@@ -1,8 +1,9 @@
-ARG NODE_VERSION=10
-FROM node:$NODE_VERSION
-ARG version=latest
-WORKDIR /home/substrate
-ADD $version.package.json ./package.json
+## Install theia
+
+FROM node:10
+RUN apt-get install make gcc g++ python
+WORKDIR /home/theia
+ADD package.json .
 ARG GITHUB_TOKEN
 RUN yarn --pure-lockfile && \
     NODE_OPTIONS="--max_old_space_size=4096" yarn theia build && \
@@ -14,41 +15,71 @@ RUN yarn --pure-lockfile && \
     yarn autoclean --force && \
     yarn cache clean
 
-ENV USER root
+#FROM ubuntu:19.04
 
-RUN apt-get update
-RUN apt-get install -y sudo cmake pkg-config libssl-dev git gcc build-essential clang libclang-dev
+RUN apt-get update && \
+    apt-get install -y curl git cmake pkg-config libssl-dev git gcc build-essential git clang libclang-dev pkg-config && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
-# See : https://github.com/theia-ide/theia-apps/issues/34
-RUN adduser --gecos '' substrate && \
-    echo substrate:substrate | chpasswd && \
-    usermod -aG sudo substrate && \
-    chmod g+rw /home && \
+RUN curl -sL https://deb.nodesource.com/setup_12.x | bash - && \
+    curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
+
+RUN apt-get update && \
+    apt-get install -y nodejs yarn && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN adduser --gecos '' theia
+RUN chmod g+rw /home && \
     mkdir -p /home/project && \
-    mkdir -p /usr/local/cargo && \
-    chown -R substrate:substrate /usr/local/cargo && \
-    chown -R substrate:substrate /home/substrate && \
-    chown -R substrate:substrate /home/project
+    chown -R theia:theia /home/theia && \
+    chown -R theia:theia /home/project;
 
-USER substrate
+USER theia
 
-# configure Theia
-ENV SHELL=/bin/bash \
-    THEIA_DEFAULT_PLUGINS=local-dir:/home/substrate/plugins \
-    PATH=/home/substrate/.cargo/bin:$PATH
+ENV PATH=/home/theia/.cargo/bin:$PATH 
 
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y \
-    && . .cargo/env \
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain none \
+    && . $HOME/.cargo/env \
     && rustup install nightly \
     && rustup update \
     && rustup default nightly \
-    && rustup target add wasm32-unknown-unknown --toolchain nightly \
-    && rustup component add rls rust-src rust-analysis
+    && rustup target add wasm32-unknown-unknown --toolchain nightly
 
-RUN cargo install --force --git https://github.com/alexcrichton/wasm-gc
-RUN cargo install --force --git https://github.com/paritytech/substrate subkey
+RUN cargo install --force --git https://github.com/alexcrichton/wasm-gc \
+    && cargo install --force --git https://github.com/paritytech/substrate subkey \
+    && cargo install sccache
 
 WORKDIR /home/project
 
-EXPOSE 3000
-ENTRYPOINT [ "node", "/home/substrate/src-gen/backend/main.js", "/home/project", "--hostname=0.0.0.0" ]
+RUN git clone --recurse-submodules https://github.com/substrate-developer-hub/substrate-package
+
+#ENV RUSTC_WRAPPER sccache
+ENV SCCACHE_DIR .sscache/
+ENV SCCACHE_CACHE_SIZE 2G
+ENV SCCACHE_IDLE_TIMEOUT=0
+# TODO configure to use Parity global cache, once available
+
+ENV RUST_LOG=sccache=debug
+#RUN sccache --start-server
+
+WORKDIR /home/project/substrate-package/substrate-node-template
+
+RUN cargo check --release && cargo build --release
+
+ENV HOME /home/theia
+WORKDIR /home/theia
+EXPOSE 8080
+ENV SHELL /bin/bash
+ENV USE_LOCAL_GIT true
+
+ENTRYPOINT [ "node", "/home/theia/src-gen/backend/main.js", "/home/project/substrate-package/substrate-node-template", "--hostname=0.0.0.0", "--port=8080" ]
+
+ARG BUILD_DATE
+ARG GIT_REV
+ARG GIT_UPSTREAM
+
+LABEL org.label-schema.schema-version="1.0"
+LABEL org.label-schema.build-date=$BUILD_DATE
+LABEL org.label-schema.vcs-ref=$GIT_REV
+LABEL vcs-upstream=$GIT_UPSTREAM

@@ -1,0 +1,23 @@
+{
+  "name": "@parity/substrate-playground-frontend",
+  "version": "1.0.0",
+  "license": "MIT",
+  "scripts": {
+    "dev": "parcel public/index.html",
+    "build": "cross-env NODE_ENV=production parcel build public/index.html",
+    "clean" : "rm -rf node_modules/ dist/ .cache/ yarn.lock"
+  },
+  "dependencies": {
+    "@material-ui/core": "4.4.0",
+    "@types/react": "16.9.2",
+    "@types/react-dom": "16.9.0",
+    "react": "16.9.0",
+    "react-dom": "16.9.0",
+    "typeface-roboto": "0.0.75"
+  },
+  "devDependencies": {
+    "cross-env": "5.2.1",
+    "parcel-bundler": "1.12.3",
+    "typescript": "3.6.2"
+  }
+}

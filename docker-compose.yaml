@@ -1,0 +1,11 @@
+version: '3'
+services:
+  substrate-playground:
+    image: parity/substrate-playground
+    container_name: substrate-playground
+    restart: always
+    ports:
+       - "80:80"
+    environment:
+      RUST_BACKTRACE: 1
+      RUST_LOG: microservice=debug
