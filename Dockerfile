@@ -44,6 +44,7 @@ RUN mkdir src \
 # Now add the rest of the project and build the real main
 
 COPY backend/src src
+COPY backend/Playground.toml /opt
 
 RUN set -x && cargo build --frozen --release --out-dir=/opt/bin -Z unstable-options --target x86_64-unknown-linux-musl
 
@@ -63,6 +64,7 @@ ENV RUST_LOG="error,$BINARY_NAME=info" \
     ROCKET_PORT=$PORT
 
 COPY --from=builder-backend /opt/bin/$BINARY_NAME /
+COPY --from=builder-backend /opt/Playground.toml /
 COPY --from=builder-frontend /opt/dist/ /static
 
 CMD ["/playground"]

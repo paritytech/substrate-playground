@@ -8,4 +8,4 @@ services:
        - "80:80"
     environment:
       RUST_BACKTRACE: 1
-      RUST_LOG: microservice=debug
+      RUST_LOG: playground=info

@@ -9,6 +9,19 @@ https://help.github.com/en/articles/virtual-environments-for-github-actions
 https://help.github.com/en/articles/contexts-and-expression-syntax-for-github-actions
 https://css-tricks.com/introducing-github-actions/
 https://github.com/ZcashFoundation/zebra/blob/master/.github/workflows/main.yml
+https://svartalf.info/posts/2019-09-16-github-actions-for-rust/
+https://blog.quid.works/setting-up-your-first-gcp-github-action/ 
+https://github.com/actions/gcloud
+https://leaks.digitalproductschool.io/continuously-deliver-your-react-app-with-github-actions-and-google-cloud-4a71fd52a035
+https://blog.kontena.io/deploying-to-kubernetes-from-github-actions/
+https://gist.github.com/NiklasMerz/1e55dd050a2b755c1c7db1754c32a134
+https://github.com/Azure/k8s-actions
+https://gianarb.it/blog/kubernetes-github-action
+https://blog.jessfraz.com/post/the-life-of-a-github-action/
+https://github.com/tokio-rs/tracing/blob/04088a0014cbf1b80187fca8c9ce43a97bcd456e/.github/workflows/CI.yml
+https://blog.digitalocean.com/how-to-deploy-to-digitalocean-kubernetes-with-github-actions/
+https://raw.githubusercontent.com/sagebind/blog/master/.github/main.workflow
+https://github.com/actions-rs/cargo
 
 ## Auto stuff
 
@@ -32,20 +45,22 @@ https://stackoverflow.com/questions/48009893/expose-environment-in-parceljs
 
 https://marketplace.visualstudio.com/items?itemName=tintinweb.solidity-visual-auditor
 
-# Github actions
+# Tracing
 
-https://blog.quid.works/setting-up-your-first-gcp-github-action/ 
-https://github.com/actions/gcloud
-https://leaks.digitalproductschool.io/continuously-deliver-your-react-app-with-github-actions-and-google-cloud-4a71fd52a035
-https://blog.kontena.io/deploying-to-kubernetes-from-github-actions/
-https://gist.github.com/NiklasMerz/1e55dd050a2b755c1c7db1754c32a134
-https://github.com/Azure/k8s-actions
-https://gianarb.it/blog/kubernetes-github-action
-https://blog.jessfraz.com/post/the-life-of-a-github-action/
-https://github.com/tokio-rs/tracing/blob/04088a0014cbf1b80187fca8c9ce43a97bcd456e/.github/workflows/CI.yml
-https://blog.digitalocean.com/how-to-deploy-to-digitalocean-kubernetes-with-github-actions/
-https://raw.githubusercontent.com/sagebind/blog/master/.github/main.workflow
-https://github.com/actions-rs/cargo
+https://tokio.rs/blog/2019-08-tracing/
+https://crates.io/crates/tracing
+https://github.com/tokio-rs/tracing
+
+# Infra
+
+https://github.com/timberio/vector
+https://opentelemetry.io/
+https://linkerd.io/ (https://github.com/linkerd/linkerd2)
+https://kuma.io/
+https://www.envoyproxy.io/
+https://istio.io/
+https://konghq.com/
+https://konghq.com/blog/kong-istio-setting-service-mesh-kubernetes-kiali-observability/
 
 # Icones
 

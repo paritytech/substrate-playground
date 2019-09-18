@@ -2,8 +2,10 @@ use crate::utils;
 use crate::platform::Platform;
 use std::process::Command;
 
+#[allow(dead_code)]
 pub struct Docker {}
 
+#[allow(dead_code)]
 impl Docker {
     pub fn new() -> Self {
         Docker{}

@@ -65,6 +65,7 @@ ENV RUST_LOG=sccache=debug
 
 WORKDIR /home/project/substrate-package/substrate-node-template
 
+RUN cargo check && cargo build
 RUN cargo check --release && cargo build --release
 
 ENV HOME /home/theia

@@ -1,6 +1,7 @@
 use crate::platform::Wrapper;
-use rocket::State;
-use rocket_contrib::json::{JsonValue};
+use log::warn;
+use rocket::{get, State};
+use rocket_contrib::{json, json::{JsonValue}};
 
 fn image_for(template: &str) -> Option<&str> {
     match template {

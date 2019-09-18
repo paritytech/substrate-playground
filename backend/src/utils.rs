@@ -1,7 +1,10 @@
 //! A set of utilities.
 //!
 
-pub fn output_result(result: std::io::Result<std::process::Output>) -> Result<String, String> {
+use std::io::{self, ErrorKind};
+use std::process::Output;
+
+pub fn output_result(result: io::Result<Output>) -> Result<String, String> {
     match result {
         Ok(output) => {
             if output.status.success() {
@@ -11,6 +14,7 @@ pub fn output_result(result: std::io::Result<std::process::Output>) -> Result<St
             }
         },
         Err(err) => match err.kind() {
+            ErrorKind::NotFound => Err("Not found".to_string()),
             _ => Err(format!("{}", err))
         }
     }
