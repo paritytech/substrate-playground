@@ -4,7 +4,7 @@ mod api;
 mod platform;
 mod utils;
 
-use crate::platform::{Wrapper, kubernetes};
+use crate::platform::Wrapper;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io;
@@ -19,6 +19,7 @@ use serde::Deserialize;
 #[derive(Deserialize)]
 struct Config {
     assets: String,
+    platform: String,
     images: HashMap<String, String>
 }
 
@@ -46,8 +47,14 @@ fn main() {
     let config = read_config();
 
     let allowed_origins = AllowedOrigins::All;
+    let platform = match platform::platform_for(config.platform.as_str()) {
+        None => {
+            println!("! No platform with name {}", config.platform);
+            std::process::exit(9)
+        },
+        Some(o) => o
+    };
 
-    // You can also deserialize this
     let cors = CorsOptions {
         allowed_origins,
         allowed_methods: vec![Method::Get].into_iter().map(From::from).collect(),
@@ -58,6 +65,6 @@ fn main() {
     rocket::ignite()
       .mount("/", StaticFiles::from(config.assets.as_str()))
       .mount("/api", routes![api::index, api::get])
-      .manage(Wrapper(Box::new(kubernetes::K8s::new())))
+      .manage(Wrapper(platform))
       .attach(cors).launch();
 }

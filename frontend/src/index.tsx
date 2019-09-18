@@ -8,7 +8,7 @@ import * as templates from './templates.json';
 import substrate_placeholder from './assets/substrate-placeholder.png';
 
 async function deployDocker(template: string) {
-    const response = await fetch(`http://localhost:8000/api/new?template=${template}`, {
+    const response = await fetch(`/api/new?template=${template}`, {
         method: 'GET',
         headers: {
         'Accept': 'application/json',
@@ -24,7 +24,7 @@ async function deployDocker(template: string) {
 async function getDeployment(uuid: string) {
     try {
 
-    const response = await fetch(`http://localhost:8000/api/${uuid}`, {
+    const response = await fetch(`/api/${uuid}`, {
         method: 'GET',
         headers: {
         'Accept': 'application/json',

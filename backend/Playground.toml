@@ -1,4 +1,5 @@
 assets = "/static"
+platform = "docker"
 
 [images]
 default = "dfds"
