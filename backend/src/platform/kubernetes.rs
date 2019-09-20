@@ -1,57 +1,82 @@
-use crate::utils;
 use crate::platform::Platform;
-use std::process::Command;
+use log::error;
+use kube::{
+    api::{Api, PostParams},
+    client::{APIClient},
+    config,
+};
+use serde_json::json;
 
 pub struct K8s {}
 
-impl K8s {
-    pub fn new() -> Self {
-        K8s{}
+fn deploy_pod(client: APIClient,image: &str) {
+    let pods = Api::v1Pod(client).within("default");
+    let p = json!({
+        "apiVersion": "v1",
+        "kind": "Pod",
+        "metadata": { "name": image },
+        "spec": {
+            "containers": [{
+            "name": image,
+            "image": image
+            }],
+        }
+    });
+    let pp = PostParams::default();
+    match pods.create(&pp, serde_json::to_vec(&p).unwrap()) {
+        Ok(o) => {
+            assert_eq!(p["metadata"]["name"], o.metadata.name);
+            error!("Created {}", o.metadata.name);
+            // wait for it..
+            std::thread::sleep(std::time::Duration::from_millis(5_000));
+        }
+        Err(e) => {
+            error!("Err {}", e);
+            if let Some(ae) = e.api_error() {
+                error!("Err {}", ae);
+            }
+        },
     }
 }
 
-fn parse_port(output: String) -> Option<String> {
-    let split: Vec<&str> = output.split(":").collect();
-    match split.get(1) {
-        Some(port) => Some(port.to_string().trim().to_string()),
-        None => None
+fn get_service(client: APIClient,name: &str) {
+    let service = Api::v1Service(client).within("default");
+    match service.get(name) {
+        Ok(o) => {
+            error!("Got {}", o.metadata.name);
+        }
+        Err(e) => {
+            error!("Err {}", e);
+        },
+    }
+}
+
+impl K8s {
+    pub fn new() -> Self {
+        let config = config::incluster_config().expect("failed to load kubeconfig");
+        let client = APIClient::new(config);
+        K8s{}
     }
 }
 
 impl Platform for K8s {
 
     fn deploy(&self, image: & str) -> Result<String, String> {
-        let output = Command::new("kubectl")
-                        .args(&["run", format!("--image={}", image.to_string()).as_str(), "subs", "--port=80", ])
-                        .output();
-        utils::output_result(output)
+        let config = config::incluster_config().expect("failed to load kubeconfig");
+        let client = APIClient::new(config);
+        deploy_pod(client, image);
+        Ok("playground".to_string())
     }
 
     fn undeploy(&self, id: & str) -> Result<String, String> {
-        let output = Command::new("docker")
-                        .arg("stop").arg(id)
-                        .output();
-        utils::output_result(output)
+        unimplemented!();
     }
 
     fn url(&self, id: & str) -> Result<String, String> {
-        let port = utils::output_result(Command::new("docker")
-                                        .args(&["port", &id[..]])
-                                        .output())?;
-        Ok(format!("//localhost:{}/#/home/project", parse_port(port).unwrap()))
-    }
-
-}
-
-#[cfg(test)]
-mod tests {
-
-    use super::*;
-
-    #[test]
-    fn test_parse_port() {
-    //    assert_eq!(None, parse_port("".to_string()));
-    //    assert_eq!(Some("12".to_string()), parse_port("test : 12".to_string()));
+        let config = config::incluster_config().expect("failed to load kubeconfig");
+        let client = APIClient::new(config);
+        let aa = get_service(client, &"playground-http".to_string());
+        Ok(format!("//localhost:{}/#/home/project", ""))
     }
 
 }

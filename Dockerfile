@@ -60,7 +60,8 @@ ARG PORT="80"
 ARG PORT
 ENV PORT=$PORT
 
-ENV RUST_LOG="error,$BINARY_NAME=info" \
+ENV RUST_BACKTRACE=1\
+    RUST_LOG="error,$BINARY_NAME=info" \
     ROCKET_PORT=$PORT
 
 COPY --from=builder-backend /opt/bin/$BINARY_NAME /

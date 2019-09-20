@@ -57,6 +57,12 @@ kubectl set image deployments/kubernetes-bootcamp kubernetes-bootcamp=jocatalin/
 kubectl rollout status deployments/kubernetes-bootcamp
 kubectl rollout undo deployments/kubernetes-bootcamp
 
+kubectl get pods playground-7646f59fbd-c45hh --template='{{(index (index .spec.containers 0).ports 0).containerPort}}{{"\n"}}'
+kubectl port-forward  playground-7646f59fbd-c45hh 80:80
+kubectl expose deployment playground --port=80 --target-port=80 --name=playground-http --type=NodePort
+kubectl apply -f deployment.yaml
+minikube service playground-http --url
+kubectl delete -f deployment.yaml
 ## GCD
 
 https://devopstar.com/2019/03/31/containerizing-deploying-services-to-kubernetes-on-gcp/

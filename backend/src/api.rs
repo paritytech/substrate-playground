@@ -22,7 +22,7 @@ pub fn index(state: State<'_, Context>, template: String) -> JsonValue {
             }
         }
     } else {
-        warn!("ssd");
+        warn!("Unkown image {}", template);
         json!({"status": "ko", "reason": format!("Unknown template <{}>", template)})
     }
 }

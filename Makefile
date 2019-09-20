@@ -39,5 +39,8 @@ PLAYGROUND_PORT="80"
 build-playground-docker-image:
 	docker build --build-arg PORT=${PLAYGROUND_PORT} -f Dockerfile -t jeluard/substrate-playground:latest . && docker image prune -f --filter label=stage=builder
 
+publish-playground-docker-image: build-playground-docker-image
+	docker push jeluard/substrate-playground:latest
+
 run-playground-docker-image: build-playground-docker-image
 	docker run -d -p 80:${PLAYGROUND_PORT} jeluard/substrate-playground:latest
