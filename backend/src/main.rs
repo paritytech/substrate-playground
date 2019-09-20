@@ -4,12 +4,14 @@ mod api;
 mod platform;
 mod utils;
 
-use crate::platform::Wrapper;
+use crate::platform::Context;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io;
 use std::io::prelude::*;
 use std::path::Path;
+use env_logger;
+use log::{error, info, warn};
 use rocket::routes;
 use rocket::http::Method;
 use rocket_contrib::serve::StaticFiles;
@@ -35,7 +37,7 @@ fn read(path: &Path) -> io::Result<String> {
 fn read_config() -> Config {
     let conf = match read(&Path::new("Playground.toml")) {
         Err(why) => {
-            println!("! {:?}", why.kind());
+            error!("! {:?}", why.kind());
             std::process::exit(9)
         },
         Ok(s) => s
@@ -44,16 +46,20 @@ fn read_config() -> Config {
 }
 
 fn main() {
+    env_logger::init();
+
     let config = read_config();
 
     let allowed_origins = AllowedOrigins::All;
     let platform = match platform::platform_for(config.platform.as_str()) {
         None => {
-            println!("! No platform with name {}", config.platform);
+            warn!("! No platform with name {}", config.platform);
             std::process::exit(9)
         },
         Some(o) => o
     };
+
+    info!("Using platform {}", config.platform);
 
     let cors = CorsOptions {
         allowed_origins,
@@ -65,6 +71,6 @@ fn main() {
     rocket::ignite()
       .mount("/", StaticFiles::from(config.assets.as_str()))
       .mount("/api", routes![api::index, api::get])
-      .manage(Wrapper(platform))
+      .manage(Context(platform, config.images))
       .attach(cors).launch();
 }
