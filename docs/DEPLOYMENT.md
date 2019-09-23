@@ -63,6 +63,15 @@ kubectl expose deployment playground --port=80 --target-port=80 --name=playgroun
 kubectl apply -f deployment.yaml
 minikube service playground-http --url
 kubectl delete -f deployment.yaml
+
+```
+make publish-playground-docker-image
+kubectl apply -f deployment.yaml
+kubectl get all
+kubectl logs
+kubectl delete -f deployment.yaml
+```
+
 ## GCD
 
 https://devopstar.com/2019/03/31/containerizing-deploying-services-to-kubernetes-on-gcp/

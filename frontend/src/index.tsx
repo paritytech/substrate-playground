@@ -30,6 +30,8 @@ async function getDeployment(uuid: string) {
       });
       if (response.status == 200) {
         return await response.json();
+      } else {
+          return {};
       }
 }
 
@@ -40,7 +42,7 @@ async function deployAndRedirect(setError: (error: string) => void, template: st
         if (!!id) {
             // Drop existing query parameters
             window.history.replaceState(null, "", window.location.pathname);
-            window.location.pathname = "/" + id;
+            document.location.search = "?uuid=" + id;
         } else {
             setError("Missing id in returned response")
         }
@@ -49,18 +51,11 @@ async function deployAndRedirect(setError: (error: string) => void, template: st
     }
 }
 
-function templateFromGithub(s: string): string | undefined {
+function templateFromGithub(s: string | null): string | undefined {
     const regex = /github.com\/(.*)/;
-    if (regex.test(s)) {
+    if (s && regex.test(s)) {
         return s;
     }
-}
-
-function uuidFromPath(s: string): string | null {
-    if (s !== "/") {
-        return s.substr(1);
-    }
-    return null;
 }
 
 function App() {
@@ -74,18 +69,19 @@ function App() {
     //    - and ready - show theia
     //    - and loading - show loading screen
 
-    const uuid = uuidFromPath(window.location.pathname);
-    const template = templateFromGithub(new URLSearchParams(window.location.search).get("template") || document.referrer);
+    const uuid = new URLSearchParams(window.location.search).get("uuid");
+    const template = templateFromGithub(new URLSearchParams(window.location.search).get("template"));
 
     if (uuid) {
         const id = setInterval(async () => {
             const deployment = await getDeployment(uuid);
-            if (deployment && deployment.status == "pending") {
+            if (deployment.status == "pending") {
                 return;
             }
             clearInterval(id);
-            if (deployment) {
-                setURL(deployment.URL);
+            const url = deployment.URL;
+            if (url) {
+                setURL(url);
             }
         }, 1000);
         if (url) {

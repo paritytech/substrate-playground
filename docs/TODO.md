@@ -1,3 +1,48 @@
+# Playground
+
+## MVP
+
+Deploy under substrate.dev (https)
+Add more templates and a landing page
+Deploy image with sha256 https://docs.docker.com/engine/reference/commandline/pull/#pull-an-image-by-digest-immutable-identifier
+https://docs.docker.com/ee/dtr/user/manage-images/prevent-tags-from-being-overwritten/
+
+## Fast
+
+Configure a nicer Rust env
+Make sure rust runs fast
+Auto-kill containers after some inactivity
+
+## 3rd parties
+
+Interact with marketplace
+Easily add modules (https://hackmd.io/B-jWKzRCQmq1gPtFFkXjFA#Adding-A-Custom-Runtime-Module)
+https://github.com/killercup/cargo-edit
+
+## Features
+
+Test VSCode plugin, specifically Web3 fundation ones
+Allow to simply start a chain, possibly locally (WASM)
+Provide macros syntaxic sugar
+Support ink syntax 
+Ink plugin
+
+Plugin to interact with networks
+
+## Teach
+
+Tutorial as in
+https://kubernetes.io/docs/tutorials/kubernetes-basics/expose/expose-interactive/
+
+https://github.com/ashleygwilliams/cargo-generate
+https://code.visualstudio.com/blogs/2019/07/25/remote-ssh
+https://github.com/microsoft/vscode-dev-containers
+
+## Devops
+
+https://opentelemetry.io/
+https://kuma.io/
+
 # Github actions
 
 https://github.com/actions/starter-workflows/tree/master/ci
