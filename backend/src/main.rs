@@ -1,4 +1,5 @@
 #![feature(proc_macro_hygiene, decl_macro)]
+#![deny(intra_doc_link_resolution_failure)]
 
 mod api;
 mod platform;

@@ -1,9 +1,9 @@
 use crate::platform::Platform;
-use log::error;
+use log::{error, info};
 use kube::{
     api::{Api, PostParams},
     client::{APIClient},
-    config,
+    config::{self, Configuration},
 };
 use serde_json::json;
 
@@ -51,10 +51,22 @@ fn get_service(client: APIClient,name: &str) {
     }
 }
 
+fn create_client() -> kube::Result<APIClient> {
+    let config = match config::incluster_config() {
+        Ok(config) => {
+            config
+        },
+        Err(_) => {
+            info!("Local");
+            config::load_kube_config().unwrap()
+        },
+    };
+    Ok(APIClient::new(config))
+}
+
 impl K8s {
     pub fn new() -> Self {
-        let config = config::incluster_config().expect("failed to load kubeconfig");
-        let client = APIClient::new(config);
+        let client = create_client();
         K8s{}
     }
 }
@@ -62,10 +74,15 @@ impl K8s {
 impl Platform for K8s {
 
     fn deploy(&self, image: & str) -> Result<String, String> {
-        let config = config::incluster_config().expect("failed to load kubeconfig");
-        let client = APIClient::new(config);
-        deploy_pod(client, image);
-        Ok("playground".to_string())
+        match create_client(){
+            Ok(client) => {
+                deploy_pod(client, image);
+                Ok("playground".to_string())
+            },
+            Err(error) => {
+                Err(format!("{}", error))
+            }
+        }
     }
 
     fn undeploy(&self, id: & str) -> Result<String, String> {
@@ -73,10 +90,10 @@ impl Platform for K8s {
     }
 
     fn url(&self, id: & str) -> Result<String, String> {
-        let config = config::incluster_config().expect("failed to load kubeconfig");
-        let client = APIClient::new(config);
-        let aa = get_service(client, &"playground-http".to_string());
-        Ok(format!("//localhost:{}/#/home/project", ""))
+        /*let client = create_client()?;
+        let service = get_service(client, &"playground-http".to_string());
+        Ok(format!("//localhost:{}/#/home/project", ""))*/
+        unimplemented!();
     }
 
 }
