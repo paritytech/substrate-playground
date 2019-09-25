@@ -1,0 +1,23 @@
+{
+    "kind": "Service",
+    "apiVersion": "v1",
+    "metadata": {
+        "generateName": "theia-http-",
+        "labels": {
+            "app": "theia-substrate"
+        }
+    },
+    "spec": {
+        "ports": [
+            {
+                "protocol": "TCP",
+                "port": 8080,
+                "targetPort": 8080
+            }
+        ],
+        "selector": {
+            "app": "theia-substrate"
+        },
+        "type": "LoadBalancer"
+    }
+}

@@ -7,9 +7,8 @@ mod utils;
 
 use crate::platform::Context;
 use std::collections::HashMap;
+use std::env;
 use std::fs::File;
-use std::io;
-use std::io::prelude::*;
 use std::path::Path;
 use env_logger;
 use log::{error, info, warn};
@@ -26,17 +25,8 @@ struct Config {
     images: HashMap<String, String>
 }
 
-fn read(path: &Path) -> io::Result<String> {
-    let mut f = File::open(path)?;
-    let mut s = String::new();
-    match f.read_to_string(&mut s) {
-        Ok(_) => Ok(s),
-        Err(e) => Err(e),
-    }
-}
-
 fn read_config() -> Config {
-    let conf = match read(&Path::new("Playground.toml")) {
+    let conf = match utils::read(&Path::new("Playground.toml")) {
         Err(why) => {
             error!("! {:?}", why.kind());
             std::process::exit(9)
@@ -47,6 +37,9 @@ fn read_config() -> Config {
 }
 
 fn main() {
+    if env::var("RUST_LOG").is_err() {
+        env::set_var("RUST_LOG", "info,kube=debug");
+    }
     env_logger::init();
 
     let config = read_config();

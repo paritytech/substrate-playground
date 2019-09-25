@@ -27,23 +27,33 @@ build-frontend: setup-frontend
 build-backend:
 	cd backend; cargo build --release
 
-# 
+THEIA_IMAGE_NAME="jeluard/theia-substrate"
+THEIA_IMAGE_VERSION="v1"
+THEIA_IMAGE="${THEIA_IMAGE_NAME}:${THEIA_IMAGE_VERSION}"
+
+#
 build-theia-docker-image:
-	cd theia-substrate; docker build -f Dockerfile -t jeluard/theia-substrate:latest . && docker image prune -f --filter label=stage=builder
+	@cd theia-substrate; docker build -f Dockerfile -t ${THEIA_IMAGE} . && docker image prune -f --filter label=stage=builder
+
+publish-theia-docker-image: build-theia-docker-image
+	docker push ${THEIA_IMAGE}
 
 run-theia-docker-image: build-theia-docker-image
-	docker run -d -p 3000:3000 jeluard/theia-substrate:latest
+	docker run -d -p 3000:3000 ${THEIA_IMAGE}
 
 PLAYGROUND_PORT="80"
+PLAYGROUND_IMAGE_NAME="jeluard/substrate-playground"
+PLAYGROUND_IMAGE_VERSION="latest"
+PLAYGROUND_IMAGE="${PLAYGROUND_IMAGE_NAME}:${PLAYGROUND_IMAGE_VERSION}"
 
 build-playground-docker-image:
-	docker build --build-arg PORT=${PLAYGROUND_PORT} -f Dockerfile -t jeluard/substrate-playground:latest . && docker image prune -f --filter label=stage=builder
+	docker build --build-arg PORT=${PLAYGROUND_PORT} -f Dockerfile -t ${PLAYGROUND_IMAGE} . && docker image prune -f --filter label=stage=builder
 
 publish-playground-docker-image: build-playground-docker-image
-	docker push jeluard/substrate-playground:latest
+	docker push ${PLAYGROUND_IMAGE}
 
 run-playground-docker-image: build-playground-docker-image
-	docker run -d -p 80:${PLAYGROUND_PORT} jeluard/substrate-playground:latest
+	docker run -d -p 80:${PLAYGROUND_PORT} ${PLAYGROUND_IMAGE}
 
 integrate:
 	cargo doc --document-private-items

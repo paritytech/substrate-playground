@@ -7,9 +7,10 @@ use rocket_contrib::{json, json::{JsonValue}};
 ///
 /// Returns a `JsonValue` with following shape:
 /// - {"status" "ok"
-///     "id"    "xxxx"}
+///    "id"     "xxxx"}
 ///  if the container statup was successful
-/// - {"status" "ko"} if not
+/// - {"status" "ko"
+///    "reason" "xxxx"} if not
 #[get("/new?<template>")]
 pub fn index(state: State<'_, Context>, template: String) -> JsonValue {
     if let Some(image) = state.1.get(&template) {
@@ -27,7 +28,15 @@ pub fn index(state: State<'_, Context>, template: String) -> JsonValue {
     }
 }
 
-#[get("/<id>")]
+/// Access the URL of a running container identified by `id`.
+///
+/// Returns a `JsonValue` with following shape:
+/// - {"status" "ok"
+///    "id"    "xxxx"}
+///  if the container statup was successful
+/// - {"status" "ko"
+///    "reason" "xxxx"} if not
+#[get("/url?<id>")]
 pub fn get(platform: State<'_, Context>, id: String) -> JsonValue {
     let result = platform.0.url(&id.to_string());
     match result {

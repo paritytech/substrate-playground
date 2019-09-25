@@ -3,9 +3,6 @@
 ## MVP
 
 Deploy under substrate.dev (https)
-Add more templates and a landing page
-Deploy image with sha256 https://docs.docker.com/engine/reference/commandline/pull/#pull-an-image-by-digest-immutable-identifier
-https://docs.docker.com/ee/dtr/user/manage-images/prevent-tags-from-being-overwritten/
 
 ## Fast
 

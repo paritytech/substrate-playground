@@ -43,6 +43,7 @@ async function deployAndRedirect(setError: (error: string) => void, template: st
             // Drop existing query parameters
             window.history.replaceState(null, "", window.location.pathname);
             document.location.search = "?uuid=" + id;
+            window.location.pathname = "/url";
         } else {
             setError("Missing id in returned response")
         }

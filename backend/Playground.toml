@@ -2,4 +2,4 @@ assets = "/static"
 platform = "kubernetes"
 
 [images]
-default = "jeluard/theia-substrate:next"
+default = "jeluard/theia-substrate@sha256:25b602cd3c72871956d04d866c1fbb4aa5092f2ef2455108e1503fba692399de"

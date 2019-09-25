@@ -1,52 +1,90 @@
+use crate::utils;
 use crate::platform::Platform;
+use std::fs::File;
+use std::path::Path;
 use log::{error, info};
 use kube::{
     api::{Api, PostParams},
     client::{APIClient},
     config::{self, Configuration},
 };
-use serde_json::json;
+use serde_json::{json, Value};
 
 pub struct K8s {}
 
-fn deploy_pod(client: APIClient,image: &str) {
-    let pods = Api::v1Pod(client).within("default");
-    let p = json!({
-        "apiVersion": "v1",
-        "kind": "Pod",
-        "metadata": { "name": image },
-        "spec": {
-            "containers": [{
-            "name": image,
-            "image": image
-            }],
-        }
-    });
+fn read_deployment(image: &str) -> Result<Value, String> {
+    match utils::read(&Path::new("conf/deployment.yaml")) {
+        Err(why) => {
+            error!("! {:?}", why.kind());
+            Err("".to_string())
+        },
+        Ok(s) => serde_json::from_str(&s.replace("%IMAGE_NAME%", image)).map_err(|err| -> String {format!("{}", err)})
+    }
+}
+
+fn read_service(pod: &str) -> Result<Value, String> {
+    match utils::read(&Path::new("conf/service.yaml")) {
+        Err(why) => {
+            error!("! {:?}", why.kind());
+            Err("".to_string())
+        },
+        Ok(s) => serde_json::from_str(&s.replace("%POD_NAME%", pod)).map_err(|err| -> String {format!("{}", err)})
+    }
+}
+
+fn deploy_pod(client: APIClient,image: &str) -> Result<String, String> {
+    let p: Value = read_deployment(image).unwrap();
+
     let pp = PostParams::default();
-    match pods.create(&pp, serde_json::to_vec(&p).unwrap()) {
+    let pods = Api::v1Pod(client.clone()).within("default");
+    let name = match pods.create(&pp, serde_json::to_vec(&p).unwrap()) {
         Ok(o) => {
-            assert_eq!(p["metadata"]["name"], o.metadata.name);
-            error!("Created {}", o.metadata.name);
-            // wait for it..
-            std::thread::sleep(std::time::Duration::from_millis(5_000));
+            info!("Created {}", o.metadata.name);
+            info!("Created {}", o.metadata.uid.unwrap());
+            //Ok(o.metadata.name)
+            o.metadata.name
         }
         Err(e) => {
             error!("Err {}", e);
-            if let Some(ae) = e.api_error() {
-                error!("Err {}", ae);
-            }
+            "".to_string()
+        },
+    };
+
+    let p2: Value = read_service(&name).unwrap();
+
+    let services = Api::v1Service(client).within("default");
+    match services.create(&pp, serde_json::to_vec(&p2).unwrap()) {
+        Ok(o) => {
+            info!("Created {}", o.metadata.name);
+            info!("Created {}", o.metadata.uid.unwrap());
+            Ok(o.metadata.name)
+        }
+        Err(e) => {
+            error!("Err {}", e);
+            Err(format!("{}", e))
         },
     }
 }
 
-fn get_service(client: APIClient,name: &str) {
+fn get_service(client: APIClient,name: &str) -> Option<String> {
     let service = Api::v1Service(client).within("default");
     match service.get(name) {
         Ok(o) => {
-            error!("Got {}", o.metadata.name);
+            // https://docs.rs/k8s-openapi/0.5.1/k8s_openapi/api/core/v1/struct.ServiceStatus.html
+            // https://docs.rs/k8s-openapi/0.5.1/k8s_openapi/api/core/v1/struct.ServiceSpec.html
+            error!("Got {:?}", o.metadata.name);
+            error!("Got {:?}", o.status);
+            error!("Got {:?}", o.spec.external_ips);
+            error!("Got {:?}", o.spec.load_balancer_ip);
+            if let (Some(cluster_ip), Some(ports)) = (o.spec.cluster_ip, o.spec.ports) {
+                Some(format!("http://{}:{}", cluster_ip, ports[0].node_port.unwrap()).to_string())
+            } else {
+                None
+            }
         }
         Err(e) => {
             error!("Err {}", e);
+            None
         },
     }
 }
@@ -74,10 +112,9 @@ impl K8s {
 impl Platform for K8s {
 
     fn deploy(&self, image: & str) -> Result<String, String> {
-        match create_client(){
+        match create_client() {
             Ok(client) => {
-                deploy_pod(client, image);
-                Ok("playground".to_string())
+                deploy_pod(client, image)
             },
             Err(error) => {
                 Err(format!("{}", error))
@@ -90,10 +127,15 @@ impl Platform for K8s {
     }
 
     fn url(&self, id: & str) -> Result<String, String> {
-        /*let client = create_client()?;
-        let service = get_service(client, &"playground-http".to_string());
-        Ok(format!("//localhost:{}/#/home/project", ""))*/
-        unimplemented!();
+        match create_client() {
+            Ok(client) => {
+                let service = get_service(client, id);
+                service.ok_or("dsfs".to_string())
+            },
+            Err(error) => {
+                Err(format!("{}", error))
+            }
+        }
     }
 
 }

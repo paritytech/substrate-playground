@@ -1,0 +1,15 @@
+{
+  "apiVersion": "v1",
+  "kind": "Pod",
+  "metadata": {
+    "generateName": "theia-substrate-",
+    "labels": {
+      "app": "theia-substrate"
+    }},
+  "spec": {
+    "containers": [{
+    "name": "theia-substrate-container",
+    "image": "%IMAGE_NAME%"
+    }]
+  }
+}
