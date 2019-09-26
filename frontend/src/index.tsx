@@ -17,11 +17,13 @@ async function deployDocker(template: string) {
       });
       if (response.status == 200) {
         return await response.json();
+      } else {
+        return {"reason": response.statusText};
       }
 }
 
 async function getDeployment(uuid: string) {
-    const response = await fetch(`/api/${uuid}`, {
+    const response = await fetch(`/api/url?id=${uuid}`, {
         method: 'GET',
         headers: {
         'Accept': 'application/json',
@@ -31,7 +33,7 @@ async function getDeployment(uuid: string) {
       if (response.status == 200) {
         return await response.json();
       } else {
-          return {};
+          return {"reason": response.statusText};
       }
 }
 
@@ -42,8 +44,8 @@ async function deployAndRedirect(setError: (error: string) => void, template: st
         if (!!id) {
             // Drop existing query parameters
             window.history.replaceState(null, "", window.location.pathname);
-            document.location.search = "?uuid=" + id;
             window.location.pathname = "/url";
+            document.location.search = "?uuid=" + id;
         } else {
             setError("Missing id in returned response")
         }

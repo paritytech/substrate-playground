@@ -74,16 +74,32 @@ kubectl delete -f deployment.yaml
 
 ## GCD
 
-https://devopstar.com/2019/03/31/containerizing-deploying-services-to-kubernetes-on-gcp/
-https://cloud.google.com/sdk/docs/quickstarts
+First make sure kubectl points to the right google cloud engine:
 
+```
 gcloud auth application-default login
 
 gcloud container clusters get-credentials substrate-playground --zone us-central1-a --project substrateplayground-252112
+```
 
+You can then check it's correctly configured using:
+
+```
 kubectl cluster-info
+```
 
-gcloud auth configure-docker
+After deployment, the external facing IP can be found using:
+
+```
+kubectl get services playground-http
+```
+
+### Update fixed IP
+
+gcloud compute addresses create playground --region us-central1
+gcloud compute addresses describe playground --region us-central1
+
+then update `loadBalancerIP` in `backend/conf/service.yaml`
 
 docker tag parity/substrate-playground-backend:latest asia.gcr.io/substrateplayground-252112/parity/substrate-playground-backend:latest
 docker push asia.gcr.io/substrateplayground-252112/parity/substrate-playground-backend:latest

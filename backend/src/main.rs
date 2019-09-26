@@ -37,14 +37,16 @@ fn read_config() -> Config {
 }
 
 fn main() {
+    // Initialize log configuration. Reads RUST_LOG if any, otherwise fallsback to `default`
     if env::var("RUST_LOG").is_err() {
         env::set_var("RUST_LOG", "info,kube=debug");
     }
     env_logger::init();
 
+    // Load configuration from `Playground.toml`
     let config = read_config();
+    let assets = env::var("PLAYGROUND_ASSETS").unwrap_or(config.assets);
 
-    let allowed_origins = AllowedOrigins::All;
     let platform = match platform::platform_for(config.platform.as_str()) {
         None => {
             warn!("! No platform with name {}", config.platform);
@@ -53,8 +55,12 @@ fn main() {
         Some(o) => o
     };
 
-    info!("Using platform {}", config.platform);
+    info!("Configuration:");
+    info!("platform: {}", config.platform);
+    info!("assets: {}", assets);
 
+    // Configure CORS
+    let allowed_origins = AllowedOrigins::All;
     let cors = CorsOptions {
         allowed_origins,
         allowed_methods: vec![Method::Get].into_iter().map(From::from).collect(),
@@ -62,8 +68,9 @@ fn main() {
         allow_credentials: true,
         ..Default::default()
     }.to_cors().unwrap();
+
     rocket::ignite()
-      .mount("/", StaticFiles::from(config.assets.as_str()))
+      .mount("/", StaticFiles::from(assets.as_str()))
       .mount("/api", routes![api::index, api::get])
       .manage(Context(platform, config.images))
       .attach(cors).launch();

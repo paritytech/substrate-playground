@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "license": "MIT",
   "scripts": {
-    "dev": "parcel public/index.html",
+    "dev": "parcel watch public/index.html",
     "build": "cross-env NODE_ENV=production parcel build public/index.html",
     "clean" : "rm -rf node_modules/ dist/ .cache/ yarn.lock"
   },

@@ -33,7 +33,7 @@ fn read_service(pod: &str) -> Result<Value, String> {
 }
 
 fn deploy_pod(client: APIClient,image: &str) -> Result<String, String> {
-    let p: Value = read_deployment(image).unwrap();
+    let p: Value = read_deployment(image).unwrap(); // TODO better error handling
 
     let pp = PostParams::default();
     let pods = Api::v1Pod(client.clone()).within("default");
@@ -72,12 +72,12 @@ fn get_service(client: APIClient,name: &str) -> Option<String> {
         Ok(o) => {
             // https://docs.rs/k8s-openapi/0.5.1/k8s_openapi/api/core/v1/struct.ServiceStatus.html
             // https://docs.rs/k8s-openapi/0.5.1/k8s_openapi/api/core/v1/struct.ServiceSpec.html
-            error!("Got {:?}", o.metadata.name);
             error!("Got {:?}", o.status);
             error!("Got {:?}", o.spec.external_ips);
-            error!("Got {:?}", o.spec.load_balancer_ip);
-            if let (Some(cluster_ip), Some(ports)) = (o.spec.cluster_ip, o.spec.ports) {
-                Some(format!("http://{}:{}", cluster_ip, ports[0].node_port.unwrap()).to_string())
+            error!("Got !! {:?}", o.spec.load_balancer_ip);
+            error!("Got !!2 {:?}", o.spec.ports);
+            if let (Some(load_balancer_ip), Some(ports)) = (o.spec.load_balancer_ip, o.spec.ports) {
+                Some(format!("http://{}:{}", load_balancer_ip, /*ports[0].node_port.unwrap())*/ 8080).to_string()) // TODO only the proper port (correct name)
             } else {
                 None
             }
@@ -104,7 +104,6 @@ fn create_client() -> kube::Result<APIClient> {
 
 impl K8s {
     pub fn new() -> Self {
-        let client = create_client();
         K8s{}
     }
 }

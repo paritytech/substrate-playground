@@ -18,6 +18,7 @@ https://github.com/killercup/cargo-edit
 
 ## Features
 
+https://github.com/tonsky/FiraCode/wiki/Linux-instructions#installing-with-a-package-manager
 Test VSCode plugin, specifically Web3 fundation ones
 Allow to simply start a chain, possibly locally (WASM)
 Provide macros syntaxic sugar

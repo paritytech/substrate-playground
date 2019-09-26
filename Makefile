@@ -21,6 +21,9 @@ clean: clean-frontend clean-backend
 dev-frontend: setup-frontend
 	cd frontend; yarn dev
 
+dev-backend:
+	cd backend; PLAYGROUND_ASSETS="../frontend/dist" cargo run
+
 build-frontend: setup-frontend
 	cd frontend; yarn build
 
@@ -54,6 +57,15 @@ publish-playground-docker-image: build-playground-docker-image
 
 run-playground-docker-image: build-playground-docker-image
 	docker run -d -p 80:${PLAYGROUND_PORT} ${PLAYGROUND_IMAGE}
+
+k8s-deploy-playground:
+	kubectl apply -f  deployment.yaml
+
+k8s-undeploy-playground:
+	kubectl delete -f  deployment.yaml
+
+k8s-undeploy-theia:
+	kubectl delete pods,services -l app=theia-substrate
 
 integrate:
 	cargo doc --document-private-items

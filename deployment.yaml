@@ -33,7 +33,7 @@ spec:
       serviceAccountName: default-service-account
       containers:
       - name: playground
-        image: jeluard/substrate-playground:latest
+        image: jeluard/substrate-playground@sha256:1d964b9d162269382f56e1eaa41a37a498734cc4b59a9337ccf7c9757876507e
         ports:
         - containerPort: 80
 ---
@@ -44,7 +44,8 @@ metadata:
   labels:
     app: playground
 spec:
-  type: NodePort
+  type: LoadBalancer
+  loadBalancerIP: "130.211.214.215"
   ports:
   - port: 80
     targetPort: 80
