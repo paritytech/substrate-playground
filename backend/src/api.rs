@@ -40,7 +40,13 @@ pub fn index(state: State<'_, Context>, template: String) -> JsonValue {
 pub fn get(platform: State<'_, Context>, id: String) -> JsonValue {
     let result = platform.0.url(&id.to_string());
     match result {
-        Ok(id) => json!({"status": "ok", "URL": id}),
+        Ok(id) => {
+            if (id.is_empty()) {
+                json!({"status": "pending"})
+            } else {
+                json!({"status": "ok", "URL": id})
+            }
+        },
         Err(err) => json!({"status": "ko", "reason": err})
     }
 }

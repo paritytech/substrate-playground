@@ -2,12 +2,18 @@
 
 ## MVP
 
-Deploy under substrate.dev (https)
+Deploy under substrate.dev
+https
+Select proper port
+
+Integration tests
+https://blog.yoshuawuyts.com/async-finalizers/
 
 ## Fast
 
 Configure a nicer Rust env
 Make sure rust runs fast
+* https://internals.rust-lang.org/t/exploring-crate-graph-build-times-with-cargo-build-ztimings/10975
 Auto-kill containers after some inactivity
 
 ## 3rd parties
@@ -40,6 +46,10 @@ https://github.com/microsoft/vscode-dev-containers
 
 https://opentelemetry.io/
 https://kuma.io/
+https://gitlab.parity.io/parity/infrastructure/traefik
+https://traefik.io/
+https://github.com/topfreegames/maestro
+https://github.com/Babylonpartners/shipcat
 
 # Github actions
 

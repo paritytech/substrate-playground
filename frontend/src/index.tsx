@@ -47,10 +47,10 @@ async function deployAndRedirect(setError: (error: string) => void, template: st
             window.location.pathname = "/url";
             document.location.search = "?uuid=" + id;
         } else {
-            setError("Missing id in returned response")
+            setError("Missing id in returned response");
         }
     } else {
-        setError(result.reason)
+        setError(result.reason);
     }
 }
 
@@ -77,12 +77,14 @@ function App() {
 
     if (uuid) {
         const id = setInterval(async () => {
-            const deployment = await getDeployment(uuid);
-            if (deployment.status == "pending") {
+            const result = await getDeployment(uuid);
+            if (result.status == "pending") {
                 return;
+            } else if (result.status == "ko") {
+                setError(result.reason);
             }
             clearInterval(id);
-            const url = deployment.URL;
+            const url = result.URL;
             if (url) {
                 setURL(url);
             }

@@ -11,14 +11,12 @@
         "ports": [
             {
                 "protocol": "TCP",
-                "port": 8080,
-                "targetPort": 8080
+                "port": 8080
             }
         ],
         "selector": {
             "app": "theia-substrate"
         },
-        "type": "LoadBalancer",
-        "loadBalancerIP":"130.211.214.215"
+        "type": "LoadBalancer"
     }
 }

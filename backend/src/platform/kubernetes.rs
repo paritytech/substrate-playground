@@ -66,25 +66,26 @@ fn deploy_pod(client: APIClient,image: &str) -> Result<String, String> {
     }
 }
 
-fn get_service(client: APIClient,name: &str) -> Option<String> {
+fn get_service(client: APIClient,name: &str) -> Result<String, String> {
     let service = Api::v1Service(client).within("default");
     match service.get(name) {
         Ok(o) => {
-            // https://docs.rs/k8s-openapi/0.5.1/k8s_openapi/api/core/v1/struct.ServiceStatus.html
-            // https://docs.rs/k8s-openapi/0.5.1/k8s_openapi/api/core/v1/struct.ServiceSpec.html
-            error!("Got {:?}", o.status);
-            error!("Got {:?}", o.spec.external_ips);
-            error!("Got !! {:?}", o.spec.load_balancer_ip);
-            error!("Got !!2 {:?}", o.spec.ports);
-            if let (Some(load_balancer_ip), Some(ports)) = (o.spec.load_balancer_ip, o.spec.ports) {
-                Some(format!("http://{}:{}", load_balancer_ip, /*ports[0].node_port.unwrap())*/ 8080).to_string()) // TODO only the proper port (correct name)
+            // Find more details here:
+            // * https://docs.rs/k8s-openapi/0.5.1/k8s_openapi/api/core/v1/struct.ServiceStatus.html
+            // * https://docs.rs/k8s-openapi/0.5.1/k8s_openapi/api/core/v1/struct.ServiceSpec.html
+            if let (Some(status), Some(ports)) = (o.status, o.spec.ports) {
+                if let (Some (ingress)) = status.load_balancer.unwrap().ingress {
+                  Ok(format!("http://{}:{}", ingress[0].ip.as_ref().unwrap(), 8080).to_string()) // TODO only the proper port (correct name)
+                } else {
+                    Ok("".to_string())
+                }
             } else {
-                None
+                Err("Failed to access service endpoint".to_string())
             }
         }
         Err(e) => {
             error!("Err {}", e);
-            None
+            Err("Failed to access service endpoint".to_string())
         },
     }
 }
@@ -95,7 +96,7 @@ fn create_client() -> kube::Result<APIClient> {
             config
         },
         Err(_) => {
-            info!("Local");
+            info!("Use local configuration");
             config::load_kube_config().unwrap()
         },
     };
@@ -128,8 +129,7 @@ impl Platform for K8s {
     fn url(&self, id: & str) -> Result<String, String> {
         match create_client() {
             Ok(client) => {
-                let service = get_service(client, id);
-                service.ok_or("dsfs".to_string())
+                get_service(client, id)
             },
             Err(error) => {
                 Err(format!("{}", error))
