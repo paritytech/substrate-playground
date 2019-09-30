@@ -77,7 +77,6 @@ spec:
     - host: playground.substrate.dev
       http:
         paths:
-        - path: /
-          backend:
-            serviceName: playground-http
-            servicePort: 80
+        - backend:
+           serviceName: playground-http
+           servicePort: 80
