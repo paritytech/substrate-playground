@@ -70,6 +70,14 @@ metadata:
     kubernetes.io/ingress.global-static-ip-name: "playground"
     networking.gke.io/managed-certificates: playground-certificate
 spec:
-  backend:
-    serviceName: playground-http
-    servicePort: 80
+  tls:
+  - hosts:
+    - playground.substrate.dev
+  rules:
+    - host: playground.substrate.dev
+      http:
+        paths:
+        - path: /
+          backend:
+            serviceName: playground-http
+            servicePort: 80
