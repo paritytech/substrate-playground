@@ -96,13 +96,10 @@ kubectl get services playground-http
 
 ### Update fixed IP
 
-gcloud compute addresses create playground --region us-central1
-gcloud compute addresses describe playground --region us-central1
+gcloud compute addresses create playground --global
+gcloud compute addresses describe playground --global
 
-then update `loadBalancerIP` in `backend/conf/service.yaml`
-
-docker tag parity/substrate-playground-backend:latest asia.gcr.io/substrateplayground-252112/parity/substrate-playground-backend:latest
-docker push asia.gcr.io/substrateplayground-252112/parity/substrate-playground-backend:latest
+then update `loadBalancerIP` in `deployment.yaml`
 
 ### Secure nginx
 

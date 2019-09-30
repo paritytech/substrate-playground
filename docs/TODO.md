@@ -2,12 +2,12 @@
 
 ## MVP
 
-Deploy under substrate.dev
 https
-Select proper port
+Configure memory usage, grow to bigger machine?
 
 Integration tests
 https://blog.yoshuawuyts.com/async-finalizers/
+https://www.joshmcguigan.com/blog/custom-exit-status-codes-rust/
 
 ## Fast
 
@@ -50,9 +50,13 @@ https://gitlab.parity.io/parity/infrastructure/traefik
 https://traefik.io/
 https://github.com/topfreegames/maestro
 https://github.com/Babylonpartners/shipcat
+https://blog.containo.us/traefik-2-0-6531ec5196c2
+https://mae.sh/
+https://coredns.io/
 
 # Github actions
 
+https://github.com/actions-rs/clippy-check
 https://github.com/actions/starter-workflows/tree/master/ci
 https://github.com/actions/toolkit/blob/master/.github/workflows/workflow.yml
 https://help.github.com/en/articles/configuring-a-workflow

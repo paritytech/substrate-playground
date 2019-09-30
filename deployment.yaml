@@ -44,10 +44,31 @@ metadata:
   labels:
     app: playground
 spec:
-  type: LoadBalancer
-  loadBalancerIP: "130.211.214.215"
+  type: NodePort
   ports:
   - port: 80
     targetPort: 80
   selector:
     app: playground
+---
+# Creates an HTTPS certificate
+apiVersion: networking.gke.io/v1beta1
+kind: ManagedCertificate
+metadata:
+  name: playground-certificate
+spec:
+  domains:
+    - playground.substrate.dev
+---
+# Creates an ingress associating the certificate to the LoadBalancer
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: playground-ingress
+  annotations:
+    kubernetes.io/ingress.global-static-ip-name: "34.95.81.114"
+    networking.gke.io/managed-certificates: playground-certificate
+spec:
+  backend:
+    serviceName: playground-http
+    servicePort: 80
