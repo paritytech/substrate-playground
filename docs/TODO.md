@@ -5,16 +5,17 @@
 https
 Configure memory usage, grow to bigger machine?
 
-Integration tests
-https://blog.yoshuawuyts.com/async-finalizers/
-https://www.joshmcguigan.com/blog/custom-exit-status-codes-rust/
-
 ## Fast
 
 Configure a nicer Rust env
 Make sure rust runs fast
 * https://internals.rust-lang.org/t/exploring-crate-graph-build-times-with-cargo-build-ztimings/10975
 Auto-kill containers after some inactivity
+Introduce pool of idle pods, to reduce time to get started
+
+Integration tests
+https://blog.yoshuawuyts.com/async-finalizers/
+https://www.joshmcguigan.com/blog/custom-exit-status-codes-rust/
 
 ## 3rd parties
 

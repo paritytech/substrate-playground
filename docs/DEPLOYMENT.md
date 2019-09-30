@@ -99,8 +99,6 @@ kubectl get services playground-http
 gcloud compute addresses create playground --global
 gcloud compute addresses describe playground --global
 
-then update `loadBalancerIP` in `deployment.yaml`
-
 ### Secure nginx
 
 https://kubernetes.io/docs/concepts/services-networking/connect-applications-service/#securing-the-service

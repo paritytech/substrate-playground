@@ -61,12 +61,13 @@ spec:
     - playground.substrate.dev
 ---
 # Creates an ingress associating the certificate to the LoadBalancer
+# See https://cloud.google.com/kubernetes-engine/docs/how-to/managed-certs
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
   name: playground-ingress
   annotations:
-    kubernetes.io/ingress.global-static-ip-name: "34.95.81.114"
+    kubernetes.io/ingress.global-static-ip-name: "playground"
     networking.gke.io/managed-certificates: playground-certificate
 spec:
   backend:
