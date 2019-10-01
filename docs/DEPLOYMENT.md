@@ -44,6 +44,8 @@ After deployment, the external facing IP can be found using:
 kubectl get services playground-http
 ```
 
+Ensure that `playground-http` is correctly deployed by browsing its [events](https://console.cloud.google.com/kubernetes/service/us-central1-a/substrate-playground/default/playground-http?project=substrateplayground-252112&organizationId=939403632241&tab=events&duration=PT1H&pod_summary_list_tablesize=20&playground-http_events_tablesize=50)
+
 ### Update fixed IP
 
 Make sure to use regional addresses, matching your cluster region. Global addresses won't work.

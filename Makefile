@@ -18,17 +18,15 @@ clean-backend:
 clean: clean-frontend clean-backend
 	@:
 
+## Local development
+
 dev-frontend: setup-frontend
 	cd frontend; yarn dev
 
 dev-backend:
-	cd backend; PLAYGROUND_ASSETS="../frontend/dist" cargo run
+	cd backend; RUST_BACKTRACE=1 PLAYGROUND_ASSETS="../frontend/dist" cargo run
 
-build-frontend: setup-frontend
-	cd frontend; yarn build
-
-build-backend:
-	cd backend; cargo build --release
+## Docker images
 
 THEIA_IMAGE_NAME="jeluard/theia-substrate"
 THEIA_IMAGE_VERSION="v1"
@@ -57,6 +55,8 @@ publish-playground-docker-image: build-playground-docker-image
 
 run-playground-docker-image: build-playground-docker-image
 	docker run -d -p 80:${PLAYGROUND_PORT} ${PLAYGROUND_IMAGE}
+
+## Kubernetes deployment
 
 k8s-deploy-playground:
 	kubectl apply -f  deployment.yaml

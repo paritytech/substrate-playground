@@ -44,7 +44,6 @@ async function deployAndRedirect(setError: (error: string) => void, template: st
         if (!!id) {
             // Drop existing query parameters
             window.history.replaceState(null, "", window.location.pathname);
-            window.location.pathname = "/url";
             document.location.search = "?uuid=" + id;
         } else {
             setError("Missing id in returned response");
@@ -54,26 +53,11 @@ async function deployAndRedirect(setError: (error: string) => void, template: st
     }
 }
 
-function templateFromGithub(s: string | null): string | undefined {
-    const regex = /github.com\/(.*)/;
-    if (s && regex.test(s)) {
-        return s;
-    }
-}
-
 function App() {
     const [url, setURL] = useState(undefined);
     const [error, setError] = useState(undefined);
 
-    // states: 
-    // - start, display a page with selection (/, playground.substrate.dev)
-    // - with template - deploy docker        (/, playground.substrate.dev?template=....)
-    // - with id                              (/uuid, uuid.playground.substrate.dev)
-    //    - and ready - show theia
-    //    - and loading - show loading screen
-
     const uuid = new URLSearchParams(window.location.search).get("uuid");
-    const template = templateFromGithub(new URLSearchParams(window.location.search).get("template"));
 
     if (uuid) {
         const id = setInterval(async () => {
@@ -92,7 +76,7 @@ function App() {
         if (url) {
             return (
                 <div>
-                  <iframe src={url} frameBorder="0" style={{overflow:"hidden",height:"100vh",width:"100vm"}} height="100%" width="100%"></iframe>
+                  <iframe src={url} onError={() => setError("Failed to load theia")} frameBorder="0" style={{overflow:"hidden",height:"100vh",width:"100vm"}} height="100%" width="100%"></iframe>
                 </div>)
         } else {
             return (
@@ -105,30 +89,8 @@ function App() {
                     </div>
                 </div>)
         }
-    } else if (template) {
-        return (
-            <div style={{display: "flex", justifyContent: "center", alignItems: "center", height: "100vh"}}>
-                <div style={{display: "flex", justifyContent: "center", alignItems: "center", flexDirection: "column"}}>
-                    <Typography variant="h3" component="h2">
-                      Play with a substrate project
-                    </Typography>
-                    <Typography variant="h5">
-                      Forked from <a href={template}>{template}</a>
-                    </Typography>
-
-                    {error == null ? (
-                        <Button style={{marginTop: "20px"}} variant="contained" color="primary" onClick={() => deployAndRedirect(setError, template)}>
-                            Let's go!
-                        </Button>
-                    ) : (
-                        <div>
-                            Error during deployment: {error}
-                        </div>
-                    )
-                    }
-                </div>
-            </div>)
-    } else {
+    }  else {
+        // Landing page
         return (
             <div style={{display: "flex", justifyContent: "center", alignItems: "center", height: "100vh"}}>
                 {error == null && templates.data.map((item, key) =>

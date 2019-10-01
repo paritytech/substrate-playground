@@ -1,14 +1,13 @@
 use crate::utils;
 use crate::platform::Platform;
-use std::fs::File;
 use std::path::Path;
 use log::{error, info};
 use kube::{
     api::{Api, PostParams},
     client::{APIClient},
-    config::{self, Configuration},
+    config,
 };
-use serde_json::{json, Value};
+use serde_json::Value;
 
 pub struct K8s {}
 
@@ -74,7 +73,7 @@ fn get_service(client: APIClient,name: &str) -> Result<String, String> {
             // * https://docs.rs/k8s-openapi/0.5.1/k8s_openapi/api/core/v1/struct.ServiceStatus.html
             // * https://docs.rs/k8s-openapi/0.5.1/k8s_openapi/api/core/v1/struct.ServiceSpec.html
             if let (Some(status), Some(ports)) = (o.status, o.spec.ports) {
-                if let (Some (ingress)) = status.load_balancer.unwrap().ingress {
+                if let Some (ingress) = status.load_balancer.unwrap().ingress {
                   Ok(format!("http://{}:{}", ingress[0].ip.as_ref().unwrap(), 8080).to_string()) // TODO only the proper port (correct name)
                 } else {
                     Ok("".to_string())
