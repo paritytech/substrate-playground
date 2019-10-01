@@ -42,7 +42,7 @@ publish-theia-docker-image: build-theia-docker-image
 	docker push ${THEIA_IMAGE}
 
 run-theia-docker-image: build-theia-docker-image
-	docker run -d -p 3000:3000 ${THEIA_IMAGE}
+	docker run -d -p 8080:8080 ${THEIA_IMAGE}
 
 PLAYGROUND_PORT="80"
 PLAYGROUND_IMAGE_NAME="jeluard/substrate-playground"

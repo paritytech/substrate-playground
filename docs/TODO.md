@@ -3,14 +3,15 @@
 ## MVP
 
 https
-Configure memory usage, grow to bigger machine?
 
 ## Fast
 
 Configure a nicer Rust env
+* https://github.com/rust-analyzer/rust-analyzer/tree/master/docs/user
 Make sure rust runs fast
 * https://internals.rust-lang.org/t/exploring-crate-graph-build-times-with-cargo-build-ztimings/10975
 Auto-kill containers after some inactivity
+* https://github.com/Yoric/timer.rs
 Introduce pool of idle pods, to reduce time to get started
 
 Integration tests
@@ -20,6 +21,7 @@ https://www.joshmcguigan.com/blog/custom-exit-status-codes-rust/
 ## 3rd parties
 
 Interact with marketplace
+* https://github.com/everstake/vscode-plugin-substrate/blob/master/docs/TUTORIAL.md
 Easily add modules (https://hackmd.io/B-jWKzRCQmq1gPtFFkXjFA#Adding-A-Custom-Runtime-Module)
 https://github.com/killercup/cargo-edit
 

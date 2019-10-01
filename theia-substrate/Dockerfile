@@ -68,12 +68,16 @@ WORKDIR /home/project/substrate-package/substrate-node-template
 RUN cargo check && cargo build
 RUN cargo check --release && cargo build --release
 
+WORKDIR /home/theia
+#RUN openssl req -nodes -new -x509 -keyout server.key -out server.cert -subj "/C=DE/ST=/L=Berlin/O=Parity/OU=Substrate/CN=support@parity.io"
+
 ENV HOME /home/theia
 WORKDIR /home/theia
 EXPOSE 8080
 ENV SHELL /bin/bash
 ENV USE_LOCAL_GIT true
 
+#ENTRYPOINT [ "node", "/home/theia/src-gen/backend/main.js", "/home/project/substrate-package/substrate-node-template", "--hostname=0.0.0.0", "--port=8080", "--ssl", "--cert=server.cert", "--certkey=server.key" ]
 ENTRYPOINT [ "node", "/home/theia/src-gen/backend/main.js", "/home/project/substrate-package/substrate-node-template", "--hostname=0.0.0.0", "--port=8080" ]
 
 ARG BUILD_DATE
