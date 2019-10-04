@@ -24,6 +24,12 @@ minikube service playground-http --url
 
 ## GCD
 
+Playground is currently deployed on playground.substrate.dev. The cluster is hosted on GKE and composed of 3 `n2-standard-4` pods.
+For more details about machines:
+
+* https://cloud.google.com/compute/docs/machine-types
+* https://cloud.google.com/compute/vm-instance-pricing
+
 First make sure kubectl points to the right google cloud engine:
 
 ```

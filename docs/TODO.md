@@ -3,6 +3,11 @@
 ## MVP
 
 https
+Change namespace
+Move to Ingress
+* https://kubernetes.io/docs/concepts/services-networking/ingress/
+* https://kubernetes.github.io/ingress-nginx/user-guide/default-backend/
+* https://blog.containo.us/traefik-2-0-docker-101-fc2893944b9d
 
 ## Fast
 
@@ -27,8 +32,19 @@ https://github.com/killercup/cargo-edit
 
 ## Features
 
-https://github.com/tonsky/FiraCode/wiki/Linux-instructions#installing-with-a-package-manager
 Test VSCode plugin, specifically Web3 fundation ones
+* https://marketplace.visualstudio.com/items?itemName=pnp.polacode
+* https://github.com/tonsky/FiraCode/wiki/Linux-instructions#installing-with-a-package-manager
+* https://marketplace.visualstudio.com/items?itemName=ritwickdey.LiveServer
+* https://marketplace.visualstudio.com/items?itemName=techer.open-in-browser
+* https://github.com/ashleygwilliams/cargo-generate
+* https://code.visualstudio.com/blogs/2019/07/25/remote-ssh
+* https://github.com/microsoft/vscode-dev-containers
+* https://marketplace.visualstudio.com/items?itemName=MS-vsliveshare.vsliveshare
+* https://hoverbear.org/blog/setting-up-a-rust-devenv/
+* https://vscodecandothat.com/
+* https://code.visualstudio.com/api/get-started/your-first-extension
+* https://code.visualstudio.com/api/references/contribution-points
 Allow to simply start a chain, possibly locally (WASM)
 Provide macros syntaxic sugar
 Support ink syntax 
@@ -38,14 +54,17 @@ Plugin to interact with networks
 
 ## Teach
 
-Tutorial as in
-https://kubernetes.io/docs/tutorials/kubernetes-basics/expose/expose-interactive/
+Tutorial as in https://kubernetes.io/docs/tutorials/kubernetes-basics/expose/expose-interactive/
 
-https://github.com/ashleygwilliams/cargo-generate
-https://code.visualstudio.com/blogs/2019/07/25/remote-ssh
-https://github.com/microsoft/vscode-dev-containers
+## Probes
 
-## Devops
+* https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
+* https://medium.com/@AADota/kubernetes-liveness-and-readiness-probes-difference-1b659c369e17
+* https://cloud.google.com/blog/products/gcp/kubernetes-best-practices-setting-up-health-checks-with-readiness-and-liveness-probes
+* https://blog.octo.com/liveness-et-readiness-probes-mettez-de-lintelligence-dans-vos-clusters/
+* https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#examples
+
+# Devops
 
 https://opentelemetry.io/
 https://kuma.io/
@@ -83,7 +102,7 @@ https://blog.digitalocean.com/how-to-deploy-to-digitalocean-kubernetes-with-gith
 https://raw.githubusercontent.com/sagebind/blog/master/.github/main.workflow
 https://github.com/actions-rs/cargo
 
-## Auto stuff
+# Auto stuff
 
 https://dependabot.com/
 https://codeclimate.com/github/paritytech/substrate-light-ui
@@ -95,11 +114,6 @@ https://tokei.rs/b1/github/paritytech/ink?category=code
 
 https://github.com/ChrisMacNaughton/cargo-cacher
 https://stackoverflow.com/questions/54952867/cache-cargo-dependencies-in-a-docker-volume
-
-# Env abstract server URL
-
-https://docs.docker.com/compose/environment-variables/
-https://stackoverflow.com/questions/48009893/expose-environment-in-parceljs
 
 # Plugins
 

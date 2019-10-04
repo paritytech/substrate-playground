@@ -4,7 +4,8 @@
     "metadata": {
         "generateName": "theia-substrate-http-",
         "labels": {
-            "app": "theia-substrate"
+            "app": "theia-substrate",
+            "app-uuid": "%UUID%"
         }
     },
     "spec": {
@@ -15,7 +16,7 @@
             }
         ],
         "selector": {
-            "app": "theia-substrate"
+            "app-uuid": "%UUID%"
         },
         "type": "LoadBalancer"
     }

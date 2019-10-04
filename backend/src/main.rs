@@ -2,25 +2,21 @@
 #![deny(intra_doc_link_resolution_failure)]
 
 mod api;
-mod platform;
+mod kubernetes;
 mod utils;
 
-use crate::platform::Context;
-use std::collections::HashMap;
-use std::env;
-use std::path::Path;
+use std::{collections::HashMap, env, path::Path, sync::Mutex};
 use env_logger;
-use log::{error, info, warn};
-use rocket::routes;
-use rocket::http::Method;
+use log::{error, info};
+use rocket::{routes, http::Method};
 use rocket_contrib::serve::StaticFiles;
 use rocket_cors::{AllowedOrigins, CorsOptions};
 use serde::Deserialize;
+use timer::Timer;
 
 #[derive(Deserialize)]
 struct Config {
     assets: String,
-    platform: String,
     images: HashMap<String, String>
 }
 
@@ -35,6 +31,8 @@ fn read_config() -> Config {
     toml::from_str(conf.as_str()).unwrap()
 }
 
+pub struct Context(pub HashMap<String, String>, pub Mutex<Timer>);
+
 fn main() {
     // Initialize log configuration. Reads RUST_LOG if any, otherwise fallsback to `default`
     if env::var("RUST_LOG").is_err() {
@@ -46,16 +44,7 @@ fn main() {
     let config = read_config();
     let assets = env::var("PLAYGROUND_ASSETS").unwrap_or(config.assets);
 
-    let platform = match platform::platform_for(config.platform.as_str()) {
-        None => {
-            warn!("! No platform with name {}", config.platform);
-            std::process::exit(9)
-        },
-        Some(o) => o
-    };
-
     info!("Configuration:");
-    info!("platform: {}", config.platform);
     info!("assets: {}", assets);
 
     // Configure CORS
@@ -68,9 +57,10 @@ fn main() {
         ..Default::default()
     }.to_cors().unwrap();
 
+    let t = Mutex::new(Timer::new());
     rocket::ignite()
       .mount("/", StaticFiles::from(assets.as_str()))
       .mount("/api", routes![api::index, api::get])
-      .manage(Context(platform, config.images))
+      .manage(Context(config.images, t))
       .attach(cors).launch();
 }

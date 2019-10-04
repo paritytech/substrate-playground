@@ -13,7 +13,7 @@ The backend can be configured through `Playground.toml`.
 
 ## Development
 
-Make sure [minikube](https://minikube.sigs.k8s.io/) is started when using kubernetes as platform:
+Make sure [minikube](https://minikube.sigs.k8s.io/) is started for local development:
 
 ```
 minikube start
@@ -35,18 +35,18 @@ You can now browse `http:localhost:8000`.
 
 ## Release
 
-Publish the theia image:
+Push the theia image:
 
 ```
-make publish-theia-docker-image
+make push-theia-docker-image
 ```
 
 Locate the digest (`sha256:...`) in the command output and update `backend/Playground.toml` with it.
 
-Publish the playground image:
+Push the playground image:
 
 ```
-make publish-playground-docker-image
+make push-playground-docker-image
 ```
 
 Locate the digest (`sha256:...`) in the command output and update `deployment.yaml` with it.

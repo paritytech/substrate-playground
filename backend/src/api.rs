@@ -1,7 +1,12 @@
-use crate::platform::{Context, Platform};
+//! HTTP endpoints exposed in /api context
+//! 
+
+use crate::kubernetes;
+use crate::Context;
 use log::{info, warn};
 use rocket::{get, State};
 use rocket_contrib::{json, json::{JsonValue}};
+use chrono;
 
 /// Starts a Docker container with `template` as parameter.
 ///
@@ -13,12 +18,17 @@ use rocket_contrib::{json, json::{JsonValue}};
 ///    "reason" "xxxx"} if not
 #[get("/new?<template>")]
 pub fn index(state: State<'_, Context>, template: String) -> JsonValue {
-    if let Some(image) = state.1.get(&template) {
-        let result = state.0.deploy(image);
-        match result {
+    if let Some(image) = state.0.get(&template) {
+        match kubernetes::deploy(image) {
             Ok(id) => {
-                info!("Launched image {} ({})", template, id);
-                //state.0.undeploy(&id);
+                info!("Launched image {} (template: {})", id, template);
+                let id2 = id.clone();
+                state.1.lock().unwrap().schedule_with_delay(chrono::Duration::hours(3), move || {
+                    info!("#Deleting! {}", id2);
+                    if let Err(s) = kubernetes::undeploy(id2.as_str()) {
+                        warn!("Failed to undeploy {}: {}", id2, s);
+                    }
+                }).ignore();
                 json!({"status": "ok", "id": id})
             },
             Err(err) => {
@@ -27,7 +37,7 @@ pub fn index(state: State<'_, Context>, template: String) -> JsonValue {
             }
         }
     } else {
-        warn!("Unkown image {}", template);
+        warn!("Unkown template {}", template);
         json!({"status": "ko", "reason": format!("Unknown template <{}>", template)})
     }
 }
@@ -41,8 +51,8 @@ pub fn index(state: State<'_, Context>, template: String) -> JsonValue {
 /// - {"status" "ko"
 ///    "reason" "xxxx"} if not
 #[get("/url?<id>")]
-pub fn get(platform: State<'_, Context>, id: String) -> JsonValue {
-    let result = platform.0.url(&id.to_string());
+pub fn get(id: String) -> JsonValue {
+    let result = kubernetes::url(&id.to_string());
     match result {
         Ok(id) => {
             if id.is_empty() {

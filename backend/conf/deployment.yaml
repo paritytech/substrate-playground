@@ -4,7 +4,8 @@
   "metadata": {
     "generateName": "theia-substrate-",
     "labels": {
-      "app": "theia-substrate"
+      "app": "theia-substrate",
+      "app-uuid": "%UUID%"
     }},
   "spec": {
     "containers": [{
