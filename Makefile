@@ -62,11 +62,11 @@ run-playground-docker-image: build-playground-docker-image
 
 # Deploy playground on kubernetes
 k8s-deploy-playground:
-	kubectl apply -f  deployment.yaml
+	kubectl apply -f deployment-lb.yaml
 
 # Undeploy playground from kubernetes
 k8s-undeploy-playground:
-	kubectl delete -f  deployment.yaml
+	kubectl delete -f deployment-lb.yaml
 
 # Undeploy all theia-substrate pods and services from kubernetes
 k8s-undeploy-theia:

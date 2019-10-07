@@ -55,6 +55,7 @@ const lifecycle = Machine({
     states: {
         initial: {
           on: { LOAD: 'loading',
+                FETCH: 'fetching',
                 FAIL: 'error' }
         },
         loading: {
@@ -107,8 +108,9 @@ function App() {
     // Landing page
     return (
     <React.Fragment>
-        
-        <SVGBox isHovered={{isHovered}}/>
+        {!state.matches('loaded') &&
+            <SVGBox isHovered={isHovered} />
+        }
         
         {state.matches('initial') &&
             <div className="box-fullscreen box-text">
@@ -123,14 +125,14 @@ function App() {
         {state.matches('loading') || state.matches('fetching') &&
             <Loading />
         }
-        {state.matches('done') &&
+        {state.matches('loaded') &&
             <div>
-                <iframe src={state.context.url} onError={() => send("FAIL", {reason: "Failed to load theia"})} frameBorder="0" style={{overflow:"hidden",height:"100vh",width:"100vm"}} height="100%" width="100%"></iframe>
+                <iframe src={state.event.url} onError={() => send("FAIL", {reason: "Failed to load theia"})} frameBorder="0" style={{overflow:"hidden",height:"100vh",width:"100vm"}} height="100%" width="100%"></iframe>
             </div>
         }
 
         {state.matches('error') &&
-            <Error state={{state}} />
+            <Error state={state} />
         }
         </React.Fragment>
     );

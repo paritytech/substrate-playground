@@ -75,8 +75,6 @@ fn get_service(client: APIClient, uuid: &str) -> Result<String, String> {
     let services = list_by_selector(&service_api, selector)?;
     let service = &services.first().ok_or(format!("No matching pod for {}", uuid))?;
     if let Some(status) = &service.status {
-        println!("ee {:?}", &status.load_balancer);
-        println!("ee {:?}", &service.spec);
         if let Some (ingress) = &status.load_balancer.as_ref().unwrap().ingress {
             Ok(format!("http://{}:{}", ingress[0].ip.as_ref().unwrap(), 8080).to_string()) // TODO only the proper port (correct name)
         } else {
