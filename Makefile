@@ -21,7 +21,7 @@ clean: clean-frontend clean-backend
 ## Local development
 
 dev-frontend: setup-frontend
-	cd frontend; yarn dev
+	cd frontend; yarn watch
 
 dev-backend:
 	cd backend; RUST_BACKTRACE=1 PLAYGROUND_ASSETS="../frontend/dist" cargo run

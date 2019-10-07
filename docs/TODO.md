@@ -9,6 +9,11 @@ Move to Ingress
 * https://kubernetes.github.io/ingress-nginx/user-guide/default-backend/
 * https://blog.containo.us/traefik-2-0-docker-101-fc2893944b9d
 
+## Shiny
+
+* https://goldsteinsveta.github.io/parity-ani/
+* https://github.com/goldsteinsveta/parity-ani
+
 ## Fast
 
 Configure a nicer Rust env
@@ -18,6 +23,9 @@ Make sure rust runs fast
 Auto-kill containers after some inactivity
 * https://github.com/Yoric/timer.rs
 Introduce pool of idle pods, to reduce time to get started
+
+Use workspaces
+* https://code.visualstudio.com/docs/editor/multi-root-workspaces
 
 Integration tests
 https://blog.yoshuawuyts.com/async-finalizers/

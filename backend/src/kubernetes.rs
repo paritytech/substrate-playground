@@ -1,3 +1,7 @@
+//! Find more details here:
+//! * https://docs.rs/k8s-openapi/0.5.1/k8s_openapi/api/core/v1/struct.ServiceStatus.html
+//! * https://docs.rs/k8s-openapi/0.5.1/k8s_openapi/api/core/v1/struct.ServiceSpec.html
+
 use crate::utils;
 use std::path::Path;
 use log::{error, info};
@@ -66,26 +70,20 @@ fn undeploy_pod(client: APIClient, uuid: &str) -> Result<(), String> {
 }
 
 fn get_service(client: APIClient, uuid: &str) -> Result<String, String> {
-    let service = Api::v1Service(client).within(NAMESPACE);
-    match service.get(uuid) {
-        Ok(o) => {
-            // Find more details here:
-            // * https://docs.rs/k8s-openapi/0.5.1/k8s_openapi/api/core/v1/struct.ServiceStatus.html
-            // * https://docs.rs/k8s-openapi/0.5.1/k8s_openapi/api/core/v1/struct.ServiceSpec.html
-            if let (Some(status), Some(ports)) = (o.status, o.spec.ports) {
-                if let Some (ingress) = status.load_balancer.unwrap().ingress {
-                  Ok(format!("http://{}:{}", ingress[0].ip.as_ref().unwrap(), 8080).to_string()) // TODO only the proper port (correct name)
-                } else {
-                    Ok("".to_string())
-                }
-            } else {
-                Err("Failed to access service endpoint".to_string())
-            }
+    let service_api = Api::v1Service(client).within(NAMESPACE);
+    let selector = format!("app-uuid={}", uuid);
+    let services = list_by_selector(&service_api, selector)?;
+    let service = &services.first().ok_or(format!("No matching pod for {}", uuid))?;
+    if let Some(status) = &service.status {
+        println!("ee {:?}", &status.load_balancer);
+        println!("ee {:?}", &service.spec);
+        if let Some (ingress) = &status.load_balancer.as_ref().unwrap().ingress {
+            Ok(format!("http://{}:{}", ingress[0].ip.as_ref().unwrap(), 8080).to_string()) // TODO only the proper port (correct name)
+        } else {
+            Ok("".to_string())
         }
-        Err(e) => {
-            error!("Err {}", e);
-            Err("Failed to access service endpoint".to_string())
-        },
+    } else {
+        Err("Failed to access service endpoint".to_string())
     }
 }
 

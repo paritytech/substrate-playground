@@ -12,7 +12,7 @@ use chrono;
 ///
 /// Returns a `JsonValue` with following shape:
 /// - {"status" "ok"
-///    "id"     "xxxx"}
+///    "uuid"     "xxxx"}
 ///  if the container statup was successful
 /// - {"status" "ko"
 ///    "reason" "xxxx"} if not
@@ -20,16 +20,16 @@ use chrono;
 pub fn index(state: State<'_, Context>, template: String) -> JsonValue {
     if let Some(image) = state.0.get(&template) {
         match kubernetes::deploy(image) {
-            Ok(id) => {
-                info!("Launched image {} (template: {})", id, template);
-                let id2 = id.clone();
+            Ok(uuid) => {
+                info!("Launched image {} (template: {})", uuid, template);
+                let uuid2 = uuid.clone();
                 state.1.lock().unwrap().schedule_with_delay(chrono::Duration::hours(3), move || {
-                    info!("#Deleting! {}", id2);
-                    if let Err(s) = kubernetes::undeploy(id2.as_str()) {
-                        warn!("Failed to undeploy {}: {}", id2, s);
+                    info!("#Deleting! {}", uuid2);
+                    if let Err(s) = kubernetes::undeploy(uuid2.as_str()) {
+                        warn!("Failed to undeploy {}: {}", uuid2, s);
                     }
                 }).ignore();
-                json!({"status": "ok", "id": id})
+                json!({"status": "ok", "uuid": uuid})
             },
             Err(err) => {
                 warn!("Error {}", err);
@@ -46,19 +46,18 @@ pub fn index(state: State<'_, Context>, template: String) -> JsonValue {
 ///
 /// Returns a `JsonValue` with following shape:
 /// - {"status" "ok"
-///    "id"    "xxxx"}
-///  if the container statup was successful
-/// - {"status" "ko"
-///    "reason" "xxxx"} if not
-#[get("/url?<id>")]
-pub fn get(id: String) -> JsonValue {
-    let result = kubernetes::url(&id.to_string());
+///    "URL"    "xxxx"}
+///  if the container is running
+/// - {"status" "pending"} if still starting
+#[get("/url?<uuid>")]
+pub fn get(uuid: String) -> JsonValue {
+    let result = kubernetes::url(&uuid.to_string());
     match result {
-        Ok(id) => {
-            if id.is_empty() {
+        Ok(url) => {
+            if url.is_empty() {
                 json!({"status": "pending"})
             } else {
-                json!({"status": "ok", "URL": id})
+                json!({"status": "ok", "URL": url})
             }
         },
         Err(err) => json!({"status": "ko", "reason": err})
