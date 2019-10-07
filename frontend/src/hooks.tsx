@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, MutableRefObject } from "react";
 
 export function useHover() {
     const [value, setValue] = useState(false);
@@ -11,7 +11,7 @@ export function useHover() {
   
     useEffect(
       () => {
-        const node: Node = ref.current;
+        const node = ref.current as unknown as Node;
         if (node) {
           node.addEventListener('mouseover', handleMouseOver);
           node.addEventListener('mouseout', handleMouseOut);
@@ -45,4 +45,21 @@ export function useWindowMaxDimension() {
     });
     
     return dimension;
+}
+
+export function useInterval(callback: () => void, delay: number) {
+  const savedCallback = useRef() as MutableRefObject<() => void>;
+
+  useEffect(() => {
+    savedCallback.current = callback;
+  });
+
+  useEffect(() => {
+    function tick() {
+      savedCallback.current();
+    }
+
+    let id = setInterval(tick, delay);
+    return () => clearInterval(id);
+  }, [delay]);
 }

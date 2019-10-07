@@ -1,7 +1,9 @@
-import React from "react";
-import {useWindowMaxDimension} from './hooks';
+import React, {useState} from "react";
+import { State } from 'xstate';
+import { useSpring, animated } from 'react-spring'
+import { useWindowMaxDimension, useInterval } from './hooks';
 
-export function SVGBox({isHovered}) {
+export function SVGBox({isHovered}: {isHovered: boolean}) {
     const blurFactor = isHovered ? 0 : 10;
     const dimension = useWindowMaxDimension();
     return (
@@ -37,7 +39,7 @@ export function SVGBox({isHovered}) {
         </React.Fragment>);
 }
 
-export function Error({state}) {
+export function Error({state, send}: {state: State, send: (name: string) => void}) {
     return (
         <div className="box-fullscreen box-text">
             <h1>
@@ -51,13 +53,38 @@ export function Error({state}) {
     );
 }
 
+const loadingPhrases = [
+    'heating the core',
+    'sharing security',
+    'testing interoperability',
+    'issuing tokens',
+    'rehersing auctions',
+    'generalising consensus',
+    'establishing democracy',
+    'seizing blockchain landscape',
+    'scaling finality',
+    'pledging roadmap',
+    'addressing existing stacks',
+    'balancing governance',
+    'destributing roles',
+    'importing module crate',
+    'updating runtime']
+
 export function Loading() {
+    const [phrase, setPhrase] = useState(loadingPhrases[0]);
+    const [props, set] = useSpring(() => ({opacity: 1}));
+
+    useInterval(() => {
+        set({ opacity: 0 });
+        
+        setTimeout(function(){ setPhrase(loadingPhrases[Math.floor(Math.random()*loadingPhrases.length)]); }, 500);
+        setTimeout(function(){ set({ opacity: 1 }); }, 1000);
+    }, 3000);
+
     return (
         <div className="box-fullscreen box-text">
             <span>Please wait, we might be</span>
-            <h1>
-                Hacking
-            </h1>
+            <animated.h1 style={props}>{phrase}</animated.h1>
         </div>
     );
 }

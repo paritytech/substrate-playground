@@ -14,7 +14,8 @@
     "@xstate/react": "0.7.1",
     "react": "16.10.2",
     "react-dom": "16.10.2",
-    "xstate": "4.6.7"
+    "xstate": "4.6.7",
+    "react-spring": "8.0.27"
   },
   "devDependencies": {
     "cross-env": "6.0.3",

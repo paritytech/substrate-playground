@@ -132,7 +132,7 @@ function App() {
         }
 
         {state.matches('error') &&
-            <Error state={state} />
+            <Error state={state} send={send} />
         }
         </React.Fragment>
     );
