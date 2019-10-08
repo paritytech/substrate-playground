@@ -11,8 +11,29 @@
     "spec": {
         "ports": [
             {
+                "name": "theia-http",
                 "protocol": "TCP",
                 "port": 8080
+            },
+            {
+                "name": "node-http",
+                "protocol": "TCP",
+                "port": 8000
+            },
+            {
+                "name": "tcp",
+                "protocol": "TCP",
+                "port": 30333
+            },
+            {
+                "name": "ws",
+                "protocol": "TCP",
+                "port": 9933
+            },
+            {
+                "name": "wss",
+                "protocol": "TCP",
+                "port": 9944
             }
         ],
         "selector": {

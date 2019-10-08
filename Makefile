@@ -34,7 +34,7 @@ THEIA_IMAGE="${THEIA_IMAGE_NAME}:${THEIA_IMAGE_VERSION}"
 
 # Build theia-substrate docker image
 build-theia-docker-image:
-	@cd theia-substrate; docker build -f Dockerfile -t ${THEIA_IMAGE} . && docker image prune -f --filter label=stage=builder
+	@cd theia-substrate; docker build --no-cache -f Dockerfile -t ${THEIA_IMAGE} . && docker image prune -f --filter label=stage=builder
 
 # Build theia-substrate docker image
 push-theia-docker-image: build-theia-docker-image

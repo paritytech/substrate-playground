@@ -63,6 +63,10 @@ ENV SCCACHE_IDLE_TIMEOUT=0
 ENV RUST_LOG=sccache=debug
 #RUN sccache --start-server
 
+WORKDIR /home/project/substrate-package/substrate-front-end-template
+
+RUN yarn
+
 WORKDIR /home/project/substrate-package/substrate-node-template
 
 RUN cargo check && cargo build
@@ -73,9 +77,10 @@ WORKDIR /home/theia
 
 ENV HOME /home/theia
 WORKDIR /home/theia
-EXPOSE 8080
+EXPOSE 8080 8000 9933 9944 30333
 ENV SHELL /bin/bash
 ENV USE_LOCAL_GIT true
+ENV HOST 0.0.0.0
 
 #ENTRYPOINT [ "node", "/home/theia/src-gen/backend/main.js", "/home/project/substrate-package/substrate-node-template", "--hostname=0.0.0.0", "--port=8080", "--ssl", "--cert=server.cert", "--certkey=server.key" ]
 ENTRYPOINT [ "node", "/home/theia/src-gen/backend/main.js", "/home/project/substrate-package/substrate-node-template", "--hostname=0.0.0.0", "--port=8080" ]
