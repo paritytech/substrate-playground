@@ -15,7 +15,9 @@ RUN yarn --pure-lockfile && \
     yarn autoclean --force && \
     yarn cache clean
 
-#FROM ubuntu:19.04
+ENV RUSTUP_HOME=/usr/local/rustup \
+    CARGO_HOME=/usr/local/cargo \
+    PATH=/usr/local/cargo/bin:$PATH
 
 RUN apt-get update && \
     apt-get install -y curl git cmake pkg-config libssl-dev git gcc build-essential git clang libclang-dev pkg-config && \
@@ -29,19 +31,17 @@ RUN apt-get update && \
     apt-get install -y nodejs yarn && \
     rm -rf /var/lib/apt/lists/*
 
-RUN adduser --gecos '' theia
-RUN chmod g+rw /home && \
-    mkdir -p /home/project && \
-    chown -R theia:theia /home/theia && \
-    chown -R theia:theia /home/project;
+WORKDIR /home/workspace
 
-USER theia
+# https://theia-ide.org/docs/preferences
+ADD settings.json recentworkspace.json .theia/
+ADD .theia-workspace .
 
-ENV PATH=/home/theia/.cargo/bin:$PATH 
+#USER theia
 
 # https://rust-lang.github.io/rustup-components-history/index.html
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain none \
-    && . $HOME/.cargo/env \
+    && . $CARGO_HOME/env \
     && rustup install nightly-2019-10-04 \
     && rustup update \
     && rustup default nightly-2019-10-04 \
@@ -53,9 +53,8 @@ RUN cargo install --force --git https://github.com/alexcrichton/wasm-gc \
     && cargo install --force --git https://github.com/paritytech/ink cargo-contract \
     && cargo install sccache
 
-WORKDIR /home/project
-
-RUN git clone --recurse-submodules https://github.com/substrate-developer-hub/substrate-package
+RUN git clone https://github.com/substrate-developer-hub/substrate-node-template node && \
+    git clone https://github.com/substrate-developer-hub/substrate-front-end-template front-end
 
 #ENV RUSTC_WRAPPER sccache
 ENV SCCACHE_DIR .sscache/
@@ -66,11 +65,10 @@ ENV SCCACHE_IDLE_TIMEOUT=0
 ENV RUST_LOG=sccache=debug
 #RUN sccache --start-server
 
-WORKDIR /home/project/substrate-package/substrate-front-end-template
-
+WORKDIR /home/workspace/front-end
 RUN yarn
 
-WORKDIR /home/project/substrate-package/substrate-node-template
+WORKDIR /home/workspace/node
 
 RUN cargo check && cargo build
 RUN cargo check --release && cargo build --release
@@ -83,8 +81,9 @@ EXPOSE 8080 8000 9933 9944 30333
 ENV SHELL /bin/bash
 ENV USE_LOCAL_GIT true
 ENV HOST 0.0.0.0
+ENV PROVIDER_SOCKET ws://localhost:9944
 
-ENTRYPOINT [ "node", "/home/theia/src-gen/backend/main.js", "/home/project/substrate-package/substrate-node-template", "--hostname=0.0.0.0", "--port=8080" ]
+ENTRYPOINT [ "node", "/home/theia/src-gen/backend/main.js", "/home/workspace/", "--hostname=0.0.0.0", "--port=8080" ]
 
 ARG BUILD_DATE
 ARG GIT_REV

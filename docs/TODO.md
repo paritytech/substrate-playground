@@ -33,12 +33,11 @@ https://seanmonstar.com/post/188220739932/reqwest-alphaawait
 
 Interact with marketplace
 * https://github.com/everstake/vscode-plugin-substrate/blob/master/docs/TUTORIAL.md
-Easily add modules (https://hackmd.io/B-jWKzRCQmq1gPtFFkXjFA#Adding-A-Custom-Runtime-Module)
-https://github.com/killercup/cargo-edit
 
 ## Features
 
 Test VSCode plugin, specifically Web3 fundation ones
+* https://github.com/stiiifff/substrate-deps
 * https://marketplace.visualstudio.com/items?itemName=pnp.polacode
 * https://github.com/tonsky/FiraCode/wiki/Linux-instructions#installing-with-a-package-manager
 * https://marketplace.visualstudio.com/items?itemName=ritwickdey.LiveServer
@@ -51,6 +50,14 @@ Test VSCode plugin, specifically Web3 fundation ones
 * https://vscodecandothat.com/
 * https://code.visualstudio.com/api/get-started/your-first-extension
 * https://code.visualstudio.com/api/references/contribution-points
+* https://github.com/theia-ide/theia-extension-example
+* https://github.com/JPinkney/theia-yaml-extension
+* https://github.com/spring-projects/sts4/tree/master/theia-extensions
+* https://github.com/eclipse-theia/theia/wiki/Testing-VS-Code-extensions
+* https://github.com/eclipse-theia/theia/blob/master/doc/Developing.md
+* https://github.com/theia-ide/vscode-builtin-extensions
+* https://spectrum.chat/theia/general/vs-code-extensions-in-a-custom-docker-image~73145eea-4c80-4314-b657-30d96b2f2bb0
+
 Allow to simply start a chain, possibly locally (WASM)
 Provide macros syntaxic sugar
 Support ink syntax 

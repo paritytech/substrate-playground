@@ -1,4 +1,4 @@
 assets = "/static"
 
 [images]
-default = "jeluard/theia-substrate@sha256:15eefd72398ebd5509cb2e1f309a94945f071fb85cbfe044fa8760d5c54cfc7b"
+default = "jeluard/theia-substrate@sha256:9005a9b9efd935a6e3e5de62924302ec9d5c0d0025f4466061b51270b8fc00ae"
