@@ -33,7 +33,7 @@ spec:
       serviceAccountName: default-service-account
       containers:
       - name: playground
-        image: jeluard/substrate-playground@sha256:52c6c264ddc66c224cdb2c9b30fb53029f51a0b028846ffba2eca7265bd6804d
+        image: jeluard/substrate-playground@sha256:3094b1858bcd6b312760ec284891f69362522b8b6ccd50c4afcfee7881985902
         ports:
         - containerPort: 80
 ---

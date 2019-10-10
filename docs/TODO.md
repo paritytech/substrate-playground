@@ -9,20 +9,17 @@ Move to Ingress
 * https://kubernetes.github.io/ingress-nginx/user-guide/default-backend/
 * https://blog.containo.us/traefik-2-0-docker-101-fc2893944b9d
 
-## Shiny
+## Tuto
 
-* https://goldsteinsveta.github.io/parity-ani/
-* https://github.com/goldsteinsveta/parity-ani
+Faster theia image startup (move away from LB, ingress? or traeffik?)
+wss (teremination for access via https://polkadot.js.org/apps/?rpc=ws://127.0.0.1:9944#/explorer)
+Access public IP from container
 
 ## Fast
 
 Configure a nicer Rust env
 * https://github.com/rust-analyzer/rust-analyzer/tree/master/docs/user
-Make sure rust runs fast
-* https://internals.rust-lang.org/t/exploring-crate-graph-build-times-with-cargo-build-ztimings/10975
-Auto-kill containers after some inactivity
-* https://github.com/Yoric/timer.rs
-Introduce pool of idle pods, to reduce time to get started
+(Only if can't be made fast) Introduce pool of idle pods, to reduce time to get started
 
 Use workspaces
 * https://code.visualstudio.com/docs/editor/multi-root-workspaces
@@ -30,6 +27,7 @@ Use workspaces
 Integration tests
 https://blog.yoshuawuyts.com/async-finalizers/
 https://www.joshmcguigan.com/blog/custom-exit-status-codes-rust/
+https://seanmonstar.com/post/188220739932/reqwest-alphaawait
 
 ## 3rd parties
 

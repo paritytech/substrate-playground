@@ -39,15 +39,18 @@ USER theia
 
 ENV PATH=/home/theia/.cargo/bin:$PATH 
 
+# https://rust-lang.github.io/rustup-components-history/index.html
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain none \
     && . $HOME/.cargo/env \
-    && rustup install nightly \
+    && rustup install nightly-2019-10-04 \
     && rustup update \
-    && rustup default nightly \
-    && rustup target add wasm32-unknown-unknown --toolchain nightly
+    && rustup default nightly-2019-10-04 \
+    && rustup component add rls rust-analysis rust-src clippy rustfmt llvm-tools-preview \
+    && rustup target add wasm32-unknown-unknown --toolchain nightly-2019-10-04
 
 RUN cargo install --force --git https://github.com/alexcrichton/wasm-gc \
     && cargo install --force --git https://github.com/paritytech/substrate subkey \
+    && cargo install --force --git https://github.com/paritytech/ink cargo-contract \
     && cargo install sccache
 
 WORKDIR /home/project
@@ -73,7 +76,6 @@ RUN cargo check && cargo build
 RUN cargo check --release && cargo build --release
 
 WORKDIR /home/theia
-#RUN openssl req -nodes -new -x509 -keyout server.key -out server.cert -subj "/C=DE/ST=/L=Berlin/O=Parity/OU=Substrate/CN=support@parity.io"
 
 ENV HOME /home/theia
 WORKDIR /home/theia
@@ -82,7 +84,6 @@ ENV SHELL /bin/bash
 ENV USE_LOCAL_GIT true
 ENV HOST 0.0.0.0
 
-#ENTRYPOINT [ "node", "/home/theia/src-gen/backend/main.js", "/home/project/substrate-package/substrate-node-template", "--hostname=0.0.0.0", "--port=8080", "--ssl", "--cert=server.cert", "--certkey=server.key" ]
 ENTRYPOINT [ "node", "/home/theia/src-gen/backend/main.js", "/home/project/substrate-package/substrate-node-template", "--hostname=0.0.0.0", "--port=8080" ]
 
 ARG BUILD_DATE
