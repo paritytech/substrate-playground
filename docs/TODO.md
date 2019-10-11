@@ -77,6 +77,14 @@ Tutorial as in https://kubernetes.io/docs/tutorials/kubernetes-basics/expose/exp
 * https://blog.octo.com/liveness-et-readiness-probes-mettez-de-lintelligence-dans-vos-clusters/
 * https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#examples
 
+## Issues
+
+### Preview and localhost
+
+https://spectrum.chat/theia/general/preview-and-localhost-resolution-behavior~cc291ac2-6b07-4807-8693-e429fc7f7596
+
+Either patch to support localhost, or have native external IP support (à la gitpod.io)
+
 # Devops
 
 https://opentelemetry.io/
