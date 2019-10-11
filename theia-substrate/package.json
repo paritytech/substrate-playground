@@ -47,8 +47,7 @@
         "@theia/typescript": "0.11.0",
         "@theia/userstorage": "0.11.0",
         "@theia/variable-resolver": "0.11.0",
-        "@theia/workspace": "0.11.0",
-        "@theia/yaml": "0.1.0"
+        "@theia/workspace": "0.11.0"
     },
     "devDependencies": {
         "@theia/cli": "next"
