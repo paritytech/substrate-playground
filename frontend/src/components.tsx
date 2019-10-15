@@ -58,7 +58,7 @@ const loadingPhrases = [
     'sharing security',
     'testing interoperability',
     'issuing tokens',
-    'rehersing auctions',
+    'rehearsing auctions',
     'generalising consensus',
     'establishing democracy',
     'seizing blockchain landscape',
