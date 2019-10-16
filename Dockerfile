@@ -11,8 +11,8 @@ WORKDIR /opt
 
 COPY frontend .
 
-ENV PARCEL_WORKERS=1 \
-    NODE_DEV=${ENVIRONMENT}
+ARG ENVIRONMENT
+ENV PARCEL_WORKERS=1, NODE_ENV=$ENVIRONMENT
 
 RUN yarn clean && yarn && yarn build
 

@@ -71,11 +71,3 @@ spec:
   backend:
     serviceName: playground-http
     servicePort: ${PLAYGROUND_PORT}
-  rules:
-    - host: 1234.${HOST}
-      http:
-        paths:
-         - path: /
-           backend:
-             serviceName: theia-substrate-http-7qsld
-             servicePort: 8080

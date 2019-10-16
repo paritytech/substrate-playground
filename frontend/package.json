@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "parcel dev public/index.html",
     "watch": "parcel watch public/index.html",
-    "build": "cross-env NODE_ENV=production parcel build public/index.html",
+    "build": "parcel build public/index.html",
     "clean": "rm -rf node_modules/ dist/ .cache/ yarn.lock"
   },
   "dependencies": {
@@ -18,7 +18,6 @@
     "react-spring": "8.0.27"
   },
   "devDependencies": {
-    "cross-env": "6.0.3",
     "parcel-bundler": "1.12.3",
     "typescript": "3.6.3"
   }
