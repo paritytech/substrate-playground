@@ -5,7 +5,7 @@ mod api;
 mod kubernetes;
 mod utils;
 
-use std::{collections::HashMap, env, path::Path, sync::Mutex};
+use std::{collections::HashMap, env, io::{Error, ErrorKind}, path::Path, sync::Mutex};
 use env_logger;
 use log::{error, info};
 use rocket::{routes, http::Method};
@@ -31,9 +31,9 @@ fn read_config() -> Config {
     toml::from_str(conf.as_str()).unwrap()
 }
 
-pub struct Context(pub HashMap<String, String>, pub Mutex<Timer>);
+pub struct Context(pub String, pub HashMap<String, String>, pub Mutex<Timer>);
 
-fn main() {
+fn main() -> Result<(), Error> {
     // Initialize log configuration. Reads RUST_LOG if any, otherwise fallsback to `default`
     if env::var("RUST_LOG").is_err() {
         env::set_var("RUST_LOG", "info,kube=debug");
@@ -43,9 +43,11 @@ fn main() {
     // Load configuration from `Playground.toml`
     let config = read_config();
     let assets = env::var("PLAYGROUND_ASSETS").unwrap_or(config.assets);
+    let namespace = env::var("K8S_NAMESPACE").map_err(|e| Error::new(ErrorKind::NotFound, e))?;
 
     info!("Configuration:");
     info!("assets: {}", assets);
+    info!("namespace: {}", namespace);
 
     // Configure CORS
     let allowed_origins = AllowedOrigins::All;
@@ -61,6 +63,8 @@ fn main() {
     rocket::ignite()
       .mount("/", StaticFiles::from(assets.as_str()))
       .mount("/api", routes![api::index, api::get])
-      .manage(Context(config.images, t))
+      .manage(Context(namespace, config.images, t))
       .attach(cors).launch();
+
+    Ok(())
 }

@@ -18,14 +18,15 @@ use chrono;
 ///    "reason" "xxxx"} if not
 #[get("/new?<template>")]
 pub fn index(state: State<'_, Context>, template: String) -> JsonValue {
-    if let Some(image) = state.0.get(&template) {
-        match kubernetes::deploy(image) {
+    if let Some(image) = state.1.get(&template) {
+        let namespace = state.0.clone();
+        match kubernetes::deploy(&namespace, image) {
             Ok(uuid) => {
                 info!("Launched image {} (template: {})", uuid, template);
                 let uuid2 = uuid.clone();
-                state.1.lock().unwrap().schedule_with_delay(chrono::Duration::hours(3), move || {
+                state.2.lock().unwrap().schedule_with_delay(chrono::Duration::hours(3), move || {
                     info!("#Deleting! {}", uuid2);
-                    if let Err(s) = kubernetes::undeploy(uuid2.as_str()) {
+                    if let Err(s) = kubernetes::undeploy(&namespace, uuid2.as_str()) {
                         warn!("Failed to undeploy {}: {}", uuid2, s);
                     }
                 }).ignore();
@@ -50,8 +51,8 @@ pub fn index(state: State<'_, Context>, template: String) -> JsonValue {
 ///  if the container is running
 /// - {"status" "pending"} if still starting
 #[get("/url?<uuid>")]
-pub fn get(uuid: String) -> JsonValue {
-    let result = kubernetes::url(&uuid.to_string());
+pub fn get(state: State<'_, Context>, uuid: String) -> JsonValue {
+    let result = kubernetes::url(&state.0, &uuid.to_string());
     match result {
         Ok(url) => {
             if url.is_empty() {

@@ -1,4 +1,9 @@
-.DEFAULT_GOAL := help
+.DEFAULT_GOAL=help
+
+ENVIRONMENT=staging
+ENVIRONMENT_FILE=$(join .env., $(ENVIRONMENT))
+
+include $(ENVIRONMENT_FILE)
 
 # Show this help.
 help:
@@ -41,16 +46,16 @@ push-theia-docker-image: build-theia-docker-image
 	docker push ${THEIA_IMAGE}
 
 run-theia-docker-image: build-theia-docker-image
-	docker run -d -p 8080:8080 ${THEIA_IMAGE}
+	docker run -d -p 80:80 ${THEIA_IMAGE}
 
 PLAYGROUND_PORT="80"
 PLAYGROUND_IMAGE_NAME="jeluard/substrate-playground"
-PLAYGROUND_IMAGE_VERSION="latest"
+PLAYGROUND_IMAGE_VERSION="${ENVIRONMENT}-latest"
 PLAYGROUND_IMAGE="${PLAYGROUND_IMAGE_NAME}:${PLAYGROUND_IMAGE_VERSION}"
 
 # Build playground docker image
 build-playground-docker-image:
-	docker build --build-arg PORT=${PLAYGROUND_PORT} -f Dockerfile -t ${PLAYGROUND_IMAGE} . && docker image prune -f --filter label=stage=builder
+	docker build --build-arg PORT=${PLAYGROUND_PORT} --build-arg ENVIRONMENT=${ENVIRONMENT} --build-arg K8S_NAMESPACE=${K8S_NAMESPACE} -f Dockerfile -t ${PLAYGROUND_IMAGE} . && docker image prune -f --filter label=stage=builder
 
 push-playground-docker-image: build-playground-docker-image
 	docker push ${PLAYGROUND_IMAGE}
@@ -60,17 +65,36 @@ run-playground-docker-image: build-playground-docker-image
 
 ## Kubernetes deployment
 
+k8s-assert:
+	@read -p $$'You are about to interact with the \e[31m'"${ENVIRONMENT}"$$'\e[0m environment. Ok to proceed? [yN]' answer; \
+	if [ "$${answer}" != "Y" ] ;then exit 1; fi
+
+k8s-setup: k8s-assert
+	@kubectl create namespace ${K8S_NAMESPACE}
+
 # Deploy playground on kubernetes
-k8s-deploy-playground:
-	kubectl apply -f deployment-lb.yaml
+k8s-deploy-playground: k8s-assert
+	@cat ${K8S_DEPLOYMENT_FILE_TEMPLATE} | \
+	sed 's/\$${K8S_NAMESPACE}'"/${K8S_NAMESPACE}/g" | \
+	sed 's/\$${PLAYGROUND_PORT}'"/${PLAYGROUND_PORT}/g" | \
+	sed 's/\$${IMAGE}'"/${IMAGE}/g" | \
+	sed 's/\$${HOST}'"/${HOST}/g" | \
+	sed 's/\$${GLOBAL_IP_NAME}'"/${GLOBAL_IP_NAME}/g" | \
+	kubectl apply --namespace=${K8S_NAMESPACE} --record -f -
 
 # Undeploy playground from kubernetes
-k8s-undeploy-playground:
-	kubectl delete -f deployment-lb.yaml
+k8s-undeploy-playground: k8s-assert
+	@cat ${K8S_DEPLOYMENT_FILE_TEMPLATE} | \
+	sed 's/\$${K8S_NAMESPACE}'"/${K8S_NAMESPACE}/g" | \
+	sed 's/\$${PLAYGROUND_PORT}'"/${PLAYGROUND_PORT}/g" | \
+	sed 's/\$${IMAGE}'"/${IMAGE}/g" | \
+	sed 's/\$${HOST}'"/${HOST}/g" | \
+	sed 's/\$${GLOBAL_IP_NAME}'"/${GLOBAL_IP_NAME}/g" | \
+	kubectl delete --namespace=${K8S_NAMESPACE} -f -
 
 # Undeploy all theia-substrate pods and services from kubernetes
-k8s-undeploy-theia:
-	kubectl delete pods,services -l app=theia-substrate
+k8s-undeploy-theia: k8s-assert
+	kubectl delete pods,services -l app=theia-substrate --namespace=${K8S_NAMESPACE}
 
 integrate:
 	cargo doc --document-private-items

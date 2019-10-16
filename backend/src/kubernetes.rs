@@ -4,7 +4,7 @@
 
 use crate::utils;
 use std::path::Path;
-use log::{error, info};
+use log::info;
 use kube::{
     api::{Api, DeleteParams, ListParams, PostParams, KubeObject},
     client::APIClient,
@@ -13,8 +13,6 @@ use kube::{
 use serde::de::DeserializeOwned;
 use serde_json::Value;
 use uuid::Uuid;
-
-const NAMESPACE : &str = "default";
 
 fn error_to_string<T: std::fmt::Display>(err: T) -> String {
     format!("{}", err)
@@ -32,18 +30,18 @@ fn read_service(uuid: &str, pod: &str) -> Result<Value, String> {
       .and_then(|s| serde_json::from_str(&s.replace("%POD_NAME%", pod).replacen("%UUID%", uuid, 2)).map_err(error_to_string))
 }
 
-fn deploy_pod(client: APIClient, image: &str) -> Result<String, String> {
+fn deploy_pod(namespace: &str, client: APIClient, image: &str) -> Result<String, String> {
     let uuid = format!("{}", Uuid::new_v4());
     let p: Value = read_deployment(&uuid, image)?;
 
     let params = PostParams::default();
-    let pods = Api::v1Pod(client.clone()).within(NAMESPACE);
+    let pods = Api::v1Pod(client.clone()).within(namespace);
     let name = pods.create(&params, serde_json::to_vec(&p).map_err(error_to_string)?)
       .map(|o| o.metadata.name).map_err(error_to_string)?;
 
     let p2: Value = read_service(&uuid, &name)?;
 
-    let services = Api::v1Service(client).within(NAMESPACE);
+    let services = Api::v1Service(client).within(namespace);
     services.create(&params, serde_json::to_vec(&p2).map_err(error_to_string)?)
       .map(|_| uuid).map_err(error_to_string)
 }
@@ -53,15 +51,15 @@ fn list_by_selector<K: Clone + DeserializeOwned + KubeObject>(api: &Api<K>, sele
     api.list(&params).map(|l| l.items).map_err(|s| format!("Error {}", s))
 }
 
-fn undeploy_pod(client: APIClient, uuid: &str) -> Result<(), String> {
-    let service_api = Api::v1Service(client.clone()).within(NAMESPACE);
+fn undeploy_pod(namespace: &str, client: APIClient, uuid: &str) -> Result<(), String> {
+    let service_api = Api::v1Service(client.clone()).within(namespace);
     let selector = format!("app-uuid={}", uuid);
     let services = list_by_selector(&service_api, selector.clone())?;
     let service = services.first().ok_or(format!("No matching pod for {}", uuid))?;
     let params = DeleteParams::default();
     service_api.delete(&service.metadata.name, &params).map_err(|s| format!("Error {}", s))?;
 
-    let pod_api = Api::v1Pod(client).within(NAMESPACE);
+    let pod_api = Api::v1Pod(client).within(namespace);
     let pods = list_by_selector(&pod_api, selector)?;
     let pod = pods.first().ok_or(format!("No matching pod for {}", uuid))?;
     pod_api.delete(&pod.metadata.name, &params).map_err(|s| format!("Error {}", s))?;
@@ -69,8 +67,8 @@ fn undeploy_pod(client: APIClient, uuid: &str) -> Result<(), String> {
     Ok(())
 }
 
-fn get_service(client: APIClient, uuid: &str) -> Result<String, String> {
-    let service_api = Api::v1Service(client).within(NAMESPACE);
+fn get_service(namespace: &str, client: APIClient, uuid: &str) -> Result<String, String> {
+    let service_api = Api::v1Service(client).within(namespace);
     let selector = format!("app-uuid={}", uuid);
     let services = list_by_selector(&service_api, selector)?;
     let service = &services.first().ok_or(format!("No matching pod for {}", uuid))?;
@@ -94,14 +92,14 @@ fn create_client() -> kube::Result<APIClient> {
     Ok(APIClient::new(config))
 }
 
-pub fn deploy(image: & str) -> Result<String, String> {
-    create_client().map_err(error_to_string).and_then(|c| deploy_pod(c, image))
+pub fn deploy(namespace: &str, image: & str) -> Result<String, String> {
+    create_client().map_err(error_to_string).and_then(|c| deploy_pod(namespace, c, image))
 }
 
-pub fn undeploy(uuid: & str) -> Result<(), String> {
-    create_client().map_err(error_to_string).and_then(|c| undeploy_pod(c, uuid))
+pub fn undeploy(namespace: &str, uuid: & str) -> Result<(), String> {
+    create_client().map_err(error_to_string).and_then(|c| undeploy_pod(namespace, c, uuid))
 }
 
-pub fn url(uuid: & str) -> Result<String, String> {
-    create_client().map_err(error_to_string).and_then(|c| get_service(c, uuid))
+pub fn url(namespace: &str, uuid: & str) -> Result<String, String> {
+    create_client().map_err(error_to_string).and_then(|c| get_service(namespace, c, uuid))
 }

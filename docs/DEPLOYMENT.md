@@ -57,10 +57,10 @@ Ensure that `playground-http` is correctly deployed by browsing its [events](htt
 Make sure to use regional addresses, matching your cluster region. Global addresses won't work.
 
 ```
-gcloud compute addresses create playground --region us-central1
-gcloud compute addresses describe playground --region us-central1
+gcloud compute addresses create playground --global
+gcloud compute addresses describe playground --global
 ```
 
 ```
-gcloud compute addresses delete playground --region us-central1
+gcloud compute addresses delete playground --global
 ```

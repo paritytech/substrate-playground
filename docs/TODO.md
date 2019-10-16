@@ -3,7 +3,6 @@
 ## MVP
 
 https
-Change namespace
 Move to Ingress
 * https://kubernetes.io/docs/concepts/services-networking/ingress/
 * https://kubernetes.github.io/ingress-nginx/user-guide/default-backend/
@@ -38,6 +37,7 @@ Interact with marketplace
 
 Test VSCode plugin, specifically Web3 fundation ones
 * https://github.com/stiiifff/substrate-deps
+* https://marketplace.visualstudio.com/items?itemName=tintinweb.solidity-visual-auditor&ssr=false#overview
 * https://marketplace.visualstudio.com/items?itemName=pnp.polacode
 * https://github.com/tonsky/FiraCode/wiki/Linux-instructions#installing-with-a-package-manager
 * https://marketplace.visualstudio.com/items?itemName=ritwickdey.LiveServer

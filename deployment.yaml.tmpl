@@ -1,4 +1,12 @@
 apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: pod-quota
+spec:
+  hard:
+    pods: "15"
+---
+apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: default-service-account
@@ -10,7 +18,7 @@ metadata:
 subjects:
 - kind: ServiceAccount
   name: default-service-account
-  namespace: default
+  namespace: ${K8S_NAMESPACE}
 roleRef:
   kind: ClusterRole
   name: cluster-admin
@@ -33,9 +41,9 @@ spec:
       serviceAccountName: default-service-account
       containers:
       - name: playground
-        image: jeluard/substrate-playground@sha256:a116d38bf39a65eebe1ada0d1a49a7004aa851b3267b605db7234a2e9d45338f
+        image: ${IMAGE}
         ports:
-        - containerPort: 80
+        - containerPort: ${PLAYGROUND_PORT}
 ---
 apiVersion: v1
 kind: Service
@@ -46,9 +54,8 @@ metadata:
 spec:
   type: NodePort
   ports:
-  - port: 80
-    targetPort: 80
-  loadBalancerIP: "35.202.224.243"
+  - port: ${PLAYGROUND_PORT}
+    targetPort: ${PLAYGROUND_PORT}
   selector:
     app: playground
 ---
@@ -59,12 +66,16 @@ kind: Ingress
 metadata:
   name: playground-ingress
   annotations:
-    kubernetes.io/ingress.global-static-ip-name: "playground"
+    kubernetes.io/ingress.global-static-ip-name: ${GLOBAL_IP_NAME}
 spec:
+  backend:
+    serviceName: playground-http
+    servicePort: ${PLAYGROUND_PORT}
   rules:
-    - host: playground.substrate.dev
+    - host: 1234.${HOST}
       http:
         paths:
-        - backend:
-           serviceName: playground-http
-           servicePort: 80
+         - path: /
+           backend:
+             serviceName: theia-substrate-http-7qsld
+             servicePort: 8080

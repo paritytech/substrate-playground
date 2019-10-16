@@ -12,7 +12,7 @@ WORKDIR /opt
 COPY frontend .
 
 ENV PARCEL_WORKERS=1 \
-    NODE_DEV=production
+    NODE_DEV=${ENVIRONMENT}
 
 RUN yarn clean && yarn && yarn build
 
@@ -61,9 +61,19 @@ ARG PORT="80"
 ARG PORT
 ENV PORT=$PORT
 
+ARG ENVIRONMENT="default"
+ARG ENVIRONMENT
+ENV ENVIRONMENT=$ENVIRONMENT
+
+ARG K8S_NAMESPACE="default"
+ARG K8S_NAMESPACE
+ENV K8S_NAMESPACE=$K8S_NAMESPACE
+
 ENV RUST_BACKTRACE=1\
     RUST_LOG="error,$BINARY_NAME=info" \
-    ROCKET_PORT=$PORT
+    ROCKET_PORT=$PORT \
+    ROCKET_ENV=$ENVIRONMENT \
+    K8S_NAMESPACE=$K8S_NAMESPACE
 
 COPY --from=builder-backend /opt/bin/$BINARY_NAME /
 COPY --from=builder-backend /opt/Playground.toml /
