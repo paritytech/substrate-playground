@@ -83,7 +83,7 @@ ENV USE_LOCAL_GIT true
 ENV HOST 0.0.0.0
 ENV PROVIDER_SOCKET ws://localhost:9944
 
-ENTRYPOINT [ "node", "/home/theia/src-gen/backend/main.js", "/home/workspace/", "--hostname=0.0.0.0", "--port=8080" ]
+ENTRYPOINT [ "node", "/home/theia/src-gen/backend/main.js", "/home/workspace/", "--hostname=0.0.0.0", "--port=80" ]
 
 ARG BUILD_DATE
 ARG GIT_REV

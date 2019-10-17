@@ -59,6 +59,15 @@ spec:
   selector:
     app: playground
 ---
+# Creates an HTTPS certificate
+apiVersion: networking.gke.io/v1beta1
+kind: ManagedCertificate
+metadata:
+  name: playground-certificate
+spec:
+  domains:
+    - ${HOST}
+---
 # Creates an ingress associating the certificate to the LoadBalancer
 # See https://cloud.google.com/kubernetes-engine/docs/how-to/managed-certs
 apiVersion: extensions/v1beta1
@@ -67,7 +76,16 @@ metadata:
   name: playground-ingress
   annotations:
     kubernetes.io/ingress.global-static-ip-name: ${GLOBAL_IP_NAME}
+    networking.gke.io/managed-certificates: playground-certificate
 spec:
-  backend:
-    serviceName: playground-http
-    servicePort: ${PLAYGROUND_PORT}
+  tls:
+  - hosts:
+    - ${HOST}
+  rules:
+  - host: ${HOST}
+    http:
+      paths:
+      - path: /*
+        backend:
+          serviceName: playground-http
+          servicePort: ${PLAYGROUND_PORT}

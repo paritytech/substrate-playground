@@ -73,11 +73,7 @@ fn get_service(namespace: &str, client: APIClient, uuid: &str) -> Result<String,
     let services = list_by_selector(&service_api, selector)?;
     let service = &services.first().ok_or(format!("No matching pod for {}", uuid))?;
     if let Some(status) = &service.status {
-        if let Some (ingress) = &status.load_balancer.as_ref().unwrap().ingress {
-            Ok(format!("http://{}:{}", ingress[0].ip.as_ref().unwrap(), 8080).to_string()) // TODO only the proper port (correct name)
-        } else {
-            Ok("".to_string())
-        }
+        Ok(format!("http://playground-staging.substrate.dev/theia/{}", uuid).to_string().to_string())
     } else {
         Err("Failed to access service endpoint".to_string())
     }
