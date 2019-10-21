@@ -43,25 +43,3 @@ pub fn index(state: State<'_, Context>, template: String) -> JsonValue {
         json!({"status": "ko", "reason": format!("Unknown template <{}>", template)})
     }
 }
-
-/// Access the URL of a running container identified by `id`.
-///
-/// Returns a `JsonValue` with following shape:
-/// - {"status" "ok"
-///    "URL"    "xxxx"}
-///  if the container is running
-/// - {"status" "pending"} if still starting
-#[get("/url?<uuid>")]
-pub fn get(state: State<'_, Context>, uuid: String) -> JsonValue {
-    let result = kubernetes::url(&state.0, &uuid.to_string());
-    match result {
-        Ok(url) => {
-            if url.is_empty() {
-                json!({"status": "pending"})
-            } else {
-                json!({"status": "ok", "URL": url})
-            }
-        },
-        Err(err) => json!({"status": "ko", "reason": err})
-    }
-}

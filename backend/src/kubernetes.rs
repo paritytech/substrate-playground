@@ -31,7 +31,7 @@ fn read_service(uuid: &str, pod: &str) -> Result<Value, String> {
 }
 
 fn read_add_path(host: &str, uuid: &str, service_name: &str) -> Result<Value, String> {
-    let subdomain = format!("{}.theia.{}", uuid, host);
+    let subdomain = format!("{}.{}", uuid, host);
     utils::read(&Path::new("conf/add-theia-path.json"))
       .map_err(error_to_string)
       .and_then(|s| serde_json::from_str(&s.replacen("%SERVICE_NAME%", service_name, 4).replace("%HOST%", &subdomain)).map_err(error_to_string))
@@ -82,18 +82,6 @@ fn undeploy_pod(namespace: &str, client: APIClient, uuid: &str) -> Result<(), St
     Ok(())
 }
 
-fn get_service(namespace: &str, client: APIClient, uuid: &str) -> Result<String, String> {
-    let service_api = Api::v1Service(client).within(namespace);
-    let selector = format!("app-uuid={}", uuid);
-    let services = list_by_selector(&service_api, selector)?;
-    let service = &services.first().ok_or(format!("No matching service for {}", uuid))?;
-    if let Some(_status) = &service.status {
-        Ok(format!("http://playground-staging.substrate.dev/theia/{}", uuid).to_string().to_string())
-    } else {
-        Err("Failed to access service endpoint".to_string())
-    }
-}
-
 fn create_client() -> kube::Result<APIClient> {
     let config = config::incluster_config()
       .unwrap_or_else(|_| {
@@ -109,8 +97,4 @@ pub fn deploy(host: &str, namespace: &str, image: & str) -> Result<String, Strin
 
 pub fn undeploy(namespace: &str, uuid: & str) -> Result<(), String> {
     create_client().map_err(error_to_string).and_then(|c| undeploy_pod(namespace, c, uuid))
-}
-
-pub fn url(namespace: &str, uuid: & str) -> Result<String, String> {
-    create_client().map_err(error_to_string).and_then(|c| get_service(namespace, c, uuid))
 }

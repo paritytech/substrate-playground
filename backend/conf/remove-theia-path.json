@@ -1,41 +1,7 @@
+// See https://kubernetes.io/docs/reference/kubectl/jsonpath/
 [
-    {
-      "op": "add",
-      "path": "/spec/rules/-",
-      "value": {
-        "host": "%HOST%",
-        "http": {
-          "paths": [
-            {
-              "path": "/",
-              "backend": {
-                "serviceName": "%SERVICE_NAME%",
-                "servicePort": 80
-              }
-            },
-            {
-              "path": "/front-end",
-              "backend": {
-                "serviceName": "%SERVICE_NAME%",
-                "servicePort": 8080
-              }
-            },
-            {
-              "path": "/http",
-              "backend": {
-                "serviceName": "%SERVICE_NAME%",
-                "servicePort": 9933
-              }
-            },
-            {
-              "path": "/ws",
-              "backend": {
-                "serviceName": "%SERVICE_NAME%",
-                "servicePort": 9944
-              }
-            }
-          ]
-        }
-      }
-    }
-  ]
+  {
+    "op": "remove",
+    "path": "{.spec.rules[?(@.host=='%HOST%')]}"
+  }
+]

@@ -92,7 +92,7 @@ function App() {
         document.body.classList.add("loading");
         var retries = 0;
         const id = setInterval(async () => {
-            const url = `//${state.event.uuid}.theia.playground-staging.substrate.dev`;
+            const url = `//${state.event.uuid}.playground-staging.substrate.dev`;
             const [response] = await Promise.all([fetch(url), timeout(5000)]);
             if (response.status == 404) {
                 retries ++;

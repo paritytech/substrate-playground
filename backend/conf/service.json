@@ -11,22 +11,22 @@
     "spec": {
         "ports": [
             {
-                "name": "theia-http",
+                "name": "web",
                 "protocol": "TCP",
                 "port": 80
             },
             {
-                "name": "node-http",
+                "name": "front-end",
                 "protocol": "TCP",
-                "port": 8000
+                "port": 8080
             },
             {
-                "name": "rpc-http",
+                "name": "http",
                 "protocol": "TCP",
                 "port": 9933
             },
             {
-                "name": "rpc-websocket",
+                "name": "ws",
                 "protocol": "TCP",
                 "port": 9944
             }

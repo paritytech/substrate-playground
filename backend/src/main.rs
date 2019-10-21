@@ -56,6 +56,7 @@ fn main() -> Result<(), Error> {
     let cors = CorsOptions {
         allowed_origins,
         allowed_methods: vec![Method::Get].into_iter().map(From::from).collect(),
+        //TODO only from host
         //allowed_headers: AllowedHeaders::some(&["Authorization", "Accept"]),
         allow_credentials: true,
         ..Default::default()
@@ -64,7 +65,7 @@ fn main() -> Result<(), Error> {
     let t = Mutex::new(Timer::new());
     rocket::ignite()
       .mount("/", StaticFiles::from(assets.as_str()))
-      .mount("/api", routes![api::index, api::get])
+      .mount("/api", routes![api::index])
       .manage(Context(host, namespace, config.images, t))
       .attach(cors).launch();
 
