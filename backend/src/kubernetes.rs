@@ -6,7 +6,7 @@ use crate::utils;
 use std::path::Path;
 use log::info;
 use kube::{
-    api::{Api, DeleteParams, ListParams, PostParams, KubeObject},
+    api::{Api, DeleteParams, ListParams, PatchStrategy, PatchParams, PostParams, KubeObject},
     client::APIClient,
     config,
 };
@@ -19,18 +19,25 @@ fn error_to_string<T: std::fmt::Display>(err: T) -> String {
 }
 
 fn read_deployment(uuid: &str, image: &str) -> Result<Value, String> {
-    utils::read(&Path::new("conf/deployment.yaml"))
+    utils::read(&Path::new("conf/deployment.json"))
       .map_err(error_to_string)
       .and_then(|s| serde_json::from_str(&s.replace("%IMAGE_NAME%", image).replace("%UUID%", uuid)).map_err(error_to_string))
 }
 
 fn read_service(uuid: &str, pod: &str) -> Result<Value, String> {
-    utils::read(&Path::new("conf/service.yaml"))
+    utils::read(&Path::new("conf/service.json"))
       .map_err(error_to_string)
       .and_then(|s| serde_json::from_str(&s.replace("%POD_NAME%", pod).replacen("%UUID%", uuid, 2)).map_err(error_to_string))
 }
 
-fn deploy_pod(namespace: &str, client: APIClient, image: &str) -> Result<String, String> {
+fn read_add_path(host: &str, uuid: &str, service_name: &str) -> Result<Value, String> {
+    let subdomain = format!("{}.theia.{}", uuid, host);
+    utils::read(&Path::new("conf/add-theia-path.json"))
+      .map_err(error_to_string)
+      .and_then(|s| serde_json::from_str(&s.replacen("%SERVICE_NAME%", service_name, 4).replace("%HOST%", &subdomain)).map_err(error_to_string))
+}
+
+fn deploy_pod(host: &str, namespace: &str, client: APIClient, image: &str) -> Result<String, String> {
     let uuid = format!("{}", Uuid::new_v4());
     let p: Value = read_deployment(&uuid, image)?;
 
@@ -41,9 +48,17 @@ fn deploy_pod(namespace: &str, client: APIClient, image: &str) -> Result<String,
 
     let p2: Value = read_service(&uuid, &name)?;
 
-    let services = Api::v1Service(client).within(namespace);
-    services.create(&params, serde_json::to_vec(&p2).map_err(error_to_string)?)
-      .map(|_| uuid).map_err(error_to_string)
+    let services = Api::v1Service(client.clone()).within(namespace);
+    let service_name = services.create(&params, serde_json::to_vec(&p2).map_err(error_to_string)?)
+      .map(|o| o.metadata.name).map_err(error_to_string)?;
+
+    let p3: Value = read_add_path(&host, &uuid, &service_name)?;
+    println!("{:?}", p3);
+    let patch_params = PatchParams{ patch_strategy: PatchStrategy::JSON , ..PatchParams::default() };
+    let ingress = Api::v1beta1Ingress(client.clone()).within(namespace);
+    ingress.patch("playground-ingress", &patch_params, serde_json::to_vec(&p3).map_err(error_to_string)?).map_err(error_to_string)?;
+
+    Ok(uuid)
 }
 
 fn list_by_selector<K: Clone + DeserializeOwned + KubeObject>(api: &Api<K>, selector: String) -> Result<Vec<K>, String> {
@@ -55,7 +70,7 @@ fn undeploy_pod(namespace: &str, client: APIClient, uuid: &str) -> Result<(), St
     let service_api = Api::v1Service(client.clone()).within(namespace);
     let selector = format!("app-uuid={}", uuid);
     let services = list_by_selector(&service_api, selector.clone())?;
-    let service = services.first().ok_or(format!("No matching pod for {}", uuid))?;
+    let service = services.first().ok_or(format!("No matching service for {}", uuid))?;
     let params = DeleteParams::default();
     service_api.delete(&service.metadata.name, &params).map_err(|s| format!("Error {}", s))?;
 
@@ -71,8 +86,8 @@ fn get_service(namespace: &str, client: APIClient, uuid: &str) -> Result<String,
     let service_api = Api::v1Service(client).within(namespace);
     let selector = format!("app-uuid={}", uuid);
     let services = list_by_selector(&service_api, selector)?;
-    let service = &services.first().ok_or(format!("No matching pod for {}", uuid))?;
-    if let Some(status) = &service.status {
+    let service = &services.first().ok_or(format!("No matching service for {}", uuid))?;
+    if let Some(_status) = &service.status {
         Ok(format!("http://playground-staging.substrate.dev/theia/{}", uuid).to_string().to_string())
     } else {
         Err("Failed to access service endpoint".to_string())
@@ -88,8 +103,8 @@ fn create_client() -> kube::Result<APIClient> {
     Ok(APIClient::new(config))
 }
 
-pub fn deploy(namespace: &str, image: & str) -> Result<String, String> {
-    create_client().map_err(error_to_string).and_then(|c| deploy_pod(namespace, c, image))
+pub fn deploy(host: &str, namespace: &str, image: & str) -> Result<String, String> {
+    create_client().map_err(error_to_string).and_then(|c| deploy_pod(host, namespace, c, image))
 }
 
 pub fn undeploy(namespace: &str, uuid: & str) -> Result<(), String> {

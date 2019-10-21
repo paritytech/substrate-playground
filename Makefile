@@ -55,7 +55,7 @@ PLAYGROUND_IMAGE="${PLAYGROUND_IMAGE_NAME}:${PLAYGROUND_IMAGE_VERSION}"
 
 # Build playground docker image
 build-playground-docker-image:
-	docker build --build-arg PORT=${PLAYGROUND_PORT} --build-arg ENVIRONMENT=${ENVIRONMENT} --build-arg K8S_NAMESPACE=${K8S_NAMESPACE} -f Dockerfile -t ${PLAYGROUND_IMAGE} . && docker image prune -f --filter label=stage=builder
+	docker build --build-arg PORT=${PLAYGROUND_PORT} --build-arg ENVIRONMENT=${ENVIRONMENT} --build-arg PLAYGROUND_HOST=${HOST} --build-arg K8S_NAMESPACE=${K8S_NAMESPACE} -f Dockerfile -t ${PLAYGROUND_IMAGE} . && docker image prune -f --filter label=stage=builder
 
 push-playground-docker-image: build-playground-docker-image
 	docker push ${PLAYGROUND_IMAGE}
@@ -79,7 +79,9 @@ k8s-deploy-playground: k8s-assert
 	sed 's/\$${PLAYGROUND_PORT}'"/${PLAYGROUND_PORT}/g" | \
 	sed 's/\$${IMAGE}'"/${IMAGE}/g" | \
 	sed 's/\$${HOST}'"/${HOST}/g" | \
+	sed 's/\$${PLAYGROUND_STATIC_IP}'"/${PLAYGROUND_STATIC_IP}/g" | \
 	sed 's/\$${GLOBAL_IP_NAME}'"/${GLOBAL_IP_NAME}/g" | \
+	sed 's/\$${GLOBAL_THEIA_IP_NAME}'"/${GLOBAL_THEIA_IP_NAME}/g" | \
 	kubectl apply --namespace=${K8S_NAMESPACE} --record -f -
 
 # Undeploy playground from kubernetes
@@ -89,7 +91,9 @@ k8s-undeploy-playground: k8s-assert
 	sed 's/\$${PLAYGROUND_PORT}'"/${PLAYGROUND_PORT}/g" | \
 	sed 's/\$${IMAGE}'"/${IMAGE}/g" | \
 	sed 's/\$${HOST}'"/${HOST}/g" | \
+	sed 's/\$${PLAYGROUND_STATIC_IP}'"/${PLAYGROUND_STATIC_IP}/g" | \
 	sed 's/\$${GLOBAL_IP_NAME}'"/${GLOBAL_IP_NAME}/g" | \
+	sed 's/\$${GLOBAL_THEIA_IP_NAME}'"/${GLOBAL_THEIA_IP_NAME}/g" | \
 	kubectl delete --namespace=${K8S_NAMESPACE} -f -
 
 # Undeploy all theia-substrate pods and services from kubernetes

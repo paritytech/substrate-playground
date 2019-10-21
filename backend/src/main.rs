@@ -31,7 +31,7 @@ fn read_config() -> Config {
     toml::from_str(conf.as_str()).unwrap()
 }
 
-pub struct Context(pub String, pub HashMap<String, String>, pub Mutex<Timer>);
+pub struct Context(pub String, pub String, pub HashMap<String, String>, pub Mutex<Timer>);
 
 fn main() -> Result<(), Error> {
     // Initialize log configuration. Reads RUST_LOG if any, otherwise fallsback to `default`
@@ -44,9 +44,11 @@ fn main() -> Result<(), Error> {
     let config = read_config();
     let assets = env::var("PLAYGROUND_ASSETS").unwrap_or(config.assets);
     let namespace = env::var("K8S_NAMESPACE").map_err(|e| Error::new(ErrorKind::NotFound, e))?;
+    let host = env::var("PLAYGROUND_HOST").map_err(|e| Error::new(ErrorKind::NotFound, e))?;
 
     info!("Configuration:");
     info!("assets: {}", assets);
+    info!("host: {}", host);
     info!("namespace: {}", namespace);
 
     // Configure CORS
@@ -63,7 +65,7 @@ fn main() -> Result<(), Error> {
     rocket::ignite()
       .mount("/", StaticFiles::from(assets.as_str()))
       .mount("/api", routes![api::index, api::get])
-      .manage(Context(namespace, config.images, t))
+      .manage(Context(host, namespace, config.images, t))
       .attach(cors).launch();
 
     Ok(())

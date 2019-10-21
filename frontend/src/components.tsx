@@ -40,12 +40,13 @@ export function SVGBox({isHovered}: {isHovered: boolean}) {
 }
 
 export function Error({state, send}: {state: State, send: (name: string) => void}) {
+    const reason = state.context.reason || state.event.reason;
     return (
         <div className="box-fullscreen box-text">
             <h1>
                 Oups! Looks like something went wrong :(
             </h1>
-            <h2>{state.context.reason}</h2>
+            <h2>{reason}</h2>
             <div className="cta" onClick={() => {window.history.replaceState(null, "", window.location.pathname); send("RESTART")}}>
                 <span>Try again !</span>
             </div>

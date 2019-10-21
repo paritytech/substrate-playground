@@ -32,6 +32,8 @@ https://seanmonstar.com/post/188220739932/reqwest-alphaawait
 
 Interact with marketplace
 * https://github.com/everstake/vscode-plugin-substrate/blob/master/docs/TUTORIAL.md
+* https://gist.github.com/drochgenius/6374bbc13eb10168e05e3bf00be2d07e
+* https://spectrum.chat/theia/general/custom-express-handlers~29907ad1-e9fe-402e-8479-5e05574b3e4f
 
 ## Features
 

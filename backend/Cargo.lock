@@ -640,7 +640,7 @@ dependencies = [
 [[package]]
 name = "kube"
 version = "0.16.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
+source = "git+https://github.com/clux/kube-rs#b2b0f8dbda0af1e3384e02cadad4a0887789ef62"
 dependencies = [
  "base64 0.9.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "chrono 0.4.9 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -981,7 +981,7 @@ dependencies = [
  "chrono 0.4.9 (registry+https://github.com/rust-lang/crates.io-index)",
  "env_logger 0.6.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "k8s-openapi 0.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "kube 0.16.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "kube 0.16.1 (git+https://github.com/clux/kube-rs)",
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "rocket 0.4.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "rocket_contrib 0.4.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2044,7 +2044,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 "checksum itoa 0.4.4 (registry+https://github.com/rust-lang/crates.io-index)" = "501266b7edd0174f8530248f87f99c88fbe60ca4ef3dd486835b8d8d53136f7f"
 "checksum k8s-openapi 0.5.1 (registry+https://github.com/rust-lang/crates.io-index)" = "30e2ac1496d5920d157d0eb5ab453b0af1e6622d5ffa8e7f9c60d435d13342da"
 "checksum kernel32-sys 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)" = "7507624b29483431c0ba2d82aece8ca6cdba9382bff4ddd0f7490560c056098d"
-"checksum kube 0.16.1 (registry+https://github.com/rust-lang/crates.io-index)" = "999e096714140913deb79850f33a1cd99c38acf0824305604456ccd0bc2c6cde"
+"checksum kube 0.16.1 (git+https://github.com/clux/kube-rs)" = "<none>"
 "checksum language-tags 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)" = "a91d884b6667cd606bb5a69aa0c99ba811a115fc68915e7056ec08a46e93199a"
 "checksum lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)" = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
 "checksum lazycell 1.2.1 (registry+https://github.com/rust-lang/crates.io-index)" = "b294d6fa9ee409a054354afc4352b0b9ef7ca222c69b8812cbea9e7d2bf3783f"

@@ -75,6 +75,10 @@ const lifecycle = Machine({
     }
 });
 
+function timeout(ms: number) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 function App() {
     const [state, send] = useMachine(lifecycle);
     const [hoverRef, isHovered] = useHover();
@@ -86,18 +90,20 @@ function App() {
 
     if (state.matches('fetching')) {
         document.body.classList.add("loading");
+        var retries = 0;
         const id = setInterval(async () => {
-            const result = await getDeployment(state.event.uuid);
-            if (result.status == "pending") {
-                return;
-            } else if (result.status == "ko") {
-                send("FAIL", {reason: result.reason});
+            const url = `//${state.event.uuid}.theia.playground-staging.substrate.dev`;
+            const [response] = await Promise.all([fetch(url), timeout(5000)]);
+            if (response.status == 404) {
+                retries ++;
+                if (retries > 10) {
+                    send("FAIL", {reason: "Failed to access the theia image in time"});
+                } else {
+                    return;
+                }
             }
+            send("DONE", {url: url});
             clearInterval(id);
-            const url = result.URL;
-            if (url) {
-                send("DONE", {url: url});
-            }
         }, 1000);
     }
 

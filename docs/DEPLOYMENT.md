@@ -62,5 +62,39 @@ gcloud compute addresses describe playground --global
 ```
 
 ```
+gcloud compute addresses create playground --region us-central1
+gcloud compute addresses create playground-theia --region us-central1
+gcloud compute addresses create playground-staging --region us-central1
+gcloud compute addresses create playground-theia-staging --region us-central1
+gcloud compute addresses list --region us-central1
+```
+
+playground-staging        34.69.4.59      EXTERNAL                    us-central1          RESERVED
+playground-theia-staging  34.68.218.45    EXTERNAL                    us-central1          RESERVED
+
+```
 gcloud compute addresses delete playground --global
 ```
+
+
+-----------------------------------
+
+
+Setup Ingress NGinx on GKE
+
+See https://kubernetes.github.io/ingress-nginx/deploy/#gce-gke
+
+kubectl create clusterrolebinding cluster-admin-binding \
+  --clusterrole cluster-admin \
+  --user $(gcloud config get-value account)
+
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/static/mandatory.yaml
+
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/static/provider/cloud-generic.yaml
+
+# Make sure k8s 1,14 is used
+
+
+kubectl get ing playground-ingress --namespace=playground-staging
+
+Should have an address
