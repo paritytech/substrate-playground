@@ -82,6 +82,42 @@ spec:
     app.kubernetes.io/name: ingress-nginx
     app.kubernetes.io/part-of: ingress-nginx
 ---
+apiVersion: cert-manager.io/v1alpha2
+kind: Issuer
+metadata:
+  name: letsencrypt
+spec:
+  selfSigned: {}
+#  acme:
+#    server: https://acme-staging-v02.api.letsencrypt.org/directory
+#    email: admin@parity.io
+#    privateKeySecretRef:
+#      name: letsencrypt
+#    solvers:
+#    - selector: {}
+#      http01:
+#        ingress:
+#          class: nginx
+---
+apiVersion: cert-manager.io/v1alpha2
+kind: Certificate
+metadata:
+  name: playground-tls
+spec:
+  secretName: playground-tls
+  duration: 2160h # 90d
+  renewBefore: 360h # 15d
+  commonName: '*.${HOST}'
+  isCA: true
+  dnsNames:
+  - ${HOST}
+  - '*.${HOST}'
+  uriSANs:
+  - spiffe://cluster.local/ns/sandbox/sa/example
+  issuerRef:
+    name: letsencrypt
+    kind: Issuer
+---
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
@@ -90,8 +126,18 @@ metadata:
     kubernetes.io/ingress.class: "nginx"
     nginx.ingress.kubernetes.io/enable-cors: "true"
     nginx.ingress.kubernetes.io/cors-allow-methods: "GET, OPTIONS"
-    nginx.ingress.kubernetes.io/cors-allow-origin: "http://playground-staging.substrate.dev"
+    #nginx.ingress.kubernetes.io/cors-allow-origin: "https://${HOST}"
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      if ($scheme = https) {
+        more_clear_headers "Strict-Transport-Security";
+      }
 spec:
+  tls:
+  - hosts:
+    - ${HOST}
+    - '*.${HOST}'
+    secretName: playground-tls
   rules:
   - host: ${HOST}
     http:

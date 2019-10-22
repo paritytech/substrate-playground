@@ -3,15 +3,11 @@
 ## MVP
 
 https
-Move to Ingress
-* https://kubernetes.io/docs/concepts/services-networking/ingress/
-* https://kubernetes.github.io/ingress-nginx/user-guide/default-backend/
-* https://blog.containo.us/traefik-2-0-docker-101-fc2893944b9d
 
 ## Tuto
 
 Faster theia image startup (move away from LB, ingress? or traeffik?)
-wss (teremination for access via https://polkadot.js.org/apps/?rpc=ws://127.0.0.1:9944#/explorer)
+wss (termination for access via https://polkadot.js.org/apps/?rpc=ws://127.0.0.1:9944#/explorer)
 Access public IP from container
 
 ## Fast
@@ -34,6 +30,7 @@ Interact with marketplace
 * https://github.com/everstake/vscode-plugin-substrate/blob/master/docs/TUTORIAL.md
 * https://gist.github.com/drochgenius/6374bbc13eb10168e05e3bf00be2d07e
 * https://spectrum.chat/theia/general/custom-express-handlers~29907ad1-e9fe-402e-8479-5e05574b3e4f
+* https://spectrum.chat/theia/general/preview-and-localhost-resolution-behavior~cc291ac2-6b07-4807-8693-e429fc7f7596
 
 ## Features
 

@@ -98,3 +98,16 @@ kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/mast
 kubectl get ing playground-ingress --namespace=playground-staging
 
 Should have an address
+
+## TLS support
+
+Setup certmanager: https://docs.cert-manager.io/en/latest/getting-started/install/kubernetes.html
+Setup an ACME Issuer: https://docs.cert-manager.io/en/latest/tasks/issuers/setup-acme/index.html
+kubectl describe issuer letsencrypt --namespace=playground-staging
+kubectl describe certificate playground-tls --namespace=playground-staging
+kubectl describe secret letsencrypt --namespace=playground-staging
+kubectl describe order playground-tls-3130649356 --namespace=playground-staging
+
+### Troubleshootings
+
+kubectl logs pod/cert-manager-f7f8bf74d-zrzkm --namespace=cert-manager
