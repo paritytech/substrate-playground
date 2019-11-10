@@ -52,6 +52,30 @@ kubectl get services playground-http
 
 Ensure that `playground-http` is correctly deployed by browsing its [events](https://console.cloud.google.com/kubernetes/service/us-central1-a/substrate-playground/default/playground-http?project=substrateplayground-252112&organizationId=939403632241&tab=events&duration=PT1H&pod_summary_list_tablesize=20&playground-http_events_tablesize=50)
 
+### TLS certificate
+
+To get a wildcard certificate from let's encrypt:
+
+https://certbot.eff.org/docs/using.html#manual
+
+sudo certbot certonly --manual --preferred-challenges dns --server https://acme-v02.api.letsencrypt.org/directory --manual-public-ip-logging-ok --agree-tos -m admin@parity.io -d *.playground-staging.substrate.dev -d playground-staging.substrate.dev
+
+dig -t txt +short _acme-challenge.playground-staging.substrate.dev
+
+
+IMPORTANT NOTES:
+ - Congratulations! Your certificate and chain have been saved at:                            /etc/letsencrypt/live/playground-staging.substrate.dev/fullchain.pem
+   Your key file has been saved at:
+   /etc/letsencrypt/live/playground-staging.substrate.dev/privkey.pem
+   Your cert will expire on 2020-01-22. To obtain a new or tweaked
+   version of this certificate in the future, simply run certbot
+   again. To non-interactively renew *all* of your certificates, run
+   "certbot renew"
+
+kubectl delete secret  playground-tls-full --namespace=playground-staging
+
+sudo kubectl create secret tls playground-tls-full --key  /etc/letsencrypt/live/playground-staging.substrate.dev/privkey.pem --cert /etc/letsencrypt/live/playground-staging.substrate.dev/cert.pem  --namespace=playground-staging
+
 ### Update fixed IP
 
 Make sure to use regional addresses, matching your cluster region. Global addresses won't work.
