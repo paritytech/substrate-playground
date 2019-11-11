@@ -14,7 +14,12 @@ COPY frontend .
 ARG ENVIRONMENT
 ENV PARCEL_WORKERS=1, NODE_ENV=$ENVIRONMENT
 
-RUN yarn clean && yarn && yarn build
+RUN apk add --no-cache --virtual .gyp \
+        python \
+        make \
+        g++ \
+    && yarn clean && yarn && yarn build \
+    && apk del .gyp
 
 LABEL stage=builder
 

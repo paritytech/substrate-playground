@@ -17,7 +17,7 @@
               "path": "/front-end",
               "backend": {
                 "serviceName": "%SERVICE_NAME%",
-                "servicePort": 8080
+                "servicePort": 8000
               }
             },
             {
@@ -28,7 +28,7 @@
               }
             },
             {
-              "path": "/ws",
+              "path": "/wss",
               "backend": {
                 "serviceName": "%SERVICE_NAME%",
                 "servicePort": 9944

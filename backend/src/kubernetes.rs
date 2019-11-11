@@ -34,7 +34,7 @@ fn read_add_path(host: &str, uuid: &str, service_name: &str) -> Result<Value, St
     let subdomain = format!("{}.{}", uuid, host);
     utils::read(&Path::new("conf/add-theia-path.json"))
       .map_err(error_to_string)
-      .and_then(|s| serde_json::from_str(&s.replacen("%SERVICE_NAME%", service_name, 4).replace("%HOST%", &subdomain)).map_err(error_to_string))
+      .and_then(|s| serde_json::from_str(&s.replacen("%SERVICE_NAME%", service_name, 4).replacen("%HOST%", &subdomain, 2)).map_err(error_to_string))
 }
 
 fn deploy_pod(host: &str, namespace: &str, client: APIClient, image: &str) -> Result<String, String> {
