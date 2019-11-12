@@ -75,8 +75,8 @@ const lifecycle = Machine({
     }
 });
 
-function timeout(ms: number) {
-    return new Promise(resolve => setTimeout(resolve, ms));
+function rejectAfterTimeout(ms: number) {
+    return new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), ms));
 }
 
 function App() {
@@ -93,17 +93,17 @@ function App() {
         var retries = 0;
         const id = setInterval(async () => {
             const url = `//${state.event.uuid}.playground-staging.substrate.dev`;
-            const [response] = await Promise.all([fetch(url), timeout(5000)]);
-            if (response.status == 404) {
+            const response = await Promise.race([fetch(url), rejectAfterTimeout(5000)]);
+            if (response.status == 200 || response.status == 304) {
+                clearInterval(id);
+                send("DONE", {url: url});
+            } else {
                 retries ++;
                 if (retries > 10) {
+                    clearInterval(id);
                     send("FAIL", {reason: "Failed to access the theia image in time"});
-                } else {
-                    return;
                 }
             }
-            send("DONE", {url: url});
-            clearInterval(id);
         }, 1000);
     }
 
