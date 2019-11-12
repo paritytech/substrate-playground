@@ -2,8 +2,8 @@ import React from "react";
 import * as ReactDOM from "react-dom";
 import { Machine } from 'xstate';
 import { useMachine } from '@xstate/react';
-import {SVGBox, Error, Loading} from './components';
-import {useHover} from './hooks';
+import { SVGBox, Error, Loading } from './components';
+import { useHover } from './hooks';
 
 async function deployDocker(template: string) {
     const response = await fetch(`/api/new?template=${template}`, {

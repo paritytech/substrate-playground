@@ -8,7 +8,7 @@
 ## Development server
 
 ```bash
-cargo run
+PLAYGROUND_ASSETS=../frontend/dist K8S_NAMESPACE=staging PLAYGROUND_HOST=localhost cargo run
 ```
 
 ## TODO

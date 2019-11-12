@@ -64,6 +64,11 @@ Ink plugin
 
 Plugin to interact with networks
 
+## Admin
+
+An admin page listing all running containers
+Only @parity.io users can access it (https://developers.google.com/identity/sign-in/web/sign-in)
+
 ## Teach
 
 Tutorial as in https://kubernetes.io/docs/tutorials/kubernetes-basics/expose/expose-interactive/

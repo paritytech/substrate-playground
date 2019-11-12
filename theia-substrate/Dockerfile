@@ -1,7 +1,10 @@
 ## Install theia
 
 FROM node:10
-RUN apt-get install make gcc g++ python
+RUN apt-get update && \
+    apt-get install -y make gcc g++ python sudo vim curl git cmake pkg-config libssl-dev git gcc build-essential git clang libclang-dev pkg-config && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 WORKDIR /home/theia
 ADD package.json .
 ARG GITHUB_TOKEN
@@ -18,11 +21,6 @@ RUN yarn --pure-lockfile && \
 ENV RUSTUP_HOME=/usr/local/rustup \
     CARGO_HOME=/usr/local/cargo \
     PATH=/usr/local/cargo/bin:$PATH
-
-RUN apt-get update && \
-    apt-get install -y curl git cmake pkg-config libssl-dev git gcc build-essential git clang libclang-dev pkg-config && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
 
 RUN curl -sL https://deb.nodesource.com/setup_12.x | bash - && \
     curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
@@ -53,22 +51,13 @@ RUN cargo install --force --git https://github.com/alexcrichton/wasm-gc \
     && cargo install --force --git https://github.com/paritytech/ink cargo-contract \
     && cargo install sccache
 
-RUN git clone https://github.com/substrate-developer-hub/substrate-node-template node && \
-    git clone https://github.com/substrate-developer-hub/substrate-front-end-template front-end
+RUN git clone https://github.com/substrate-developer-hub/substrate-node-template && \
+    git clone https://github.com/substrate-developer-hub/substrate-front-end-template
 
-#ENV RUSTC_WRAPPER sccache
-ENV SCCACHE_DIR .sscache/
-ENV SCCACHE_CACHE_SIZE 2G
-ENV SCCACHE_IDLE_TIMEOUT=0
-# TODO configure to use Parity global cache, once available
-
-ENV RUST_LOG=sccache=debug
-#RUN sccache --start-server
-
-WORKDIR /home/workspace/front-end
+WORKDIR /home/workspace/substrate-front-end-template
 RUN yarn
 
-WORKDIR /home/workspace/node
+WORKDIR /home/workspace/substrate-node-template
 
 RUN cargo check && cargo build
 RUN cargo check --release && cargo build --release

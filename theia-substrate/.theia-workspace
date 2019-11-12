@@ -1,10 +1,10 @@
 {
    "folders": [
       {
-         "path": "front-end"
+         "path": substrate-front-end-template"
       },
       {
-         "path": "node"
+         "path": "substrate-node-template"
       }
    ],
    "settings": {}
