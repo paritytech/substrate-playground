@@ -2,7 +2,7 @@
 
 FROM node:10
 RUN apt-get update && \
-    apt-get install -y make gcc g++ python sudo vim curl git cmake pkg-config libssl-dev git gcc build-essential git clang libclang-dev pkg-config && \
+    apt-get install -y make gcc g++ python sudo vim curl git cmake pkg-config libssl-dev git gcc build-essential git clang libclang-dev pkg-config xsel && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 WORKDIR /home/theia
@@ -47,12 +47,11 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --de
     && rustup target add wasm32-unknown-unknown --toolchain nightly-2019-10-04
 
 RUN cargo install --force --git https://github.com/alexcrichton/wasm-gc \
-    && cargo install --force --git https://github.com/paritytech/substrate subkey \
-    && cargo install --force --git https://github.com/paritytech/ink cargo-contract \
-    && cargo install sccache
+    && cargo install --force --git https://github.com/paritytech/substrate subkey
+    #&& cargo install --force --git https://github.com/paritytech/ink cargo-contract
 
 RUN git clone https://github.com/substrate-developer-hub/substrate-node-template && \
-    git clone https://github.com/substrate-developer-hub/substrate-front-end-template
+    git clone https://github.com/jeluard/substrate-front-end-template
 
 WORKDIR /home/workspace/substrate-front-end-template
 RUN yarn
@@ -66,11 +65,12 @@ WORKDIR /home/theia
 
 ENV HOME /home/theia
 WORKDIR /home/theia
-EXPOSE 8080 8000 9933 9944 30333
+EXPOSE 80 8000 9944 30333
 ENV SHELL /bin/bash
 ENV USE_LOCAL_GIT true
 ENV HOST 0.0.0.0
-ENV PROVIDER_SOCKET ws://localhost:9944
+ENV PUBLIC_URL .
+ENV REACT_APP_PROVIDER_SOCKET=
 
 ENTRYPOINT [ "node", "/home/theia/src-gen/backend/main.js", "/home/workspace/", "--hostname=0.0.0.0", "--port=80" ]
 

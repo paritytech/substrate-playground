@@ -27,7 +27,7 @@ pub fn index(state: State<'_, Context>, template: String) -> JsonValue {
                 let uuid2 = uuid.clone();
                 state.3.lock().unwrap().schedule_with_delay(chrono::Duration::hours(3), move || {
                     info!("#Deleting! {}", uuid2);
-                    if let Err(s) = kubernetes::undeploy(&namespace, uuid2.as_str()) {
+                    if let Err(s) = kubernetes::undeploy(&host, &namespace, uuid2.as_str()) {
                         warn!("Failed to undeploy {}: {}", uuid2, s);
                     }
                 }).ignore();

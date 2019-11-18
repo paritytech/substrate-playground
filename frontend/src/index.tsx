@@ -2,7 +2,7 @@ import React from "react";
 import * as ReactDOM from "react-dom";
 import { Machine } from 'xstate';
 import { useMachine } from '@xstate/react';
-import { SVGBox, Error, Loading } from './components';
+import { SVGBox, ErrorMessage, Loading } from './components';
 import { useHover } from './hooks';
 
 async function deployDocker(template: string) {
@@ -99,7 +99,7 @@ function App() {
                 send("DONE", {url: url});
             } else {
                 retries ++;
-                if (retries > 10) {
+                if (retries > 60) {
                     clearInterval(id);
                     send("FAIL", {reason: "Failed to access the theia image in time"});
                 }
@@ -113,6 +113,7 @@ function App() {
 
 
     let polkadotJSURL = `https://polkadot.js.org/apps/?rpc=wss:${state.event.url}/wss`;
+    let frontendURL = `${state.event.url}/front-end`;
 
     // Landing page
     return (
@@ -138,13 +139,14 @@ function App() {
             <div>
                 <div>
                     <a href={polkadotJSURL}>Polkadot Apps</a>
+                    <a href={frontendURL}>Front end</a>
                 </div>
                 <iframe src={state.event.url} onError={() => send("FAIL", {reason: "Failed to load theia"})} frameBorder="0" style={{overflow:"hidden",height:"100vh",width:"100vm"}} height="100%" width="100%"></iframe>
             </div>
         }
 
         {state.matches('error') &&
-            <Error state={state} send={send} />
+            <ErrorMessage state={state} send={send} />
         }
         </React.Fragment>
     );

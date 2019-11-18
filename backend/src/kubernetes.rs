@@ -37,6 +37,13 @@ fn read_add_path(host: &str, uuid: &str, service_name: &str) -> Result<Value, St
       .and_then(|s| serde_json::from_str(&s.replacen("%SERVICE_NAME%", service_name, 4).replacen("%HOST%", &subdomain, 2)).map_err(error_to_string))
 }
 
+fn read_remove_path(host: &str, uuid: &str) -> Result<Value, String> {
+    let subdomain = format!("{}.{}", uuid, host);
+    utils::read(&Path::new("conf/remove-theia-path.json"))
+      .map_err(error_to_string)
+      .and_then(|s| serde_json::from_str(&s.replace("%HOST%", &subdomain)).map_err(error_to_string))
+}
+
 fn deploy_pod(host: &str, namespace: &str, client: APIClient, image: &str) -> Result<String, String> {
     let uuid = format!("{}", Uuid::new_v4());
     let p: Value = read_deployment(&uuid, image)?;
@@ -46,17 +53,15 @@ fn deploy_pod(host: &str, namespace: &str, client: APIClient, image: &str) -> Re
     let name = pods.create(&params, serde_json::to_vec(&p).map_err(error_to_string)?)
       .map(|o| o.metadata.name).map_err(error_to_string)?;
 
-    let p2: Value = read_service(&uuid, &name)?;
-
+    let service: Value = read_service(&uuid, &name)?;
     let services = Api::v1Service(client.clone()).within(namespace);
-    let service_name = services.create(&params, serde_json::to_vec(&p2).map_err(error_to_string)?)
+    let service_name = services.create(&params, serde_json::to_vec(&service).map_err(error_to_string)?)
       .map(|o| o.metadata.name).map_err(error_to_string)?;
 
-    let p3: Value = read_add_path(&host, &uuid, &service_name)?;
-    println!("{:?}", p3);
+    let add_path: Value = read_add_path(&host, &uuid, &service_name)?;
     let patch_params = PatchParams{ patch_strategy: PatchStrategy::JSON , ..PatchParams::default() };
-    let ingress = Api::v1beta1Ingress(client.clone()).within(namespace);
-    ingress.patch("playground-ingress", &patch_params, serde_json::to_vec(&p3).map_err(error_to_string)?).map_err(error_to_string)?;
+    let ingress = Api::v1beta1Ingress(client).within(namespace);
+    ingress.patch("playground-ingress", &patch_params, serde_json::to_vec(&add_path).map_err(error_to_string)?).map_err(error_to_string)?;
 
     Ok(uuid)
 }
@@ -66,7 +71,7 @@ fn list_by_selector<K: Clone + DeserializeOwned + KubeObject>(api: &Api<K>, sele
     api.list(&params).map(|l| l.items).map_err(|s| format!("Error {}", s))
 }
 
-fn undeploy_pod(namespace: &str, client: APIClient, uuid: &str) -> Result<(), String> {
+fn undeploy_pod(host: &str, namespace: &str, client: APIClient, uuid: &str) -> Result<(), String> {
     let service_api = Api::v1Service(client.clone()).within(namespace);
     let selector = format!("app-uuid={}", uuid);
     let services = list_by_selector(&service_api, selector.clone())?;
@@ -74,10 +79,15 @@ fn undeploy_pod(namespace: &str, client: APIClient, uuid: &str) -> Result<(), St
     let params = DeleteParams::default();
     service_api.delete(&service.metadata.name, &params).map_err(|s| format!("Error {}", s))?;
 
-    let pod_api = Api::v1Pod(client).within(namespace);
+    let pod_api = Api::v1Pod(client.clone()).within(namespace);
     let pods = list_by_selector(&pod_api, selector)?;
     let pod = pods.first().ok_or(format!("No matching pod for {}", uuid))?;
     pod_api.delete(&pod.metadata.name, &params).map_err(|s| format!("Error {}", s))?;
+
+    let remove_path: Value = read_remove_path(&host, &uuid)?;
+    let patch_params = PatchParams{ patch_strategy: PatchStrategy::JSON , ..PatchParams::default() };
+    let ingress = Api::v1beta1Ingress(client).within(namespace);
+    ingress.patch("playground-ingress", &patch_params, serde_json::to_vec(&remove_path).map_err(error_to_string)?).map_err(error_to_string)?;
 
     Ok(())
 }
@@ -95,6 +105,6 @@ pub fn deploy(host: &str, namespace: &str, image: & str) -> Result<String, Strin
     create_client().map_err(error_to_string).and_then(|c| deploy_pod(host, namespace, c, image))
 }
 
-pub fn undeploy(namespace: &str, uuid: & str) -> Result<(), String> {
-    create_client().map_err(error_to_string).and_then(|c| undeploy_pod(namespace, c, uuid))
+pub fn undeploy(host: &str, namespace: &str, uuid: & str) -> Result<(), String> {
+    create_client().map_err(error_to_string).and_then(|c| undeploy_pod(host, namespace, c, uuid))
 }

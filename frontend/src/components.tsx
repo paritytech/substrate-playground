@@ -39,7 +39,7 @@ export function SVGBox({isHovered}: {isHovered: boolean}) {
         </React.Fragment>);
 }
 
-export function Error({state, send}: {state: State, send: (name: string) => void}) {
+export function ErrorMessage({state, send}: {state: State, send: (name: string) => void}) {
     const reason = state.context.reason || state.event.reason;
     return (
         <div className="box-fullscreen box-text">
@@ -55,21 +55,16 @@ export function Error({state, send}: {state: State, send: (name: string) => void
 }
 
 const loadingPhrases = [
-    'heating the core',
-    'sharing security',
+    'First, you take the dinglepop',
+    'you smooth it out with a bunch of schleem',
     'testing interoperability',
-    'issuing tokens',
-    'rehearsing auctions',
-    'generalising consensus',
-    'establishing democracy',
-    'seizing blockchain landscape',
-    'scaling finality',
-    'pledging roadmap',
-    'addressing existing stacks',
-    'balancing governance',
-    'destributing roles',
-    'importing module crate',
-    'updating runtime']
+    'The schleem is then repurposed for later batches',
+    'Then you take the dinglebop and push it through the grumbo',
+    "It's important that the fleeb is rubbed",
+    'Then a Shlami shows up and he rubs it, and spits on it',
+    "There's several hizzards in the way.",
+    'The blaffs rub against the chumbles',
+    'That leaves you with a regular old plumbus!']
 
 export function Loading() {
     const [phrase, setPhrase] = useState(loadingPhrases[0]);

@@ -1,4 +1,3 @@
-// See https://kubernetes.io/docs/reference/kubectl/jsonpath/
 [
   {
     "op": "remove",

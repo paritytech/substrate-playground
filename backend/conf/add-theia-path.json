@@ -21,13 +21,6 @@
               }
             },
             {
-              "path": "/http",
-              "backend": {
-                "serviceName": "%SERVICE_NAME%",
-                "servicePort": 9933
-              }
-            },
-            {
               "path": "/wss",
               "backend": {
                 "serviceName": "%SERVICE_NAME%",

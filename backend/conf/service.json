@@ -21,12 +21,7 @@
                 "port": 8000
             },
             {
-                "name": "http",
-                "protocol": "TCP",
-                "port": 9933
-            },
-            {
-                "name": "ws",
+                "name": "wss",
                 "protocol": "TCP",
                 "port": 9944
             }
