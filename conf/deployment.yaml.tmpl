@@ -14,7 +14,7 @@ metadata:
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: default-role
+  name: default-playground-role-${K8S_NAMESPACE}
 subjects:
 - kind: ServiceAccount
   name: default-service-account-${K8S_NAMESPACE}
@@ -58,29 +58,6 @@ spec:
     targetPort: ${PLAYGROUND_PORT}
   selector:
     app: playground
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: nginx-ingress-lb
-  labels:
-    app.kubernetes.io/name: ingress-nginx
-    app.kubernetes.io/part-of: ingress-nginx
-spec:
-  externalTrafficPolicy: Local
-  type: LoadBalancer
-  loadBalancerIP: ${PLAYGROUND_STATIC_IP}
-  ports:
-  - port: 80
-    name: http
-    targetPort: 80
-  - port: 443
-    name: https
-    targetPort: 443
-  selector:
-    # Selects nginx-ingress-controller pods
-    app.kubernetes.io/name: ingress-nginx
-    app.kubernetes.io/part-of: ingress-nginx
 ---
 apiVersion: extensions/v1beta1
 kind: Ingress

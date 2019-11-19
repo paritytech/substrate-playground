@@ -72,6 +72,20 @@ k8s-assert:
 k8s-setup: k8s-assert
 	@kubectl create namespace ${K8S_NAMESPACE}
 
+# Deploy nginx on kubernetes
+k8s-deploy-nginx: k8s-assert
+	@cat conf/nginx.yaml | \
+	sed 's/\$${K8S_NAMESPACE}'"/${K8S_NAMESPACE}/g" | \
+	sed 's/\$${PLAYGROUND_STATIC_IP}'"/${PLAYGROUND_STATIC_IP}/g" | \
+	kubectl apply --namespace=${K8S_NAMESPACE} --record -f -
+
+# Undeploy nginx
+k8s-undeploy-nginx: k8s-assert
+	@cat conf/nginx.yaml | \
+	sed 's/\$${K8S_NAMESPACE}'"/${K8S_NAMESPACE}/g" | \
+	sed 's/\$${PLAYGROUND_STATIC_IP}'"/${PLAYGROUND_STATIC_IP}/g" | \
+	kubectl delete --namespace=${K8S_NAMESPACE} -f -
+
 # Deploy playground on kubernetes
 k8s-deploy-playground: k8s-assert
 	@cat ${K8S_DEPLOYMENT_FILE_TEMPLATE} | \
