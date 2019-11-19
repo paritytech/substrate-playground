@@ -39,7 +39,7 @@ metadata:
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRole
 metadata:
-  name: nginx-ingress-clusterrole
+  name: nginx-ingress-clusterrole-${K8S_NAMESPACE}
   labels:
     app.kubernetes.io/name: ingress-nginx
     app.kubernetes.io/part-of: ingress-nginx
@@ -153,19 +153,18 @@ subjects:
   - kind: ServiceAccount
     name: nginx-ingress-serviceaccount
     namespace: ${K8S_NAMESPACE}
-
 ---
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRoleBinding
 metadata:
-  name: nginx-ingress-clusterrole-nisa-binding
+  name: nginx-ingress-clusterrole-nisa-binding-${K8S_NAMESPACE}
   labels:
     app.kubernetes.io/name: ingress-nginx
     app.kubernetes.io/part-of: ingress-nginx
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: nginx-ingress-clusterrole
+  name: nginx-ingress-clusterrole-${K8S_NAMESPACE}
 subjects:
   - kind: ServiceAccount
     name: nginx-ingress-serviceaccount

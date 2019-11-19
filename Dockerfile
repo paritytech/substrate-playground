@@ -18,7 +18,7 @@ RUN apk add --no-cache --virtual .gyp \
         python \
         make \
         g++ \
-    && yarn clean && yarn && yarn build \
+    && yarn global add parcel-bundler && yarn clean && yarn install && yarn build \
     && apk del .gyp
 
 LABEL stage=builder

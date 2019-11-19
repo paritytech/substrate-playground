@@ -92,7 +92,7 @@ function App() {
         document.body.classList.add("loading");
         var retries = 0;
         const id = setInterval(async () => {
-            const url = `//${state.event.uuid}.playground-staging.substrate.dev`;
+            const url = `//${state.event.uuid}.${window.location.hostname}`;
             const response = await Promise.race([fetch(url), rejectAfterTimeout(5000)]);
             if (response.status == 200 || response.status == 304) {
                 clearInterval(id);
