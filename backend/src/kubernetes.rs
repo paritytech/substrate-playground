@@ -37,11 +37,10 @@ fn read_add_path(host: &str, uuid: &str, service_name: &str) -> Result<Value, St
       .and_then(|s| serde_json::from_str(&s.replacen("%SERVICE_NAME%", service_name, 4).replacen("%HOST%", &subdomain, 2)).map_err(error_to_string))
 }
 
-fn read_remove_path(host: &str, uuid: &str) -> Result<Value, String> {
-    let subdomain = format!("{}.{}", uuid, host);
+fn read_remove_path(index: &str) -> Result<Value, String> {
     utils::read(&Path::new("conf/remove-theia-path.json"))
       .map_err(error_to_string)
-      .and_then(|s| serde_json::from_str(&s.replace("%HOST%", &subdomain)).map_err(error_to_string))
+      .and_then(|s| serde_json::from_str(&s.replace("%INDEX%", &index)).map_err(error_to_string))
 }
 
 fn deploy_pod(host: &str, namespace: &str, client: APIClient, image: &str) -> Result<String, String> {
@@ -84,10 +83,12 @@ fn undeploy_pod(host: &str, namespace: &str, client: APIClient, uuid: &str) -> R
     let pod = pods.first().ok_or(format!("No matching pod for {}", uuid))?;
     pod_api.delete(&pod.metadata.name, &params).map_err(|s| format!("Error {}", s))?;
 
-    let remove_path: Value = read_remove_path(&host, &uuid)?;
-    let patch_params = PatchParams{ patch_strategy: PatchStrategy::JSON , ..PatchParams::default() };
     let ingress = Api::v1beta1Ingress(client).within(namespace);
-    ingress.patch("playground-ingress", &patch_params, serde_json::to_vec(&remove_path).map_err(error_to_string)?).map_err(error_to_string)?;
+    //let aa: Value = ingress.get("playground-ingress").map_err(error_to_string)?;
+    /*let index = format!("{}", 0);
+    let remove_path: Value = read_remove_path(&index)?;
+    let patch_params = PatchParams{ patch_strategy: PatchStrategy::JSON , ..PatchParams::default() };
+    ingress.patch("playground-ingress", &patch_params, serde_json::to_vec(&remove_path).map_err(error_to_string)?).map_err(error_to_string)?;*/
 
     Ok(())
 }

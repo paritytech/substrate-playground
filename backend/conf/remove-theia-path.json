@@ -1,6 +1,6 @@
 [
   {
     "op": "remove",
-    "path": "{.spec.rules[?(@.host=='%HOST%')]}"
+    "path": "/spec/rules/%INDEX%"
   }
 ]

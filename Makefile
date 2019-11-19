@@ -1,6 +1,6 @@
 .DEFAULT_GOAL=help
 
-ENVIRONMENT=staging
+ENVIRONMENT=production
 ENVIRONMENT_FILE=$(join .env., $(ENVIRONMENT))
 
 include $(ENVIRONMENT_FILE)
