@@ -56,12 +56,11 @@ export function ErrorMessage({state, send}: {state: State, send: (name: string) 
 
 const loadingPhrases = [
     'First, you take the dinglepop',
-    'you smooth it out with a bunch of schleem',
-    'testing interoperability',
+    'You smooth it out with a bunch of schleem',
     'The schleem is then repurposed for later batches',
     'Then you take the dinglebop and push it through the grumbo',
     "It's important that the fleeb is rubbed",
-    'Then a Shlami shows up and he rubs it, and spits on it',
+    'A Shlami shows up and he rubs it, and spits on it',
     "There's several hizzards in the way.",
     'The blaffs rub against the chumbles',
     'That leaves you with a regular old plumbus!']
@@ -79,7 +78,7 @@ export function Loading() {
 
     return (
         <div className="box-fullscreen box-text">
-            <span>Please wait, we might be</span>
+            <span>Please wait, because</span>
             <animated.h1 style={props}>{phrase}</animated.h1>
         </div>
     );
