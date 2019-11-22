@@ -1,8 +1,9 @@
+import { useState } from "react";
 import React from "react";
 import * as ReactDOM from "react-dom";
 import { Machine } from 'xstate';
 import { useMachine } from '@xstate/react';
-import { SVGBox, ErrorMessage, Loading } from './components';
+import { SVGBox, ErrorMessage, Loading, Help } from './components';
 import { useHover } from './hooks';
 
 async function deployDocker(template: string) {
@@ -81,6 +82,7 @@ function rejectAfterTimeout(ms: number) {
 
 function App() {
     const [state, send] = useMachine(lifecycle);
+    const [showHelp, setShowHelp] = useState(false);
     const [hoverRef, isHovered] = useHover();
 
     const uuid = new URLSearchParams(window.location.search).get("uuid");
@@ -118,12 +120,18 @@ function App() {
     // Landing page
     return (
     <React.Fragment>
+
+        <Help open={showHelp} onClose={() => setShowHelp(false)} />
+
         {!state.matches('loaded') &&
             <SVGBox isHovered={isHovered} />
         }
         
         {state.matches('initial') &&
             <div className="box-fullscreen box-text">
+                <div style={{fontSize: 20, fontWeight: "bold", color: "#FF1864",padding: "0.9em 2em 1em 3.3em", position: "fixed", top: 20, right: 20, cursor: "pointer"}} onClick={() => setShowHelp(true)}>
+                    <span>Help</span>
+                </div>
                 <h1>
                     Start hacking your substrate runtime in a web based VSCode like IDE
                 </h1>

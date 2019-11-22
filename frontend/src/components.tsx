@@ -2,6 +2,58 @@ import React, {useState} from "react";
 import { State } from 'xstate';
 import { useSpring, animated } from 'react-spring'
 import { useWindowMaxDimension, useInterval } from './hooks';
+import DialogTitle from '@material-ui/core/DialogTitle';
+import Dialog from '@material-ui/core/Dialog';
+import DialogContent from '@material-ui/core/DialogContent';
+import DialogContentText from '@material-ui/core/DialogContentText';
+import frontendImage from './../assets/help/front-end.png';
+import initialImage from './../assets/help/initial.png';
+import newTerminalImage from './../assets/help/new-terminal.png';
+import polkadotJSAppsImage from './../assets/help/polkadotjs-apps.png';
+import terminalFrontendImage from './../assets/help/terminal-front-end.png';
+import terminalFrontendServeImage from './../assets/help/terminal-front-end-serve.png';
+import terminalNodeImage from './../assets/help/terminal-node.png';
+
+export function Help({open, onClose}: {open: boolean}) {
+    return (<Dialog aria-labelledby="help-dialog" open={open} onClose={onClose} scroll="paper" maxWidth="lg">
+                <DialogTitle>Getting started with the playground</DialogTitle>
+                <DialogContent dividers={true} style={{display: "flex", flexDirection: "column", alignItems: "center", padding: 100}}>
+                    <DialogContentText>
+                        Playground is the simplest way to get you started with substrate. From the comfort of your browser, hack and start a remotely accessible node.
+                        It gives you access to a VS Code like IDE, with full terminal support!
+                        <br />
+                        This help page will guide you through the process of starting a stock node and access it via external web UIs.
+                        <br />
+                        To give it a try, just click the <em>Experiment !</em> button
+                    </DialogContentText>
+                    <img src={initialImage} style={{width: 800}} />
+                    <DialogContentText style={{paddingTop: 50}}>
+                        First create a new terminal
+                    </DialogContentText>
+                    <img src={newTerminalImage} style={{width: 300}} />
+                    <DialogContentText style={{paddingTop: 50}}>
+                        This terminal will host our new substrate node. It can be started with the following command: <code>./target/release/node-template --dev --ws-external</code>
+                    </DialogContentText>
+                    <img src={terminalNodeImage} style={{width: 800}} />
+                    <DialogContentText style={{paddingTop: 50}}>
+                        Create a second terminal. This terminal will host the HTTP server serving the code from <code>substrate-front-end-template</code>. This can be done by executing the following command: <code>yarn build && yarn serve</code>                        
+                    </DialogContentText>
+                    <img src={terminalFrontendImage} style={{width: 800}} />
+                    <DialogContentText style={{paddingTop: 50}}>
+                        Wait for the following output before proceding to the next step.
+                    </DialogContentText>
+                    <img src={terminalFrontendServeImage} style={{width: 500}} />
+                    <DialogContentText style={{paddingTop: 50}}>
+                        The regular PolkadotJS Apps can be used to browse your node. Just follow the <em>Polkadot Apps</em> link.
+                    </DialogContentText>
+                    <img src={polkadotJSAppsImage} style={{width: 500}} />
+                    <DialogContentText style={{paddingTop: 50}}>
+                        Similarly the front-end template can be accessed. Just follow the <em>Frontend</em> link.
+                    </DialogContentText>
+                    <img src={frontendImage} style={{width: 800}} />
+                </DialogContent>
+            </Dialog>);
+}
 
 export function SVGBox({isHovered}: {isHovered: boolean}) {
     const blurFactor = isHovered ? 0 : 10;

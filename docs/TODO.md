@@ -1,28 +1,13 @@
 # Playground
 
-## MVP
-
-https
-
-## Tuto
-
-Faster theia image startup (move away from LB, ingress? or traeffik?)
-wss (termination for access via https://polkadot.js.org/apps/?rpc=ws://127.0.0.1:9944#/explorer)
-Access public IP from container
-
 ## Fast
 
-Configure a nicer Rust env
-* https://github.com/rust-analyzer/rust-analyzer/tree/master/docs/user
-(Only if can't be made fast) Introduce pool of idle pods, to reduce time to get started
+### Tutorial
 
 Use workspaces
 * https://code.visualstudio.com/docs/editor/multi-root-workspaces
 
-Integration tests
-https://blog.yoshuawuyts.com/async-finalizers/
-https://www.joshmcguigan.com/blog/custom-exit-status-codes-rust/
-https://seanmonstar.com/post/188220739932/reqwest-alphaawait
+* Tutorial as in https://kubernetes.io/docs/tutorials/kubernetes-basics/expose/expose-interactive/
 
 ## 3rd parties
 
@@ -68,10 +53,6 @@ Plugin to interact with networks
 
 An admin page listing all running containers
 Only @parity.io users can access it (https://developers.google.com/identity/sign-in/web/sign-in)
-
-## Teach
-
-Tutorial as in https://kubernetes.io/docs/tutorials/kubernetes-basics/expose/expose-interactive/
 
 ## Probes
 
