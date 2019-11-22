@@ -19,24 +19,28 @@ export function Help({open, onClose}: {open: boolean}) {
                 <DialogTitle>Getting started with the playground</DialogTitle>
                 <DialogContent dividers={true} style={{display: "flex", flexDirection: "column", alignItems: "center", padding: 100}}>
                     <DialogContentText>
-                        Playground is the simplest way to get you started with substrate. From the comfort of your browser, hack and start a remotely accessible node.
-                        It gives you access to a VS Code like IDE, with full terminal support!
+                        Playground is the simplest way to get started with Substrate.
+                        From the comfort of your browser, hack and start a remotely-accessible node.
+                        It gives you access to an IDE similar to VS Code, with full terminal support.
                         <br />
-                        This help page will guide you through the process of starting a stock node and access it via external web UIs.
+                        This help page will guide you through the process of starting a stock node and accessing it via external web UIs.
                         <br />
-                        To give it a try, just click the <em>Experiment !</em> button
+                        To give it a try, just click the <em>Experiment!</em> button.
                     </DialogContentText>
                     <img src={initialImage} style={{width: 800}} />
                     <DialogContentText style={{paddingTop: 50}}>
-                        First create a new terminal
+                        First, create a new terminal.
                     </DialogContentText>
                     <img src={newTerminalImage} style={{width: 300}} />
                     <DialogContentText style={{paddingTop: 50}}>
-                        This terminal will host our new substrate node. It can be started with the following command: <code>./target/release/node-template --dev --ws-external</code>
+                        This terminal will host our new Substrate node.
+                        It can be started with the following command: <code>./target/release/node-template --dev --ws-external</code>
                     </DialogContentText>
                     <img src={terminalNodeImage} style={{width: 800}} />
                     <DialogContentText style={{paddingTop: 50}}>
-                        Create a second terminal. This terminal will host the HTTP server serving the code from <code>substrate-front-end-template</code>. This can be done by executing the following command: <code>yarn build && yarn serve</code>                        
+                        Create a second terminal.
+                        This terminal will host the HTTP server serving the code from <code>substrate-front-end-template</code>.
+                        This can be done by executing the following command: <code>yarn build && yarn serve</code>
                     </DialogContentText>
                     <img src={terminalFrontendImage} style={{width: 800}} />
                     <DialogContentText style={{paddingTop: 50}}>
@@ -48,7 +52,7 @@ export function Help({open, onClose}: {open: boolean}) {
                     </DialogContentText>
                     <img src={polkadotJSAppsImage} style={{width: 500}} />
                     <DialogContentText style={{paddingTop: 50}}>
-                        Similarly the front-end template can be accessed. Just follow the <em>Frontend</em> link.
+                        Similarly, you can access the front-end template. Just follow the <em>Front end</em> link.
                     </DialogContentText>
                     <img src={frontendImage} style={{width: 800}} />
                 </DialogContent>
@@ -81,7 +85,7 @@ export function SVGBox({isHovered}: {isHovered: boolean}) {
                         <path d="M0 1253.5H1535" stroke="#FF1864"/>
                         <path d="M0 1273.5H1535" stroke="#FF1864"/>
                         <path d="M0 1293.5H1535" stroke="#C4C4C4"/>
-                    
+
                         <path d="M0 938.5H1535" stroke="#000000"/>
                         <path d="M0 738.5H1535" stroke="#FFFFFF"/>
                         <path d="M0 338.5H1535" stroke="#FF1864"/>
@@ -96,11 +100,11 @@ export function ErrorMessage({state, send}: {state: State, send: (name: string) 
     return (
         <div className="box-fullscreen box-text">
             <h1>
-                Oups! Looks like something went wrong :(
+                Oops! Looks like something went wrong :(
             </h1>
             <h2>{reason}</h2>
             <div className="cta" onClick={() => {window.history.replaceState(null, "", window.location.pathname); send("RESTART")}}>
-                <span>Try again !</span>
+                <span>Try again!</span>
             </div>
         </div>
     );
@@ -123,7 +127,7 @@ export function Loading() {
 
     useInterval(() => {
         set({ opacity: 0 });
-        
+
         setTimeout(function(){ setPhrase(loadingPhrases[Math.floor(Math.random()*loadingPhrases.length)]); }, 500);
         setTimeout(function(){ set({ opacity: 1 }); }, 1000);
     }, 3000);
