@@ -6,7 +6,7 @@ The production environment is available at [playground.substrate.dev](https://pl
 
 ## Architecture
 
-A TypeScript base [frontend](/frontend) allows end users to communicate with a [backend](/backend). This HTTP server is hosted on kubernetes and deploys custom [theia](https://www.theia-ide.org/) (a web based VSCode IDE) containers via kubernetes API.
+Users can use a TypeScript base [front end](/frontend) to communicate with a [back end](/backend). This HTTP server is hosted on kubernetes and deploys custom [theia](https://www.theia-ide.org/) (a web based VSCode IDE) containers via kubernetes API.
 
 ## Development
 
