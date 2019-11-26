@@ -129,8 +129,9 @@ function App() {
         
         {state.matches('initial') &&
             <div className="box-fullscreen box-text">
-                <div style={{fontSize: 20, fontWeight: "bold", color: "#FF1864",padding: "0.9em 2em 1em 3.3em", position: "fixed", top: 20, right: 20, cursor: "pointer"}} onClick={() => setShowHelp(true)}>
-                    <span>Help</span>
+                <div style={{fontSize: 20, fontWeight: "bold", color: "#FF1864",padding: "0.9em 2em 1em 3.3em", position: "fixed", top: 20, right: 20, cursor: "pointer"}}>
+                    <span style={{padding: 10}} onClick={() => window.open("https://docs.google.com/forms/d/e/1FAIpQLSdXpq_fHqS_ow4nC7EpGmrC_XGX_JCIRzAqB1vaBtoZrDW-ZQ/viewform?edit_requested=true")}>Send Feedback</span>
+                    <span onClick={() => setShowHelp(true)}>Help</span>
                 </div>
                 <h1>
                     Start hacking your substrate runtime in a web based VSCode like IDE
