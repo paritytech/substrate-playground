@@ -7,3 +7,4 @@ yarn.lock
 theia-substrate/lib/
 theia-substrate/webpack.config.js
 src-gen/
+theia-substrate/**/lib/**

@@ -11,6 +11,13 @@ https://github.com/paritytech/substrate/archive/v1.0.0.zip
 docker tag jeluard/theia jeluard/theia-substrate
 docker push jeluard/theia-substrate:latest
 
+## Dev
+
+```
+yarn
+yarn workspace @parity/theia-playground start
+```
+
 ## TODO
 
 Extend https://github.com/paritytech/substrate/blob/master/Dockerfile ?

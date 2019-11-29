@@ -113,10 +113,6 @@ function App() {
         document.body.classList.remove("loading");
     }
 
-
-    let polkadotJSURL = `https://polkadot.js.org/apps/?rpc=wss:${state.event.url}/wss`;
-    let frontendURL = `${state.event.url}/front-end`;
-
     // Landing page
     return (
     <React.Fragment>
@@ -146,10 +142,6 @@ function App() {
         }
         {state.matches('loaded') &&
             <div>
-                <div>
-                    <a href={polkadotJSURL}>Polkadot Apps</a>
-                    <a href={frontendURL}>Front end</a>
-                </div>
                 <iframe src={state.event.url} onError={() => send("FAIL", {reason: "Failed to load theia"})} frameBorder="0" style={{overflow:"hidden",height:"100vh",width:"100vm"}} height="100%" width="100%"></iframe>
             </div>
         }

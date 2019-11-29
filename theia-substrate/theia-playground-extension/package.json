@@ -1,0 +1,28 @@
+{
+  "name": "@parity/theia-playground-extension",
+  "keywords": [
+    "theia-extension"
+  ],
+  "version": "0.5.0",
+  "files": [
+    "lib",
+    "src"
+  ],
+  "dependencies": {
+    "@theia/core": "0.12.0",
+    "@theia/getting-started": "0.12.0"
+  },
+  "devDependencies": {
+    "typescript": "3.7.2"
+  },
+  "scripts": {
+    "prepare": "yarn run build",
+    "build": "tsc",
+    "watch": "tsc -w"
+  },
+  "theiaExtensions": [
+    {
+      "frontend": "lib/browser/theia-playground-extension-frontend-module"
+    }
+  ]
+}
