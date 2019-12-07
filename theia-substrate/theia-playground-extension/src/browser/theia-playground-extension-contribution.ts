@@ -1,8 +1,8 @@
 import { injectable } from "inversify";
 import { MAIN_MENU_BAR, CommandContribution, CommandRegistry, MenuContribution, MenuModelRegistry } from "@theia/core/lib/common";
 
-const polkadotAppsURL = `https://polkadot.js.org/apps/?rpc=wss:${window.location.hostname}/wss`;
-const frontendURL = `${window.location.hostname}/front-end`;
+const polkadotAppsURL = `https://polkadot.js.org/apps/?rpc=wss://${window.location.hostname}/wss`;
+const frontendURL = `//${window.location.hostname}/front-end`;
 
 export const SendFeedbackCommand = {
     id: 'TheiaSubstrateExtension.send-feedback-command',
