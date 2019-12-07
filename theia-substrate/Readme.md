@@ -14,6 +14,7 @@ docker push jeluard/theia-substrate:latest
 ## Dev
 
 ```
+nvm use 10
 yarn
 yarn workspace @parity/theia-playground start
 ```
