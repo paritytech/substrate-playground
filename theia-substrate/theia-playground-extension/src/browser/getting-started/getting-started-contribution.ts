@@ -1,6 +1,6 @@
 import { injectable, inject } from 'inversify';
-import { CommandRegistry, MenuModelRegistry } from '@theia/core/lib/common';
-import { CommonMenus, AbstractViewContribution, FrontendApplicationContribution, FrontendApplication } from '@theia/core/lib/browser';
+import { CommandRegistry } from '@theia/core/lib/common';
+import { AbstractViewContribution, FrontendApplicationContribution, FrontendApplication } from '@theia/core/lib/browser';
 import { GettingStartedWidget } from './getting-started-widget';
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
 
@@ -40,11 +40,4 @@ export class GettingStartedContribution extends AbstractViewContribution<Getting
         });
     }
 
-    registerMenus(menus: MenuModelRegistry): void {
-        menus.registerMenuAction(CommonMenus.HELP, {
-            commandId: GettingStartedCommand.id,
-            label: GettingStartedCommand.label,
-            order: 'a10'
-        });
-    }
 }

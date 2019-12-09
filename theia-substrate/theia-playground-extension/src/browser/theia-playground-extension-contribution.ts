@@ -2,6 +2,7 @@ import { injectable } from "inversify";
 import { MAIN_MENU_BAR, CommandContribution, CommandRegistry, MenuContribution, MenuModelRegistry } from "@theia/core/lib/common";
 import { LocationMapper } from '@theia/mini-browser/lib/browser/location-mapper-service';
 import { MaybePromise } from '@theia/core/lib/common/types';
+import { GettingStartedCommand } from './getting-started/getting-started-contribution';
 import Shepherd from 'shepherd.js';
 
 const polkadotAppsURL = `https://polkadot.js.org/apps/?rpc=wss://${window.location.hostname}/wss`;
@@ -78,6 +79,9 @@ export class TheiaSubstrateExtensionMenuContribution implements MenuContribution
         //const PLAYGROUND_TOUR = [...PLAYGROUND, '2_tour'];
         const PLAYGROUND_FEEDBACK = [...PLAYGROUND, '3_feedback'];
         menus.registerSubmenu(PLAYGROUND, 'Playground');
+        menus.registerMenuAction(PLAYGROUND_LINKS, {
+            commandId: GettingStartedCommand.id
+        });
         menus.registerMenuAction(PLAYGROUND_LINKS, {
             commandId: OpenPolkadotAppsCommand.id
         });
