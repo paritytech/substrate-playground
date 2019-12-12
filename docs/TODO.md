@@ -1,14 +1,12 @@
-## Inline tutorial support
-
-Use workspaces
-* https://code.visualstudio.com/docs/editor/multi-root-workspaces
-
-* Tutorial as in https://kubernetes.io/docs/tutorials/kubernetes-basics/expose/expose-interactive/
-
 ## Monitoring / Probes
 
 * https://cloud.google.com/monitoring/kubernetes-engine/observing
 * https://cloud.google.com/monitoring/kubernetes-engine/prometheus
+* https://cloud.google.com/solutions/white-box-app-monitoring-for-gke-with-prometheus
+* https://console.cloud.google.com/marketplace/details/google/prometheus
+* https://prometheus.io/docs/visualization/grafana/
+* https://grafana.com/docs/grafana/latest/features/datasources/prometheus/
+* https://itnext.io/kubernetes-monitoring-with-prometheus-in-15-minutes-8e54d1de2e13
 * https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
 * https://medium.com/@AADota/kubernetes-liveness-and-readiness-probes-difference-1b659c369e17
 * https://cloud.google.com/blog/products/gcp/kubernetes-best-practices-setting-up-health-checks-with-readiness-and-liveness-probes
@@ -52,12 +50,6 @@ Test VSCode plugin, specifically Web3 fundation ones
 
 An admin page listing all running containers
 Only @parity.io users can access it (https://developers.google.com/identity/sign-in/web/sign-in)
-
-## Issue with Preview and localhost
-
-https://spectrum.chat/theia/general/preview-and-localhost-resolution-behavior~cc291ac2-6b07-4807-8693-e429fc7f7596
-
-Either patch to support localhost, or have native external IP support (à la gitpod.io)
 
 ## CI / CD
 

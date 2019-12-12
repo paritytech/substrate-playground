@@ -26,6 +26,7 @@ import { KeymapsCommands } from '@theia/keymaps/lib/browser';
 import { CommonCommands, LabelProvider } from '@theia/core/lib/browser';
 import { ApplicationInfo, ApplicationServer } from '@theia/core/lib/common/application-protocol';
 import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
+import { TourCommand } from '../theia-playground-extension-contribution';
 
 /**
  * Default implementation of the `GettingStartedWidget`.
@@ -133,7 +134,7 @@ export class GettingStartedWidget extends ReactWidget {
             <br />
             <img src={this.logo} style={{width: 200}} />
             <p>
-            Playground allows you to easily hack and start a substrate based node.
+            Playground allows you to easily hack and start a substrate based node. Quickly get a taste of it by taking the <a href='#' onClick={this.doTour}>tour</a>.
             </p>
         </div>;
     }
@@ -224,4 +225,9 @@ export class GettingStartedWidget extends ReactWidget {
      * @param uri {URI} the workspace uri.
      */
     protected open = (uri: URI) => this.workspaceService.open(uri);
+    /**
+     * Trigger the open preferences command.
+     * Used to open the preferences widget.
+     */
+    protected doTour = () => this.commandRegistry.executeCommand(TourCommand.id);
 }

@@ -30,6 +30,8 @@ For more details about machines:
 * https://cloud.google.com/compute/docs/machine-types
 * https://cloud.google.com/compute/vm-instance-pricing
 
+Install https://cloud.google.com/sdk/docs/
+
 First make sure kubectl points to the right google cloud engine:
 
 ```
