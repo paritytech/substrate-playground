@@ -13,25 +13,14 @@ async function deployDocker(template: string) {
                   'Content-Type': 'application/json'}
     });
     const contentType = response.headers.get("content-type");
-    if (response.status == 200 && contentType && contentType.indexOf("application/json") !== -1) {
-        return await response.json();
-    } else {
-        return {"reason": response.statusText};
-    }
-}
-
-async function getDeployment(uuid: string) {
-    const response = await fetch(`/api/url?uuid=${uuid}`, {
-        method: 'GET',
-        headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
+    if (response.status == 200 && contentType && contentType != null && contentType.indexOf("application/json") !== -1) {
+        try {
+            return await response.json();
+        } catch {
+            return {reason: "Failed to parse returned JSON"};
         }
-    });
-    if (response.status == 200) {
-        return await response.json();
     } else {
-          return {"reason": response.statusText};
+        return {reason: response.statusText};
     }
 }
 
@@ -64,8 +53,13 @@ const lifecycle = Machine({
                 FAIL: 'error' }
         },
         fetching: {
-            on: { DONE: 'loaded',
-                  FAIL: 'error' }
+          on: { DONE: 'loaded',
+                SLOW: 'slow',
+                FAIL: 'error' }
+        },
+        slow: {
+          on: { DONE: 'loaded',
+                FAIL: 'error' }
         },
         loaded: {
           on: { RESTART: 'initial' }
@@ -93,15 +87,19 @@ function App() {
     if (state.matches('fetching')) {
         document.body.classList.add("loading");
         var retries = 0;
+        
         const id = setInterval(async () => {
             const url = `//${state.event.uuid}.${window.location.hostname}`;
-            const response = await Promise.race([fetch(url), rejectAfterTimeout(5000)]);
-            if (response.status == 200 || response.status == 304) {
+            const response = await Promise.race([fetch(url).catch(() => {}), rejectAfterTimeout(5000)]);
+            if (response != null && (response.status == 200 || response.status == 304)) {
                 clearInterval(id);
                 send("DONE", {url: url});
             } else {
                 retries ++;
-                if (retries > 60) {
+                if (retries == 30) {
+                    send("SLOW");
+                }
+                if (retries > 300) {
                     clearInterval(id);
                     send("FAIL", {reason: "Failed to access the theia image in time"});
                 }
@@ -137,8 +135,8 @@ function App() {
                 </div>
             </div>
         }
-        {state.matches('loading') || state.matches('fetching') &&
-            <Loading />
+        {(state.matches('loading') || state.matches('fetching') || state.matches('slow')) &&
+            <Loading slow={state.matches('slow')} />
         }
         {state.matches('loaded') &&
             <div>

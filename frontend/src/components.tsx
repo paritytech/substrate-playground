@@ -121,7 +121,7 @@ const loadingPhrases = [
     'The blaffs rub against the chumbles',
     'That leaves you with a regular old plumbus!']
 
-export function Loading() {
+export function Loading({slow}: {slow: boolean}) {
     const [phrase, setPhrase] = useState(loadingPhrases[0]);
     const [props, set] = useSpring(() => ({opacity: 1}));
 
@@ -136,6 +136,8 @@ export function Loading() {
         <div className="box-fullscreen box-text">
             <span>Please wait, because</span>
             <animated.h1 style={props}>{phrase}</animated.h1>
+            {slow &&
+            <div>It looks like it takes longer than expected to load. Please be patient :)</div>}
         </div>
     );
 }
