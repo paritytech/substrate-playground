@@ -8,3 +8,4 @@ theia-substrate/lib/
 theia-substrate/webpack.config.js
 src-gen/
 theia-substrate/**/lib/**
+*/lerna-debug.log

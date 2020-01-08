@@ -90,7 +90,7 @@ function App() {
         
         const id = setInterval(async () => {
             const url = `//${state.event.uuid}.${window.location.hostname}`;
-            const response = await Promise.race([fetch(url).catch(() => {}), rejectAfterTimeout(5000)]);
+            const response = await Promise.race([fetch(url, {mode: 'no-cors'}).catch(() => {}), rejectAfterTimeout(5000)]);
             if (response != null && (response.status == 200 || response.status == 304)) {
                 clearInterval(id);
                 send("DONE", {url: url});
