@@ -2,29 +2,9 @@
 
 Kubernetes is used as a deployment platform for the playground. It can be deployed on GCE or locally via minikube.
 
-## Local 
-
-First start a local minikube cluster:
-
-```
-minikube start
-```
-
-Then deploy playground:
-
-```
-make k8s-deploy-playground
-```
-
-Finally access the URL entrypoint managed by minikube:
-
-```
-minikube service playground-http --url
-```
-
 ## GCD
 
-Playground is currently deployed on playground.substrate.dev. The cluster is hosted on GKE and composed of 3 `n2-standard-4` pods.
+Playground is currently deployed on playground.substrate.dev. The cluster is hosted on GKE and composed of some `n2-standard-4` pods.
 For more details about machines:
 
 * https://cloud.google.com/compute/docs/machine-types
@@ -56,27 +36,24 @@ Ensure that `playground-http` is correctly deployed by browsing its [events](htt
 
 ### TLS certificate
 
-To get a wildcard certificate from let's encrypt:
+To get a wildcard certificate from let's encrypt (this applies to staging, replace `playground-staging` with `playground` for production env):
 
 https://certbot.eff.org/docs/using.html#manual
 
+```
 sudo certbot certonly --manual --preferred-challenges dns --server https://acme-v02.api.letsencrypt.org/directory --manual-public-ip-logging-ok --agree-tos -m admin@parity.io -d *.playground-staging.substrate.dev -d playground-staging.substrate.dev
 
+# Make sure to check it's been propagated 
 dig -t txt +short _acme-challenge.playground-staging.substrate.dev
+```
 
+Then update the tls secret:
 
-IMPORTANT NOTES:
- - Congratulations! Your certificate and chain have been saved at:                            /etc/letsencrypt/live/playground-staging.substrate.dev/fullchain.pem
-   Your key file has been saved at:
-   /etc/letsencrypt/live/playground-staging.substrate.dev/privkey.pem
-   Your cert will expire on 2020-01-22. To obtain a new or tweaked
-   version of this certificate in the future, simply run certbot
-   again. To non-interactively renew *all* of your certificates, run
-   "certbot renew"
+```
+sudo kubectl create secret tls playground-tls --save-config --key /etc/letsencrypt/live/playground-staging.substrate.dev/privkey.pem --cert /etc/letsencrypt/live/playground-staging.substrate.dev/cert.pem  --namespace=playground-staging --dry-run -o yaml | sudo kubectl apply -f -
+```
 
-kubectl delete secret  playground-tls-full --namespace=playground-staging
-
-sudo kubectl create secret tls playground-tls-full --key  /etc/letsencrypt/live/playground-staging.substrate.dev/privkey.pem --cert /etc/letsencrypt/live/playground-staging.substrate.dev/cert.pem  --namespace=playground-staging
+The new secret will be auomatically picked up.
 
 ### Update fixed IP
 
