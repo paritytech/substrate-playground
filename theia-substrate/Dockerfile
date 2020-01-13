@@ -29,14 +29,16 @@ WORKDIR /home/workspace
 
 #USER theia
 
+ARG RUST_VERSION=nightly-2020-01-08
+
 # https://rust-lang.github.io/rustup-components-history/index.html
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain none \
     && . $CARGO_HOME/env \
-    && rustup install nightly-2019-10-04 \
+    && rustup install $RUST_VERSION \
     && rustup update \
-    && rustup default nightly-2019-10-04 \
+    && rustup default $RUST_VERSION \
     && rustup component add rls rust-analysis rust-src clippy rustfmt llvm-tools-preview \
-    && rustup target add wasm32-unknown-unknown --toolchain nightly-2019-10-04
+    && rustup target add wasm32-unknown-unknown --toolchain $RUST_VERSION
 
 RUN cargo install --force --git https://github.com/alexcrichton/wasm-gc \
     && cargo install --force --git https://github.com/paritytech/substrate subkey

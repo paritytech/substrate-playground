@@ -1,8 +1,5 @@
 ## Monitoring / Probes
 
-* https://cloud.google.com/monitoring/kubernetes-engine/observing
-* https://cloud.google.com/monitoring/kubernetes-engine/prometheus
-* https://cloud.google.com/solutions/white-box-app-monitoring-for-gke-with-prometheus
 * https://console.cloud.google.com/marketplace/details/google/prometheus
 * https://prometheus.io/docs/visualization/grafana/
 * https://grafana.com/docs/grafana/latest/features/datasources/prometheus/

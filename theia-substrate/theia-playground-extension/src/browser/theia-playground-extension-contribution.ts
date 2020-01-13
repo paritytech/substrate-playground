@@ -1,8 +1,11 @@
 import { injectable, inject } from "inversify";
 import { MAIN_MENU_BAR, CommandContribution, CommandRegistry, MenuContribution, MenuModelRegistry } from "@theia/core/lib/common";
 import { MaybePromise } from '@theia/core/lib/common/types';
+import URI from '@theia/core/lib/common/uri';
 import { LocationMapper } from '@theia/mini-browser/lib/browser/location-mapper-service';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
+import { FileDownloadService } from '@theia/filesystem/lib/browser/download/file-download-service';
+import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { GettingStartedCommand } from './getting-started/getting-started-contribution';
 import Shepherd from 'shepherd.js';
 
@@ -44,6 +47,11 @@ export const TourCommand = {
     label: "Take the tour"
 };
 
+export const DownloadArchiveCommand = {
+    id: 'TheiaSubstrateExtension.download-archive-command',
+    label: "Download archive"
+};
+
 async function newTerminal(terminalService: TerminalService, id: string, cwd: string, command: string) {
     let terminalWidget = await terminalService.newTerminal({cwd: cwd, id: id});
     await terminalWidget.start();
@@ -59,6 +67,12 @@ export class TheiaSubstrateExtensionCommandContribution implements CommandContri
 
     @inject(CommandRegistry)
     protected readonly commandRegistry: CommandRegistry;
+
+    @inject(FileDownloadService)
+    protected readonly downloadService: FileDownloadService;
+
+    @inject(WorkspaceService)
+    protected readonly workspaceService: WorkspaceService;
 
     registerCommands(registry: CommandRegistry): void {
         const tour = new Shepherd.Tour({
@@ -137,6 +151,12 @@ export class TheiaSubstrateExtensionCommandContribution implements CommandContri
         registry.registerCommand(TourCommand, {
             execute: () => tour.start()
         });
+        registry.registerCommand(DownloadArchiveCommand, {
+            execute: async () => {
+                const uris = this.workspaceService.tryGetRoots().map(r => new URI(r.uri));
+                this.downloadService.download(uris);
+            }
+        });
     }
 
 }
@@ -179,6 +199,9 @@ export class TheiaSubstrateExtensionMenuContribution implements MenuContribution
         });
         menus.registerMenuAction(SUBSTRATE_FEEDBACK, {
             commandId: SendFeedbackCommand.id
+        });
+        menus.registerMenuAction(SUBSTRATE_FEEDBACK, {
+            commandId: DownloadArchiveCommand.id
         });
     }
 }

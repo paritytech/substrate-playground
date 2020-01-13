@@ -9,7 +9,8 @@
     "src"
   ],
   "dependencies": {
-    "@theia/core": "0.13.0",
+    "@theia/core": "0.14.0",
+    "gunzip-maybe": "^1.4.1",
     "intro.js": "2.9.3",
     "shepherd.js": "6.0.2"
   },
@@ -23,7 +24,8 @@
   },
   "theiaExtensions": [
     {
-      "frontend": "lib/browser/theia-playground-extension-frontend-module"
+      "frontend": "lib/browser/theia-playground-extension-frontend-module",
+      "backend": "lib/node/theia-playground-extension-backend-module"
     }
   ]
 }
