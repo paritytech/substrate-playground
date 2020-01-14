@@ -18,8 +18,8 @@ rocket = "0.4.2"
 rocket_cors = "0.5.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0.40"
-kube = { git = "https://github.com/clux/kube-rs", features = ["openapi"] }
-k8s-openapi = { version = "0.5.1", default-features = false, features = ["v1_15"] }
+kube = { version = "0.17.0", features = ["openapi"] }
+k8s-openapi = { version = "0.6.0", default-features = false, features = ["v1_15"] }
 
 [dependencies.rocket_contrib]
 version = "0.4.2"
