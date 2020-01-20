@@ -1,5 +1,4 @@
 import React, {useState} from "react";
-import { State } from 'xstate';
 import { useSpring, animated } from 'react-spring'
 import { useWindowMaxDimension, useInterval } from './hooks';
 import DialogTitle from '@material-ui/core/DialogTitle';

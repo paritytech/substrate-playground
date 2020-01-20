@@ -5,19 +5,26 @@ mod api;
 mod kubernetes;
 mod utils;
 
-use std::{collections::HashMap, env, io::{Error, ErrorKind}, path::Path, sync::Mutex};
 use env_logger;
 use log::{error, info};
-use rocket::{routes, http::Method};
+use rocket::{http::Method, routes};
 use rocket_contrib::serve::StaticFiles;
 use rocket_cors::{AllowedOrigins, CorsOptions};
+use rocket_prometheus::PrometheusMetrics;
 use serde::Deserialize;
+use std::{
+    collections::HashMap,
+    env,
+    io::{Error, ErrorKind},
+    path::Path,
+    sync::Mutex,
+};
 use timer::Timer;
 
 #[derive(Deserialize)]
 struct Config {
     assets: String,
-    images: HashMap<String, String>
+    images: HashMap<String, String>,
 }
 
 fn read_config() -> Config {
@@ -25,13 +32,18 @@ fn read_config() -> Config {
         Err(why) => {
             error!("! {:?}", why.kind());
             std::process::exit(9)
-        },
-        Ok(s) => s
+        }
+        Ok(s) => s,
     };
     toml::from_str(conf.as_str()).unwrap()
 }
 
-pub struct Context(pub String, pub String, pub HashMap<String, String>, pub Mutex<Timer>);
+pub struct Context(
+    pub String,
+    pub String,
+    pub HashMap<String, String>,
+    pub Mutex<Timer>,
+);
 
 fn main() -> Result<(), Error> {
     // Initialize log configuration. Reads RUST_LOG if any, otherwise fallsback to `default`
@@ -60,14 +72,25 @@ fn main() -> Result<(), Error> {
         //allowed_headers: AllowedHeaders::some(&["Authorization", "Accept"]),
         allow_credentials: true,
         ..Default::default()
-    }.to_cors().unwrap();
+    }
+    .to_cors()
+    .unwrap();
+
+    let prometheus = PrometheusMetrics::new();
+    prometheus
+        .registry()
+        .register(Box::new(api::NEW_COUNTER.clone()))
+        .unwrap();
 
     let t = Mutex::new(Timer::new());
     rocket::ignite()
-      .mount("/", StaticFiles::from(assets.as_str()))
-      .mount("/api", routes![api::index])
-      .manage(Context(host, namespace, config.images, t))
-      .attach(cors).launch();
+        .mount("/", StaticFiles::from(assets.as_str()))
+        .mount("/api", routes![api::index])
+        .mount("/metrics", prometheus.clone())
+        .manage(Context(host, namespace, config.images, t))
+        .attach(prometheus)
+        .attach(cors)
+        .launch();
 
     Ok(())
 }

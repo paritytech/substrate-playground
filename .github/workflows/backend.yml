@@ -1,0 +1,52 @@
+name: Continuous Integration
+
+on: [pull_request]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        rust: [stable]
+
+    steps:
+      - uses: hecrj/setup-rust-action@v1
+        with:
+          rust-version: ${{ matrix.rust }}
+          components: rustfmt, clippy
+      - uses: actions/checkout@master
+      - name: Build
+        run: cargo build --verbose
+        working-directory: ./backend
+      - name: Run tests
+        run: cargo test --verbose
+        working-directory: ./backend
+
+  clippy:
+    name: clippy (ubuntu-latest, stable)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: hecrj/setup-rust-action@v1
+        with:
+          rust-version: stable
+          components: clippy
+      - name: Checkout sources
+        uses: actions/checkout@v1
+      - name: Cargo Clippy
+        run: cargo clippy -- -D warnings -A deprecated
+        working-directory: ./backend
+
+  fmt:
+    name: fmt (ubuntu-latest, stable)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: hecrj/setup-rust-action@v1
+        with:
+          rust-version: stable
+          components: rustfmt
+      - name: Checkout sources
+        uses: actions/checkout@v1
+      - name: Check Formatting
+        run: cargo fmt --all -- --check
+        working-directory: ./backend

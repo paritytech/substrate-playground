@@ -1,0 +1,20 @@
+name: Continuous Integration
+
+on: [pull_request]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - uses: actions/setup-node@v1
+        with:
+          node-version: "10.x"
+      - run: yarn install --check-files
+        working-directory: ./frontend
+      - run: yarn lint
+        working-directory: ./frontend
+      - run: yarn audit
+        working-directory: ./frontend
+      - run: yarn build
+        working-directory: ./frontend

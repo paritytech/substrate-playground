@@ -1,7 +1,11 @@
 //! A set of utilities.
 //!
 
-use std::{fs::File, io::{self, prelude::*}, path::Path};
+use std::{
+    fs::File,
+    io::{self, prelude::*},
+    path::Path,
+};
 
 pub fn read(path: &Path) -> io::Result<String> {
     let mut f = File::open(path)?;

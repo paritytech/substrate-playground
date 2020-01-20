@@ -28,7 +28,7 @@ async function deployAndRedirect(send, template: string) {
     const result = await deployDocker(template);
     if (result && result.status === "ok") {
         const uuid = result.uuid;
-        if (!!uuid) {
+        if (uuid) {
             send("FETCH", {uuid: uuid});
             window.history.replaceState(null, "", `${window.location.pathname}?uuid=${uuid}`);
         } else {
