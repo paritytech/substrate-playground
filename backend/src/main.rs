@@ -7,6 +7,7 @@ mod utils;
 
 use env_logger;
 use log::{error, info};
+use prometheus::Registry;
 use rocket::{http::Method, routes};
 use rocket_contrib::serve::StaticFiles;
 use rocket_cors::{AllowedOrigins, CorsOptions};
@@ -76,11 +77,13 @@ fn main() -> Result<(), Error> {
     .to_cors()
     .unwrap();
 
-    let prometheus = PrometheusMetrics::new();
-    prometheus
-        .registry()
-        .register(Box::new(api::NEW_COUNTER.clone()))
-        .unwrap();
+    let registry = Registry::new_custom(Some("backend_api".to_string()), None).unwrap();
+    registry.register(Box::new(api::UNKNOWN_TEMPLATE_COUNTER.clone())).unwrap();
+    registry.register(Box::new(api::DEPLOY_COUNTER.clone())).unwrap();
+    registry.register(Box::new(api::DEPLOY_FAILURES_COUNTER.clone())).unwrap();
+    registry.register(Box::new(api::UNDEPLOY_COUNTER.clone())).unwrap();
+    registry.register(Box::new(api::UNDEPLOY_FAILURES_COUNTER.clone())).unwrap();
+    let prometheus = PrometheusMetrics::with_registry(registry);
 
     let t = Mutex::new(Timer::new());
     rocket::ignite()

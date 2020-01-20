@@ -1118,6 +1118,7 @@ dependencies = [
  "kube",
  "log 0.4.8",
  "once_cell",
+ "prometheus",
  "rocket",
  "rocket_contrib",
  "rocket_cors",
