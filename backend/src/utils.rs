@@ -17,7 +17,7 @@ pub fn read(path: &Path) -> io::Result<String> {
     }
 }
 
-pub fn parse_images(s: String) -> HashMap<String, String> {
+pub fn parse_images(s: &str) -> HashMap<String, String> {
     s.split(',')
         .map(|kv| kv.split('=').collect::<Vec<&str>>())
         .map(|vec| {
@@ -35,7 +35,7 @@ mod tests {
     fn test_parse_images() {
         let res: HashMap<String, String> = [("A".to_string(), "1".to_string()), ("B".to_string(), "2".to_string())]
                 .iter().cloned().collect();
-        assert_eq!(parse_images("A=1, B=2".to_string()), res);
+        assert_eq!(parse_images("A=1, B=2"), res);
     }
 
 }

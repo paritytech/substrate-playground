@@ -36,7 +36,7 @@ fn main() -> Result<(), Error> {
     // Load configuration from environment variables
     let assets = env::var("PLAYGROUND_ASSETS").unwrap_or("/static".to_string());
     let host = env::var("PLAYGROUND_HOST").map_err(|e| Error::new(ErrorKind::NotFound, e))?;
-    let images = env::var("PLAYGROUND_IMAGES").map(utils::parse_images).map_err(|e| Error::new(ErrorKind::NotFound, e))?;
+    let images = env::var("PLAYGROUND_IMAGES").map(|s| utils::parse_images(&s)).map_err(|e| Error::new(ErrorKind::NotFound, e))?;
 
     info!("Configuration:");
     info!("assets: {}", assets);
