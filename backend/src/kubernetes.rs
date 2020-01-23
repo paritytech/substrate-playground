@@ -144,22 +144,21 @@ fn undeploy_pod(_host: &str, namespace: &str, client: APIClient, uuid: &str) -> 
     Ok(())
 }
 
-fn create_client() -> kube::Result<APIClient> {
-    let config = config::incluster_config().or_else(|_| {
+fn create_config() -> kube::Result<kube::config::Configuration> {
+    config::incluster_config().or_else(|_| {
         info!("Use local configuration");
         config::load_kube_config()
-    })?;
-    Ok(APIClient::new(config))
+    })
 }
 
-pub fn deploy(host: &str, namespace: &str, image: &str) -> Result<String, String> {
-    create_client()
-        .map_err(error_to_string)
-        .and_then(|c| deploy_pod(host, namespace, c, image))
+pub fn deploy(host: &str, image: &str) -> Result<String, String> {
+    let config = create_config().map_err(error_to_string)?;
+    let ns = &config.clone().default_ns;
+    deploy_pod(host, &ns, APIClient::new(config), image)
 }
 
-pub fn undeploy(host: &str, namespace: &str, uuid: &str) -> Result<(), String> {
-    create_client()
-        .map_err(error_to_string)
-        .and_then(|c| undeploy_pod(host, namespace, c, uuid))
+pub fn undeploy(host: &str, uuid: &str) -> Result<(), String> {
+    let config = create_config().map_err(error_to_string)?;
+    let ns = &config.clone().default_ns;
+    undeploy_pod(host, &ns, APIClient::new(config), uuid)
 }

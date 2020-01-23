@@ -22,7 +22,6 @@ use timer::Timer;
 
 pub struct Context(
     pub String,
-    pub String,
     pub HashMap<String, String>,
     pub Mutex<Timer>,
 );
@@ -36,14 +35,12 @@ fn main() -> Result<(), Error> {
 
     // Load configuration from environment variables
     let assets = env::var("PLAYGROUND_ASSETS").unwrap_or("/static".to_string());
-    let namespace = env::var("K8S_NAMESPACE").map_err(|e| Error::new(ErrorKind::NotFound, e))?;
     let host = env::var("PLAYGROUND_HOST").map_err(|e| Error::new(ErrorKind::NotFound, e))?;
     let images = env::var("PLAYGROUND_IMAGES").map(utils::parse_images).map_err(|e| Error::new(ErrorKind::NotFound, e))?;
 
     info!("Configuration:");
     info!("assets: {}", assets);
     info!("host: {}", host);
-    info!("namespace: {}", namespace);
     info!("images: {:?}", images);
 
     // Configure CORS
@@ -73,7 +70,7 @@ fn main() -> Result<(), Error> {
         .mount("/", StaticFiles::from(assets.as_str()))
         .mount("/api", routes![api::index])
         .mount("/metrics", prometheus)
-        .manage(Context(host, namespace, images, t))
+        .manage(Context(host, images, t))
         .attach(cors)
         .launch();
 

@@ -46,21 +46,20 @@ pub static UNDEPLOY_FAILURES_COUNTER: Lazy<IntCounterVec> = Lazy::new(|| {
 ///    "reason" "xxxx"} if not
 #[get("/new?<template>")]
 pub fn index(state: State<'_, Context>, template: String) -> JsonValue {
-    if let Some(image) = state.2.get(&template) {
+    if let Some(image) = state.1.get(&template) {
         let host = state.0.clone();
-        let namespace = state.1.clone();
-        match kubernetes::deploy(&host, &namespace, image) {
+        match kubernetes::deploy(&host, image) {
             Ok(uuid) => {
                 info!("Launched image {} (template: {})", uuid, template);
                 DEPLOY_COUNTER.with_label_values(&[&template, &uuid]).inc();
                 let uuid2 = uuid.clone();
                 state
-                    .3
+                    .2
                     .lock()
                     .unwrap()
                     .schedule_with_delay(chrono::Duration::hours(3), move || {
                         info!("#Deleting! {}", uuid2);
-                        if let Err(s) = kubernetes::undeploy(&host, &namespace, &uuid2) {
+                        if let Err(s) = kubernetes::undeploy(&host, &uuid2) {
                             warn!("Failed to undeploy {}: {}", uuid2, s);
                             UNDEPLOY_FAILURES_COUNTER.with_label_values(&[&template, &uuid2]).inc();
                         } else {
