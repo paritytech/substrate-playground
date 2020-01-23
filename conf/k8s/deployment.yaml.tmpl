@@ -44,6 +44,17 @@ spec:
         image: ${IMAGE}
         ports:
         - containerPort: ${PLAYGROUND_PORT}
+        env:
+        - name: K8S_NAMESPACE
+          value: ${K8S_NAMESPACE}
+        - name: PLAYGROUND_HOST
+          value: ${PLAYGROUND_HOST}
+        - name: PLAYGROUND_IMAGES
+          value: "default = jeluard/theia-substrate@sha256:4bdb6b4998e6d9448313a1b24b15eb9376bfcf85a716180800f26585e7d7809e"
+        - name: ROCKET_PORT
+          value: "${PLAYGROUND_PORT}"
+        - name: ROCKET_ENV
+          value: ${ENVIRONMENT}
 ---
 apiVersion: v1
 kind: Service
@@ -72,14 +83,14 @@ metadata:
     #  location ~ /front-end/.* {
     #    rewrite ^/front-end(/.*)?$ https://$host/$1 break;
     #  }
-    # nginx.ingress.kubernetes.io/cors-allow-origin: "https://${HOST}"
+    # nginx.ingress.kubernetes.io/cors-allow-origin: "https://${PLAYGROUND_HOST}"
 spec:
   tls:
   - hosts:
-    - '*.${HOST}'
+    - '*.${PLAYGROUND_HOST}'
     secretName: playground-tls
   rules:
-  - host: ${HOST}
+  - host: ${PLAYGROUND_HOST}
     http:
       paths:
       - path: /

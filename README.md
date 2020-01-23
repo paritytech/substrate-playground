@@ -38,7 +38,7 @@ Push the theia image:
 make push-theia-docker-image
 ```
 
-Locate the digest (`sha256:...`) in the command output and update `backend/Playground.toml` with it.
+Locate the digest (`sha256:...`) in the command output.
 
 Push the playground image:
 

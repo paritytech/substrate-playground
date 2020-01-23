@@ -114,3 +114,7 @@ kubectl describe order playground-tls-3130649356 --namespace=playground-staging
 ### Troubleshootings
 
 kubectl logs pod/cert-manager-f7f8bf74d-zrzkm --namespace=cert-manager
+
+kubectl port-forward playground-8586574b76-j7qbx 8080:80
+kubectl config set-context --current --namespace=playground-staging
+kubectl get pods

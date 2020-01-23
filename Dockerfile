@@ -49,7 +49,6 @@ RUN mkdir src \
 # Now add the rest of the project and build the real main
 
 COPY backend/src src
-COPY backend/Playground.toml /opt
 COPY backend/conf /opt/conf
 
 RUN set -x && cargo build --frozen --release --out-dir=/opt/bin -Z unstable-options --target x86_64-unknown-linux-musl
@@ -62,31 +61,10 @@ LABEL stage=builder
 
 FROM scratch
 
-ARG PORT="80"
-ARG PORT
-ENV PORT=$PORT
-
-ARG ENVIRONMENT="default"
-ARG ENVIRONMENT
-ENV ENVIRONMENT=$ENVIRONMENT
-
-ARG K8S_NAMESPACE="default"
-ARG K8S_NAMESPACE
-ENV K8S_NAMESPACE=$K8S_NAMESPACE
-
-ARG PLAYGROUND_HOST="default"
-ARG PLAYGROUND_HOST
-ENV PLAYGROUND_HOST=$PLAYGROUND_HOST
-
-ENV RUST_BACKTRACE=1\
-    RUST_LOG="error,$BINARY_NAME=info" \
-    ROCKET_PORT=$PORT \
-    ROCKET_ENV=$ENVIRONMENT \
-    PLAYGROUND_HOST=$PLAYGROUND_HOST \
-    K8S_NAMESPACE=$K8S_NAMESPACE
+ENV RUST_BACKTRACE=full\
+    RUST_LOG="error,$BINARY_NAME=info"
 
 COPY --from=builder-backend /opt/bin/$BINARY_NAME /
-COPY --from=builder-backend /opt/Playground.toml /
 COPY --from=builder-backend /opt/conf /conf
 COPY --from=builder-frontend /opt/dist/ /static
 

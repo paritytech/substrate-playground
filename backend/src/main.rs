@@ -6,38 +6,19 @@ mod kubernetes;
 mod utils;
 
 use env_logger;
-use log::{error, info};
+use log::info;
 use prometheus::Registry;
 use rocket::{http::Method, routes};
 use rocket_contrib::serve::StaticFiles;
 use rocket_cors::{AllowedOrigins, CorsOptions};
 use rocket_prometheus::PrometheusMetrics;
-use serde::Deserialize;
 use std::{
     collections::HashMap,
     env,
     io::{Error, ErrorKind},
-    path::Path,
     sync::Mutex,
 };
 use timer::Timer;
-
-#[derive(Deserialize)]
-struct Config {
-    assets: String,
-    images: HashMap<String, String>,
-}
-
-fn read_config() -> Config {
-    let conf = match utils::read(&Path::new("Playground.toml")) {
-        Err(why) => {
-            error!("! {:?}", why.kind());
-            std::process::exit(9)
-        }
-        Ok(s) => s,
-    };
-    toml::from_str(conf.as_str()).unwrap()
-}
 
 pub struct Context(
     pub String,
@@ -53,16 +34,17 @@ fn main() -> Result<(), Error> {
     }
     env_logger::init();
 
-    // Load configuration from `Playground.toml`
-    let config = read_config();
-    let assets = env::var("PLAYGROUND_ASSETS").unwrap_or(config.assets);
+    // Load configuration from environment variables
+    let assets = env::var("PLAYGROUND_ASSETS").unwrap_or("/static".to_string());
     let namespace = env::var("K8S_NAMESPACE").map_err(|e| Error::new(ErrorKind::NotFound, e))?;
     let host = env::var("PLAYGROUND_HOST").map_err(|e| Error::new(ErrorKind::NotFound, e))?;
+    let images = env::var("PLAYGROUND_IMAGES").map(utils::parse_images).map_err(|e| Error::new(ErrorKind::NotFound, e))?;
 
     info!("Configuration:");
     info!("assets: {}", assets);
     info!("host: {}", host);
     info!("namespace: {}", namespace);
+    info!("images: {:?}", images);
 
     // Configure CORS
     let allowed_origins = AllowedOrigins::All;
@@ -87,11 +69,11 @@ fn main() -> Result<(), Error> {
 
     let t = Mutex::new(Timer::new());
     rocket::ignite()
+        .attach(prometheus.clone())
         .mount("/", StaticFiles::from(assets.as_str()))
         .mount("/api", routes![api::index])
-        .mount("/metrics", prometheus.clone())
-        .manage(Context(host, namespace, config.images, t))
-        .attach(prometheus)
+        .mount("/metrics", prometheus)
+        .manage(Context(host, namespace, images, t))
         .attach(cors)
         .launch();
 

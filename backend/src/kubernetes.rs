@@ -145,10 +145,10 @@ fn undeploy_pod(_host: &str, namespace: &str, client: APIClient, uuid: &str) -> 
 }
 
 fn create_client() -> kube::Result<APIClient> {
-    let config = config::incluster_config().unwrap_or_else(|_| {
+    let config = config::incluster_config().or_else(|_| {
         info!("Use local configuration");
-        config::load_kube_config().unwrap()
-    });
+        config::load_kube_config()
+    })?;
     Ok(APIClient::new(config))
 }
 
