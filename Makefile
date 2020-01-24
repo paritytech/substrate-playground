@@ -10,12 +10,14 @@ THEIA_FRONTEND_PORT=8080
 THEIA_HTTP_PORT=9934
 THEIA_WS_PORT=9944
 PLAYGROUND_PORT="80"
-PLAYGROUND_DOCKER_IMAGE_NAME="jeluard/substrate-playground"
-PLAYGROUND_DOCKER_IMAGE_VERSION="${ENVIRONMENT}-latest"
-PLAYGROUND_DOCKER_IMAGE="${PLAYGROUND_DOCKER_IMAGE_NAME}:${PLAYGROUND_DOCKER_IMAGE_VERSION}"
-THEIA_DOCKER_IMAGE_NAME="jeluard/theia-substrate"
-THEIA_DOCKER_IMAGE_VERSION="${ENVIRONMENT}-latest"
-THEIA_DOCKER_IMAGE="${THEIA_DOCKER_IMAGE_NAME}:${THEIA_DOCKER_IMAGE_VERSION}"
+DOCKER_USERNAME=jeluard
+PLAYGROUND_DOCKER_IMAGE_NAME=${DOCKER_USERNAME}/substrate-playground
+PLAYGROUND_DOCKER_IMAGE_LATEST_VERSION=${ENVIRONMENT}-latest
+PLAYGROUND_DOCKER_IMAGE_LATEST=${PLAYGROUND_DOCKER_IMAGE_NAME}:${PLAYGROUND_DOCKER_IMAGE_LATEST_VERSION}
+THEIA_DOCKER_IMAGE_NAME=${DOCKER_USERNAME}/theia-substrate
+THEIA_DOCKER_IMAGE_LATEST_VERSION=${ENVIRONMENT}-latest
+THEIA_DOCKER_IMAGE_LATEST=${THEIA_DOCKER_IMAGE_NAME}:${THEIA_DOCKER_IMAGE_LATEST_VERSION}
+GOOGLE_PROJECT_ID=substrateplayground-252112
 
 include $(ENVIRONMENT_FILE)
 
@@ -49,24 +51,28 @@ dev-backend:
 
 # Build theia-substrate docker image
 build-theia-docker-image:
-	@cd theia-substrate; docker build -f Dockerfile -t ${THEIA_DOCKER_IMAGE} . && docker image prune -f --filter label=stage=builder
+	$(eval THEIA_DOCKER_IMAGE_VERSION=$(shell git rev-parse --short HEAD))
+	@cd theia-substrate; docker build -f Dockerfile --label git-commit=${THEIA_DOCKER_IMAGE_VERSION} -t ${THEIA_DOCKER_IMAGE_LATEST} . && docker image prune -f --filter label=stage=builder
+	docker tag ${THEIA_DOCKER_IMAGE_LATEST} gcr.io/${GOOGLE_PROJECT_ID}/${THEIA_DOCKER_IMAGE_NAME}
 
 # Build theia-substrate docker image
 push-theia-docker-image: build-theia-docker-image
-	docker push ${THEIA_DOCKER_IMAGE}
+	gcloud docker -- push gcr.io/${GOOGLE_PROJECT_ID}/${THEIA_DOCKER_IMAGE_NAME}
 
 run-theia-docker-image: build-theia-docker-image
-	docker run -d -p 80:80 ${THEIA_DOCKER_IMAGE}
+	docker run -d -p 80:80 ${THEIA_DOCKER_IMAGE_LATEST}
 
 # Build playground docker image
 build-playground-docker-image:
-	docker build --build-arg ENVIRONMENT=${ENVIRONMENT} -f Dockerfile -t ${PLAYGROUND_DOCKER_IMAGE} . && docker image prune -f --filter label=stage=builder
+	$(eval PLAYGROUND_DOCKER_IMAGE_VERSION=$(shell git rev-parse --short HEAD))
+	docker build --build-arg ENVIRONMENT=${ENVIRONMENT} -f Dockerfile --label git-commit=${PLAYGROUND_DOCKER_IMAGE_VERSION} -t ${PLAYGROUND_DOCKER_IMAGE_LATEST} . && docker image prune -f --filter label=stage=builder
+	docker tag ${PLAYGROUND_DOCKER_IMAGE_LATEST} gcr.io/${GOOGLE_PROJECT_ID}/${PLAYGROUND_DOCKER_IMAGE_NAME}
 
 push-playground-docker-image: build-playground-docker-image
-	docker push ${PLAYGROUND_DOCKER_IMAGE}
+	gcloud docker -- push gcr.io/${GOOGLE_PROJECT_ID}/${PLAYGROUND_DOCKER_IMAGE_NAME}
 
 run-playground-docker-image: build-playground-docker-image
-	docker run -d -p 80:${PLAYGROUND_PORT} ${PLAYGROUND_DOCKER_IMAGE}
+	docker run -d -p 80:${PLAYGROUND_PORT} ${PLAYGROUND_DOCKER_IMAGE_LATEST}
 
 ## Kubernetes deployment
 
@@ -97,7 +103,7 @@ k8s-deploy-playground: k8s-assert
 	sed 's/\$${ENVIRONMENT}'"/${ENVIRONMENT}/g" | \
 	sed 's/\$${K8S_NAMESPACE}'"/${K8S_NAMESPACE}/g" | \
 	sed 's/\$${PLAYGROUND_PORT}'"/${PLAYGROUND_PORT}/g" | \
-	sed 's/\$${IMAGE}'"/${IMAGE}:${IMAGE_SHA}/g" | \
+	sed 's/\$${IMAGE}'"/${IMAGE}/g" | \
 	sed 's/\$${PLAYGROUND_HOST}'"/${PLAYGROUND_HOST}/g" | \
 	sed 's/\$${PLAYGROUND_STATIC_IP}'"/${PLAYGROUND_STATIC_IP}/g" | \
 	sed 's/\$${GLOBAL_IP_NAME}'"/${GLOBAL_IP_NAME}/g" | \
