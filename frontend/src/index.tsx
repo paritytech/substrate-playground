@@ -8,7 +8,7 @@ import { useHover } from './hooks';
 
 async function deployDocker(template: string) {
     const response = await fetch(`/api/new?template=${template}`, {
-        method: 'GET',
+        method: 'POST',
         headers: {'Accept': 'application/json',
                   'Content-Type': 'application/json'}
     });

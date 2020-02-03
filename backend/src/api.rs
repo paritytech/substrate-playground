@@ -5,7 +5,7 @@ use crate::Context;
 use chrono;
 use log::{info, warn};
 use once_cell::sync::Lazy;
-use rocket::{get, State};
+use rocket::{post, State};
 use rocket_contrib::{json, json::JsonValue};
 use rocket_prometheus::prometheus::{opts, IntCounterVec};
 
@@ -44,7 +44,7 @@ pub static UNDEPLOY_FAILURES_COUNTER: Lazy<IntCounterVec> = Lazy::new(|| {
 ///  if the container statup was successful
 /// - {"status" "ko"
 ///    "reason" "xxxx"} if not
-#[get("/new?<template>")]
+#[post("/new?<template>")]
 pub fn index(state: State<'_, Context>, template: String) -> JsonValue {
     if let Some(image) = state.1.get(&template) {
         let host = state.0.clone();
