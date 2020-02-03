@@ -99,11 +99,13 @@ k8s-undeploy-nginx: k8s-assert
 
 # Deploy playground on kubernetes
 k8s-deploy-playground: k8s-assert
+	$(eval PLAYGROUND_DOCKER_IMAGE_VERSION=$(shell docker inspect --format='{{index .RepoDigests 0}}' ${PLAYGROUND_DOCKER_IMAGE_LATEST}))
+	@echo "Deploying ${PLAYGROUND_DOCKER_IMAGE_VERSION}"
 	@cat ${K8S_DEPLOYMENT_FILE_TEMPLATE} | \
 	sed 's/\$${ENVIRONMENT}'"/${ENVIRONMENT}/g" | \
 	sed 's/\$${K8S_NAMESPACE}'"/${K8S_NAMESPACE}/g" | \
 	sed 's/\$${PLAYGROUND_PORT}'"/${PLAYGROUND_PORT}/g" | \
-	sed 's/\$${IMAGE}'"/${IMAGE}/g" | \
+	sed 's~\$${IMAGE}'"~${PLAYGROUND_DOCKER_IMAGE_VERSION}~g" | \
 	sed 's/\$${PLAYGROUND_HOST}'"/${PLAYGROUND_HOST}/g" | \
 	sed 's/\$${PLAYGROUND_STATIC_IP}'"/${PLAYGROUND_STATIC_IP}/g" | \
 	sed 's/\$${GLOBAL_IP_NAME}'"/${GLOBAL_IP_NAME}/g" | \
@@ -112,11 +114,13 @@ k8s-deploy-playground: k8s-assert
 
 # Undeploy playground from kubernetes
 k8s-undeploy-playground: k8s-assert
+	$(eval PLAYGROUND_DOCKER_IMAGE_VERSION=$(shell docker inspect --format='{{index .RepoDigests 0}}' ${PLAYGROUND_DOCKER_IMAGE_LATEST}))
+	@echo "Undeploying ${PLAYGROUND_DOCKER_IMAGE_VERSION}"
 	@cat ${K8S_DEPLOYMENT_FILE_TEMPLATE} | \
 	sed 's/\$${ENVIRONMENT}'"/${ENVIRONMENT}/g" | \
 	sed 's/\$${K8S_NAMESPACE}'"/${K8S_NAMESPACE}/g" | \
 	sed 's/\$${PLAYGROUND_PORT}'"/${PLAYGROUND_PORT}/g" | \
-	sed 's/\$${IMAGE}'"/${IMAGE}/g" | \
+	sed 's~\$${IMAGE}'"~${PLAYGROUND_DOCKER_IMAGE_VERSION}~g" | \
 	sed 's/\$${PLAYGROUND_HOST}'"/${PLAYGROUND_HOST}/g" | \
 	sed 's/\$${PLAYGROUND_STATIC_IP}'"/${PLAYGROUND_STATIC_IP}/g" | \
 	sed 's/\$${GLOBAL_IP_NAME}'"/${GLOBAL_IP_NAME}/g" | \
