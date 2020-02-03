@@ -9,8 +9,8 @@
     "src"
   ],
   "dependencies": {
-    "@theia/core": "0.14.0",
-    "gunzip-maybe": "^1.4.1",
+    "@theia/core": "0.15.0",
+    "gunzip-maybe": "1.4.1",
     "intro.js": "2.9.3",
     "shepherd.js": "6.0.2"
   },

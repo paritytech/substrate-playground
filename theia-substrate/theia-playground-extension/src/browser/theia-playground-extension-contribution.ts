@@ -27,6 +27,11 @@ export const StartNodeTerminalCommand = {
     label: "Start Node"
 };
 
+export const PurgeChainTerminalCommand = {
+    id: 'TheiaSubstrateExtension.purge-chain-terminal-command',
+    label: "Purge chain"
+};
+
 export const OpenPolkadotAppsCommand = {
     id: 'TheiaSubstrateExtension.open-polkadot-apps-command',
     label: "Polkadot Apps"
@@ -139,6 +144,9 @@ export class TheiaSubstrateExtensionCommandContribution implements CommandContri
         registry.registerCommand(StartNodeTerminalCommand, {
             execute: () => newTerminal(this.terminalService, "start-node", "/home/workspace/substrate-node-template", "./target/release/node-template --dev --ws-external\r\n")
         });
+        registry.registerCommand(PurgeChainTerminalCommand, {
+            execute: () => newTerminal(this.terminalService, "purge-chain", "/home/workspace/substrate-node-template", "./target/release/node-template purge-chain --dev\r\n")
+        });
         registry.registerCommand(OpenPolkadotAppsCommand, {
             execute: () => window.open(polkadotAppsURL)
         });
@@ -183,16 +191,20 @@ export class TheiaSubstrateExtensionMenuContribution implements MenuContribution
             order: "3"
         });
         menus.registerMenuAction(SUBSTRATE_LINKS, {
-            commandId: OpenPolkadotAppsCommand.id,
+            commandId: PurgeChainTerminalCommand.id,
             order: "4"
         });
         menus.registerMenuAction(SUBSTRATE_LINKS, {
-            commandId: StartFrontEndTerminalCommand.id,
+            commandId: OpenPolkadotAppsCommand.id,
             order: "5"
         });
         menus.registerMenuAction(SUBSTRATE_LINKS, {
-            commandId: OpenFrontEndCommand.id,
+            commandId: StartFrontEndTerminalCommand.id,
             order: "6"
+        });
+        menus.registerMenuAction(SUBSTRATE_LINKS, {
+            commandId: OpenFrontEndCommand.id,
+            order: "7"
         });
         menus.registerMenuAction(SUBSTRATE_TOUR, {
             commandId: TourCommand.id
