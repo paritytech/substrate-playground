@@ -116,7 +116,7 @@ k8s-undeploy-playground: k8s-assert
 	sed 's/\$${ENVIRONMENT}'"/${ENVIRONMENT}/g" | \
 	sed 's/\$${K8S_NAMESPACE}'"/${K8S_NAMESPACE}/g" | \
 	sed 's/\$${PLAYGROUND_PORT}'"/${PLAYGROUND_PORT}/g" | \
-	sed 's/\$${IMAGE}'"/${IMAGE}:${IMAGE_SHA}/g" | \
+	sed 's/\$${IMAGE}'"/${IMAGE}/g" | \
 	sed 's/\$${PLAYGROUND_HOST}'"/${PLAYGROUND_HOST}/g" | \
 	sed 's/\$${PLAYGROUND_STATIC_IP}'"/${PLAYGROUND_STATIC_IP}/g" | \
 	sed 's/\$${GLOBAL_IP_NAME}'"/${GLOBAL_IP_NAME}/g" | \
