@@ -49,3 +49,13 @@ make push-playground-docker-image
 Locate the digest (`sha256:...`) in the command output and update `deployment.yaml` with it.
 
 Finally [deploy](docs/deployment.md) on kubernetes.
+
+## Local usage
+
+The docker image can be run using:
+
+```
+docker run -p 80:80 gcr.io/substrateplayground-252112/jeluard/theia-substrate:latest
+```
+
+Then browse http://localhost:80
