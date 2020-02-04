@@ -69,7 +69,8 @@ gcloud compute addresses create playground --region us-central1
 gcloud compute addresses create playground-theia --region us-central1
 gcloud compute addresses create playground-staging --region us-central1
 gcloud compute addresses create playground-theia-staging --region us-central1
-gcloud compute addresses list --region us-central1
+gcloud compute addresses list --filter="region:( us-central1 )"
+gcloud compute addresses describe playground --region=us-central1 --format="value(address)"
 ```
 
 playground-staging        34.69.4.59      EXTERNAL                    us-central1          RESERVED

@@ -1,10 +1,18 @@
 .DEFAULT_GOAL=help
 
-ENVIRONMENT=staging
-ENVIRONMENT_FILE=$(join .env., $(ENVIRONMENT))
+ifeq ($(ENVIRONMENT),)
+  ENVIRONMENT=staging
+endif
+ifeq ($(ENVIRONMENT), production)
+  IDENTIFIER=playground
+else
+  IDENTIFIER=playground-${ENVIRONMENT}
+endif
 
+GKE_REGION=us-central1
 K8S_DEPLOYMENT_FILE_TEMPLATE=conf/k8s/deployment.yaml.tmpl
 PLAYGROUND_PORT=8080
+PLAYGROUND_HOST=${IDENTIFIER}.substrate.dev
 THEIA_WEB_PORT=80
 THEIA_FRONTEND_PORT=8080
 THEIA_HTTP_PORT=9934
@@ -18,8 +26,6 @@ THEIA_DOCKER_IMAGE_NAME=${DOCKER_USERNAME}/theia-substrate
 THEIA_DOCKER_IMAGE_LATEST_VERSION=${ENVIRONMENT}-latest
 THEIA_DOCKER_IMAGE_LATEST=${THEIA_DOCKER_IMAGE_NAME}:${THEIA_DOCKER_IMAGE_LATEST_VERSION}
 GOOGLE_PROJECT_ID=substrateplayground-252112
-
-include $(ENVIRONMENT_FILE)
 
 # Show this help.
 help:
@@ -81,21 +87,23 @@ k8s-assert:
 	if [ "$${answer}" != "Y" ] ;then exit 1; fi
 
 k8s-setup: k8s-assert
-	@kubectl create namespace ${K8S_NAMESPACE}
+	@kubectl create namespace ${IDENTIFIER}
 
 # Deploy nginx on kubernetes
 k8s-deploy-nginx: k8s-assert
+	$(eval PLAYGROUND_STATIC_IP=$(shell gcloud compute addresses describe ${IDENTIFIER} --region=${GKE_REGION} --format="value(address)"))
 	@cat conf/k8s/nginx.yaml | \
-	sed 's/\$${K8S_NAMESPACE}'"/${K8S_NAMESPACE}/g" | \
+	sed 's/\$${K8S_NAMESPACE}'"/${IDENTIFIER}/g" | \
 	sed 's/\$${PLAYGROUND_STATIC_IP}'"/${PLAYGROUND_STATIC_IP}/g" | \
-	kubectl apply --namespace=${K8S_NAMESPACE} --record -f -
+	kubectl apply --namespace=${IDENTIFIER} --record -f -
 
 # Undeploy nginx
 k8s-undeploy-nginx: k8s-assert
+	$(eval PLAYGROUND_STATIC_IP=$(shell gcloud compute addresses describe ${IDENTIFIER} --region=${GKE_REGION} --format="value(address)"))
 	@cat conf/k8s/nginx.yaml | \
-	sed 's/\$${K8S_NAMESPACE}'"/${K8S_NAMESPACE}/g" | \
+	sed 's/\$${K8S_NAMESPACE}'"/${IDENTIFIER}/g" | \
 	sed 's/\$${PLAYGROUND_STATIC_IP}'"/${PLAYGROUND_STATIC_IP}/g" | \
-	kubectl delete --namespace=${K8S_NAMESPACE} -f -
+	kubectl delete --namespace=${IDENTIFIER} -f -
 
 # Deploy playground on kubernetes
 k8s-deploy-playground: k8s-assert
@@ -103,14 +111,11 @@ k8s-deploy-playground: k8s-assert
 	@echo "Deploying ${PLAYGROUND_DOCKER_IMAGE_VERSION}"
 	@cat ${K8S_DEPLOYMENT_FILE_TEMPLATE} | \
 	sed 's/\$${ENVIRONMENT}'"/${ENVIRONMENT}/g" | \
-	sed 's/\$${K8S_NAMESPACE}'"/${K8S_NAMESPACE}/g" | \
+	sed 's/\$${K8S_NAMESPACE}'"/${IDENTIFIER}/g" | \
 	sed 's/\$${PLAYGROUND_PORT}'"/${PLAYGROUND_PORT}/g" | \
 	sed 's~\$${IMAGE}'"~${PLAYGROUND_DOCKER_IMAGE_VERSION}~g" | \
 	sed 's/\$${PLAYGROUND_HOST}'"/${PLAYGROUND_HOST}/g" | \
-	sed 's/\$${PLAYGROUND_STATIC_IP}'"/${PLAYGROUND_STATIC_IP}/g" | \
-	sed 's/\$${GLOBAL_IP_NAME}'"/${GLOBAL_IP_NAME}/g" | \
-	sed 's/\$${GLOBAL_THEIA_IP_NAME}'"/${GLOBAL_THEIA_IP_NAME}/g" | \
-	kubectl apply --namespace=${K8S_NAMESPACE} --record -f -
+	kubectl apply --namespace=${IDENTIFIER} --record -f -
 
 # Undeploy playground from kubernetes
 k8s-undeploy-playground: k8s-assert
@@ -118,18 +123,15 @@ k8s-undeploy-playground: k8s-assert
 	@echo "Undeploying ${PLAYGROUND_DOCKER_IMAGE_VERSION}"
 	@cat ${K8S_DEPLOYMENT_FILE_TEMPLATE} | \
 	sed 's/\$${ENVIRONMENT}'"/${ENVIRONMENT}/g" | \
-	sed 's/\$${K8S_NAMESPACE}'"/${K8S_NAMESPACE}/g" | \
+	sed 's/\$${K8S_NAMESPACE}'"/${IDENTIFIER}/g" | \
 	sed 's/\$${PLAYGROUND_PORT}'"/${PLAYGROUND_PORT}/g" | \
 	sed 's~\$${IMAGE}'"~${PLAYGROUND_DOCKER_IMAGE_VERSION}~g" | \
 	sed 's/\$${PLAYGROUND_HOST}'"/${PLAYGROUND_HOST}/g" | \
-	sed 's/\$${PLAYGROUND_STATIC_IP}'"/${PLAYGROUND_STATIC_IP}/g" | \
-	sed 's/\$${GLOBAL_IP_NAME}'"/${GLOBAL_IP_NAME}/g" | \
-	sed 's/\$${GLOBAL_THEIA_IP_NAME}'"/${GLOBAL_THEIA_IP_NAME}/g" | \
-	kubectl delete --namespace=${K8S_NAMESPACE} -f -
+	kubectl delete --namespace=${IDENTIFIER} -f -
 
 # Undeploy all theia-substrate pods and services from kubernetes
 k8s-undeploy-theia: k8s-assert
-	kubectl delete pods,services -l app=theia-substrate --namespace=${K8S_NAMESPACE}
+	kubectl delete pods,services -l app=theia-substrate --namespace=${IDENTIFIER}
 
 integrate:
 	cargo doc --document-private-items
