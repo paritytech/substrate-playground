@@ -139,19 +139,19 @@ export class TheiaSubstrateExtensionCommandContribution implements CommandContri
             execute: () => window.open('https://docs.google.com/forms/d/e/1FAIpQLSdXpq_fHqS_ow4nC7EpGmrC_XGX_JCIRzAqB1vaBtoZrDW-ZQ/viewform?edit_requested=true')
         });
         registry.registerCommand(CompileNodeTerminalCommand, {
-            execute: () => newTerminal(this.terminalService, "compile-node", "/home/workspace/substrate-node-template", "cargo build --release\r\n")
+            execute: () => newTerminal(this.terminalService, "compile-node", "/home/workspace/substrate-node-template", "cargo build --release\r")
         });
         registry.registerCommand(StartNodeTerminalCommand, {
-            execute: () => newTerminal(this.terminalService, "start-node", "/home/workspace/substrate-node-template", "./target/release/node-template --dev --ws-external\r\n")
+            execute: () => newTerminal(this.terminalService, "start-node", "/home/workspace/substrate-node-template", "./target/release/node-template --dev --ws-external\r")
         });
         registry.registerCommand(PurgeChainTerminalCommand, {
-            execute: () => newTerminal(this.terminalService, "purge-chain", "/home/workspace/substrate-node-template", "./target/release/node-template purge-chain --dev\r\n")
+            execute: () => newTerminal(this.terminalService, "purge-chain", "/home/workspace/substrate-node-template", "./target/release/node-template purge-chain --dev\r")
         });
         registry.registerCommand(OpenPolkadotAppsCommand, {
             execute: () => window.open(polkadotAppsURL)
         });
         registry.registerCommand(StartFrontEndTerminalCommand, {
-            execute: () => newTerminal(this.terminalService, "front-end", "/home/workspace/substrate-front-end-template", "yarn build && yarn serve\r\n")
+            execute: () => newTerminal(this.terminalService, "front-end", "/home/workspace/substrate-front-end-template", "yarn build && yarn serve\r")
         });
         registry.registerCommand(OpenFrontEndCommand, {
             execute: () => window.open(frontendURL)
