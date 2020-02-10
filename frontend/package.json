@@ -26,5 +26,8 @@
     "eslint-plugin-react": "7.18.0",
     "parcel-bundler": "1.12.4",
     "typescript": "3.6.3"
+  },
+  "resolutions": {
+    "kind-of": ">=6.0.3"
   }
 }
