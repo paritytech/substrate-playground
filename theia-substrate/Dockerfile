@@ -45,7 +45,7 @@ RUN cargo install --force --git https://github.com/alexcrichton/wasm-gc \
     #&& cargo install --force --git https://github.com/paritytech/ink cargo-contract
 
 RUN git clone https://github.com/substrate-developer-hub/substrate-node-template && \
-    git clone https://github.com/jeluard/substrate-front-end-template
+    git clone https://github.com/substrate-developer-hub/substrate-front-end-template
 
 WORKDIR /home/workspace/substrate-front-end-template
 RUN yarn

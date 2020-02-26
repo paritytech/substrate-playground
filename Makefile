@@ -58,8 +58,8 @@ dev-backend:
 # Build theia-substrate docker image
 build-theia-docker-image:
 	$(eval THEIA_DOCKER_IMAGE_VERSION=$(shell git rev-parse --short HEAD))
-	@cd theia-substrate; docker build -f Dockerfile --label git-commit=${THEIA_DOCKER_IMAGE_VERSION} -t ${THEIA_DOCKER_IMAGE_LATEST} . && docker image prune -f --filter label=stage=builder
-	docker tag ${THEIA_DOCKER_IMAGE_LATEST} gcr.io/${GOOGLE_PROJECT_ID}/${THEIA_DOCKER_IMAGE_NAME}
+	@cd theia-substrate; docker build -f Dockerfile --label git-commit=${THEIA_DOCKER_IMAGE_VERSION} -t ${THEIA_DOCKER_IMAGE_VERSION} -t ${THEIA_DOCKER_IMAGE_LATEST} . && docker image prune -f --filter label=stage=builder
+	docker tag ${THEIA_DOCKER_IMAGE_VERSION} gcr.io/${GOOGLE_PROJECT_ID}/${THEIA_DOCKER_IMAGE_NAME}
 
 # Build theia-substrate docker image
 push-theia-docker-image: build-theia-docker-image
@@ -71,8 +71,8 @@ run-theia-docker-image: build-theia-docker-image
 # Build playground docker image
 build-playground-docker-image:
 	$(eval PLAYGROUND_DOCKER_IMAGE_VERSION=$(shell git rev-parse --short HEAD))
-	docker build --build-arg ENVIRONMENT=${ENVIRONMENT} -f Dockerfile --label git-commit=${PLAYGROUND_DOCKER_IMAGE_VERSION} -t ${PLAYGROUND_DOCKER_IMAGE_LATEST} . && docker image prune -f --filter label=stage=builder
-	docker tag ${PLAYGROUND_DOCKER_IMAGE_LATEST} gcr.io/${GOOGLE_PROJECT_ID}/${PLAYGROUND_DOCKER_IMAGE_NAME}
+	docker build --build-arg ENVIRONMENT=${ENVIRONMENT} -f Dockerfile --label git-commit=${PLAYGROUND_DOCKER_IMAGE_VERSION} --label env=${ENVIRONMENT} -t ${PLAYGROUND_DOCKER_IMAGE_VERSION} -t ${PLAYGROUND_DOCKER_IMAGE_LATEST} . && docker image prune -f --filter label=stage=builder
+	docker tag ${PLAYGROUND_DOCKER_IMAGE_VERSION} gcr.io/${GOOGLE_PROJECT_ID}/${PLAYGROUND_DOCKER_IMAGE_NAME}
 
 push-playground-docker-image: build-playground-docker-image
 	gcloud docker -- push gcr.io/${GOOGLE_PROJECT_ID}/${PLAYGROUND_DOCKER_IMAGE_NAME}

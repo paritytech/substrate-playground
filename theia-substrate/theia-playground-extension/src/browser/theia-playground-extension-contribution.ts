@@ -9,8 +9,12 @@ import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service
 import { GettingStartedCommand } from './getting-started/getting-started-contribution';
 import Shepherd from 'shepherd.js';
 
-const polkadotAppsURL = `https://polkadot.js.org/apps/?rpc=wss://${window.location.hostname}/wss`;
-const frontendURL = `//${window.location.hostname}/front-end`;
+const hostname = window.location.hostname;
+const localhost = hostname == "localhost";
+const nodeWebsocket = localhost ? `wss://${hostname}:9944` : `wss://${hostname}/wss`;
+const polkadotAppsURL = `https://polkadot.js.org/apps/?rpc=${nodeWebsocket}`;
+const port = 8000;
+const frontendURL = localhost ? `//${hostname}:${port}` : `//${hostname}/front-end`;
 
 export const SendFeedbackCommand = {
     id: 'TheiaSubstrateExtension.send-feedback-command',
@@ -151,7 +155,7 @@ export class TheiaSubstrateExtensionCommandContribution implements CommandContri
             execute: () => window.open(polkadotAppsURL)
         });
         registry.registerCommand(StartFrontEndTerminalCommand, {
-            execute: () => newTerminal(this.terminalService, "front-end", "/home/workspace/substrate-front-end-template", "yarn build && yarn serve\r")
+            execute: () => newTerminal(this.terminalService, "front-end", "/home/workspace/substrate-front-end-template", `REACT_APP_PROVIDER_SOCKET=${nodeWebsocket} yarn build && rm -rf front-end/ && mv build front-end && python -m SimpleHTTPServer ${port}\r`)
         });
         registry.registerCommand(OpenFrontEndCommand, {
             execute: () => window.open(frontendURL)
