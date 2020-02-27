@@ -20,11 +20,7 @@ THEIA_WS_PORT=9944
 PLAYGROUND_PORT="80"
 DOCKER_USERNAME=jeluard
 PLAYGROUND_DOCKER_IMAGE_NAME=${DOCKER_USERNAME}/substrate-playground
-PLAYGROUND_DOCKER_IMAGE_LATEST_VERSION=${ENVIRONMENT}-latest
-PLAYGROUND_DOCKER_IMAGE_LATEST=${PLAYGROUND_DOCKER_IMAGE_NAME}:${PLAYGROUND_DOCKER_IMAGE_LATEST_VERSION}
 THEIA_DOCKER_IMAGE_NAME=${DOCKER_USERNAME}/theia-substrate
-THEIA_DOCKER_IMAGE_LATEST_VERSION=${ENVIRONMENT}-latest
-THEIA_DOCKER_IMAGE_LATEST=${THEIA_DOCKER_IMAGE_NAME}:${THEIA_DOCKER_IMAGE_LATEST_VERSION}
 GOOGLE_PROJECT_ID=substrateplayground-252112
 
 # Show this help.
@@ -58,27 +54,22 @@ dev-backend:
 # Build theia-substrate docker image
 build-theia-docker-image:
 	$(eval THEIA_DOCKER_IMAGE_VERSION=$(shell git rev-parse --short HEAD))
-	@cd theia-substrate; docker build -f Dockerfile --label git-commit=${THEIA_DOCKER_IMAGE_VERSION} -t ${THEIA_DOCKER_IMAGE_VERSION} -t ${THEIA_DOCKER_IMAGE_LATEST} . && docker image prune -f --filter label=stage=builder
+	@cd theia-substrate; docker build -f Dockerfile --label git-commit=${THEIA_DOCKER_IMAGE_VERSION} -t ${THEIA_DOCKER_IMAGE_VERSION} . && docker image prune -f --filter label=stage=builder
 	docker tag ${THEIA_DOCKER_IMAGE_VERSION} gcr.io/${GOOGLE_PROJECT_ID}/${THEIA_DOCKER_IMAGE_NAME}
 
-# Build theia-substrate docker image
+# Push a newly built theia image on gcr.io
 push-theia-docker-image: build-theia-docker-image
 	gcloud docker -- push gcr.io/${GOOGLE_PROJECT_ID}/${THEIA_DOCKER_IMAGE_NAME}
-
-run-theia-docker-image: build-theia-docker-image
-	docker run -d -p 80:80 ${THEIA_DOCKER_IMAGE_LATEST}
 
 # Build playground docker image
 build-playground-docker-image:
 	$(eval PLAYGROUND_DOCKER_IMAGE_VERSION=$(shell git rev-parse --short HEAD))
-	docker build --build-arg ENVIRONMENT=${ENVIRONMENT} -f Dockerfile --label git-commit=${PLAYGROUND_DOCKER_IMAGE_VERSION} --label env=${ENVIRONMENT} -t ${PLAYGROUND_DOCKER_IMAGE_VERSION} -t ${PLAYGROUND_DOCKER_IMAGE_LATEST} . && docker image prune -f --filter label=stage=builder
+	docker build -f Dockerfile --label git-commit=${PLAYGROUND_DOCKER_IMAGE_VERSION} -t ${PLAYGROUND_DOCKER_IMAGE_VERSION} . && docker image prune -f --filter label=stage=builder
 	docker tag ${PLAYGROUND_DOCKER_IMAGE_VERSION} gcr.io/${GOOGLE_PROJECT_ID}/${PLAYGROUND_DOCKER_IMAGE_NAME}
 
+# Push a newly built playground image on gcr.io
 push-playground-docker-image: build-playground-docker-image
 	gcloud docker -- push gcr.io/${GOOGLE_PROJECT_ID}/${PLAYGROUND_DOCKER_IMAGE_NAME}
-
-run-playground-docker-image: build-playground-docker-image
-	docker run -d -p 80:${PLAYGROUND_PORT} ${PLAYGROUND_DOCKER_IMAGE_LATEST}
 
 ## Kubernetes deployment
 
@@ -107,7 +98,9 @@ k8s-undeploy-nginx: k8s-assert
 
 # Deploy playground on kubernetes
 k8s-deploy-playground: k8s-assert
-	$(eval PLAYGROUND_DOCKER_IMAGE_VERSION=$(shell docker inspect --format='{{index .RepoDigests 0}}' ${PLAYGROUND_DOCKER_IMAGE_LATEST}))
+ifeq ($(PLAYGROUND_DOCKER_IMAGE_VERSION), )
+	$(error 'PLAYGROUND_DOCKER_IMAGE_VERSION' must be defined)
+endif
 	@echo "Deploying ${PLAYGROUND_DOCKER_IMAGE_VERSION}"
 	@cat ${K8S_DEPLOYMENT_FILE_TEMPLATE} | \
 	sed 's/\$${ENVIRONMENT}'"/${ENVIRONMENT}/g" | \
@@ -119,7 +112,9 @@ k8s-deploy-playground: k8s-assert
 
 # Undeploy playground from kubernetes
 k8s-undeploy-playground: k8s-assert
-	$(eval PLAYGROUND_DOCKER_IMAGE_VERSION=$(shell docker inspect --format='{{index .RepoDigests 0}}' ${PLAYGROUND_DOCKER_IMAGE_LATEST}))
+ifeq ($(PLAYGROUND_DOCKER_IMAGE_VERSION), )
+	$(error 'PLAYGROUND_DOCKER_IMAGE_VERSION' must be defined)
+endif
 	@echo "Undeploying ${PLAYGROUND_DOCKER_IMAGE_VERSION}"
 	@cat ${K8S_DEPLOYMENT_FILE_TEMPLATE} | \
 	sed 's/\$${ENVIRONMENT}'"/${ENVIRONMENT}/g" | \
@@ -132,6 +127,3 @@ k8s-undeploy-playground: k8s-assert
 # Undeploy all theia-substrate pods and services from kubernetes
 k8s-undeploy-theia: k8s-assert
 	kubectl delete pods,services -l app=theia-substrate --namespace=${IDENTIFIER}
-
-integrate:
-	cargo doc --document-private-items
