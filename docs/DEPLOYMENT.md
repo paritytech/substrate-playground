@@ -2,6 +2,12 @@
 
 Kubernetes is used as a deployment platform for the playground. It can be deployed on GCE or locally via minikube.
 
+Deploy on GKE:
+
+```
+PLAYGROUND_DOCKER_IMAGE_VERSION="gcr.io/substrateplayground-252112/jeluard/substrate-playground@_VERSION_" make k8s-deploy-playground
+```
+
 ## GCD
 
 Playground is currently deployed on playground.substrate.dev. The cluster is hosted on GKE and composed of some `n2-standard-4` pods.
