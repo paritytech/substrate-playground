@@ -1,3 +1,5 @@
+![](https://github.com/paritytech/substrate-playground/workflows/Continuous%20Integration%20Playground/badge.svg)
+
 # Substrate playground
 
 A hosted website that enables the user to navigate the [Substrate](https://github.com/paritytech/substrate) [Node-Template](https://github.com/paritytech/substrate/tree/master/node-template); edit & add modules/files; compile & share code/errors.

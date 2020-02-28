@@ -1,0 +1,56 @@
+name: Continuous Integration Playground
+
+on:
+  pull_request:
+    paths-ignore:
+      - 'theia-substrate/**'
+
+jobs:
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      # https://github.com/actions/checkout
+      - uses: actions/checkout@@v2
+      # https://github.com/actions/setup-node
+      - name: Setup node
+        uses: actions/setup-node@v1
+        with:
+          node-version: "10.x"
+      - name: Install
+        run: yarn install --check-files
+        working-directory: ./frontend
+      - name: Lint
+        run: yarn lint
+        working-directory: ./frontend
+      - name: Audit
+        run: yarn audit
+        working-directory: ./frontend
+      - name: Build
+        run: yarn build
+        working-directory: ./frontend
+
+  backend:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        rust: [stable]
+    steps:
+      # https://github.com/hecrj/setup-rust-action
+      - uses: hecrj/setup-rust-action@v1
+        with:
+          rust-version: ${{ matrix.rust }}
+          components: rustfmt, clippy
+      - uses: actions/checkout@v2
+      - name: Check Formatting
+        run: cargo fmt --all -- --check
+        working-directory: ./backend
+      - name: Clippy
+        run: cargo clippy -- -D warnings -A deprecated
+        working-directory: ./backend
+      - name: Build
+        run: cargo build --verbose
+        working-directory: ./backend
+      - name: Run tests
+        run: cargo test --verbose
+        working-directory: ./backend
