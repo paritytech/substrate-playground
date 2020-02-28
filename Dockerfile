@@ -1,3 +1,5 @@
+# The main playground Dockerfile. Runs the `backend`, serving on port 80 the `frontend` (under /) and the associated API (undre /api)
+#
 # A multi-stage docker image (https://docs.docker.com/develop/develop-images/multistage-build/)
 # Based on https://github.com/bjornmolin/rust-minimal-docker
 
@@ -11,8 +13,7 @@ WORKDIR /opt
 
 COPY frontend .
 
-ARG ENVIRONMENT
-ENV PARCEL_WORKERS=1, NODE_ENV=$ENVIRONMENT
+ENV PARCEL_WORKERS=1
 
 RUN apk add --no-cache --virtual .gyp \
         python \

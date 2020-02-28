@@ -3,6 +3,13 @@
 ifeq ($(ENVIRONMENT),)
   ENVIRONMENT=staging
 endif
+
+ENVIRONMENTS := production staging
+
+ifeq ($(filter $(ENVIRONMENT),$(ENVIRONMENTS)),)
+    $(error ENVIRONMENT should be one of ($(ENVIRONMENTS)) but was $(ENVIRONMENT))
+endif
+
 ifeq ($(ENVIRONMENT), production)
   IDENTIFIER=playground
 else
@@ -127,3 +134,7 @@ endif
 # Undeploy all theia-substrate pods and services from kubernetes
 k8s-undeploy-theia: k8s-assert
 	kubectl delete pods,services -l app=theia-substrate --namespace=${IDENTIFIER}
+
+# Creates or replaces the `images` config map from `conf/k8s/images/*.properties`
+k8s-update-images-config: k8s-assert
+	kubectl create configmap theia-images --namespace=${IDENTIFIER} --from-env-file=conf/k8s/images/${ENVIRONMENT}.properties --dry-run -o yaml | kubectl apply -f -

@@ -11,7 +11,10 @@ use kube::{
 use log::info;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
-use std::path::Path;
+use std::{
+    collections::BTreeMap,
+    path::Path,
+};
 use uuid::Uuid;
 
 fn error_to_string<T: std::fmt::Display>(err: T) -> String {
@@ -57,12 +60,22 @@ fn read_remove_path(index: &str) -> Result<Value, String> {
 }
 */
 
+fn images_from_template(client: APIClient, namespace: &str,) -> Result<BTreeMap<String, String>, String> {
+    let resource = Api::v1ConfigMap(client.clone()).within(namespace);
+    resource.get("theia-images")
+        .map(|o| {println!("{:?}", o.data); o.data})
+        .map_err(error_to_string)
+}
+
 fn deploy_pod(
     host: &str,
     namespace: &str,
     client: APIClient,
-    image: &str,
+    template: &str,
 ) -> Result<String, String> {
+    let images = images_from_template(client.clone(), &namespace)?;
+    //let images = utils::parse_images(config);
+    let image = images.get(&template.to_string()).ok_or(format!("Unknow template {}", template))?;
     let uuid = format!("{}", Uuid::new_v4());
     let p: Value = read_deployment(&uuid, image)?;
 

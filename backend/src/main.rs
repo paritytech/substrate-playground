@@ -22,7 +22,6 @@ use timer::Timer;
 
 pub struct Context(
     pub String,
-    pub HashMap<String, String>,
     pub Mutex<Timer>,
 );
 
@@ -36,12 +35,10 @@ fn main() -> Result<(), Error> {
     // Load configuration from environment variables
     let assets = env::var("PLAYGROUND_ASSETS").unwrap_or("/static".to_string());
     let host = env::var("PLAYGROUND_HOST").map_err(|e| Error::new(ErrorKind::NotFound, e))?;
-    let images = env::var("PLAYGROUND_IMAGES").map(|s| utils::parse_images(&s)).map_err(|e| Error::new(ErrorKind::NotFound, e))?;
 
     info!("Configuration:");
     info!("assets: {}", assets);
     info!("host: {}", host);
-    info!("images: {:?}", images);
 
     // Configure CORS
     let allowed_origins = AllowedOrigins::All;
@@ -57,7 +54,6 @@ fn main() -> Result<(), Error> {
     .unwrap();
 
     let registry = Registry::new_custom(Some("backend_api".to_string()), None).unwrap();
-    registry.register(Box::new(api::UNKNOWN_TEMPLATE_COUNTER.clone())).unwrap();
     registry.register(Box::new(api::DEPLOY_COUNTER.clone())).unwrap();
     registry.register(Box::new(api::DEPLOY_FAILURES_COUNTER.clone())).unwrap();
     registry.register(Box::new(api::UNDEPLOY_COUNTER.clone())).unwrap();
@@ -70,7 +66,7 @@ fn main() -> Result<(), Error> {
         .mount("/", StaticFiles::from(assets.as_str()))
         .mount("/api", routes![api::index])
         .mount("/metrics", prometheus)
-        .manage(Context(host, images, t))
+        .manage(Context(host, t))
         .attach(cors)
         .launch();
 
