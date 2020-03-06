@@ -1,0 +1,30 @@
+name: Continuous Integration Playground
+
+on:
+  pull_request:
+    paths:
+      - 'theia-substrate/**'
+
+jobs:
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      # https://github.com/actions/checkout
+      - uses: actions/checkout@@v2
+      # https://github.com/actions/setup-node
+      - name: Setup node
+        uses: actions/setup-node@v1
+        with:
+          node-version: "10.x"
+      - name: Install
+        run: yarn install --check-files
+        working-directory: ./theia-substrate
+      - name: Lint
+        run: yarn lint
+        working-directory: ./theia-substrate
+      - name: Audit
+        run: yarn audit
+        working-directory: ./theia-substrate
+      - name: Build
+        run: yarn build
+        working-directory: ./theia-substrate
