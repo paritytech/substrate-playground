@@ -4,7 +4,8 @@ import * as ReactDOM from "react-dom";
 import { Machine } from 'xstate';
 import { useMachine } from '@xstate/react';
 import { SVGBox, ErrorMessage, Loading, Help } from './components';
-import { useHover } from './hooks';
+import { useHover, useLocalStorage } from './hooks';
+import { v4 as uuidv4 } from 'uuid';
 
 async function deployDocker(template: string) {
     const response = await fetch(`/api/new?template=${template}`, {
@@ -22,6 +23,10 @@ async function deployDocker(template: string) {
     } else {
         return {reason: response.statusText};
     }
+}
+
+function generateIdentifier() {
+    return uuidv4();
 }
 
 async function deployAndRedirect(send, template: string) {
@@ -78,6 +83,11 @@ function App() {
     const [state, send] = useMachine(lifecycle);
     const [showHelp, setShowHelp] = useState(false);
     const [hoverRef, isHovered] = useHover();
+    const [identifier, setIdentifier] = useLocalStorage("identifier");
+
+    if (!identifier) {
+        setIdentifier(generateIdentifier());
+    }
 
     const uuid = new URLSearchParams(window.location.search).get("uuid");
     if (uuid) {
