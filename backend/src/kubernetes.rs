@@ -74,7 +74,6 @@ fn deploy_pod(
     template: &str,
 ) -> Result<String, String> {
     let images = images_from_template(client.clone(), &namespace)?;
-    //let images = utils::parse_images(config);
     let image = images.get(&template.to_string()).ok_or(format!("Unknow template {}", template))?;
     let uuid = format!("{}", Uuid::new_v4());
     let p: Value = read_deployment(&uuid, image)?;
