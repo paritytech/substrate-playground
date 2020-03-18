@@ -2,7 +2,6 @@
 
 use crate::kubernetes;
 use crate::Context;
-use chrono;
 use log::{info, warn};
 use once_cell::sync::Lazy;
 use rocket::{post, State};
@@ -12,23 +11,38 @@ use rocket_prometheus::prometheus::{opts, IntCounterVec};
 // Prometheus metrics definition
 
 pub static DEPLOY_COUNTER: Lazy<IntCounterVec> = Lazy::new(|| {
-    IntCounterVec::new(opts!("deploy_counter", "Count of deployments"), &["template", "uuid"])
-        .expect("Could not create lazy IntCounterVec")
+    IntCounterVec::new(
+        opts!("deploy_counter", "Count of deployments"),
+        &["template", "uuid"],
+    )
+    .expect("Could not create lazy IntCounterVec")
 });
 
 pub static DEPLOY_FAILURES_COUNTER: Lazy<IntCounterVec> = Lazy::new(|| {
-    IntCounterVec::new(opts!("deploy_failures_counter", "Count of deployment failures"), &["template"])
-        .expect("Could not create lazy IntCounterVec")
+    IntCounterVec::new(
+        opts!("deploy_failures_counter", "Count of deployment failures"),
+        &["template"],
+    )
+    .expect("Could not create lazy IntCounterVec")
 });
 
 pub static UNDEPLOY_COUNTER: Lazy<IntCounterVec> = Lazy::new(|| {
-    IntCounterVec::new(opts!("undeploy_counter", "Count of undeployments"), &["template", "uuid"])
-        .expect("Could not create lazy IntCounterVec")
+    IntCounterVec::new(
+        opts!("undeploy_counter", "Count of undeployments"),
+        &["template", "uuid"],
+    )
+    .expect("Could not create lazy IntCounterVec")
 });
 
 pub static UNDEPLOY_FAILURES_COUNTER: Lazy<IntCounterVec> = Lazy::new(|| {
-    IntCounterVec::new(opts!("undeploy_failures_counter", "Count of undeployments failures"), &["template", "uuid"])
-        .expect("Could not create lazy IntCounterVec")
+    IntCounterVec::new(
+        opts!(
+            "undeploy_failures_counter",
+            "Count of undeployments failures"
+        ),
+        &["template", "uuid"],
+    )
+    .expect("Could not create lazy IntCounterVec")
 });
 
 /// Starts a Docker container with `template` as parameter.
@@ -55,9 +69,13 @@ pub fn index(state: State<'_, Context>, template: String) -> JsonValue {
                     info!("#Deleting! {}", uuid2);
                     if let Err(s) = kubernetes::undeploy(&host, &uuid2) {
                         warn!("Failed to undeploy {}: {}", uuid2, s);
-                        UNDEPLOY_FAILURES_COUNTER.with_label_values(&[&template, &uuid2]).inc();
+                        UNDEPLOY_FAILURES_COUNTER
+                            .with_label_values(&[&template, &uuid2])
+                            .inc();
                     } else {
-                        UNDEPLOY_COUNTER.with_label_values(&[&template, &uuid2]).inc();
+                        UNDEPLOY_COUNTER
+                            .with_label_values(&[&template, &uuid2])
+                            .inc();
                     }
                 })
                 .ignore();
@@ -65,7 +83,9 @@ pub fn index(state: State<'_, Context>, template: String) -> JsonValue {
         }
         Err(err) => {
             warn!("Error {}", err);
-            DEPLOY_FAILURES_COUNTER.with_label_values(&[&template]).inc();
+            DEPLOY_FAILURES_COUNTER
+                .with_label_values(&[&template])
+                .inc();
             json!({"status": "ko", "reason": err})
         }
     }

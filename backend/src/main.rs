@@ -5,7 +5,6 @@ mod api;
 mod kubernetes;
 mod utils;
 
-use env_logger;
 use log::info;
 use prometheus::Registry;
 use rocket::{http::Method, routes};
@@ -13,17 +12,13 @@ use rocket_contrib::serve::StaticFiles;
 use rocket_cors::{AllowedOrigins, CorsOptions};
 use rocket_prometheus::PrometheusMetrics;
 use std::{
-    collections::HashMap,
     env,
     io::{Error, ErrorKind},
     sync::Mutex,
 };
 use timer::Timer;
 
-pub struct Context(
-    pub String,
-    pub Mutex<Timer>,
-);
+pub struct Context(pub String, pub Mutex<Timer>);
 
 fn main() -> Result<(), Error> {
     // Initialize log configuration. Reads RUST_LOG if any, otherwise fallsback to `default`
@@ -33,7 +28,7 @@ fn main() -> Result<(), Error> {
     env_logger::init();
 
     // Load configuration from environment variables
-    let assets = env::var("PLAYGROUND_ASSETS").unwrap_or("/static".to_string());
+    let assets = env::var("PLAYGROUND_ASSETS").unwrap_or_else(|_| "/static".to_string());
     let host = env::var("PLAYGROUND_HOST").map_err(|e| Error::new(ErrorKind::NotFound, e))?;
 
     info!("Configuration:");
@@ -54,10 +49,18 @@ fn main() -> Result<(), Error> {
     .unwrap();
 
     let registry = Registry::new_custom(Some("backend_api".to_string()), None).unwrap();
-    registry.register(Box::new(api::DEPLOY_COUNTER.clone())).unwrap();
-    registry.register(Box::new(api::DEPLOY_FAILURES_COUNTER.clone())).unwrap();
-    registry.register(Box::new(api::UNDEPLOY_COUNTER.clone())).unwrap();
-    registry.register(Box::new(api::UNDEPLOY_FAILURES_COUNTER.clone())).unwrap();
+    registry
+        .register(Box::new(api::DEPLOY_COUNTER.clone()))
+        .unwrap();
+    registry
+        .register(Box::new(api::DEPLOY_FAILURES_COUNTER.clone()))
+        .unwrap();
+    registry
+        .register(Box::new(api::UNDEPLOY_COUNTER.clone()))
+        .unwrap();
+    registry
+        .register(Box::new(api::UNDEPLOY_FAILURES_COUNTER.clone()))
+        .unwrap();
     let prometheus = PrometheusMetrics::with_registry(registry);
 
     let t = Mutex::new(Timer::new());

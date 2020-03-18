@@ -1,4 +1,4 @@
-name: Continuous Integration Playground
+name: Continuous Integration Theia
 
 on:
   pull_request:
@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # https://github.com/actions/checkout
-      - uses: actions/checkout@@v2
+      - uses: actions/checkout@v2
       # https://github.com/actions/setup-node
       - name: Setup node
         uses: actions/setup-node@v1

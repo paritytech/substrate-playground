@@ -1,7 +1,0 @@
-name: Continuous Delivery Playground
-
-on:
-  release:
-      types: [published]
-
-jobs:
