@@ -2,7 +2,6 @@
 //!
 
 use std::{
-    collections::HashMap,
     fs::File,
     io::{self, prelude::*},
     path::Path,
