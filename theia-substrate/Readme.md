@@ -13,5 +13,5 @@ yarn workspace @parity/theia-playground start
 Run the image via:
 
 ```
-docker run -d -p 80:80 IMAGE
+docker run -p 80:3000  gcr.io/substrateplayground-252112/jeluard/theia-substrate@sha256:XXX
 ```

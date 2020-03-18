@@ -10,7 +10,7 @@
               "path": "/",
               "backend": {
                 "serviceName": "%SERVICE_NAME%",
-                "servicePort": 80
+                "servicePort": 3000
               }
             },
             {

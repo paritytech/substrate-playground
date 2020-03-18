@@ -9,13 +9,12 @@
     "src"
   ],
   "dependencies": {
-    "@theia/core": "0.15.0",
+    "@theia/core": "0.16.1",
     "gunzip-maybe": "1.4.1",
-    "intro.js": "2.9.3",
-    "shepherd.js": "6.0.2"
+    "shepherd.js": "7.0.4"
   },
   "devDependencies": {
-    "typescript": "3.7.2"
+    "typescript": "3.8.3"
   },
   "scripts": {
     "prepare": "yarn run build",
