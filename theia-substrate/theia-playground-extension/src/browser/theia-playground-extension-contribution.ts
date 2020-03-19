@@ -11,10 +11,11 @@ import Shepherd from 'shepherd.js';
 
 const hostname = window.location.hostname;
 const localhost = hostname == "localhost";
-const nodeWebsocket = localhost ? `wss://${hostname}:9944` : `wss://${hostname}/wss`;
+const nodeWebsocket = localhost ? `ws://${hostname}:9944` : `wss://${hostname}/wss`;
 const polkadotAppsURL = `https://polkadot.js.org/apps/?rpc=${nodeWebsocket}`;
 const port = 8000;
-const frontendURL = localhost ? `//${hostname}:${port}` : `//${hostname}/front-end`;
+const frontendURL = localhost ? `//${hostname}:${port}/front-end/` : `//${hostname}/front-end`;
+const HOME = "/home/substrate/workspace";
 
 export const SendFeedbackCommand = {
     id: 'TheiaSubstrateExtension.send-feedback-command',
@@ -143,19 +144,19 @@ export class TheiaSubstrateExtensionCommandContribution implements CommandContri
             execute: () => window.open('https://docs.google.com/forms/d/e/1FAIpQLSdXpq_fHqS_ow4nC7EpGmrC_XGX_JCIRzAqB1vaBtoZrDW-ZQ/viewform?edit_requested=true')
         });
         registry.registerCommand(CompileNodeTerminalCommand, {
-            execute: () => newTerminal(this.terminalService, "compile-node", "/home/workspace/substrate-node-template", "cargo build --release\r")
+            execute: () => newTerminal(this.terminalService, "compile-node", `${HOME}/substrate-node-template`, "cargo build --release\r")
         });
         registry.registerCommand(StartNodeTerminalCommand, {
-            execute: () => newTerminal(this.terminalService, "start-node", "/home/workspace/substrate-node-template", "./target/release/node-template --dev --ws-external\r")
+            execute: () => newTerminal(this.terminalService, "start-node", `${HOME}/substrate-node-template`, "./target/release/node-template --dev --ws-external\r")
         });
         registry.registerCommand(PurgeChainTerminalCommand, {
-            execute: () => newTerminal(this.terminalService, "purge-chain", "/home/workspace/substrate-node-template", "./target/release/node-template purge-chain --dev\r")
+            execute: () => newTerminal(this.terminalService, "purge-chain", `${HOME}/substrate-node-template`, "./target/release/node-template purge-chain --dev\r")
         });
         registry.registerCommand(OpenPolkadotAppsCommand, {
             execute: () => window.open(polkadotAppsURL)
         });
         registry.registerCommand(StartFrontEndTerminalCommand, {
-            execute: () => newTerminal(this.terminalService, "front-end", "/home/workspace/substrate-front-end-template", `REACT_APP_PROVIDER_SOCKET=${nodeWebsocket} yarn build && rm -rf front-end/ && mv build front-end && python -m SimpleHTTPServer ${port}\r`)
+            execute: () => newTerminal(this.terminalService, "front-end", `${HOME}/substrate-front-end-template`, `REACT_APP_PROVIDER_SOCKET=${nodeWebsocket} yarn build && rm -rf front-end/ && mv build front-end && python -m SimpleHTTPServer ${port}\r`)
         });
         registry.registerCommand(OpenFrontEndCommand, {
             execute: () => window.open(frontendURL)

@@ -1,6 +1,6 @@
 [![Docker Image](https://img.shields.io/docker/pulls/parity/theia-substrate.svg?maxAge=2592000)](https://hub.docker.com/r/parity/theia-substrate/)
 
-A Docker image 
+A substrate ready Docker image based on theia.
 
 ## Dev
 
@@ -13,5 +13,5 @@ yarn workspace @parity/theia-playground start
 Run the image via:
 
 ```
-docker run -p 80:3000  gcr.io/substrateplayground-252112/jeluard/theia-substrate@sha256:XXX
+docker run -p 80:3000 -p 8000:8000 -p 9944:9944 gcr.io/substrateplayground-252112/jeluard/theia-substrate@sha256:XXX
 ```

@@ -27,5 +27,6 @@ jobs:
 #        gcloud auth configure-docker
 
 #    - name: Publish
+#      if: github.ref == 'refs/heads/master' or contains(github.ref, "release")
 #      run: |
 #        docker push gcr.io/$GKE_PROJECT/$IMAGE:$GITHUB_SHA

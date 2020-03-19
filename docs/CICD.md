@@ -13,3 +13,7 @@ Once manually approved on the staging environment, changes are promoted to maste
 Update to configmap?
 3rd party projects?
 Permission to push to config/k8s/images
+
+# Local support
+
+Github actions workflows can be tested locally using [act](https://github.com/nektos/act)
