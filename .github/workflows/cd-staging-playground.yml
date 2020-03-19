@@ -1,0 +1,31 @@
+name: Continuous Deployment on staging Playground
+
+on:
+  push:
+    branches:
+      - develop
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      # https://github.com/actions/checkout
+      - uses: actions/checkout@v2
+      - name: Build image
+        run: docker build -f conf/Dockerfile --label git-commit=${PLAYGROUND_DOCKER_IMAGE_VERSION} -t ${PLAYGROUND_DOCKER_IMAGE_VERSION} .
+
+#  deploy:
+#    needs: [build]
+#    - uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
+#      with:
+#        version: '270.0.0'
+#        service_account_email: ${{ secrets.SA_EMAIL }}
+#        service_account_key: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
+
+    # Configure docker to use the gcloud command-line tool as a credential helper
+#    - run: |
+#        gcloud auth configure-docker
+
+#    - name: Publish
+#      run: |
+#        docker push gcr.io/$GKE_PROJECT/$IMAGE:$GITHUB_SHA
