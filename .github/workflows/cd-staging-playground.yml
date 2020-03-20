@@ -25,7 +25,7 @@ jobs:
           username: ${{ steps.gcloud.outputs.username }}
           password: ${{ steps.gcloud.outputs.password }}
           dockerfile: conf/Dockerfile
-          repository: jeluard/substrate-playground
+          repository: substrateplayground-252112/jeluard/substrate-playground
           registry: gcr.io
           tags: latest
           tag_with_ref: true
