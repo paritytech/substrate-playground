@@ -25,9 +25,12 @@ jobs:
           service_account_key: ${{ secrets.GCLOUD_KEY }}
           export_default_credentials: true
       - run: gcloud auth configure-docker
+      - run: echo "::set-env name=ACCESS_TOKEN::$(gcloud auth print-access-token)"
       - uses: docker/build-push-action@v1 # https://github.com/docker/build-push-action
         with:
           #username: ${{ steps.gcloud.outputs.username }}
+          username: oauth2accesstoken
+          password: ${{ env.ACCESS_TOKEN }}
           #password: ${{ steps.gcloud.outputs.password }}
           dockerfile: conf/Dockerfile
           repository: substrateplayground-252112/jeluard/substrate-playground
