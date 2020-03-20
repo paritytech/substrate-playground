@@ -24,14 +24,12 @@ jobs:
         with:
           username: ${{ steps.gcloud.outputs.username }}
           password: ${{ steps.gcloud.outputs.password }}
-          path: conf
+          dockerfile: conf/Dockerfile
           repository: jeluard/substrate-playground
           registry: gcr.io
           tags: latest
           tag_with_ref: true
           tag_with_sha: true
-#      - name: Build image
-#        run: docker build . -f conf/Dockerfile --label git-commit=${GITHUB_SHA} -t ${GITHUB_SHA}
 
 #  deploy:
 #    needs: [build]
