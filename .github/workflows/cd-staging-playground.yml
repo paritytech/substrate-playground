@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - develop
-GITHUB_SHA
+
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
@@ -15,6 +15,10 @@ jobs:
         id: gcloud
         uses: elgohr/gcloud-login-action@master
         with:
+          # GCLOUD_KEY is the base64 of the json
+          # https://console.cloud.google.com/iam-admin/serviceaccounts?authuser=1&hl=fr&project=substrateplayground-252112&folder=&organizationId=&supportedpurview=project
+          # ... -> Actions -> Create Key
+          # then base64 substrateplayground-XXX.json | tr -d \\n
           account_key: ${{ secrets.GCLOUD_KEY }}
       - uses: docker/build-push-action@v1
         with:
