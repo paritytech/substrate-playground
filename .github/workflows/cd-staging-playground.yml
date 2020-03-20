@@ -11,25 +11,24 @@ jobs:
     steps:
       # https://github.com/actions/checkout
       - uses: actions/checkout@v2
-      - name: Login to gcloud registry
-        id: gcloud
-        uses: elgohr/gcloud-login-action@master # https://github.com/elgohr/gcloud-login-action
-        with:
+      #- name: Login to gcloud registry
+      #  id: gcloud
+      #  uses: elgohr/gcloud-login-action@master # https://github.com/elgohr/gcloud-login-action
+      #  with:
           # GCLOUD_KEY is the base64 of the gcloud service account JSON file
           # Get the JSON file from https://console.cloud.google.com/iam-admin/serviceaccounts?authuser=1&hl=fr&project=substrateplayground-252112&folder=&organizationId=&supportedpurview=project
           # ... -> Actions -> Create Key
           # then base64 substrateplayground-XXX.json | tr -d \\n
-          account_key: ${{ secrets.GCLOUD_KEY }}
+      #    account_key: ${{ secrets.GCLOUD_KEY }}
       - uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
         with:
-          version: '281.0.0'
           service_account_key: ${{ secrets.GCLOUD_KEY }}
           export_default_credentials: true
       - run: gcloud info
       - uses: docker/build-push-action@v1 # https://github.com/docker/build-push-action
         with:
-          username: ${{ steps.gcloud.outputs.username }}
-          password: ${{ steps.gcloud.outputs.password }}
+          #username: ${{ steps.gcloud.outputs.username }}
+          #password: ${{ steps.gcloud.outputs.password }}
           dockerfile: conf/Dockerfile
           repository: substrateplayground-252112/jeluard/substrate-playground
           registry: gcr.io
