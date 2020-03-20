@@ -15,15 +15,16 @@ jobs:
         id: gcloud
         uses: elgohr/gcloud-login-action@master
         with:
-          # GCLOUD_KEY is the base64 of the json
-          # https://console.cloud.google.com/iam-admin/serviceaccounts?authuser=1&hl=fr&project=substrateplayground-252112&folder=&organizationId=&supportedpurview=project
+          # GCLOUD_KEY is the base64 of the gcloud service account JSON file
+          # Get the JSON file from https://console.cloud.google.com/iam-admin/serviceaccounts?authuser=1&hl=fr&project=substrateplayground-252112&folder=&organizationId=&supportedpurview=project
           # ... -> Actions -> Create Key
           # then base64 substrateplayground-XXX.json | tr -d \\n
           account_key: ${{ secrets.GCLOUD_KEY }}
-      - uses: docker/build-push-action@v1
+      - uses: docker/build-push-action@v1 # https://github.com/docker/build-push-action
         with:
           username: ${{ steps.gcloud.outputs.username }}
           password: ${{ steps.gcloud.outputs.password }}
+          path: conf/Dockerfile
           repository: jeluard/substrate-playground
           registry: gcr.io
           tags: latest
