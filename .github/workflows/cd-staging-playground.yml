@@ -12,7 +12,7 @@ jobs:
       # https://github.com/actions/checkout
       - uses: actions/checkout@v2
       - name: Build image
-        run: docker build -f conf/Dockerfile --label git-commit=${PLAYGROUND_DOCKER_IMAGE_VERSION} -t ${PLAYGROUND_DOCKER_IMAGE_VERSION} .
+        run: docker build -f conf/Dockerfile --label git-commit=${GITHUB_SHA} -t ${GITHUB_SHA}
 
 #  deploy:
 #    needs: [build]
