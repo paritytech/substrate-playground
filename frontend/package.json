@@ -15,7 +15,7 @@
     "react": "16.10.2",
     "react-dom": "16.10.2",
     "react-spring": "8.0.27",
-    "xstate": "4.6.7"
+    "xstate": "4.8.0"
   },
   "devDependencies": {
     "@types/react": "16.9.5",
