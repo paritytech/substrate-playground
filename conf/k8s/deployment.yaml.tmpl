@@ -19,7 +19,7 @@ metadata:
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: default-playground-role-${K8S_NAMESPACE}
+  name: default-playground-role
 subjects:
 - kind: ServiceAccount
   name: default-service-account-${K8S_NAMESPACE}
@@ -72,7 +72,7 @@ spec:
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
-  name: playground-ingress
+  name: ingress
   annotations:
     kubernetes.io/ingress.class: "nginx"
     nginx.ingress.kubernetes.io/enable-cors: "true"

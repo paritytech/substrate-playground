@@ -22,7 +22,7 @@ const APP_LABEL: &str = "app";
 const APP_VALUE: &str = "theia-substrate";
 const USER_UUID_LABEL: &str = "user-uuid";
 const INSTANCE_UUID_LABEL: &str = "instance-uuid";
-const INGRESS_NAME: &str = "playground-ingress";
+const INGRESS_NAME: &str = "ingress";
 
 fn error_to_string<T: std::fmt::Display>(err: T) -> String {
     format!("{}", err)

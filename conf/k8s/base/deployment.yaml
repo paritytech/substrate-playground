@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deployment
+spec:
+  selector:
+    matchLabels:
+      app: playground
+  replicas: 1
+  template:
+    spec:
+      serviceAccountName: default-service-account
+      containers:
+      - image: gcr.io/substrateplayground-252112/jeluard/substrate-playground
+        ports:
+        - containerPort: 80
+        env:
+        - name: PLAYGROUND_HOST
+          value: ${PLAYGROUND_HOST}
+        - name: ROCKET_PORT
+          value: "${PLAYGROUND_PORT}"
+        - name: ROCKET_ENV
+          value: ${ENVIRONMENT}
