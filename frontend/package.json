@@ -12,7 +12,7 @@
   "dependencies": {
     "@material-ui/core": "4.6.1",
     "@xstate/react": "0.7.1",
-    "react": "16.10.2",
+    "react": "16.13.1",
     "react-dom": "16.10.2",
     "react-spring": "8.0.27",
     "xstate": "4.6.7"
