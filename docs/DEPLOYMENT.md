@@ -107,7 +107,7 @@ kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/mast
 # Make sure k8s 1,14 is used
 
 
-kubectl get ing playground-ingress --namespace=playground-staging
+kubectl get ing ingress --namespace=playground-staging
 
 Should have an address
 

@@ -3,7 +3,7 @@
 kind: ConfigMap
 apiVersion: v1
 metadata:
-  name: nginx-configuration
+  name: config
   labels:
     app.kubernetes.io/name: ingress-nginx
     app.kubernetes.io/part-of: ingress-nginx
@@ -12,7 +12,7 @@ metadata:
 kind: ConfigMap
 apiVersion: v1
 metadata:
-  name: tcp-services
+  name: config-tcp-services
   labels:
     app.kubernetes.io/name: ingress-nginx
     app.kubernetes.io/part-of: ingress-nginx
@@ -21,16 +21,15 @@ metadata:
 kind: ConfigMap
 apiVersion: v1
 metadata:
-  name: udp-services
+  name: config-udp-services
   labels:
     app.kubernetes.io/name: ingress-nginx
     app.kubernetes.io/part-of: ingress-nginx
-
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: nginx-ingress-serviceaccount
+  name: service-account
   labels:
     app.kubernetes.io/name: ingress-nginx
     app.kubernetes.io/part-of: ingress-nginx
@@ -97,7 +96,7 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: Role
 metadata:
-  name: nginx-ingress-role
+  name: role
   labels:
     app.kubernetes.io/name: ingress-nginx
     app.kubernetes.io/part-of: ingress-nginx
@@ -148,10 +147,10 @@ metadata:
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: nginx-ingress-role
+  name: role
 subjects:
   - kind: ServiceAccount
-    name: nginx-ingress-serviceaccount
+    name: service-account
     namespace: ${K8S_NAMESPACE}
 ---
 apiVersion: rbac.authorization.k8s.io/v1beta1
@@ -167,7 +166,7 @@ roleRef:
   name: nginx-ingress-clusterrole-${K8S_NAMESPACE}
 subjects:
   - kind: ServiceAccount
-    name: nginx-ingress-serviceaccount
+    name: service-account
     namespace: ${K8S_NAMESPACE}
 
 ---
@@ -196,7 +195,7 @@ spec:
     spec:
       # wait up to five minutes for the drain of connections
       terminationGracePeriodSeconds: 300
-      serviceAccountName: nginx-ingress-serviceaccount
+      serviceAccountName: service-account
       nodeSelector:
         kubernetes.io/os: linux
       containers:
@@ -204,9 +203,9 @@ spec:
           image: quay.io/kubernetes-ingress-controller/nginx-ingress-controller:0.27.1
           args:
             - /nginx-ingress-controller
-            - --configmap=$(POD_NAMESPACE)/nginx-configuration
-            - --tcp-services-configmap=$(POD_NAMESPACE)/tcp-services
-            - --udp-services-configmap=$(POD_NAMESPACE)/udp-services
+            - --configmap=$(POD_NAMESPACE)/config
+            - --tcp-services-configmap=$(POD_NAMESPACE)/config-tcp-services
+            - --udp-services-configmap=$(POD_NAMESPACE)/config-udp-services
             - --publish-service=$(POD_NAMESPACE)/ingress-nginx
             - --annotations-prefix=nginx.ingress.kubernetes.io
           securityContext:
@@ -280,7 +279,7 @@ spec:
 kind: Service
 apiVersion: v1
 metadata:
-  name: ingress-nginx
+  name: service
   labels:
     app.kubernetes.io/name: ingress-nginx
     app.kubernetes.io/part-of: ingress-nginx

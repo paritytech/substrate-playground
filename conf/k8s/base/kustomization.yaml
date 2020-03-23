@@ -1,0 +1,8 @@
+commonLabels:
+    app: playground
+resources:
+    - cluster-role-binding.yaml
+    - deployment.yaml
+    - ingress.yaml
+    - service-account.yaml
+    - service.yaml
