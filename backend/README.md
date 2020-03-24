@@ -12,5 +12,6 @@
 ## Development server
 
 ```bash
-PLAYGROUND_ASSETS=../frontend/dist PLAYGROUND_HOST=localhost cargo run
+ln -s ../frontend/dist static
+PLAYGROUND_HOST=localhost cargo run
 ```

@@ -3,7 +3,6 @@
 
 mod api;
 mod kubernetes;
-mod utils;
 
 use log::info;
 use prometheus::Registry;
@@ -28,11 +27,9 @@ fn main() -> Result<(), Error> {
     env_logger::init();
 
     // Load configuration from environment variables
-    let assets = env::var("PLAYGROUND_ASSETS").unwrap_or_else(|_| "/static".to_string());
     let host = env::var("PLAYGROUND_HOST").map_err(|e| Error::new(ErrorKind::NotFound, e))?;
 
     info!("Configuration:");
-    info!("assets: {}", assets);
     info!("host: {}", host);
 
     // Configure CORS
@@ -66,7 +63,7 @@ fn main() -> Result<(), Error> {
     let t = Mutex::new(Timer::new());
     rocket::ignite()
         .attach(prometheus.clone())
-        .mount("/", StaticFiles::from(assets.as_str()))
+        .mount("/", StaticFiles::from("/static"))
         .mount("/api", routes![api::index])
         .mount("/metrics", prometheus)
         .manage(Context(host, t))

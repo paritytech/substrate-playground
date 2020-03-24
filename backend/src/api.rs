@@ -2,6 +2,7 @@
 
 use crate::kubernetes;
 use crate::Context;
+use futures::executor::block_on;
 use log::{info, warn};
 use once_cell::sync::Lazy;
 use rocket::{post, State};
@@ -56,7 +57,7 @@ pub static UNDEPLOY_FAILURES_COUNTER: Lazy<IntCounterVec> = Lazy::new(|| {
 #[post("/new?<template>")]
 pub fn index(state: State<'_, Context>, template: String) -> JsonValue {
     let host = state.0.clone();
-    match kubernetes::deploy(&host, &template) {
+    match block_on(kubernetes::deploy(&host, &template)) {
         Ok(uuid) => {
             info!("Launched image {} (template: {})", uuid, template);
             DEPLOY_COUNTER.with_label_values(&[&template, &uuid]).inc();
@@ -67,7 +68,7 @@ pub fn index(state: State<'_, Context>, template: String) -> JsonValue {
                 .unwrap()
                 .schedule_with_delay(chrono::Duration::hours(3), move || {
                     info!("#Deleting! {}", uuid2);
-                    if let Err(s) = kubernetes::undeploy(&host, &uuid2) {
+                    if let Err(s) = block_on(kubernetes::undeploy(&host, &uuid2)) {
                         warn!("Failed to undeploy {}: {}", uuid2, s);
                         UNDEPLOY_FAILURES_COUNTER
                             .with_label_values(&[&template, &uuid2])
