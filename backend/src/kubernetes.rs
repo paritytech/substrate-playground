@@ -18,32 +18,33 @@ fn error_to_string<T: std::fmt::Display>(err: T) -> String {
     format!("{}", err)
 }
 
-fn read_deployment(uuid: &str, image: &str) -> Result<Value, String> {
+fn read_deployment(user_uuid: &str, instance_uuid: &str, image: &str) -> Result<Value, String> {
     fs::read_to_string(&Path::new("conf/deployment.json"))
         .map_err(error_to_string)
         .and_then(|s| {
-            serde_json::from_str(&s.replace("%IMAGE_NAME%", image).replace("%UUID%", uuid))
+            serde_json::from_str(&s.replace("%IMAGE_NAME%", image).replace("%USER_UUID%", user_uuid)
+                                   .replace("%INSTANCE_UUID%", instance_uuid))
                 .map_err(error_to_string)
         })
 }
 
-fn read_service(uuid: &str, pod: &str) -> Result<Value, String> {
+fn read_service(instance_uuid: &str) -> Result<Value, String> {
     fs::read_to_string(&Path::new("conf/service.json"))
         .map_err(error_to_string)
         .and_then(|s| {
-            serde_json::from_str(&s.replace("%POD_NAME%", pod).replacen("%UUID%", uuid, 2))
+            serde_json::from_str(&s.replacen("%INSTANCE_UUID%", instance_uuid, 2))
                 .map_err(error_to_string)
         })
 }
 
-fn read_add_path(host: &str, uuid: &str, service_name: &str) -> Result<Value, String> {
-    let subdomain = format!("{}.{}", uuid, host);
+fn read_add_path(host: &str, instance_uuid: &str, service_name: &str) -> Result<Value, String> {
+    let subdomain = format!("{}.{}", instance_uuid, host);
     fs::read_to_string(&Path::new("conf/add-theia-path.json"))
         .map_err(error_to_string)
         .and_then(|s| {
             serde_json::from_str(
-                &s.replacen("%SERVICE_NAME%", service_name, 4)
-                    .replacen("%HOST%", &subdomain, 2),
+                &s.replacen("%SERVICE_NAME%", service_name, 3)
+                    .replacen("%HOST%", &subdomain, 1),
             )
             .map_err(error_to_string)
         })
@@ -57,6 +58,10 @@ fn read_remove_path(index: &str) -> Result<Value, String> {
 }
 */
 
+async fn config() -> Result<kube::config::Configuration, String> {
+    config::load_kube_config().await.or_else(|_| config::incluster_config()).map_err(error_to_string)
+}
+
 async fn images_from_template(
     client: APIClient,
     namespace: &str,
@@ -67,61 +72,8 @@ async fn images_from_template(
         .await
         .map_err(error_to_string)
         .and_then(|o: ConfigMap| {
-            println!("{:?}", o.data);
             o.data.ok_or_else(|| "No data field".to_string())
         })
-}
-
-async fn deploy_pod(
-    host: &str,
-    namespace: &str,
-    client: APIClient,
-    template: &str,
-) -> Result<String, String> {
-    let images = images_from_template(client.clone(), &namespace).await?;
-    let image = images
-        .get(&template.to_string())
-        .ok_or(format!("Unknow template {}", template))?;
-    let uuid = format!("{}", Uuid::new_v4());
-    let p: Value = read_deployment(&uuid, image)?;
-
-    let pod_api: Api<Pod> = Api::namespaced(client.clone(), namespace);
-    let name = pod_api
-        .create(
-            &PostParams::default(),
-            &serde_json::from_value(p).map_err(error_to_string)?,
-        )
-        .await
-        .map(|o| o.metadata.unwrap().name.unwrap())
-        .map_err(error_to_string)?;
-
-    let service: Value = read_service(&uuid, &name)?;
-    let service_api: Api<Service> = Api::namespaced(client.clone(), namespace);
-    let service_name = service_api
-        .create(
-            &PostParams::default(),
-            &serde_json::from_value(service).map_err(error_to_string)?,
-        )
-        .await
-        .map(|o| o.metadata.unwrap().name.unwrap())
-        .map_err(error_to_string)?;
-
-    let add_path: Value = read_add_path(&host, &uuid, &service_name)?;
-    let patch_params = PatchParams {
-        patch_strategy: PatchStrategy::JSON,
-        ..PatchParams::default()
-    };
-    let ingress_api: Api<Ingress> = Api::namespaced(client.clone(), namespace);
-    ingress_api
-        .patch(
-            "playground-ingress",
-            &patch_params,
-            serde_json::to_vec(&add_path).map_err(error_to_string)?,
-        )
-        .await
-        .map_err(error_to_string)?;
-
-    Ok(uuid)
 }
 
 async fn list_by_selector<K: Clone + DeserializeOwned + Meta>(
@@ -138,24 +90,92 @@ async fn list_by_selector<K: Clone + DeserializeOwned + Meta>(
         .map_err(|s| format!("Error {}", s))
 }
 
-async fn undeploy_pod(
-    _host: &str,
-    namespace: &str,
-    client: APIClient,
-    uuid: &str,
-) -> Result<(), String> {
+pub async fn list(user_uuid: &str) -> Result<Vec<String>, String> {
+    let config = config().await?;
+    let namespace = &config.clone().default_ns;
+    let client = APIClient::new(config);
+    let pod_api: Api<Pod> = Api::namespaced(client.clone(), namespace);
+    let selector = format!("user-uuid={}", user_uuid);
+    let pods = list_by_selector(&pod_api, selector).await?;
+    let names = pods.iter().flat_map(|pod|
+        pod.metadata.as_ref().and_then(|md| md.name.clone())
+    ).collect::<Vec<_>>();
+
+    Ok(names)
+}
+
+pub async fn deploy(host: &str, user_uuid: &str, image_id: &str) -> Result<String, String> {
+    let config = config().await?;
+    let namespace = &config.clone().default_ns;
+    let client = APIClient::new(config);
+
+    let instance_uuid = format!("{}", Uuid::new_v4());
+    // Access the right image id
+    let images = images_from_template(client.clone(), &namespace).await?;
+    let image = images
+        .get(&image_id.to_string())
+        .ok_or(format!("Unknow image {}", image_id))?;
+
+    // Deploy a new pod for this image
+    let pod_api: Api<Pod> = Api::namespaced(client.clone(), namespace);
+    pod_api
+        .create(
+            &PostParams::default(),
+            &serde_json::from_value(read_deployment(&user_uuid, &instance_uuid, image)?).map_err(error_to_string)?,
+        )
+        .await
+        .map(|o| o.metadata.unwrap().name.unwrap())
+        .map_err(error_to_string)?;
+
+    // Deploy the associated service
+    let service: Value = read_service(&instance_uuid)?;
     let service_api: Api<Service> = Api::namespaced(client.clone(), namespace);
-    let selector = format!("app-uuid={}", uuid);
+    let service_name = service_api
+        .create(
+            &PostParams::default(),
+            &serde_json::from_value(service).map_err(error_to_string)?,
+        )
+        .await
+        .map(|o| o.metadata.unwrap().name.unwrap())
+        .map_err(error_to_string)?;
+
+    // Patch the ingress configuration to add the new path
+    let add_path: Value = read_add_path(&host, &instance_uuid, &service_name)?;
+    let patch_params = PatchParams {
+        patch_strategy: PatchStrategy::JSON,
+        ..PatchParams::default()
+    };
+    let ingress_api: Api<Ingress> = Api::namespaced(client.clone(), namespace);
+    ingress_api
+        .patch(
+            "playground-ingress",
+            &patch_params,
+            serde_json::to_vec(&add_path).map_err(error_to_string)?,
+        )
+        .await
+        .map_err(error_to_string)?;
+
+    Ok(instance_uuid)
+}
+
+pub async fn undeploy(_host: &str, instance_uuid: &str,) -> Result<(), String> {
+    let config = config().await?;
+    let namespace = &config.clone().default_ns;
+    let client = APIClient::new(config);
+
+    // Undeploy the service from it's id
+    let service_api: Api<Service> = Api::namespaced(client.clone(), namespace);
+    let selector = format!("instance-uuid={}", instance_uuid);
     let services = list_by_selector(&service_api, selector.clone()).await?;
     let service_name = services
         .first()
-        .ok_or(format!("No matching service for {}", uuid))?
+        .ok_or(format!("No matching service for {}", instance_uuid))?
         .metadata
         .as_ref()
-        .ok_or(format!("No metadata for {}", uuid))?
+        .ok_or(format!("No metadata for {}", instance_uuid))?
         .name
         .as_ref()
-        .ok_or(format!("No name for {}", uuid))?;
+        .ok_or(format!("No name for {}", instance_uuid))?;
     service_api
         .delete(&service_name, &DeleteParams::default())
         .await
@@ -165,13 +185,13 @@ async fn undeploy_pod(
     let pods = list_by_selector(&pod_api, selector).await?;
     let pod_name = pods
         .first()
-        .ok_or(format!("No matching pod for {}", uuid))?
+        .ok_or(format!("No matching pod for {}", instance_uuid))?
         .metadata
         .as_ref()
-        .ok_or(format!("No metadata for {}", uuid))?
+        .ok_or(format!("No metadata for {}", instance_uuid))?
         .name
         .as_ref()
-        .ok_or(format!("No name for {}", uuid))?;
+        .ok_or(format!("No name for {}", instance_uuid))?;
     pod_api
         .delete(&pod_name, &DeleteParams::default())
         .await
@@ -185,16 +205,4 @@ async fn undeploy_pod(
     ingress.patch("playground-ingress", &patch_params, serde_json::to_vec(&remove_path).map_err(error_to_string)?).map_err(error_to_string)?;*/
 
     Ok(())
-}
-
-pub async fn deploy(host: &str, image: &str) -> Result<String, String> {
-    let config = config::incluster_config().map_err(error_to_string)?;
-    let ns = &config.clone().default_ns;
-    deploy_pod(host, &ns, APIClient::new(config), image).await
-}
-
-pub async fn undeploy(host: &str, uuid: &str) -> Result<(), String> {
-    let config = config::incluster_config().map_err(error_to_string)?;
-    let ns = &config.clone().default_ns;
-    undeploy_pod(host, &ns, APIClient::new(config), uuid).await
 }

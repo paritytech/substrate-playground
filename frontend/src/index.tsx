@@ -7,8 +7,8 @@ import { SVGBox, ErrorMessage, Loading, Help } from './components';
 import { useHover, useLocalStorage } from './hooks';
 import { v4 as uuidv4 } from 'uuid';
 
-async function deployDocker(template: string) {
-    const response = await fetch(`/api/new?template=${template}`, {
+async function deployDocker(userUUID: string, imageId: string) {
+    const response = await fetch(`/api/${userUUID}/${imageId}`, {
         method: 'POST',
         headers: {'Accept': 'application/json',
                   'Content-Type': 'application/json'}
@@ -29,13 +29,12 @@ function generateIdentifier() {
     return uuidv4();
 }
 
-async function deployAndRedirect(send, template: string) {
-    const result = await deployDocker(template);
+async function deployAndRedirect(send, userUUID: string, imageId: string) {
+    const result = await deployDocker(userUUID, imageId);
     if (result && result.status === "ok") {
         const uuid = result.uuid;
         if (uuid) {
             send("FETCH", {uuid: uuid});
-            window.history.replaceState(null, "", `${window.location.pathname}?uuid=${uuid}`);
         } else {
             send("FAIL", {reason: "Missing id in returned response"});
         }
@@ -83,10 +82,11 @@ function App() {
     const [state, send] = useMachine(lifecycle);
     const [showHelp, setShowHelp] = useState(false);
     const [hoverRef, isHovered] = useHover();
-    const [identifier, setIdentifier] = useLocalStorage("identifier");
+    const [userUUID, setUserUUID] = useLocalStorage("userUUID");
 
-    if (!identifier) {
-        setIdentifier(generateIdentifier());
+    if (!userUUID) {
+        // No identifier stored, generate a new one.
+        setUserUUID(generateIdentifier());
     }
 
     const uuid = new URLSearchParams(window.location.search).get("uuid");
@@ -140,7 +140,7 @@ function App() {
                 <h1>
                     Start hacking your substrate runtime in a web based VSCode like IDE
                 </h1>
-                <div ref={hoverRef} className="cta" onClick={() => {send("LOAD"); deployAndRedirect(send, "default")}}>
+                <div ref={hoverRef} className="cta" onClick={() => {send("LOAD"); deployAndRedirect(send, userUUID, "default")}}>
                     <span>Experiment!</span>
                 </div>
             </div>

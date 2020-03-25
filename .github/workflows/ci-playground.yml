@@ -3,7 +3,7 @@ name: Continuous Integration Playground
 on:
   pull_request:
     paths-ignore:
-      - 'theia-substrate/**'
+      - 'theia-images/**'
 
 jobs:
   frontend:

@@ -2,7 +2,7 @@
 
 # Substrate playground
 
-A hosted website that enables the user to navigate the [Substrate](https://github.com/paritytech/substrate) [Node-Template](https://github.com/paritytech/substrate/tree/master/node-template); edit & add modules/files; compile & share code/errors.
+A hosted website that enables the user to navigate the [Substrate](https://github.com/paritytech/substrate) ecosystem.
 
 The production environment is available at [playground.substrate.dev](https://playground.substrate.dev) while the staging environment is available at [playground-staging.substrate.dev](https://playground-staging.substrate.dev).
 
@@ -12,25 +12,7 @@ Users can use a TypeScript base [front end](/frontend) to communicate with a [ba
 
 ## Development
 
-Make sure [minikube](https://minikube.sigs.k8s.io/) is started for local development:
-
-```
-minikube start
-```
-
-Then in a first shell, start:
-
-```
-make dev-backend
-```
-
-And in a second terminal:
-
-```
-make dev-frontend
-```
-
-You can now browse `http:localhost:8000`.
+Local development is both frontend, backend and theia images are facilitated. More details can be found in [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).
 
 ## Release
 

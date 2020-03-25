@@ -29,10 +29,6 @@ GOOGLE_PROJECT_ID=substrateplayground-252112
 help:
 	@awk '/^#/{c=substr($$0,3);next}c&&/^[[:alpha:]][[:print:]]+:/{print substr($$1,1,index($$1,":")),c}1{c=0}' $(MAKEFILE_LIST) | column -s: -t
 
-# Setup project
-setup-frontend:
-	cd frontend; yarn
-
 clean-frontend:
 	cd frontend; yarn clean
 
@@ -45,18 +41,18 @@ clean: clean-frontend clean-backend
 
 ## Local development
 
-dev-frontend: setup-frontend
-	cd frontend; yarn watch
+dev-frontend:
+	cd frontend; yarn && yarn watch
 
 dev-backend:
-	cd backend; RUST_BACKTRACE=1 PLAYGROUND_ASSETS="../frontend/dist" cargo run
+	cd backend; RUST_BACKTRACE=1 PLAYGROUND_HOST=localhost cargo run
 
 ## Docker images
 
-# Build theia-substrate docker image
+# Build theia docker image
 build-theia-docker-image:
 	$(eval THEIA_DOCKER_IMAGE_VERSION=$(shell git rev-parse --short HEAD))
-	@cd theia-substrate; docker build -f Dockerfile --label git-commit=${THEIA_DOCKER_IMAGE_VERSION} -t ${THEIA_DOCKER_IMAGE_VERSION} . && docker image prune -f --filter label=stage=builder
+	@cd theia-images; docker build -f Dockerfile --label git-commit=${THEIA_DOCKER_IMAGE_VERSION} -t ${THEIA_DOCKER_IMAGE_VERSION} . && docker image prune -f --filter label=stage=builder
 	docker tag ${THEIA_DOCKER_IMAGE_VERSION} gcr.io/${GOOGLE_PROJECT_ID}/${THEIA_DOCKER_IMAGE_NAME}
 
 # Push a newly built theia image on gcr.io
@@ -80,7 +76,7 @@ k8s-assert:
 	if [ "$${answer}" != "Y" ] ;then exit 1; fi
 
 k8s-setup: k8s-assert
-	@kubectl create namespace ${IDENTIFIER}
+	kubectl create namespace ${IDENTIFIER}
 
 # Deploy nginx on kubernetes
 k8s-deploy-nginx: k8s-assert
@@ -126,7 +122,7 @@ endif
 	sed 's/\$${PLAYGROUND_HOST}'"/${PLAYGROUND_HOST}/g" | \
 	kubectl delete --namespace=${IDENTIFIER} -f -
 
-# Undeploy all theia-substrate pods and services from kubernetes
+# Undeploy all theia pods and services from kubernetes
 k8s-undeploy-theia: k8s-assert
 	kubectl delete pods,services -l app=theia-substrate --namespace=${IDENTIFIER}
 

@@ -5,7 +5,8 @@
     "generateName": "theia-substrate-",
     "labels": {
       "app": "theia-substrate",
-      "app-uuid": "%UUID%"
+      "user-uuid": "%USER_UUID%",
+      "instance-uuid": "%INSTANCE_UUID%"
     }},
   "spec": {
     "containers": [{
