@@ -24,3 +24,4 @@ serde_json = "1.0.48"
 kube = "0.30.0"
 k8s-openapi = { version = "0.7.1", default-features = false, features = ["v1_15"] }
 futures = "0.3"
+tokio = "0.2.13"

@@ -63,8 +63,8 @@ fn main() -> Result<(), Error> {
     let t = Mutex::new(Timer::new());
     rocket::ignite()
         .attach(prometheus.clone())
-        .mount("/", StaticFiles::from("/static"))
-        .mount("/api", routes![api::index])
+        .mount("/", StaticFiles::from("./static"))
+        .mount("/api", routes![api::list, api::deploy])
         .mount("/metrics", prometheus)
         .manage(Context(host, t))
         .attach(cors)

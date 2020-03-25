@@ -5,7 +5,7 @@
         "generateName": "theia-substrate-http-",
         "labels": {
             "app": "theia-substrate",
-            "app-uuid": "%UUID%"
+            "instance-uuid": "%INSTANCE_UUID%"
         }
     },
     "spec": {
@@ -27,7 +27,7 @@
             }
         ],
         "selector": {
-            "app-uuid": "%UUID%"
+            "instance-uuid": "%INSTANCE_UUID%"
         },
         "type": "NodePort"
     }
