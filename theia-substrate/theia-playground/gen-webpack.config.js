@@ -1,6 +1,6 @@
 /**
  * Don't touch this file. It will be renerated by theia build.
- * To customize webpack configuration change /Users/julien/Documents/Projects/paritytech/substrate-playground/theia-substrate/theia-playground/webpack.config.js
+ * To customize webpack configuration change /Users/julien/Documents/Projects/paritytech/substrate-playground/theia-images/theia-playground/webpack.config.js
  */
 // @ts-check
 const path = require('path');
@@ -22,9 +22,9 @@ const { mode, staticCompression }  = yargs.option('mode', {
 }).argv;
 const development = mode === 'development';
 
-const monacoEditorCorePath = development ? '/Users/julien/Documents/Projects/paritytech/substrate-playground/theia-substrate/node_modules/@typefox/monaco-editor-core/dev/vs' : '/Users/julien/Documents/Projects/paritytech/substrate-playground/theia-substrate/node_modules/@typefox/monaco-editor-core/min/vs';
-const monacoCssLanguagePath = '/Users/julien/Documents/Projects/paritytech/substrate-playground/theia-substrate/node_modules/monaco-css/release/min';
-const monacoHtmlLanguagePath = '/Users/julien/Documents/Projects/paritytech/substrate-playground/theia-substrate/node_modules/monaco-html/release/min';
+const monacoEditorCorePath = development ? '/Users/julien/Documents/Projects/paritytech/substrate-playground/theia-images/node_modules/@typefox/monaco-editor-core/dev/vs' : '/Users/julien/Documents/Projects/paritytech/substrate-playground/theia-images/node_modules/@typefox/monaco-editor-core/min/vs';
+const monacoCssLanguagePath = '/Users/julien/Documents/Projects/paritytech/substrate-playground/theia-images/node_modules/monaco-css/release/min';
+const monacoHtmlLanguagePath = '/Users/julien/Documents/Projects/paritytech/substrate-playground/theia-images/node_modules/monaco-html/release/min';
 
 const plugins = [new CopyWebpackPlugin([
     {
