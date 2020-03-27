@@ -18,21 +18,20 @@ make dev-backend
 And in a second terminal:
 
 ```
-
 make dev-frontend
 ```
 
-You can now browse `http:localhost:8000`.
+You can now browse `http://localhost:8000`.
 
 # Dashboard
 
-Install the dashboard itself:
+[Install](https://kubernetes.io/docs/tasks/access-application-cluster/web-ui-dashboard/) the web [dashboard](https://github.com/kubernetes/dashboard/) to have a simple way to manage the k8s cluster:
 
 ```shell
 kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.0-beta8/aio/deploy/recommended.yaml
 ```
 
-Setup user access
+Setup [user access](https://github.com/kubernetes/dashboard/blob/master/docs/user/access-control/creating-sample-user.md):
 
 ```
 # Add a dummy user access

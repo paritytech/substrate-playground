@@ -22,9 +22,12 @@ fn read_deployment(user_uuid: &str, instance_uuid: &str, image: &str) -> Result<
     fs::read_to_string(&Path::new("conf/deployment.json"))
         .map_err(error_to_string)
         .and_then(|s| {
-            serde_json::from_str(&s.replace("%IMAGE_NAME%", image).replace("%USER_UUID%", user_uuid)
-                                   .replace("%INSTANCE_UUID%", instance_uuid))
-                .map_err(error_to_string)
+            serde_json::from_str(
+                &s.replace("%IMAGE_NAME%", image)
+                    .replace("%USER_UUID%", user_uuid)
+                    .replace("%INSTANCE_UUID%", instance_uuid),
+            )
+            .map_err(error_to_string)
         })
 }
 
@@ -59,7 +62,10 @@ fn read_remove_path(index: &str) -> Result<Value, String> {
 */
 
 async fn config() -> Result<kube::config::Configuration, String> {
-    config::load_kube_config().await.or_else(|_| config::incluster_config()).map_err(error_to_string)
+    config::load_kube_config()
+        .await
+        .or_else(|_| config::incluster_config())
+        .map_err(error_to_string)
 }
 
 async fn images_from_template(
@@ -71,9 +77,7 @@ async fn images_from_template(
         .get("theia-images")
         .await
         .map_err(error_to_string)
-        .and_then(|o: ConfigMap| {
-            o.data.ok_or_else(|| "No data field".to_string())
-        })
+        .and_then(|o: ConfigMap| o.data.ok_or_else(|| "No data field".to_string()))
 }
 
 async fn list_by_selector<K: Clone + DeserializeOwned + Meta>(
@@ -97,9 +101,10 @@ pub async fn list(user_uuid: &str) -> Result<Vec<String>, String> {
     let pod_api: Api<Pod> = Api::namespaced(client.clone(), namespace);
     let selector = format!("user-uuid={}", user_uuid);
     let pods = list_by_selector(&pod_api, selector).await?;
-    let names = pods.iter().flat_map(|pod|
-        pod.metadata.as_ref().and_then(|md| md.name.clone())
-    ).collect::<Vec<_>>();
+    let names = pods
+        .iter()
+        .flat_map(|pod| pod.metadata.as_ref().and_then(|md| md.name.clone()))
+        .collect::<Vec<_>>();
 
     Ok(names)
 }
@@ -121,7 +126,8 @@ pub async fn deploy(host: &str, user_uuid: &str, image_id: &str) -> Result<Strin
     pod_api
         .create(
             &PostParams::default(),
-            &serde_json::from_value(read_deployment(&user_uuid, &instance_uuid, image)?).map_err(error_to_string)?,
+            &serde_json::from_value(read_deployment(&user_uuid, &instance_uuid, image)?)
+                .map_err(error_to_string)?,
         )
         .await
         .map(|o| o.metadata.unwrap().name.unwrap())
@@ -158,7 +164,7 @@ pub async fn deploy(host: &str, user_uuid: &str, image_id: &str) -> Result<Strin
     Ok(instance_uuid)
 }
 
-pub async fn undeploy(_host: &str, instance_uuid: &str,) -> Result<(), String> {
+pub async fn undeploy(_host: &str, instance_uuid: &str) -> Result<(), String> {
     let config = config().await?;
     let namespace = &config.clone().default_ns;
     let client = APIClient::new(config);

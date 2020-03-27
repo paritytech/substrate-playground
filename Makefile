@@ -45,7 +45,7 @@ dev-frontend:
 	cd frontend; yarn && yarn watch
 
 dev-backend:
-	cd backend; RUST_BACKTRACE=1 PLAYGROUND_HOST=localhost cargo run
+	cd backend; ln -sf ../frontend/dist static; RUST_BACKTRACE=1 PLAYGROUND_HOST=localhost cargo run
 
 ## Docker images
 
