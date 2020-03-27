@@ -59,12 +59,8 @@ pub static UNDEPLOY_FAILURES_COUNTER: Lazy<IntCounterVec> = Lazy::new(|| {
 pub fn list(user_uuid: String) -> JsonValue {
     let mut runtime = Runtime::new().unwrap();
     match runtime.block_on(kubernetes::list(&user_uuid)) {
-        Ok(names) => {
-            json!({"status": "ok", "names": names})
-        }
-        Err(err) => {
-            json!({"status": "ko", "reason": err})
-        }
+        Ok(names) => json!({"status": "ok", "names": names}),
+        Err(err) => json!({"status": "ko", "reason": err}),
     }
 }
 
@@ -83,7 +79,9 @@ pub fn deploy(state: State<'_, Context>, user_uuid: String, image_id: String) ->
     match runtime.block_on(kubernetes::deploy(&host, &user_uuid, &image_id)) {
         Ok(instance_uuid) => {
             info!("Launched instance {} (template: {})", user_uuid, image_id);
-            DEPLOY_COUNTER.with_label_values(&[&image_id, &user_uuid]).inc();
+            DEPLOY_COUNTER
+                .with_label_values(&[&image_id, &user_uuid])
+                .inc();
             let uuid2 = instance_uuid.clone();
             state
                 .1

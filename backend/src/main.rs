@@ -12,22 +12,23 @@ use rocket_cors::{AllowedOrigins, CorsOptions};
 use rocket_prometheus::PrometheusMetrics;
 use std::{
     env,
-    io::{Error, ErrorKind},
+    error::Error,
+    io::{self, ErrorKind},
     sync::Mutex,
 };
 use timer::Timer;
 
 pub struct Context(pub String, pub Mutex<Timer>);
 
-fn main() -> Result<(), Error> {
-    // Initialize log configuration. Reads RUST_LOG if any, otherwise fallsback to `default`
+fn main() -> Result<(), Box<dyn Error>> {
+    // Initialize log configuration. Reads `RUST_LOG` if any, otherwise fallsback to `default`
     if env::var("RUST_LOG").is_err() {
         env::set_var("RUST_LOG", "info,kube=debug");
     }
     env_logger::init();
 
     // Load configuration from environment variables
-    let host = env::var("PLAYGROUND_HOST").map_err(|e| Error::new(ErrorKind::NotFound, e))?;
+    let host = env::var("PLAYGROUND_HOST").map_err(|e| io::Error::new(ErrorKind::NotFound, e))?;
 
     info!("Configuration:");
     info!("host: {}", host);
@@ -42,31 +43,22 @@ fn main() -> Result<(), Error> {
         allow_credentials: true,
         ..Default::default()
     }
-    .to_cors()
-    .unwrap();
+    .to_cors()?;
 
-    let registry = Registry::new_custom(Some("backend_api".to_string()), None).unwrap();
-    registry
-        .register(Box::new(api::DEPLOY_COUNTER.clone()))
-        .unwrap();
-    registry
-        .register(Box::new(api::DEPLOY_FAILURES_COUNTER.clone()))
-        .unwrap();
-    registry
-        .register(Box::new(api::UNDEPLOY_COUNTER.clone()))
-        .unwrap();
-    registry
-        .register(Box::new(api::UNDEPLOY_FAILURES_COUNTER.clone()))
-        .unwrap();
+    // Register all prometeus metrics
+    let registry = Registry::new_custom(Some("backend_api".to_string()), None)?;
+    registry.register(Box::new(api::DEPLOY_COUNTER.clone()))?;
+    registry.register(Box::new(api::DEPLOY_FAILURES_COUNTER.clone()))?;
+    registry.register(Box::new(api::UNDEPLOY_COUNTER.clone()))?;
+    registry.register(Box::new(api::UNDEPLOY_FAILURES_COUNTER.clone()))?;
+
     let prometheus = PrometheusMetrics::with_registry(registry);
-
-    let t = Mutex::new(Timer::new());
     rocket::ignite()
         .attach(prometheus.clone())
         .mount("/", StaticFiles::from("./static"))
         .mount("/api", routes![api::list, api::deploy])
         .mount("/metrics", prometheus)
-        .manage(Context(host, t))
+        .manage(Context(host, Mutex::new(Timer::new())))
         .attach(cors)
         .launch();
 
