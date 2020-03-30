@@ -76,11 +76,19 @@ push-playground-docker-image: build-playground-docker-image
 k8s-assert:
 	$(eval CURRENT_NAMESPACE=$(shell kubectl config view --minify --output 'jsonpath={..namespace}'))
 	$(eval CURRENT_CONTEXT=$(shell kubectl config current-context))
-	@echo $$'You are about to interact with the \e[31m'"${ENVIRONMENT}"$$'\e[0m environment (namespace: \e[31m'"${IDENTIFIER}"$$'\e[0m, context: \e[31m'"${CURRENT_NAMESPACE}"$$'\e[0m).'
+	@echo $$'You are about to interact with the \e[31m'"${ENVIRONMENT}"$$'\e[0m environment (namespace: \e[31m'"${IDENTIFIER}"$$'\e[0m, context: \e[31m'"${CURRENT_CONTEXT}"$$'\e[0m).'
 	@echo $$'(Modify the environment by setting \e[31m'ENVIRONMENT$$'\e[0m variable).'
 	@if [ "${CURRENT_NAMESPACE}" != "${IDENTIFIER}" ] ;then read -p $$'Current namespace (${CURRENT_NAMESPACE}) doesn\'t match environment. Update? [yN]' proceed; if [ "$${proceed}" == "Y" ] ;then kubectl config set-context --current --namespace=${IDENTIFIER}; else exit 1; fi; fi
 	@read -p $$'Ok to proceed? [yN]' answer; \
 	if [ "$${answer}" != "Y" ] ;then exit 1; fi
+
+k8s-setup-development:
+	kubectl config use-context docker-for-desktop
+	kubectl config set-context --current --namespace=${IDENTIFIER}
+
+k8s-setup-gke:
+	kubectl config use-context gke_substrateplayground-252112_us-central1-a_substrate-playground
+	kubectl config set-context --current --namespace=${IDENTIFIER}
 
 # Deploy nginx on kubernetes
 k8s-deploy-nginx: k8s-assert
