@@ -2,6 +2,7 @@
 
 use crate::kubernetes;
 use crate::Context;
+use chrono::Duration;
 use futures::executor::block_on;
 use log::{info, warn};
 use once_cell::sync::Lazy;
@@ -64,6 +65,8 @@ pub fn list(user_uuid: String) -> JsonValue {
     }
 }
 
+const DELAY_HOURS: i64 = 3;
+
 /// Deploy `image_id` Docker container for `user_uuid`.
 ///
 /// Returns a `JsonValue` with following shape:
@@ -79,6 +82,7 @@ pub fn deploy(state: State<'_, Context>, user_uuid: String, image_id: String) ->
     match runtime.block_on(kubernetes::deploy(&host, &user_uuid, &image_id)) {
         Ok(instance_uuid) => {
             info!("Launched instance {} (template: {})", user_uuid, image_id);
+            let delay = Duration::hours(DELAY_HOURS);
             DEPLOY_COUNTER
                 .with_label_values(&[&image_id, &user_uuid])
                 .inc();
@@ -87,7 +91,7 @@ pub fn deploy(state: State<'_, Context>, user_uuid: String, image_id: String) ->
                 .1
                 .lock()
                 .unwrap()
-                .schedule_with_delay(chrono::Duration::hours(3), move || {
+                .schedule_with_delay(delay, move || {
                     info!("#Deleting! {}", instance_uuid);
                     if let Err(s) = block_on(kubernetes::undeploy(&host, &instance_uuid)) {
                         warn!("Failed to undeploy {}: {}", instance_uuid, s);

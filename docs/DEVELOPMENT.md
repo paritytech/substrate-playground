@@ -6,7 +6,7 @@ It is also possible to use [minikube](https://minikube.sigs.k8s.io/) or others a
 ```shell
 # Use the local kubernetes cluster
 kubectl config use-context docker-for-desktop
-kubectl config set-context --current --namespace=playground-staging
+kubectl config set-context --current --namespace=default
 ```
 
 Then in a first shell, start:

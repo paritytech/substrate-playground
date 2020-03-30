@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import React from "react";
 import * as ReactDOM from "react-dom";
 import { Machine } from 'xstate';
@@ -89,6 +89,21 @@ function App() {
         setUserUUID(generateIdentifier());
     }
 
+    const [runningInstances, setRunningInstances] = useState([]);
+
+    useEffect(() => {
+        (async function anyNameFunction() {
+            const response = await fetch(`/api/${userUUID}`, {
+                method: 'GET',
+                headers: {'Accept': 'application/json',
+                          'Content-Type': 'application/json'}
+            });
+            setRunningInstances((await response.json()).names);
+        })();
+    }, []);
+
+    console.log("runningInstances",runningInstances);
+
     const uuid = new URLSearchParams(window.location.search).get("uuid");
     if (uuid) {
         send("FETCH", {uuid: uuid});
@@ -140,9 +155,16 @@ function App() {
                 <h1>
                     Start hacking your substrate runtime in a web based VSCode like IDE
                 </h1>
+                {runningInstances.length == 0 &&
                 <div ref={hoverRef} className="cta" onClick={() => {send("LOAD"); deployAndRedirect(send, userUUID, "default")}}>
                     <span>Experiment!</span>
                 </div>
+                }
+                {runningInstances.length != 0 &&
+                <div ref={hoverRef} className="cta" onClick={() => {send("FETCH", {uuid: runningInstances[0]});}}>
+                    <span>You already have an instance running. Join it!</span>
+                </div>
+                }
             </div>
         }
         {(state.matches('loading') || state.matches('fetching') || state.matches('slow')) &&

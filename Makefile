@@ -1,10 +1,10 @@
 .DEFAULT_GOAL=help
 
 ifeq ($(ENVIRONMENT),)
-  ENVIRONMENT=staging
+  ENVIRONMENT=dev
 endif
 
-ENVIRONMENTS := production staging
+ENVIRONMENTS := production staging dev
 
 ifeq ($(filter $(ENVIRONMENT),$(ENVIRONMENTS)),)
     $(error ENVIRONMENT should be one of ($(ENVIRONMENTS)) but was $(ENVIRONMENT))
@@ -12,6 +12,8 @@ endif
 
 ifeq ($(ENVIRONMENT), production)
   IDENTIFIER=playground
+else ifeq ($(ENVIRONMENT), dev)
+  IDENTIFIER=default
 else
   IDENTIFIER=playground-${ENVIRONMENT}
 endif
@@ -72,11 +74,13 @@ push-playground-docker-image: build-playground-docker-image
 ## Kubernetes deployment
 
 k8s-assert:
-	@read -p $$'You are about to interact with the \e[31m'"${ENVIRONMENT}"$$'\e[0m environment. Ok to proceed? [yN]' answer; \
+	$(eval CURRENT_NAMESPACE=$(shell kubectl config view --minify --output 'jsonpath={..namespace}'))
+	$(eval CURRENT_CONTEXT=$(shell kubectl config current-context))
+	@echo $$'You are about to interact with the \e[31m'"${ENVIRONMENT}"$$'\e[0m environment (namespace: \e[31m'"${IDENTIFIER}"$$'\e[0m, context: \e[31m'"${CURRENT_NAMESPACE}"$$'\e[0m).'
+	@echo $$'(Modify the environment by setting \e[31m'ENVIRONMENT$$'\e[0m variable).'
+	@if [ "${CURRENT_NAMESPACE}" != "${IDENTIFIER}" ] ;then read -p $$'Current namespace (${CURRENT_NAMESPACE}) doesn\'t match environment. Update? [yN]' proceed; if [ "$${proceed}" == "Y" ] ;then kubectl config set-context --current --namespace=${IDENTIFIER}; else exit 1; fi; fi
+	@read -p $$'Ok to proceed? [yN]' answer; \
 	if [ "$${answer}" != "Y" ] ;then exit 1; fi
-
-k8s-setup: k8s-assert
-	kubectl create namespace ${IDENTIFIER}
 
 # Deploy nginx on kubernetes
 k8s-deploy-nginx: k8s-assert
