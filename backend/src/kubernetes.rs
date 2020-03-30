@@ -103,9 +103,11 @@ pub async fn list(user_uuid: &str) -> Result<Vec<String>, String> {
     let pods = list_by_selector(&pod_api, selector).await?;
     let names: Vec<String> = pods
         .iter()
-        .flat_map(|pod| pod.metadata.as_ref().and_then(|md| {
-            Some(md.labels.clone()?.get("instance-uuid")?.to_string())
-        }))
+        .flat_map(|pod| {
+            pod.metadata
+                .as_ref()
+                .and_then(|md| Some(md.labels.clone()?.get("instance-uuid")?.to_string()))
+        })
         .collect::<Vec<_>>();
 
     Ok(names)
