@@ -101,9 +101,11 @@ pub async fn list(user_uuid: &str) -> Result<Vec<String>, String> {
     let pod_api: Api<Pod> = Api::namespaced(client.clone(), namespace);
     let selector = format!("user-uuid={}", user_uuid);
     let pods = list_by_selector(&pod_api, selector).await?;
-    let names = pods
+    let names: Vec<String> = pods
         .iter()
-        .flat_map(|pod| pod.metadata.as_ref().and_then(|md| md.name.clone()))
+        .flat_map(|pod| pod.metadata.as_ref().and_then(|md| {
+            Some(md.labels.clone()?.get("instance-uuid")?.to_string())
+        }))
         .collect::<Vec<_>>();
 
     Ok(names)
@@ -169,7 +171,7 @@ pub async fn undeploy(_host: &str, instance_uuid: &str) -> Result<(), String> {
     let namespace = &config.clone().default_ns;
     let client = APIClient::new(config);
 
-    // Undeploy the service from it's id
+    // Undeploy the service from its id
     let service_api: Api<Service> = Api::namespaced(client.clone(), namespace);
     let selector = format!("instance-uuid={}", instance_uuid);
     let services = list_by_selector(&service_api, selector.clone()).await?;

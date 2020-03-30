@@ -64,7 +64,7 @@ export function useInterval(callback: () => void, delay: number) {
   }, [delay]);
 }
 
-export function useLocalStorage(key: string, initialValue: string) {
+export function useLocalStorage(key: string, initialValue: string = "") {
   // From https://usehooks.com/useLocalStorage/
   // State to store our value
   // Pass initial state function to useState so logic is only executed once
