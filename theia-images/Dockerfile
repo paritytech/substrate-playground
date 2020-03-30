@@ -85,7 +85,7 @@ RUN git clone https://github.com/substrate-developer-hub/substrate-node-template
     git clone https://github.com/substrate-developer-hub/recipes
 
 RUN cd $HOME/workspace/substrate-front-end-template && yarn \
-    && cd $HOME/workspace/substrate-node-template && cargo build && cargo build --release
+    && cd $HOME/workspace/substrate-node-template && cargo build --release
 
 EXPOSE 3000 8000 9944 30333
 
