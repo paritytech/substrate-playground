@@ -102,8 +102,6 @@ function App() {
         })();
     }, []);
 
-    console.log("runningInstances",runningInstances);
-
     const uuid = new URLSearchParams(window.location.search).get("uuid");
     if (uuid) {
         send("FETCH", {uuid: uuid});
@@ -155,12 +153,12 @@ function App() {
                 <h1>
                     Start hacking your substrate runtime in a web based VSCode like IDE
                 </h1>
-                {runningInstances.length == 0 &&
+                {runningInstances && runningInstances.length == 0 &&
                 <div ref={hoverRef} className="cta" onClick={() => {send("LOAD"); deployAndRedirect(send, userUUID, "default")}}>
                     <span>Experiment!</span>
                 </div>
                 }
-                {runningInstances.length != 0 &&
+                {runningInstances && runningInstances.length != 0 &&
                 <div ref={hoverRef} className="cta" onClick={() => {send("FETCH", {uuid: runningInstances[0]});}}>
                     <span>You already have an instance running. Join it!</span>
                 </div>
