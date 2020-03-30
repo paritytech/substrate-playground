@@ -19,12 +19,6 @@ jobs:
       - name: Install
         run: yarn install --check-files
         working-directory: ./theia-images
-      - name: Lint
-        run: yarn lint
-        working-directory: ./theia-images
-      - name: Audit
-        run: yarn audit
-        working-directory: ./theia-images
       - name: Build
-        run: yarn build
+        run: yarn workspace @parity/theia-playground theia build
         working-directory: ./theia-images
