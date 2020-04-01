@@ -8,6 +8,7 @@
 ##########################
 
 # Theia must build with node 10 (https://github.com/eclipse-theia/theia/issues/7349)
+# Based on https://github.com/theia-ide/theia-apps/blob/master/theia-docker/Dockerfile
 ARG NODE_VERSION=10
 FROM node:${NODE_VERSION} as theia-base
 WORKDIR /home/theia
@@ -15,10 +16,16 @@ ADD package.json .
 ADD lerna.json .
 ADD theia-playground theia-playground
 ADD theia-playground-extension theia-playground-extension
-RUN yarn && \
-    yarn workspace @parity/theia-playground && \
+RUN yarn --pure-lockfile && \
+    NODE_OPTIONS="--max_old_space_size=4096" yarn workspace @parity/theia-playground theia build && \
     yarn workspace @parity/theia-playground theia download:plugins && \
-    NODE_OPTIONS="--max_old_space_size=4096" yarn workspace @parity/theia-playground theia build
+    yarn --production && \
+    yarn autoclean --init && \
+    echo *.ts >> .yarnclean && \
+    echo *.ts.map >> .yarnclean && \
+    echo *.spec.* >> .yarnclean && \
+    yarn autoclean --force && \
+    yarn cache clean
 
 ##########################
 #     Rust base          #
@@ -43,6 +50,8 @@ RUN chmod g+rw /home && \
     chown -R substrate:substrate /home/theia && \
     chown -R substrate:substrate /home/substrate;
 
+# Copy the whole theia folder, including node_modules
+# This is the recommended approach: https://spectrum.chat/theia/dev/theia-packaging~6c10127c-a316-4e87-9a27-e4b70fb647c1
 COPY --from=theia-base --chown=substrate:substrate /home/theia /home/theia
 
 # Pick up the version from https://rust-lang.github.io/rustup-components-history/index.html
