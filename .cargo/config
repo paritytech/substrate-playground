@@ -1,0 +1,3 @@
+[alias]
+check = "fmt --all -- --check"
+lint = "clippy -- -D warnings -A deprecated"

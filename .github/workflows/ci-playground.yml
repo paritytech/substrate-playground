@@ -41,10 +41,10 @@ jobs:
           components: rustfmt, clippy
       - uses: actions/checkout@v2
       - name: Check Formatting
-        run: cargo fmt --all -- --check
+        run: cargo check
         working-directory: ./backend
-      - name: Clippy
-        run: cargo clippy -- -D warnings -A deprecated
+      - name: Lint
+        run: cargo lint
         working-directory: ./backend
       - name: Build
         run: cargo build --verbose
