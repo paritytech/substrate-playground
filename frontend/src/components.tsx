@@ -1,10 +1,11 @@
-import React, {useState} from "react";
+import React, { useState } from "react";
 import { useSpring, animated } from 'react-spring'
-import { useWindowMaxDimension, useInterval } from './hooks';
-import DialogTitle from '@material-ui/core/DialogTitle';
 import Dialog from '@material-ui/core/Dialog';
 import DialogContent from '@material-ui/core/DialogContent';
 import DialogContentText from '@material-ui/core/DialogContentText';
+import DialogTitle from '@material-ui/core/DialogTitle';
+import { useHover, useInterval, useWindowMaxDimension } from './hooks';
+import { useLifecycle, checking, deploy, deployed, deploying, failed, initial, restart, show } from './lifecycle';
 import frontendImage from './../assets/help/front-end.png';
 import initialImage from './../assets/help/initial.png';
 import newTerminalImage from './../assets/help/new-terminal.png';
@@ -13,52 +14,53 @@ import terminalFrontendImage from './../assets/help/terminal-front-end.png';
 import terminalFrontendServeImage from './../assets/help/terminal-front-end-serve.png';
 import terminalNodeImage from './../assets/help/terminal-node.png';
 
-export function Help({open, onClose}: {open: boolean}) {
-    return (<Dialog aria-labelledby="help-dialog" open={open} onClose={onClose} scroll="paper" maxWidth="lg">
-                <DialogTitle>Getting started with the playground</DialogTitle>
-                <DialogContent dividers={true} style={{display: "flex", flexDirection: "column", alignItems: "center", padding: 100}}>
-                    <DialogContentText>
-                        Playground is the simplest way to get started with Substrate.
-                        From the comfort of your browser, hack and start a remotely-accessible node.
-                        It gives you access to an IDE similar to VS Code, with full terminal support.
-                        <br />
-                        This help page will guide you through the process of starting a stock node and accessing it via external web UIs.
-                        <br />
-                        To give it a try, just click the <em>Experiment!</em> button.
-                    </DialogContentText>
-                    <img src={initialImage} style={{width: 800}} />
-                    <DialogContentText style={{paddingTop: 50}}>
-                        First, create a new terminal.
-                    </DialogContentText>
-                    <img src={newTerminalImage} style={{width: 300}} />
-                    <DialogContentText style={{paddingTop: 50}}>
-                        This terminal will host our new Substrate node.
-                        It can be started with the following command: <code>./target/release/node-template --dev --ws-external</code>
-                    </DialogContentText>
-                    <img src={terminalNodeImage} style={{width: 800}} />
-                    <DialogContentText style={{paddingTop: 50}}>
-                        Create a second terminal.
-                        This terminal will host the HTTP server serving the code from <code>substrate-front-end-template</code>.
-                        This can be done by executing the following command: <code>yarn build && yarn serve</code>
-                    </DialogContentText>
-                    <img src={terminalFrontendImage} style={{width: 800}} />
-                    <DialogContentText style={{paddingTop: 50}}>
-                        Wait for the following output before proceding to the next step.
-                    </DialogContentText>
-                    <img src={terminalFrontendServeImage} style={{width: 500}} />
-                    <DialogContentText style={{paddingTop: 50}}>
-                        The regular PolkadotJS Apps can be used to browse your node. Just follow the <em>Polkadot Apps</em> link.
-                    </DialogContentText>
-                    <img src={polkadotJSAppsImage} style={{width: 500}} />
-                    <DialogContentText style={{paddingTop: 50}}>
-                        Similarly, you can access the front-end template. Just follow the <em>Front end</em> link.
-                    </DialogContentText>
-                    <img src={frontendImage} style={{width: 800}} />
-                </DialogContent>
-            </Dialog>);
+export function HelpPanel({open, onClose}: {open: boolean, onClose: () => void}) {
+    return (
+        <Dialog aria-labelledby="help-dialog" open={open} onClose={onClose} scroll="paper" maxWidth="lg">
+            <DialogTitle>Getting started with the playground</DialogTitle>
+            <DialogContent dividers={true} style={{display: "flex", flexDirection: "column", alignItems: "center", padding: 100}}>
+                <DialogContentText>
+                    Playground is the simplest way to get started with Substrate.
+                    From the comfort of your browser, hack and start a remotely-accessible node.
+                    It gives you access to an IDE similar to VS Code, with full terminal support.
+                    <br />
+                    This help page will guide you through the process of starting a stock node and accessing it via external web UIs.
+                    <br />
+                    To give it a try, just click the <em>Experiment!</em> button.
+                </DialogContentText>
+                <img src={initialImage} style={{width: 800}} />
+                <DialogContentText style={{paddingTop: 50}}>
+                    First, create a new terminal.
+                </DialogContentText>
+                <img src={newTerminalImage} style={{width: 300}} />
+                <DialogContentText style={{paddingTop: 50}}>
+                    This terminal will host our new Substrate node.
+                    It can be started with the following command: <code>./target/release/node-template --dev --ws-external</code>
+                </DialogContentText>
+                <img src={terminalNodeImage} style={{width: 800}} />
+                <DialogContentText style={{paddingTop: 50}}>
+                    Create a second terminal.
+                    This terminal will host the HTTP server serving the code from <code>substrate-front-end-template</code>.
+                    This can be done by executing the following command: <code>yarn build && yarn serve</code>
+                </DialogContentText>
+                <img src={terminalFrontendImage} style={{width: 800}} />
+                <DialogContentText style={{paddingTop: 50}}>
+                    Wait for the following output before proceding to the next step.
+                </DialogContentText>
+                <img src={terminalFrontendServeImage} style={{width: 500}} />
+                <DialogContentText style={{paddingTop: 50}}>
+                    The regular PolkadotJS Apps can be used to browse your node. Just follow the <em>Polkadot Apps</em> link.
+                </DialogContentText>
+                <img src={polkadotJSAppsImage} style={{width: 500}} />
+                <DialogContentText style={{paddingTop: 50}}>
+                    Similarly, you can access the front-end template. Just follow the <em>Front end</em> link.
+                </DialogContentText>
+                <img src={frontendImage} style={{width: 800}} />
+            </DialogContent>
+        </Dialog>);
 }
 
-export function SVGBox({isHovered}: {isHovered: boolean}) {
+export function Background({isHovered}: {isHovered: boolean}) {
     const blurFactor = isHovered ? 0 : 10;
     const dimension = useWindowMaxDimension();
     return (
@@ -94,15 +96,16 @@ export function SVGBox({isHovered}: {isHovered: boolean}) {
         </React.Fragment>);
 }
 
-export function ErrorMessage({state, send}: {state: State, send: (name: string) => void}) {
-    const reason = state.context.reason || state.event.reason;
+export function ErrorMessage({reason, onClick}: {reason?: string, onClick: () => void}) {
     return (
         <div className="box-fullscreen box-text">
             <h1>
                 Oops! Looks like something went wrong :(
             </h1>
+            {reason &&
             <h2>{reason}</h2>
-            <div className="cta" onClick={() => {window.history.replaceState(null, "", window.location.pathname); send("RESTART")}}>
+            }
+            <div className="cta" onClick={onClick}>
                 <span>Try again!</span>
             </div>
         </div>
@@ -120,7 +123,17 @@ const loadingPhrases = [
     'The blaffs rub against the chumbles',
     'That leaves you with a regular old plumbus!']
 
-export function Loading({slow}: {slow: boolean}) {
+function Phase( {value}: {value: string}) {
+    switch (value) {
+        case "Peding":
+            return <div>Deploying image</div>;
+        case "Running":
+            return <div>Creating your custom domain</div>;
+    }
+    return null;
+}
+
+export function Loading({phase}: {phase?: string}) {
     const [phrase, setPhrase] = useState(loadingPhrases[0]);
     const [props, set] = useSpring(() => ({opacity: 1}));
 
@@ -135,8 +148,71 @@ export function Loading({slow}: {slow: boolean}) {
         <div className="box-fullscreen box-text">
             <span>Please wait, because</span>
             <animated.h1 style={props}>{phrase}</animated.h1>
-            {slow &&
-            <div>It looks like it takes longer than expected to load. Please be patient :)</div>}
+            {false &&
+                <div>It looks like it takes longer than expected to load. Please be patient :)</div>}
+            {phase &&
+                <Phase value={phase} />}
         </div>
     );
+}
+
+export function Theia({url}: {url: string}) {
+    return (
+        <div>
+            <iframe src={url} frameBorder="0" style={{overflow:"hidden",height:"100vh",width:"100vm"}} height="100%" width="100%"></iframe>
+        </div>
+    );
+}
+
+function Nav({setShowHelp}: {setShowHelp: (_: boolean) => void}) {
+    return (
+        <div style={{fontSize: 20, fontWeight: "bold", color: "#FF1864",padding: "0.9em 2em 1em 3.3em", position: "fixed", top: 20, right: 20, cursor: "pointer"}}>
+            <span style={{padding: 10}} onClick={() => window.open("https://docs.google.com/forms/d/e/1FAIpQLSdXpq_fHqS_ow4nC7EpGmrC_XGX_JCIRzAqB1vaBtoZrDW-ZQ/viewform?edit_requested=true")}>Send Feedback</span>
+            <span onClick={() => setShowHelp(true)}>Help</span>
+        </div>
+    );
+}
+
+export function MainPanel() {
+    const [state, send] = useLifecycle();
+    const [showHelp, setShowHelp] = useState(false);
+    const [hoverRef, isHovered] = useHover<string>();
+
+    if (state.matches(deployed)) {
+        return <Theia url={state.context.instanceURL} />;
+    } else {
+        const instances = state.context.instances;
+        return (
+            <React.Fragment>
+                <Background isHovered={isHovered} />
+
+                <HelpPanel open={showHelp} onClose={() => setShowHelp(false)} />
+
+                {state.matches(initial) &&
+                    <div className="box-fullscreen box-text">
+                        <Nav setShowHelp={setShowHelp} />
+                        <h1>
+                            Start hacking your substrate runtime in a web based VSCode like IDE
+                        </h1>
+                        {instances?.length == 0
+                            ? <div ref={hoverRef} className="cta" onClick={() => {send(deploy);}}>
+                                <span>Experiment!</span>
+                            </div>
+                            : <div ref={hoverRef} className="cta" onClick={() => {send(show);}}>
+                                <span>You already have an instance running. Join it!</span>
+                            </div>
+                        }
+                    </div>
+                }
+
+                {state.matches(deploying) || state.matches(checking) &&
+                    <Loading phase={state.context.phase} />
+                }
+    
+                {state.matches(failed) &&
+                    <ErrorMessage reason={state.context.error} onClick={() => {window.history.replaceState(null, "", window.location.pathname); send(restart)}} />
+                }
+            </React.Fragment>
+        );
+    }
 }

@@ -5,14 +5,16 @@
 use k8s_openapi::api::core::v1::{ConfigMap, Pod, Service};
 use k8s_openapi::api::extensions::v1beta1::Ingress;
 use kube::{
-    api::{Api, DeleteParams, ListParams, Meta, PatchParams, PatchStrategy, PostParams},
+    api::{Api, DeleteParams, ListParams, Meta, PatchParams, PatchStrategy, PostParams, Resource, WatchEvent},
     client::APIClient,
     config,
+    runtime::Informer,
 };
 use serde::de::DeserializeOwned;
 use serde_json::Value;
-use std::{collections::BTreeMap, fs, path::Path};
+use std::{collections::BTreeMap, fs, path::Path, thread, time::Duration};
 use uuid::Uuid;
+use log::info;
 
 fn error_to_string<T: std::fmt::Display>(err: T) -> String {
     format!("{}", err)
@@ -80,6 +82,26 @@ async fn images_from_template(
         .and_then(|o: ConfigMap| o.data.ok_or_else(|| "No data field".to_string()))
 }
 
+pub async fn get(instance_uuid: &str) -> Result<String, String> {
+    let config = config().await?;
+    let namespace = &config.clone().default_ns;
+    let client = APIClient::new(config);
+    let pod_api: Api<Pod> = Api::namespaced(client.clone(), namespace);
+    let selector = format!("instance-uuid={}", instance_uuid);
+    let pods = list_by_selector(&pod_api, selector).await?;
+    let phase = pods
+        .first()
+        .ok_or_else(|| format!("No matching service for {}", instance_uuid))?
+        .status // https://docs.rs/k8s-openapi/0.7.1/k8s_openapi/api/core/v1/struct.PodStatus.html
+        .as_ref()
+        .ok_or_else(|| format!("No metadata for {}", instance_uuid))?
+        .phase
+        .clone()
+        .ok_or_else(|| format!("No name for {}", instance_uuid))?;
+
+    Ok(phase)
+}
+
 async fn list_by_selector<K: Clone + DeserializeOwned + Meta>(
     api: &Api<K>,
     selector: String,
@@ -113,7 +135,8 @@ pub async fn list(user_uuid: &str) -> Result<Vec<String>, String> {
     Ok(names)
 }
 
-pub async fn deploy(host: &str, user_uuid: &str, image_id: &str) -> Result<String, String> {
+pub async fn deploy(host: &str, user_uuid: &str, template: &str) -> Result<String, String> {
+    let config2 = config().await?;
     let config = config().await?;
     let namespace = &config.clone().default_ns;
     let client = APIClient::new(config);
@@ -122,12 +145,12 @@ pub async fn deploy(host: &str, user_uuid: &str, image_id: &str) -> Result<Strin
     // Access the right image id
     let images = images_from_template(client.clone(), &namespace).await?;
     let image = images
-        .get(&image_id.to_string())
-        .ok_or(format!("Unknow image {}", image_id))?;
+        .get(&template.to_string())
+        .ok_or_else(|| format!("Unknow image {}", template))?;
 
     // Deploy a new pod for this image
     let pod_api: Api<Pod> = Api::namespaced(client.clone(), namespace);
-    pod_api
+    let pod_name = pod_api
         .create(
             &PostParams::default(),
             &serde_json::from_value(read_deployment(&user_uuid, &instance_uuid, image)?)
@@ -136,6 +159,24 @@ pub async fn deploy(host: &str, user_uuid: &str, image_id: &str) -> Result<Strin
         .await
         .map(|o| o.metadata.unwrap().name.unwrap())
         .map_err(error_to_string)?;
+
+    /*info!("Spawning");
+    let thread = thread::spawn(async move || {
+        info!("New thread");
+        let namespace = &config2.clone().default_ns;
+        let client = APIClient::new(config2);
+        
+        loop {
+            info!("Loop!");
+            let pod_api: Api<Pod> = Api::namespaced(client.clone(), namespace);
+            let p1cpy = pod_api.get(&pod_name).await.map_err(error_to_string).unwrap();
+            if let Some(status) = &p1cpy.status {
+                info!("Got blog pod with containers: {:?}", status.phase);
+            }
+            thread::sleep(Duration::from_millis(1000));
+        }
+    });
+    info!("{:?}", thread.join().unwrap().await);*/
 
     // Deploy the associated service
     let service: Value = read_service(&instance_uuid)?;
@@ -156,14 +197,14 @@ pub async fn deploy(host: &str, user_uuid: &str, image_id: &str) -> Result<Strin
         ..PatchParams::default()
     };
     let ingress_api: Api<Ingress> = Api::namespaced(client.clone(), namespace);
-    ingress_api
+    /*ingress_api
         .patch(
             "playground-ingress",
             &patch_params,
             serde_json::to_vec(&add_path).map_err(error_to_string)?,
         )
         .await
-        .map_err(error_to_string)?;
+        .map_err(error_to_string)?;*/
 
     Ok(instance_uuid)
 }
@@ -179,13 +220,13 @@ pub async fn undeploy(_host: &str, instance_uuid: &str) -> Result<(), String> {
     let services = list_by_selector(&service_api, selector.clone()).await?;
     let service_name = services
         .first()
-        .ok_or(format!("No matching service for {}", instance_uuid))?
+        .ok_or_else(|| format!("No matching service for {}", instance_uuid))?
         .metadata
         .as_ref()
-        .ok_or(format!("No metadata for {}", instance_uuid))?
+        .ok_or_else(|| format!("No metadata for {}", instance_uuid))?
         .name
         .as_ref()
-        .ok_or(format!("No name for {}", instance_uuid))?;
+        .ok_or_else(|| format!("No name for {}", instance_uuid))?;
     service_api
         .delete(&service_name, &DeleteParams::default())
         .await
@@ -195,13 +236,13 @@ pub async fn undeploy(_host: &str, instance_uuid: &str) -> Result<(), String> {
     let pods = list_by_selector(&pod_api, selector).await?;
     let pod_name = pods
         .first()
-        .ok_or(format!("No matching pod for {}", instance_uuid))?
+        .ok_or_else(|| format!("No matching pod for {}", instance_uuid))?
         .metadata
         .as_ref()
-        .ok_or(format!("No metadata for {}", instance_uuid))?
+        .ok_or_else(|| format!("No metadata for {}", instance_uuid))?
         .name
         .as_ref()
-        .ok_or(format!("No name for {}", instance_uuid))?;
+        .ok_or_else(|| format!("No name for {}", instance_uuid))?;
     pod_api
         .delete(&pod_name, &DeleteParams::default())
         .await

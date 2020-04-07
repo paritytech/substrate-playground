@@ -1,4 +1,4 @@
-#![feature(proc_macro_hygiene, decl_macro)]
+#![feature(async_closure, proc_macro_hygiene, decl_macro)]
 #![deny(intra_doc_link_resolution_failure)]
 
 mod api;
@@ -56,7 +56,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     rocket::ignite()
         .attach(prometheus.clone())
         .mount("/", StaticFiles::from("./static"))
-        .mount("/api", routes![api::list, api::deploy])
+        .mount("/api", routes![api::deploy, api::get, api::list])
         .mount("/metrics", prometheus)
         .manage(Context(host, Mutex::new(Timer::new())))
         .attach(cors)

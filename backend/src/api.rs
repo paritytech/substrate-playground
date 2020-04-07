@@ -10,6 +10,7 @@ use rocket::{get, post, State};
 use rocket_contrib::{json, json::JsonValue};
 use rocket_prometheus::prometheus::{opts, IntCounterVec};
 use tokio::runtime::Runtime;
+use std::{thread, time::Duration as ODuration};
 
 // Prometheus metrics definition
 
@@ -48,71 +49,75 @@ pub static UNDEPLOY_FAILURES_COUNTER: Lazy<IntCounterVec> = Lazy::new(|| {
     .expect("Could not create lazy IntCounterVec")
 });
 
-/// Deploy `image_id` Docker container for `user_uuid`.
-///
-/// Returns a `JsonValue` with following shape:
-/// - {"status" "ok"
-///    "uuid"     "xxxx"}
-///  if the container statup was successful
-/// - {"status" "ko"
-///    "reason" "xxxx"} if not
 #[get("/<user_uuid>")]
 pub fn list(user_uuid: String) -> JsonValue {
     let mut runtime = Runtime::new().unwrap();
     match runtime.block_on(kubernetes::list(&user_uuid)) {
-        Ok(names) => json!({"status": "ok", "names": names}),
-        Err(err) => json!({"status": "ko", "reason": err}),
+        Ok(names) => json!({"result": names}),
+        Err(err) => json!({"error": err}),
+    }
+}
+
+#[get("/<_user_uuid>/<instance_uuid>")]
+pub fn get(_user_uuid: String, instance_uuid: String) -> JsonValue {
+    let mut runtime = Runtime::new().unwrap();
+    match runtime.block_on(kubernetes::get(&instance_uuid)) {
+        Ok(phase) => json!({"result": phase}),
+        Err(err) => json!({"error": err}),
     }
 }
 
 const DELAY_HOURS: i64 = 3;
 
-/// Deploy `image_id` Docker container for `user_uuid`.
-///
-/// Returns a `JsonValue` with following shape:
-/// - {"status" "ok"
-///    "uuid"     "xxxx"}
-///  if the container statup was successful
-/// - {"status" "ko"
-///    "reason" "xxxx"} if not
-#[post("/<user_uuid>/<image_id>")]
-pub fn deploy(state: State<'_, Context>, user_uuid: String, image_id: String) -> JsonValue {
+/// Deploy `template` Docker container for `user_uuid`.
+#[post("/<user_uuid>?<template>")]
+pub fn deploy(state: State<'_, Context>, user_uuid: String, template: String) -> JsonValue {
     let host = state.0.clone();
     let mut runtime = Runtime::new().unwrap();
-    match runtime.block_on(kubernetes::deploy(&host, &user_uuid, &image_id)) {
+    match runtime.block_on(kubernetes::deploy(&host, &user_uuid, &template)) {
         Ok(instance_uuid) => {
-            info!("Launched instance {} (template: {})", user_uuid, image_id);
-            let delay = Duration::hours(DELAY_HOURS);
+            info!("Launched instance {} (template: {})", user_uuid, template);
+            let delay = Duration::minutes(1); //Duration::hours(DELAY_HOURS);
             DEPLOY_COUNTER
-                .with_label_values(&[&image_id, &user_uuid])
+                .with_label_values(&[&template, &user_uuid])
                 .inc();
             let uuid2 = instance_uuid.clone();
-            state
-                .1
-                .lock()
-                .unwrap()
+            let timer = state.1.lock().unwrap();
+            timer
                 .schedule_with_delay(delay, move || {
                     info!("#Deleting! {}", instance_uuid);
                     if let Err(s) = block_on(kubernetes::undeploy(&host, &instance_uuid)) {
                         warn!("Failed to undeploy {}: {}", instance_uuid, s);
                         UNDEPLOY_FAILURES_COUNTER
-                            .with_label_values(&[&image_id, &instance_uuid])
+                            .with_label_values(&[&template, &instance_uuid])
                             .inc();
                     } else {
                         UNDEPLOY_COUNTER
-                            .with_label_values(&[&image_id, &instance_uuid])
+                            .with_label_values(&[&template, &instance_uuid])
                             .inc();
                     }
                 })
                 .ignore();
-            json!({"status": "ok", "uuid": uuid2})
+            let thread = thread::spawn(async move || {
+                info!("New thread");
+                loop {
+                    info!("Loop!");
+                    thread::sleep(ODuration::from_millis(1000));
+                }
+            });
+            let mut guard = timer
+                .schedule_repeating(Duration::seconds(3), || {
+                    info!("#Ping!");
+                })
+                .ignore();
+            json!({"result": uuid2})
         }
         Err(err) => {
             warn!("Error {}", err);
             DEPLOY_FAILURES_COUNTER
-                .with_label_values(&[&image_id])
+                .with_label_values(&[&template])
                 .inc();
-            json!({"status": "ko", "reason": err})
+            json!({"error": err})
         }
     }
 }
