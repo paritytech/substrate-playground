@@ -74,6 +74,10 @@ const lifecycle = Machine<Context>({
               callback({type: failure, error: error});
             }
           },
+          onError: {
+            target: failed,
+            actions: assign({ error: (_context, event) => event.data.error})
+          }
         },
         on: {
           [restart]: initial,

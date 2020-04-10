@@ -3,9 +3,10 @@
 
 mod api;
 mod kubernetes;
+mod manager;
+mod metrics;
 
-use log::info;
-use prometheus::Registry;
+use crate::manager::Manager;
 use rocket::{http::Method, routes};
 use rocket_contrib::serve::StaticFiles;
 use rocket_cors::{AllowedOrigins, CorsOptions};
@@ -13,25 +14,22 @@ use rocket_prometheus::PrometheusMetrics;
 use std::{
     env,
     error::Error,
-    io::{self, ErrorKind},
-    sync::Mutex,
 };
-use timer::Timer;
+use tokio;
 
-pub struct Context(pub String, pub Mutex<Timer>);
+pub struct Context {
+    manager: Manager,
+}
 
-fn main() -> Result<(), Box<dyn Error>> {
+/// manager -> kubernetes, metrics
+/// manager is injected into api
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn Error>> {
     // Initialize log configuration. Reads `RUST_LOG` if any, otherwise fallsback to `default`
     if env::var("RUST_LOG").is_err() {
-        env::set_var("RUST_LOG", "info,kube=debug");
+        env::set_var("RUST_LOG", "info,kube=info");
     }
     env_logger::init();
-
-    // Load configuration from environment variables
-    let host = env::var("PLAYGROUND_HOST").map_err(|e| io::Error::new(ErrorKind::NotFound, e))?;
-
-    info!("Configuration:");
-    info!("host: {}", host);
 
     // Configure CORS
     let allowed_origins = AllowedOrigins::All;
@@ -45,22 +43,18 @@ fn main() -> Result<(), Box<dyn Error>> {
     }
     .to_cors()?;
 
-    // Register all prometeus metrics
-    let registry = Registry::new_custom(Some("backend_api".to_string()), None)?;
-    registry.register(Box::new(api::DEPLOY_COUNTER.clone()))?;
-    registry.register(Box::new(api::DEPLOY_FAILURES_COUNTER.clone()))?;
-    registry.register(Box::new(api::UNDEPLOY_COUNTER.clone()))?;
-    registry.register(Box::new(api::UNDEPLOY_FAILURES_COUNTER.clone()))?;
-
-    let prometheus = PrometheusMetrics::with_registry(registry);
-    rocket::ignite()
+    let manager = Manager::new().await?;
+    manager.clone().spawn_reaper();
+    let prometheus = PrometheusMetrics::with_registry(manager.clone().metrics.create_registry()?);
+    let error = rocket::ignite()
         .attach(prometheus.clone())
+        .attach(cors)
         .mount("/", StaticFiles::from("./static"))
         .mount("/api", routes![api::deploy, api::get, api::list])
         .mount("/metrics", prometheus)
-        .manage(Context(host, Mutex::new(Timer::new())))
-        .attach(cors)
+        .manage(Context { manager })
         .launch();
 
-    Ok(())
+    // Launch blocks unless an error is returned
+    Err(error.into())
 }
