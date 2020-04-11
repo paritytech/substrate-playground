@@ -1,0 +1,37 @@
+{
+  "name": "@parity/substrate-playground-cli",
+  "version": "1.0.0",
+  "license": "MIT",
+  "main": "index.js",
+  "bin": {
+    "substrate-playground": "./index.js"
+  },
+  "dependencies": {
+    "import-jsx": "4.0.0",
+    "ink": "3.0.4",
+    "ink-big-text": "1.2.0",
+    "ink-gradient": "2.0.0",
+    "ink-link": "2.0.0",
+    "ink-markdown": "1.0.1",
+    "ink-select-input": "4.0.0",
+    "node-fetch": "2.6.0",
+    "react": "16.13.1",
+    "yargs": "15.4.1"
+  },
+  "devDependencies": {
+    "@babel/cli": "7.11.5",
+    "@babel/core": "7.11.5",
+    "@babel/preset-env": "7.11.5",
+    "@babel/preset-react": "7.10.4"
+  },
+  "files": [
+    "index.js",
+    "ui.js"
+  ],
+  "babel": {
+    "presets": [
+      "@babel/preset-env",
+      "@babel/preset-react"
+    ]
+  }
+}
