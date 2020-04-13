@@ -15,7 +15,7 @@ use kube::{
     config,
     runtime::Informer,
 };
-use serde::de::DeserializeOwned;
+use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use serde_json::{json, Value};
 use std::{collections::BTreeMap, error::Error, fs, path::Path};
 use uuid::Uuid;
@@ -133,6 +133,13 @@ pub struct Engine {
     host: Option<String>,
 }
 
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct InstanceDetails {
+    phase: String,
+    url: String,
+}
+
 impl Engine {
 
     pub async fn new() -> Result<Self, Box<dyn Error>> {
@@ -149,7 +156,7 @@ impl Engine {
         Ok(Engine {host: Some(host)})
     }
 
-    pub async fn get(self, instance_uuid: &str) -> Result<String, String> {
+    pub async fn get(self, instance_uuid: &str) -> Result<InstanceDetails, String> {
         let config = config().await?;
         let namespace = &config.clone().default_ns;
         let client = APIClient::new(config);
@@ -165,8 +172,12 @@ impl Engine {
             .phase
             .clone()
             .ok_or_else(|| format!("No name for {}", instance_uuid))?;
-    
-        Ok(phase)
+        let url = if let Some(host) = self.host {
+            format!("//{}.{}", instance_uuid, host)
+        } else {
+            format!("//{}", instance_uuid)
+        };
+        Ok(InstanceDetails{phase, url})
     }
 
     /// Lists all currently running instances for an identified user

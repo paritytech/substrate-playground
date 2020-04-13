@@ -4,7 +4,7 @@ use crate::Context;
 use log::{info, warn};
 use rocket::{get, post, State};
 use rocket_contrib::{json, json::JsonValue};
-use serde::ser::Serialize;
+use serde::{Deserialize, Serialize};
 
 // TODO add image templates endpoint
 
