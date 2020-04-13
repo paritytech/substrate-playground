@@ -2,8 +2,9 @@
 //! * https://docs.rs/k8s-openapi/0.5.1/k8s_openapi/api/core/v1/struct.ServiceStatus.html
 //! * https://docs.rs/k8s-openapi/0.5.1/k8s_openapi/api/core/v1/struct.ServiceSpec.html
 
-use log::info;
-use k8s_openapi::api::core::v1::{ConfigMap, Container, Pod, PodSpec, Service, ServicePort, ServiceSpec};
+use k8s_openapi::api::core::v1::{
+    ConfigMap, Container, Pod, PodSpec, Service, ServicePort, ServiceSpec,
+};
 use k8s_openapi::api::extensions::v1beta1::Ingress;
 use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
 use kube::{
@@ -15,7 +16,8 @@ use kube::{
     config,
     runtime::Informer,
 };
-use serde::{Deserialize, Serialize, de::DeserializeOwned};
+use log::info;
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::Value;
 use std::{collections::BTreeMap, error::Error, fs, path::Path};
 use uuid::Uuid;
@@ -162,19 +164,33 @@ pub struct InstanceDetails {
 }
 
 impl Engine {
-
     pub async fn new() -> Result<Self, Box<dyn Error>> {
         let config = config().await?;
         let namespace = config.clone().default_ns.to_string();
         let client = APIClient::new(config);
         let ingress_api: Api<Ingress> = Api::namespaced(client.clone(), &namespace);
-        let host = ingress_api.get(INGRESS_NAME).await?.spec.ok_or("message")?.rules.ok_or("message")?.first().ok_or("message")?.host.clone();
+        let host = if let Ok(ingress) = ingress_api.get(INGRESS_NAME).await {
+            ingress.spec
+                .ok_or("message")?
+                .rules
+                .ok_or("message")?
+                .first()
+                .ok_or("message")?
+                .host
+                .clone()
+        } else {
+            None
+        };
         // TODO failsafe
         info!("HOST: {:?}", host);
 
         // TODO load and monitor images
 
-        Ok(Engine { host, namespace, client })
+        Ok(Engine {
+            host,
+            namespace,
+            client,
+        })
     }
 
     pub async fn get(self, instance_uuid: &str) -> Result<InstanceDetails, String> {
@@ -195,7 +211,7 @@ impl Engine {
         } else {
             format!("//{}", instance_uuid)
         };
-        Ok(InstanceDetails{phase, url})
+        Ok(InstanceDetails { phase, url })
     }
 
     /// Lists all currently running instances for an identified user
@@ -215,18 +231,22 @@ impl Engine {
         Ok(names)
     }
 
-    pub async fn list_all(self) -> Result<Vec<String>, String> {
+    pub async fn list_all(self) -> Result<BTreeMap<String, String>, String> {
         let pod_api: Api<Pod> = Api::namespaced(self.client, &self.namespace);
-        let pods = list_by_selector(&pod_api, format!("{}={}", APP_LABEL, APP_VALUE).to_string()).await?;
-        let names: Vec<String> = pods
+        let pods =
+            list_by_selector(&pod_api, format!("{}={}", APP_LABEL, APP_VALUE).to_string()).await?;
+        let names: BTreeMap<String, String> = pods
             .iter()
             .flat_map(|pod| {
-                pod.metadata
-                    .as_ref()
-                    .and_then(|md| Some(md.labels.clone()?.get(INSTANCE_UUID_LABEL)?.to_string()))
+                pod.metadata.as_ref().and_then(|md| {
+                    Some((
+                        md.labels.clone()?.get(USER_UUID_LABEL)?.to_string(),
+                        md.labels.clone()?.get(INSTANCE_UUID_LABEL)?.to_string(),
+                    ))
+                })
             })
-            .collect::<Vec<_>>();
-    
+            .collect();
+
         Ok(names)
     }
 
@@ -250,13 +270,13 @@ impl Engine {
             .await
             .map(|o| o.metadata.unwrap().name.unwrap())
             .map_err(error_to_string)?;
-    
+
         /*info!("Spawning");
         let thread = thread::spawn(async move || {
             info!("New thread");
             let namespace = &config2.clone().default_ns;
             let client = APIClient::new(config2);
-    
+
             loop {
                 info!("Loop!");
                 let pod_api: Api<Pod> = Api::namespaced(client.clone(), namespace);
@@ -268,14 +288,11 @@ impl Engine {
             }
         });
         info!("{:?}", thread.join().unwrap().await);*/
-    
+
         // Deploy the associated service
         let service_api: Api<Service> = Api::namespaced(self.client.clone(), &self.namespace);
         let service_name = service_api
-            .create(
-                &PostParams::default(),
-                &create_service(&instance_uuid),
-            )
+            .create(&PostParams::default(), &create_service(&instance_uuid))
             .await
             .map(|o| o.metadata.unwrap().name.unwrap())
             .map_err(error_to_string)?;
@@ -289,18 +306,18 @@ impl Engine {
             };
             let ingress_api: Api<Ingress> = Api::namespaced(self.client, &self.namespace);
             ingress_api
-            .patch(
-                INGRESS_NAME,
-                &patch_params,
-                serde_json::to_vec(&add_path).map_err(error_to_string)?,
-            )
-            .await
-            .map_err(error_to_string)?;
+                .patch(
+                    INGRESS_NAME,
+                    &patch_params,
+                    serde_json::to_vec(&add_path).map_err(error_to_string)?,
+                )
+                .await
+                .map_err(error_to_string)?;
         }
-    
+
         Ok(instance_uuid)
     }
-    
+
     pub async fn undeploy(self, instance_uuid: &str) -> Result<(), String> {
         // Undeploy the service by its id
         let service_api: Api<Service> = Api::namespaced(self.client.clone(), &self.namespace);
@@ -319,7 +336,7 @@ impl Engine {
             .delete(&service_name, &DeleteParams::default())
             .await
             .map_err(|s| format!("Error {}", s))?;
-    
+
         let pod_api: Api<Pod> = Api::namespaced(self.client, &self.namespace);
         let pods = list_by_selector(&pod_api, selector).await?;
         let pod_name = pods
@@ -335,15 +352,14 @@ impl Engine {
             .delete(&pod_name, &DeleteParams::default())
             .await
             .map_err(|s| format!("Error {}", s))?;
-    
+
         /*let _ingress = Api::v1beta1Ingress(client).within(namespace);
         //let aa: Value = ingress.get("playground-ingress").map_err(error_to_string)?;
         let index = format!("{}", 0);
         let remove_path: Value = read_remove_path(&index)?;
         let patch_params = PatchParams{ patch_strategy: PatchStrategy::JSON , ..PatchParams::default() };
         ingress.patch("playground-ingress", &patch_params, serde_json::to_vec(&remove_path).map_err(error_to_string)?).map_err(error_to_string)?;*/
-    
+
         Ok(())
     }
-
 }

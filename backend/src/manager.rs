@@ -2,7 +2,7 @@ use crate::kubernetes::{Engine, InstanceDetails};
 use crate::metrics::Metrics;
 use log::{info, warn};
 use std::{
-    collections::HashMap,
+    collections::BTreeMap,
     error::Error,
     sync::{Arc, Mutex},
     thread::{self, JoinHandle},
@@ -14,17 +14,22 @@ use tokio::runtime::Runtime;
 pub struct Manager {
     engine: Engine,
     pub metrics: Metrics,
-    instances: Arc<Mutex<HashMap<String, String>>>,
+    pub instances: Arc<Mutex<BTreeMap<String, String>>>,
 }
 
 impl Manager {
-
     pub async fn new() -> Result<Self, Box<dyn Error>> {
-        let metrics =  Metrics::new()?;
+        let metrics = Metrics::new()?;
+        let engine = Engine::new().await?;
+        // Discover instances running at creation time and add them to the `instances` cache
+        let mut instances = BTreeMap::new();
+        for (key, value) in engine.clone().list_all().await? {
+            instances.insert(key, value);
+        }
         let manager = Manager {
-            engine: Engine::new().await?,
+            engine,
             metrics: metrics,
-            instances: Arc::new(Mutex::new(HashMap::new())),
+            instances: Arc::new(Mutex::new(instances)),
         };
         Ok(manager)
     }
@@ -48,7 +53,6 @@ impl Manager {
             }
         })
     }
-
 }
 
 fn new_runtime() -> Result<Runtime, String> {
@@ -56,7 +60,6 @@ fn new_runtime() -> Result<Runtime, String> {
 }
 
 impl Manager {
-
     pub fn get(self, user_uuid: &str, instance_uuid: &str) -> Result<InstanceDetails, String> {
         new_runtime()?.block_on(self.engine.get(&instance_uuid))
     }
@@ -65,28 +68,27 @@ impl Manager {
         new_runtime()?.block_on(self.engine.list(&user_uuid))
     }
 
-    pub fn list_all(self, user_uuid: &str, instance_uuid: &str) -> Result<Vec<String>, String> {
-        new_runtime()?.block_on(self.engine.list_all())
-    }
-
-                /*let timer = state.timer.lock().unwrap();
-                timer
-                    .schedule_with_delay(delay, move || {
-                        info!("#Deleting! {}", instance_uuid);
-                        if let Err(s) = block_on(kubernetes::undeploy(&host, &instance_uuid)) {
-                            warn!("Failed to undeploy {}: {}", instance_uuid, s);
-                            metrics::inc_undeploy_failures_counter(&template, &user_uuid);
-                        } else {
-                            metrics::inc_undeploy_counter(&template, &user_uuid);
-                        }
-                    })
-                    .ignore();*/
+    /*let timer = state.timer.lock().unwrap();
+    timer
+        .schedule_with_delay(delay, move || {
+            info!("#Deleting! {}", instance_uuid);
+            if let Err(s) = block_on(kubernetes::undeploy(&host, &instance_uuid)) {
+                warn!("Failed to undeploy {}: {}", instance_uuid, s);
+                metrics::inc_undeploy_failures_counter(&template, &user_uuid);
+            } else {
+                metrics::inc_undeploy_counter(&template, &user_uuid);
+            }
+        })
+        .ignore();*/
 
     pub fn deploy(self, user_uuid: &str, template: &str) -> Result<String, String> {
         let result = new_runtime()?.block_on(self.engine.deploy(&user_uuid, &template));
         match result.clone() {
             Ok(instance_uuid) => {
-                self.instances.lock().unwrap().insert(instance_uuid.into(), template.into());
+                self.instances
+                    .lock()
+                    .unwrap()
+                    .insert(instance_uuid.into(), template.into());
                 self.metrics.inc_deploy_counter(&user_uuid, &template);
             }
             Err(_) => {
@@ -100,7 +102,10 @@ impl Manager {
         let result = new_runtime()?.block_on(self.engine.undeploy(&instance_uuid));
         match result {
             Ok(_) => {
-                self.instances.lock().unwrap().remove(&instance_uuid.to_string());
+                self.instances
+                    .lock()
+                    .unwrap()
+                    .remove(&instance_uuid.to_string());
                 self.metrics.inc_undeploy_counter(&instance_uuid);
             }
             Err(_) => {
@@ -109,5 +114,4 @@ impl Manager {
         }
         result
     }
-
 }
