@@ -92,16 +92,16 @@ const lifecycle = Machine<Context>({
         invoke: {
           src: (context, _event) => async (callback, _onReceive) => {
             const {result, error} = await getInstanceDetails(context.userUUID, context.instanceUUID);
-            if (result == "Running") {
-              const url = `//${context.instanceUUID}.${window.location.hostname}`;
+            const {phase, url} = result;
+            if (phase == "Running") {
               if ((await fetchWithTimeout(url).catch((err) => err)).ok) {
                 callback({type: success, url: url});
                 return;
               }
             }
 
-            if (result && context.checkOccurences < 60 * 10) {
-              setTimeout(() => callback({type: progress, phase: result}), 1000);
+            if (phase && context.checkOccurences < 60 * 10) {
+              setTimeout(() => callback({type: progress, phase: phase}), 1000);
             } else {
               callback({type: failure, error: error || "Too long to deploy"});
             }

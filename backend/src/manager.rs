@@ -1,4 +1,4 @@
-use crate::kubernetes::Engine;
+use crate::kubernetes::{Engine, InstanceDetails};
 use crate::metrics::Metrics;
 use log::{info, warn};
 use std::{
@@ -57,7 +57,7 @@ fn new_runtime() -> Result<Runtime, String> {
 
 impl Manager {
 
-    pub fn get(self, user_uuid: &str, instance_uuid: &str) -> Result<String, String> {
+    pub fn get(self, user_uuid: &str, instance_uuid: &str) -> Result<InstanceDetails, String> {
         new_runtime()?.block_on(self.engine.get(&instance_uuid))
     }
 
