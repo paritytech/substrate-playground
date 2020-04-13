@@ -3,8 +3,9 @@
 //! * https://docs.rs/k8s-openapi/0.5.1/k8s_openapi/api/core/v1/struct.ServiceSpec.html
 
 use log::info;
-use k8s_openapi::api::core::v1::{ConfigMap, Pod, Service};
+use k8s_openapi::api::core::v1::{ConfigMap, Container, Pod, PodSpec, Service, ServicePort, ServiceSpec};
 use k8s_openapi::api::extensions::v1beta1::Ingress;
+use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
 use kube::{
     api::{
         Api, DeleteParams, ListParams, Meta, PatchParams, PatchStrategy, PostParams, Resource,
@@ -15,7 +16,7 @@ use kube::{
     runtime::Informer,
 };
 use serde::de::DeserializeOwned;
-use serde_json::Value;
+use serde_json::{json, Value};
 use std::{collections::BTreeMap, error::Error, fs, path::Path};
 use uuid::Uuid;
 
@@ -23,26 +24,68 @@ fn error_to_string<T: std::fmt::Display>(err: T) -> String {
     format!("{}", err)
 }
 
-fn read_deployment(user_uuid: &str, instance_uuid: &str, image: &str) -> Result<Value, String> {
-    fs::read_to_string(&Path::new("conf/deployment.json"))
-        .map_err(error_to_string)
-        .and_then(|s| {
-            serde_json::from_str(
-                &s.replace("%IMAGE_NAME%", image)
-                    .replace("%USER_UUID%", user_uuid)
-                    .replace("%INSTANCE_UUID%", instance_uuid),
-            )
-            .map_err(error_to_string)
-        })
+fn create_pod(user_uuid: &str, instance_uuid: &str, image: &str) -> Pod {
+    let mut labels = BTreeMap::new();
+    labels.insert("app".to_string(), "theia-substrate".to_string());
+    labels.insert("user-uuid".to_string(), user_uuid.to_string());
+    labels.insert("instance-uuid".to_string(), instance_uuid.to_string());
+    Pod {
+        metadata: Some(ObjectMeta {
+            generate_name: Some("theia-substrate-".to_string()),
+            labels: Some(labels),
+            ..Default::default()
+        }),
+        spec: Some(PodSpec {
+            containers: vec![Container {
+                name: "theia-substrate-container".to_string(),
+                image: Some(image.to_string()),
+                ..Default::default()
+            }],
+            ..Default::default()
+        }),
+        ..Default::default()
+    }
 }
 
-fn read_service(instance_uuid: &str) -> Result<Value, String> {
-    fs::read_to_string(&Path::new("conf/service.json"))
-        .map_err(error_to_string)
-        .and_then(|s| {
-            serde_json::from_str(&s.replacen("%INSTANCE_UUID%", instance_uuid, 2))
-                .map_err(error_to_string)
-        })
+fn create_service(instance_uuid: &str) -> Service {
+    let mut labels = BTreeMap::new();
+    labels.insert("app".to_string(), "theia-substrate".to_string());
+    labels.insert("instance-uuid".to_string(), instance_uuid.to_string());
+    let mut selectors = BTreeMap::new();
+    selectors.insert("instance-uuid".to_string(), instance_uuid.to_string());
+    Service {
+        metadata: Some(ObjectMeta {
+            generate_name: Some("theia-substrate-http-".to_string()),
+            labels: Some(labels),
+            ..Default::default()
+        }),
+        spec: Some(ServiceSpec {
+            type_: Some("NodePort".to_string()),
+            selector: Some(selectors),
+            ports: Some(vec![
+                ServicePort {
+                    name: Some("web".to_string()),
+                    protocol: Some("TCP".to_string()),
+                    port: 3000,
+                    ..Default::default()
+                },
+                ServicePort {
+                    name: Some("front-end".to_string()),
+                    protocol: Some("TCP".to_string()),
+                    port: 8000,
+                    ..Default::default()
+                },
+                ServicePort {
+                    name: Some("wss".to_string()),
+                    protocol: Some("TCP".to_string()),
+                    port: 9944,
+                    ..Default::default()
+                },
+            ]),
+            ..Default::default()
+        }),
+        ..Default::default()
+    }
 }
 
 fn read_add_path(host: &str, instance_uuid: &str, service_name: &str) -> Result<Value, String> {
@@ -169,20 +212,21 @@ impl Engine {
         let namespace = &config.clone().default_ns;
         let client = APIClient::new(config);
     
-        let instance_uuid = format!("{}", Uuid::new_v4());
         // Access the right image id
         let images = images_from_template(client.clone(), &namespace).await?;
         let image = images
             .get(&template.to_string())
             .ok_or_else(|| format!("Unknow image {}", template))?;
-    
+
+        // Create a unique ID for this instance
+        let instance_uuid = format!("{}", Uuid::new_v4());
+
         // Deploy a new pod for this image
         let pod_api: Api<Pod> = Api::namespaced(client.clone(), namespace);
         let pod_name = pod_api
             .create(
                 &PostParams::default(),
-                &serde_json::from_value(read_deployment(&user_uuid, &instance_uuid, image)?)
-                    .map_err(error_to_string)?,
+                &create_pod(&user_uuid, &instance_uuid, image),
             )
             .await
             .map(|o| o.metadata.unwrap().name.unwrap())
@@ -207,17 +251,16 @@ impl Engine {
         info!("{:?}", thread.join().unwrap().await);*/
     
         // Deploy the associated service
-        let service: Value = read_service(&instance_uuid)?;
         let service_api: Api<Service> = Api::namespaced(client.clone(), namespace);
         let service_name = service_api
             .create(
                 &PostParams::default(),
-                &serde_json::from_value(service).map_err(error_to_string)?,
+                &create_service(&instance_uuid),
             )
             .await
             .map(|o| o.metadata.unwrap().name.unwrap())
             .map_err(error_to_string)?;
-    
+
         // Patch the ingress configuration to add the new path, if host is defined
         if let Some(host) = self.host {
             let add_path: Value = read_add_path(&host, &instance_uuid, &service_name)?;
