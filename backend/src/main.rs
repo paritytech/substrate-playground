@@ -7,14 +7,12 @@ mod manager;
 mod metrics;
 
 use crate::manager::Manager;
+use log::info;
 use rocket::{http::Method, routes};
 use rocket_contrib::serve::StaticFiles;
 use rocket_cors::{AllowedOrigins, CorsOptions};
 use rocket_prometheus::PrometheusMetrics;
-use std::{
-    env,
-    error::Error,
-};
+use std::{env, error::Error};
 use tokio;
 
 pub struct Context {
@@ -45,6 +43,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let manager = Manager::new().await?;
     manager.clone().spawn_reaper();
+    info!("Synced with {} instances", manager.instances.lock().unwrap().len());
     let prometheus = PrometheusMetrics::with_registry(manager.clone().metrics.create_registry()?);
     let error = rocket::ignite()
         .attach(prometheus.clone())

@@ -11,7 +11,6 @@ pub struct Metrics {
 }
 
 impl Metrics {
-
     const USER_UUID_LABEL: &'static str = "user_uuid";
     const TEMPLATE_LABEL: &'static str = "template";
 
@@ -30,7 +29,10 @@ impl Metrics {
                 &[Self::USER_UUID_LABEL, Self::TEMPLATE_LABEL],
             )?,
             undeploy_failures_counter: IntCounterVec::new(
-                opts!("undeploy_failures_counter", "Count of undeployment failures"),
+                opts!(
+                    "undeploy_failures_counter",
+                    "Count of undeployment failures"
+                ),
                 &[Self::USER_UUID_LABEL, Self::TEMPLATE_LABEL],
             )?,
         })
@@ -42,15 +44,13 @@ impl Metrics {
         registry.register(Box::new(self.deploy_failures_counter))?;
         registry.register(Box::new(self.undeploy_counter))?;
         registry.register(Box::new(self.undeploy_failures_counter))?;
-    
+
         Ok(registry)
     }
-
 }
 
 // Helper functions
 impl Metrics {
-
     pub fn inc_deploy_counter(self, template: &str, user_uuid: &str) {
         self.deploy_counter
             .with_label_values(&[template, user_uuid])
@@ -74,5 +74,4 @@ impl Metrics {
             .with_label_values(&[&instance_uuid])
             .inc();
     }
-
 }
