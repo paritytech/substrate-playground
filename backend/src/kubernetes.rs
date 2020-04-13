@@ -16,28 +16,48 @@ use kube::{
     runtime::Informer,
 };
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
-use serde_json::{json, Value};
+use serde_json::Value;
 use std::{collections::BTreeMap, error::Error, fs, path::Path};
 use uuid::Uuid;
+
+const APP_LABEL: &str = "app";
+const APP_VALUE: &str = "theia-substrate";
+const USER_UUID_LABEL: &str = "user-uuid";
+const INSTANCE_UUID_LABEL: &str = "instance-uuid";
+const INGRESS_NAME: &str = "playground-ingress";
 
 fn error_to_string<T: std::fmt::Display>(err: T) -> String {
     format!("{}", err)
 }
 
+async fn list_by_selector<K: Clone + DeserializeOwned + Meta>(
+    api: &Api<K>,
+    selector: String,
+) -> Result<Vec<K>, String> {
+    let params = ListParams {
+        label_selector: Some(selector),
+        ..ListParams::default()
+    };
+    api.list(&params)
+        .await
+        .map(|l| l.items)
+        .map_err(|s| format!("Error {}", s))
+}
+
 fn create_pod(user_uuid: &str, instance_uuid: &str, image: &str) -> Pod {
     let mut labels = BTreeMap::new();
-    labels.insert("app".to_string(), "theia-substrate".to_string());
-    labels.insert("user-uuid".to_string(), user_uuid.to_string());
-    labels.insert("instance-uuid".to_string(), instance_uuid.to_string());
+    labels.insert(APP_LABEL.to_string(), APP_VALUE.to_string());
+    labels.insert(USER_UUID_LABEL.to_string(), user_uuid.to_string());
+    labels.insert(INSTANCE_UUID_LABEL.to_string(), instance_uuid.to_string());
     Pod {
         metadata: Some(ObjectMeta {
-            generate_name: Some("theia-substrate-".to_string()),
+            generate_name: Some(format!("{}-", APP_VALUE).to_string()),
             labels: Some(labels),
             ..Default::default()
         }),
         spec: Some(PodSpec {
             containers: vec![Container {
-                name: "theia-substrate-container".to_string(),
+                name: format!("{}-container", APP_VALUE).to_string(),
                 image: Some(image.to_string()),
                 ..Default::default()
             }],
@@ -49,13 +69,13 @@ fn create_pod(user_uuid: &str, instance_uuid: &str, image: &str) -> Pod {
 
 fn create_service(instance_uuid: &str) -> Service {
     let mut labels = BTreeMap::new();
-    labels.insert("app".to_string(), "theia-substrate".to_string());
-    labels.insert("instance-uuid".to_string(), instance_uuid.to_string());
+    labels.insert(APP_LABEL.to_string(), APP_VALUE.to_string());
+    labels.insert(INSTANCE_UUID_LABEL.to_string(), instance_uuid.to_string());
     let mut selectors = BTreeMap::new();
-    selectors.insert("instance-uuid".to_string(), instance_uuid.to_string());
+    selectors.insert(INSTANCE_UUID_LABEL.to_string(), instance_uuid.to_string());
     Service {
         metadata: Some(ObjectMeta {
-            generate_name: Some("theia-substrate-http-".to_string()),
+            generate_name: Some(format!("{}-http-", APP_VALUE).to_string()),
             labels: Some(labels),
             ..Default::default()
         }),
@@ -128,11 +148,12 @@ async fn images_from_template(
         .and_then(|o: ConfigMap| o.data.ok_or_else(|| "No data field".to_string()))
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct Engine {
     host: Option<String>,
+    namespace: String,
+    client: APIClient,
 }
-
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct InstanceDetails {
@@ -144,24 +165,21 @@ impl Engine {
 
     pub async fn new() -> Result<Self, Box<dyn Error>> {
         let config = config().await?;
-        let namespace = &config.clone().default_ns;
+        let namespace = config.clone().default_ns.to_string();
         let client = APIClient::new(config);
-        let ingress_api: Api<Ingress> = Api::namespaced(client.clone(), namespace);
-        let host: String = ingress_api.get("playground-ingress").await?.spec.ok_or("message")?.rules.ok_or("message")?.first().ok_or("message")?.host.clone().ok_or("message")?;
+        let ingress_api: Api<Ingress> = Api::namespaced(client.clone(), &namespace);
+        let host = ingress_api.get(INGRESS_NAME).await?.spec.ok_or("message")?.rules.ok_or("message")?.first().ok_or("message")?.host.clone();
         // TODO failsafe
-        info!("HOST: {}", host);
+        info!("HOST: {:?}", host);
 
         // TODO load and monitor images
 
-        Ok(Engine {host: Some(host)})
+        Ok(Engine { host, namespace, client })
     }
 
     pub async fn get(self, instance_uuid: &str) -> Result<InstanceDetails, String> {
-        let config = config().await?;
-        let namespace = &config.clone().default_ns;
-        let client = APIClient::new(config);
-        let pod_api: Api<Pod> = Api::namespaced(client.clone(), namespace);
-        let selector = format!("instance-uuid={}", instance_uuid);
+        let pod_api: Api<Pod> = Api::namespaced(self.client, &self.namespace);
+        let selector = format!("{}={}", INSTANCE_UUID_LABEL, instance_uuid);
         let pods = list_by_selector(&pod_api, selector).await?;
         let phase = pods
             .first()
@@ -182,18 +200,15 @@ impl Engine {
 
     /// Lists all currently running instances for an identified user
     pub async fn list(self, user_uuid: &str) -> Result<Vec<String>, String> {
-        let config = config().await?;
-        let namespace = &config.clone().default_ns;
-        let client = APIClient::new(config);
-        let pod_api: Api<Pod> = Api::namespaced(client.clone(), namespace);
-        let selector = format!("user-uuid={}", user_uuid);
+        let pod_api: Api<Pod> = Api::namespaced(self.client, &self.namespace);
+        let selector = format!("{}={}", USER_UUID_LABEL, user_uuid);
         let pods = list_by_selector(&pod_api, selector).await?;
         let names: Vec<String> = pods
             .iter()
             .flat_map(|pod| {
                 pod.metadata
                     .as_ref()
-                    .and_then(|md| Some(md.labels.clone()?.get("instance-uuid")?.to_string()))
+                    .and_then(|md| Some(md.labels.clone()?.get(INSTANCE_UUID_LABEL)?.to_string()))
             })
             .collect::<Vec<_>>();
 
@@ -201,17 +216,14 @@ impl Engine {
     }
 
     pub async fn list_all(self) -> Result<Vec<String>, String> {
-        let config = config().await?;
-        let namespace = &config.clone().default_ns;
-        let client = APIClient::new(config);
-        let pod_api: Api<Pod> = Api::namespaced(client.clone(), namespace);
-        let pods = list_by_selector(&pod_api, "app=theia-substrate".to_string()).await?;
+        let pod_api: Api<Pod> = Api::namespaced(self.client, &self.namespace);
+        let pods = list_by_selector(&pod_api, format!("{}={}", APP_LABEL, APP_VALUE).to_string()).await?;
         let names: Vec<String> = pods
             .iter()
             .flat_map(|pod| {
                 pod.metadata
                     .as_ref()
-                    .and_then(|md| Some(md.labels.clone()?.get("instance-uuid")?.to_string()))
+                    .and_then(|md| Some(md.labels.clone()?.get(INSTANCE_UUID_LABEL)?.to_string()))
             })
             .collect::<Vec<_>>();
     
@@ -219,12 +231,8 @@ impl Engine {
     }
 
     pub async fn deploy(self, user_uuid: &str, template: &str) -> Result<String, String> {
-        let config = config().await?;
-        let namespace = &config.clone().default_ns;
-        let client = APIClient::new(config);
-    
         // Access the right image id
-        let images = images_from_template(client.clone(), &namespace).await?;
+        let images = images_from_template(self.client.clone(), &self.namespace).await?;
         let image = images
             .get(&template.to_string())
             .ok_or_else(|| format!("Unknow image {}", template))?;
@@ -233,7 +241,7 @@ impl Engine {
         let instance_uuid = format!("{}", Uuid::new_v4());
 
         // Deploy a new pod for this image
-        let pod_api: Api<Pod> = Api::namespaced(client.clone(), namespace);
+        let pod_api: Api<Pod> = Api::namespaced(self.client.clone(), &self.namespace);
         let pod_name = pod_api
             .create(
                 &PostParams::default(),
@@ -262,7 +270,7 @@ impl Engine {
         info!("{:?}", thread.join().unwrap().await);*/
     
         // Deploy the associated service
-        let service_api: Api<Service> = Api::namespaced(client.clone(), namespace);
+        let service_api: Api<Service> = Api::namespaced(self.client.clone(), &self.namespace);
         let service_name = service_api
             .create(
                 &PostParams::default(),
@@ -274,15 +282,15 @@ impl Engine {
 
         // Patch the ingress configuration to add the new path, if host is defined
         if let Some(host) = self.host {
-            let add_path: Value = read_add_path(&host, &instance_uuid, &service_name)?;
+            let add_path = read_add_path(&host, &instance_uuid, &service_name)?;
             let patch_params = PatchParams {
                 patch_strategy: PatchStrategy::JSON,
                 ..PatchParams::default()
             };
-            let ingress_api: Api<Ingress> = Api::namespaced(client.clone(), namespace);
+            let ingress_api: Api<Ingress> = Api::namespaced(self.client, &self.namespace);
             ingress_api
             .patch(
-                "playground-ingress",
+                INGRESS_NAME,
                 &patch_params,
                 serde_json::to_vec(&add_path).map_err(error_to_string)?,
             )
@@ -294,13 +302,9 @@ impl Engine {
     }
     
     pub async fn undeploy(self, instance_uuid: &str) -> Result<(), String> {
-        let config = config().await?;
-        let namespace = &config.clone().default_ns;
-        let client = APIClient::new(config);
-    
-        // Undeploy the service from its id
-        let service_api: Api<Service> = Api::namespaced(client.clone(), namespace);
-        let selector = format!("instance-uuid={}", instance_uuid);
+        // Undeploy the service by its id
+        let service_api: Api<Service> = Api::namespaced(self.client.clone(), &self.namespace);
+        let selector = format!("{}={}", INSTANCE_UUID_LABEL, instance_uuid);
         let services = list_by_selector(&service_api, selector.clone()).await?;
         let service_name = services
             .first()
@@ -316,7 +320,7 @@ impl Engine {
             .await
             .map_err(|s| format!("Error {}", s))?;
     
-        let pod_api: Api<Pod> = Api::namespaced(client.clone(), namespace);
+        let pod_api: Api<Pod> = Api::namespaced(self.client, &self.namespace);
         let pods = list_by_selector(&pod_api, selector).await?;
         let pod_name = pods
             .first()
@@ -342,18 +346,4 @@ impl Engine {
         Ok(())
     }
 
-}
-
-async fn list_by_selector<K: Clone + DeserializeOwned + Meta>(
-    api: &Api<K>,
-    selector: String,
-) -> Result<Vec<K>, String> {
-    let params = ListParams {
-        label_selector: Some(selector),
-        ..ListParams::default()
-    };
-    api.list(&params)
-        .await
-        .map(|l| l.items)
-        .map_err(|s| format!("Error {}", s))
 }

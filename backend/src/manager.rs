@@ -10,7 +10,7 @@ use std::{
 };
 use tokio::runtime::Runtime;
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct Manager {
     engine: Engine,
     pub metrics: Metrics,
