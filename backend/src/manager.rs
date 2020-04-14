@@ -1,10 +1,9 @@
 use crate::kubernetes::{Engine, InstanceDetails};
 use crate::metrics::Metrics;
-use log::{info, warn};
+use log::info;
 use std::{
     collections::BTreeMap,
     error::Error,
-    sync::{Arc, Mutex},
     thread::{self, JoinHandle},
     time::Duration,
 };
@@ -17,7 +16,6 @@ pub struct Manager {
 }
 
 impl Manager {
-
     const THREE_HOURS: Duration = Duration::from_secs(60 * 60 * 3);
 
     pub async fn new() -> Result<Self, Box<dyn Error>> {
@@ -31,21 +29,19 @@ impl Manager {
     }
 
     pub fn spawn_reaper(self) -> JoinHandle<()> {
-        thread::spawn(move || {
-            loop {
-                thread::sleep(Duration::from_secs(5));
+        thread::spawn(move || loop {
+            thread::sleep(Duration::from_secs(5));
 
-                let instances = self.clone().list_all().unwrap();
-                info!("Map: {:?}", instances);
-                for (_user_uuid, instance) in instances {
-                    info!("Undeploying {}", instance.instance_uuid);
-                    
-                    if let Ok(duration) = instance.started_at.elapsed() {
-                        if duration > Manager::THREE_HOURS {
-                            match self.clone().undeploy(&instance.instance_uuid) {
-                                Ok(()) => info!("Removed: {}", instance.instance_uuid),
-                                Err(_) => info!("Failed to remove: {}", instance.instance_uuid),
-                            }
+            let instances = self.clone().list_all().unwrap();
+            info!("Map: {:?}", instances);
+            for (_user_uuid, instance) in instances {
+                info!("Undeploying {}", instance.instance_uuid);
+
+                if let Ok(duration) = instance.started_at.elapsed() {
+                    if duration > Manager::THREE_HOURS {
+                        match self.clone().undeploy(&instance.instance_uuid) {
+                            Ok(()) => info!("Removed: {}", instance.instance_uuid),
+                            Err(_) => info!("Failed to remove: {}", instance.instance_uuid),
                         }
                     }
                 }
@@ -55,12 +51,11 @@ impl Manager {
 }
 
 fn new_runtime() -> Result<Runtime, String> {
-    Runtime::new().map_err(|err| "".to_string())
+    Runtime::new().map_err(|err| format!("{}", err))
 }
 
 impl Manager {
-
-    pub fn get(self, user_uuid: &str, instance_uuid: &str) -> Result<InstanceDetails, String> {
+    pub fn get(self, _user_uuid: &str, instance_uuid: &str) -> Result<InstanceDetails, String> {
         new_runtime()?.block_on(self.engine.get(&instance_uuid))
     }
 
@@ -75,7 +70,7 @@ impl Manager {
     pub fn deploy(self, user_uuid: &str, template: &str) -> Result<String, String> {
         let result = new_runtime()?.block_on(self.engine.deploy(&user_uuid, &template));
         match result.clone() {
-            Ok(instance_uuid) => {
+            Ok(_instance_uuid) => {
                 self.metrics.inc_deploy_counter(&user_uuid, &template);
             }
             Err(_) => {

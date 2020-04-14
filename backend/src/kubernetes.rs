@@ -138,16 +138,17 @@ async fn config() -> Result<kube::config::Configuration, String> {
         .map_err(error_to_string)
 }
 
-async fn images_from_template(
+async fn get_config_map(
     client: APIClient,
     namespace: &str,
+    name: &str,
 ) -> Result<BTreeMap<String, String>, String> {
     let config_map_api: Api<ConfigMap> = Api::namespaced(client, namespace);
     config_map_api
-        .get("theia-images")
+        .get(name)
         .await
         .map_err(error_to_string)
-        .and_then(|o: ConfigMap| o.data.ok_or_else(|| "No data field".to_string()))
+        .and_then(|o| o.data.ok_or_else(|| "No data field".to_string()))
 }
 
 #[derive(Clone)]
@@ -166,9 +167,20 @@ pub struct InstanceDetails {
 }
 
 impl InstanceDetails {
-
-    pub fn new(engine: Engine, user_uuid: String, instance_uuid: String, phase: String, started_at: SystemTime) -> Self {
-        InstanceDetails{ user_uuid: user_uuid.clone(), instance_uuid: instance_uuid.clone(), phase, url: InstanceDetails::url(engine, instance_uuid), started_at }
+    pub fn new(
+        engine: Engine,
+        user_uuid: String,
+        instance_uuid: String,
+        phase: String,
+        started_at: SystemTime,
+    ) -> Self {
+        InstanceDetails {
+            user_uuid: user_uuid.clone(),
+            instance_uuid: instance_uuid.clone(),
+            phase,
+            url: InstanceDetails::url(engine, instance_uuid),
+            started_at,
+        }
     }
 
     fn url(engine: Engine, instance_uuid: String) -> String {
@@ -178,18 +190,17 @@ impl InstanceDetails {
             format!("//{}", instance_uuid)
         }
     }
-
 }
 
 impl Engine {
-
     pub async fn new() -> Result<Self, Box<dyn Error>> {
         let config = config().await?;
         let namespace = config.clone().default_ns.to_string();
         let client = APIClient::new(config);
         let ingress_api: Api<Ingress> = Api::namespaced(client.clone(), &namespace);
         let host = if let Ok(ingress) = ingress_api.get(INGRESS_NAME).await {
-            ingress.spec
+            ingress
+                .spec
                 .ok_or("message")?
                 .rules
                 .ok_or("message")?
@@ -205,10 +216,7 @@ impl Engine {
 
         // TODO load and monitor images
 
-        Ok(Engine {
-            host,
-            namespace,
-        })
+        Ok(Engine { host, namespace })
     }
 
     fn user_selector(user_uuid: &str) -> String {
@@ -220,25 +228,35 @@ impl Engine {
     }
 
     fn pod_to_instance(self, pod: &Pod) -> Result<InstanceDetails, String> {
-        let phase = pod
-        .status // https://docs.rs/k8s-openapi/0.7.1/k8s_openapi/api/core/v1/struct.PodStatus.html
-        .as_ref()
-        .ok_or_else(|| format!("No metadata for"))?
-        .phase
-        .clone()
-        .ok_or_else(|| format!("No name for"))?;
+        let (phase, started_at): (String, SystemTime) = pod
+            .status // https://docs.rs/k8s-openapi/0.7.1/k8s_openapi/api/core/v1/struct.PodStatus.html
+            .as_ref()
+            .and_then(|pod_status| {
+                Some((
+                    pod_status.clone().phase?,
+                    pod_status.clone().start_time?.0.into(),
+                ))
+            })
+            .ok_or("PodStatus unavailable")?;
 
-        let user_uuid = "".to_string();
-        let instance_uuid = "".to_string();
-        let started_at = SystemTime::now();
-        /*pod.metadata.as_ref().and_then(|md| {
-            Some((
-                md.labels.clone()?.get(USER_UUID_LABEL)?.to_string(),
-                InstanceDetails::new(self, md.labels.clone()?.get(INSTANCE_UUID_LABEL)?.to_string(), phase),
-            ))
-        })*/
+        let (user_uuid, instance_uuid) = pod
+            .metadata
+            .as_ref()
+            .and_then(|md| {
+                Some((
+                    md.labels.clone()?.get(USER_UUID_LABEL)?.to_string(),
+                    md.labels.clone()?.get(INSTANCE_UUID_LABEL)?.to_string(),
+                ))
+            })
+            .ok_or("Metadata unavailable")?;
 
-        Ok(InstanceDetails::new(self, user_uuid, instance_uuid, phase, started_at))
+        Ok(InstanceDetails::new(
+            self,
+            user_uuid,
+            instance_uuid,
+            phase,
+            started_at,
+        ))
     }
 
     pub async fn get(self, instance_uuid: &str) -> Result<InstanceDetails, String> {
@@ -280,7 +298,10 @@ impl Engine {
         let names = pods
             .iter()
             .flat_map(|pod| {
-                self.clone().pod_to_instance(pod).ok().map(|i| (/*i.user_uuid*/ "".to_string(), i))
+                self.clone()
+                    .pod_to_instance(pod)
+                    .ok()
+                    .map(|i| (/*i.user_uuid*/ "".to_string(), i))
             })
             .collect();
 
@@ -291,7 +312,7 @@ impl Engine {
         let config = config().await?;
         let client = APIClient::new(config);
         // Access the right image id
-        let images = images_from_template(client.clone(), &self.namespace).await?;
+        let images = get_config_map(client.clone(), &self.namespace, "theia-images").await?;
         let image = images
             .get(&template.to_string())
             .ok_or_else(|| format!("Unknow image {}", template))?;
@@ -301,7 +322,7 @@ impl Engine {
 
         // Deploy a new pod for this image
         let pod_api: Api<Pod> = Api::namespaced(client.clone(), &self.namespace);
-        let pod_name = pod_api
+        let _pod_name = pod_api
             .create(
                 &PostParams::default(),
                 &create_pod(&user_uuid, &instance_uuid, image),
@@ -377,7 +398,7 @@ impl Engine {
             .delete(&service_name, &DeleteParams::default())
             .await
             .map_err(|s| format!("Error {}", s))?;
-            
+
         let pod_api: Api<Pod> = Api::namespaced(client.clone(), &self.namespace);
         let pods = list_by_selector(&pod_api, selector).await?;
         let pod_name = pods

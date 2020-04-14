@@ -7,7 +7,6 @@ mod manager;
 mod metrics;
 
 use crate::manager::Manager;
-use log::info;
 use rocket::{http::Method, routes};
 use rocket_contrib::serve::StaticFiles;
 use rocket_cors::{AllowedOrigins, CorsOptions};
