@@ -43,7 +43,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let manager = Manager::new().await?;
     manager.clone().spawn_reaper();
-    info!("Synced with {} instances", manager.instances.lock().unwrap().len());
     let prometheus = PrometheusMetrics::with_registry(manager.clone().metrics.create_registry()?);
     let error = rocket::ignite()
         .attach(prometheus.clone())

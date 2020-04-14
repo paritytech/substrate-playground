@@ -26,14 +26,14 @@ impl Metrics {
             )?,
             undeploy_counter: IntCounterVec::new(
                 opts!("undeploy_counter", "Count of undeployment"),
-                &[Self::USER_UUID_LABEL, Self::TEMPLATE_LABEL],
+                &[Self::USER_UUID_LABEL],
             )?,
             undeploy_failures_counter: IntCounterVec::new(
                 opts!(
                     "undeploy_failures_counter",
                     "Count of undeployment failures"
                 ),
-                &[Self::USER_UUID_LABEL, Self::TEMPLATE_LABEL],
+                &[Self::USER_UUID_LABEL],
             )?,
         })
     }

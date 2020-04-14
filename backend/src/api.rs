@@ -1,10 +1,9 @@
 //! HTTP endpoints exposed in /api context
 
 use crate::Context;
-use log::{info, warn};
 use rocket::{get, post, State};
 use rocket_contrib::{json, json::JsonValue};
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 
 // TODO add image templates endpoint
 
