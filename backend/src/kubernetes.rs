@@ -19,7 +19,7 @@ use kube::{
 use log::info;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::Value;
-use std::{collections::BTreeMap, error::Error, fs, path::Path};
+use std::{collections::BTreeMap, error::Error, fs, path::Path, time::SystemTime};
 use uuid::Uuid;
 
 const APP_LABEL: &str = "app";
@@ -154,16 +154,35 @@ async fn images_from_template(
 pub struct Engine {
     host: Option<String>,
     namespace: String,
-    client: APIClient,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct InstanceDetails {
-    phase: String,
-    url: String,
+    pub user_uuid: String,
+    pub instance_uuid: String,
+    pub phase: String,
+    pub url: String,
+    pub started_at: SystemTime,
+}
+
+impl InstanceDetails {
+
+    pub fn new(engine: Engine, user_uuid: String, instance_uuid: String, phase: String, started_at: SystemTime) -> Self {
+        InstanceDetails{ user_uuid: user_uuid.clone(), instance_uuid: instance_uuid.clone(), phase, url: InstanceDetails::url(engine, instance_uuid), started_at }
+    }
+
+    fn url(engine: Engine, instance_uuid: String) -> String {
+        if let Some(host) = engine.host {
+            format!("//{}.{}", instance_uuid, host)
+        } else {
+            format!("//{}", instance_uuid)
+        }
+    }
+
 }
 
 impl Engine {
+
     pub async fn new() -> Result<Self, Box<dyn Error>> {
         let config = config().await?;
         let namespace = config.clone().default_ns.to_string();
@@ -189,36 +208,57 @@ impl Engine {
         Ok(Engine {
             host,
             namespace,
-            client,
         })
     }
 
+    fn user_selector(user_uuid: &str) -> String {
+        format!("{}={}", USER_UUID_LABEL, user_uuid)
+    }
+
+    fn instance_selector(instance_uuid: &str) -> String {
+        format!("{}={}", INSTANCE_UUID_LABEL, instance_uuid)
+    }
+
+    fn pod_to_instance(self, pod: &Pod) -> Result<InstanceDetails, String> {
+        let phase = pod
+        .status // https://docs.rs/k8s-openapi/0.7.1/k8s_openapi/api/core/v1/struct.PodStatus.html
+        .as_ref()
+        .ok_or_else(|| format!("No metadata for"))?
+        .phase
+        .clone()
+        .ok_or_else(|| format!("No name for"))?;
+
+        let user_uuid = "".to_string();
+        let instance_uuid = "".to_string();
+        let started_at = SystemTime::now();
+        /*pod.metadata.as_ref().and_then(|md| {
+            Some((
+                md.labels.clone()?.get(USER_UUID_LABEL)?.to_string(),
+                InstanceDetails::new(self, md.labels.clone()?.get(INSTANCE_UUID_LABEL)?.to_string(), phase),
+            ))
+        })*/
+
+        Ok(InstanceDetails::new(self, user_uuid, instance_uuid, phase, started_at))
+    }
+
     pub async fn get(self, instance_uuid: &str) -> Result<InstanceDetails, String> {
-        let pod_api: Api<Pod> = Api::namespaced(self.client, &self.namespace);
-        let selector = format!("{}={}", INSTANCE_UUID_LABEL, instance_uuid);
-        let pods = list_by_selector(&pod_api, selector).await?;
-        let phase = pods
+        let config = config().await?;
+        let client = APIClient::new(config);
+        let pod_api: Api<Pod> = Api::namespaced(client, &self.namespace);
+        let pods = list_by_selector(&pod_api, Engine::instance_selector(instance_uuid)).await?;
+        let pod = pods
             .first()
-            .ok_or_else(|| format!("No matching service for {}", instance_uuid))?
-            .status // https://docs.rs/k8s-openapi/0.7.1/k8s_openapi/api/core/v1/struct.PodStatus.html
-            .as_ref()
-            .ok_or_else(|| format!("No metadata for {}", instance_uuid))?
-            .phase
-            .clone()
-            .ok_or_else(|| format!("No name for {}", instance_uuid))?;
-        let url = if let Some(host) = self.host {
-            format!("//{}.{}", instance_uuid, host)
-        } else {
-            format!("//{}", instance_uuid)
-        };
-        Ok(InstanceDetails { phase, url })
+            .ok_or_else(|| format!("No matching service for {}", instance_uuid))?;
+
+        Ok(self.pod_to_instance(pod)?)
     }
 
     /// Lists all currently running instances for an identified user
     pub async fn list(self, user_uuid: &str) -> Result<Vec<String>, String> {
-        let pod_api: Api<Pod> = Api::namespaced(self.client, &self.namespace);
-        let selector = format!("{}={}", USER_UUID_LABEL, user_uuid);
-        let pods = list_by_selector(&pod_api, selector).await?;
+        let config = config().await?;
+        let client = APIClient::new(config);
+        let pod_api: Api<Pod> = Api::namespaced(client, &self.namespace);
+        let pods = list_by_selector(&pod_api, Engine::user_selector(user_uuid)).await?;
         let names: Vec<String> = pods
             .iter()
             .flat_map(|pod| {
@@ -231,19 +271,16 @@ impl Engine {
         Ok(names)
     }
 
-    pub async fn list_all(self) -> Result<BTreeMap<String, String>, String> {
-        let pod_api: Api<Pod> = Api::namespaced(self.client, &self.namespace);
+    pub async fn list_all(&self) -> Result<BTreeMap<String, InstanceDetails>, String> {
+        let config = config().await?;
+        let client = APIClient::new(config);
+        let pod_api: Api<Pod> = Api::namespaced(client, &self.namespace);
         let pods =
             list_by_selector(&pod_api, format!("{}={}", APP_LABEL, APP_VALUE).to_string()).await?;
-        let names: BTreeMap<String, String> = pods
+        let names = pods
             .iter()
             .flat_map(|pod| {
-                pod.metadata.as_ref().and_then(|md| {
-                    Some((
-                        md.labels.clone()?.get(USER_UUID_LABEL)?.to_string(),
-                        md.labels.clone()?.get(INSTANCE_UUID_LABEL)?.to_string(),
-                    ))
-                })
+                self.clone().pod_to_instance(pod).ok().map(|i| (/*i.user_uuid*/ "".to_string(), i))
             })
             .collect();
 
@@ -251,8 +288,10 @@ impl Engine {
     }
 
     pub async fn deploy(self, user_uuid: &str, template: &str) -> Result<String, String> {
+        let config = config().await?;
+        let client = APIClient::new(config);
         // Access the right image id
-        let images = images_from_template(self.client.clone(), &self.namespace).await?;
+        let images = images_from_template(client.clone(), &self.namespace).await?;
         let image = images
             .get(&template.to_string())
             .ok_or_else(|| format!("Unknow image {}", template))?;
@@ -261,7 +300,7 @@ impl Engine {
         let instance_uuid = format!("{}", Uuid::new_v4());
 
         // Deploy a new pod for this image
-        let pod_api: Api<Pod> = Api::namespaced(self.client.clone(), &self.namespace);
+        let pod_api: Api<Pod> = Api::namespaced(client.clone(), &self.namespace);
         let pod_name = pod_api
             .create(
                 &PostParams::default(),
@@ -290,7 +329,7 @@ impl Engine {
         info!("{:?}", thread.join().unwrap().await);*/
 
         // Deploy the associated service
-        let service_api: Api<Service> = Api::namespaced(self.client.clone(), &self.namespace);
+        let service_api: Api<Service> = Api::namespaced(client.clone(), &self.namespace);
         let service_name = service_api
             .create(&PostParams::default(), &create_service(&instance_uuid))
             .await
@@ -304,7 +343,7 @@ impl Engine {
                 patch_strategy: PatchStrategy::JSON,
                 ..PatchParams::default()
             };
-            let ingress_api: Api<Ingress> = Api::namespaced(self.client, &self.namespace);
+            let ingress_api: Api<Ingress> = Api::namespaced(client, &self.namespace);
             ingress_api
                 .patch(
                     INGRESS_NAME,
@@ -320,8 +359,10 @@ impl Engine {
 
     pub async fn undeploy(self, instance_uuid: &str) -> Result<(), String> {
         // Undeploy the service by its id
-        let service_api: Api<Service> = Api::namespaced(self.client.clone(), &self.namespace);
-        let selector = format!("{}={}", INSTANCE_UUID_LABEL, instance_uuid);
+        let config = config().await?;
+        let client = APIClient::new(config);
+        let service_api: Api<Service> = Api::namespaced(client.clone(), &self.namespace);
+        let selector = Engine::instance_selector(instance_uuid);
         let services = list_by_selector(&service_api, selector.clone()).await?;
         let service_name = services
             .first()
@@ -336,8 +377,8 @@ impl Engine {
             .delete(&service_name, &DeleteParams::default())
             .await
             .map_err(|s| format!("Error {}", s))?;
-
-        let pod_api: Api<Pod> = Api::namespaced(self.client, &self.namespace);
+            
+        let pod_api: Api<Pod> = Api::namespaced(client.clone(), &self.namespace);
         let pods = list_by_selector(&pod_api, selector).await?;
         let pod_name = pods
             .first()
