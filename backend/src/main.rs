@@ -41,7 +41,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     .to_cors()?;
 
     let manager = Manager::new().await?;
-    manager.clone().spawn_reaper();
+    manager.clone().spawn_background_thread();
     let prometheus = PrometheusMetrics::with_registry(manager.clone().metrics.create_registry()?);
     let error = rocket::ignite()
         .attach(prometheus.clone())
