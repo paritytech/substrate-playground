@@ -1,9 +1,10 @@
 use crate::kubernetes::{Engine, InstanceDetails};
 use crate::metrics::Metrics;
-use log::info;
+use log::warn;
 use std::{
     collections::BTreeMap,
     error::Error,
+    sync::{Arc, Mutex},
     thread::{self, JoinHandle},
     time::Duration,
 };
@@ -13,6 +14,7 @@ use tokio::runtime::Runtime;
 pub struct Manager {
     engine: Engine,
     pub metrics: Metrics,
+    instances: Arc<Mutex<BTreeMap<String, String>>>,
 }
 
 impl Manager {
@@ -23,30 +25,45 @@ impl Manager {
         let engine = Engine::new().await?;
         let manager = Manager {
             engine,
-            metrics: metrics,
+            metrics,
+            instances: Arc::new(Mutex::new(BTreeMap::new())),
         };
         Ok(manager)
     }
 
-    pub fn spawn_reaper(self) -> JoinHandle<()> {
+    pub fn spawn_background_thread(self) -> JoinHandle<()> {
         thread::spawn(move || loop {
             thread::sleep(Duration::from_secs(5));
 
-            let instances = self.clone().list_all().unwrap();
-            info!("Map: {:?}", instances);
+            let instances_thread = self.clone().instances.clone();
+            let instances2 = &mut *instances_thread.lock().unwrap();
+            let instances3 = instances2.clone();
+            for (user_uuid, instance_uuid) in instances3 {
+                if let Ok(details) = self.clone().get(&user_uuid, &instance_uuid) {
+                    let phase = details.phase;
+                    if phase != "Pending" && phase != "Unknown" {
+                        let res = instances2.remove(&user_uuid);
+                        self.clone().metrics.observe_deploy_duration(&instance_uuid, details.started_at.elapsed().unwrap().as_secs_f64());
+                    }
+                }
+                
+            }
+            
+            // Go through all Running pods and figure out if they have to be undeployed
+            let all_instances = self.clone().list_all().unwrap();
+            let instances = all_instances.iter().filter(|instance| instance.1.phase == "Running").collect::<BTreeMap<&String, &InstanceDetails>>();
             for (_user_uuid, instance) in instances {
-                info!("Undeploying {}", instance.instance_uuid);
-
+                let uuid = &instance.instance_uuid;
                 if let Ok(duration) = instance.started_at.elapsed() {
                     if duration > Manager::THREE_HOURS {
-                        match self.clone().undeploy(&instance.instance_uuid) {
-                            Ok(()) => info!("Removed: {}", instance.instance_uuid),
-                            Err(_) => info!("Failed to remove: {}", instance.instance_uuid),
+                        match self.clone().undeploy(&uuid) {
+                            Ok(()) => (),
+                            Err(err) => warn!("Error while undeploying {}: {}", uuid, err),
                         }
                     }
                 }
             }
-        })
+        })//)
     }
 }
 
@@ -70,7 +87,11 @@ impl Manager {
     pub fn deploy(self, user_uuid: &str, template: &str) -> Result<String, String> {
         let result = new_runtime()?.block_on(self.engine.deploy(&user_uuid, &template));
         match result.clone() {
-            Ok(_instance_uuid) => {
+            Ok(instance_uuid) => {
+                self.instances
+                    .lock()
+                    .unwrap()
+                    .insert(user_uuid.into(), instance_uuid.into());
                 self.metrics.inc_deploy_counter(&user_uuid, &template);
             }
             Err(_) => {

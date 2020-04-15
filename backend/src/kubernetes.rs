@@ -9,12 +9,10 @@ use k8s_openapi::api::extensions::v1beta1::Ingress;
 use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
 use kube::{
     api::{
-        Api, DeleteParams, ListParams, Meta, PatchParams, PatchStrategy, PostParams, Resource,
-        WatchEvent,
+        Api, DeleteParams, ListParams, Meta, PatchParams, PatchStrategy, PostParams,
     },
     client::APIClient,
     config,
-    runtime::Informer,
 };
 use log::info;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
@@ -322,43 +320,25 @@ impl Engine {
 
         // Deploy a new pod for this image
         let pod_api: Api<Pod> = Api::namespaced(client.clone(), &self.namespace);
-        let _pod_name = pod_api
+        let pod_name = pod_api
             .create(
                 &PostParams::default(),
-                &create_pod(&user_uuid, &instance_uuid, image),
+                &create_pod(&user_uuid, &instance_uuid.clone(), image),
             )
             .await
             .map(|o| o.metadata.unwrap().name.unwrap())
             .map_err(error_to_string)?;
 
-        /*info!("Spawning");
-        let thread = thread::spawn(async move || {
-            info!("New thread");
-            let namespace = &config2.clone().default_ns;
-            let client = APIClient::new(config2);
-
-            loop {
-                info!("Loop!");
-                let pod_api: Api<Pod> = Api::namespaced(client.clone(), namespace);
-                let p1cpy = pod_api.get(&pod_name).await.map_err(error_to_string).unwrap();
-                if let Some(status) = &p1cpy.status {
-                    info!("Got blog pod with containers: {:?}", status.phase);
-                }
-                thread::sleep(Duration::from_millis(1000));
-            }
-        });
-        info!("{:?}", thread.join().unwrap().await);*/
-
         // Deploy the associated service
         let service_api: Api<Service> = Api::namespaced(client.clone(), &self.namespace);
         let service_name = service_api
-            .create(&PostParams::default(), &create_service(&instance_uuid))
+            .create(&PostParams::default(), &create_service(&instance_uuid.clone()))
             .await
             .map(|o| o.metadata.unwrap().name.unwrap())
             .map_err(error_to_string)?;
 
         // Patch the ingress configuration to add the new path, if host is defined
-        if let Some(host) = self.host {
+        if let Some(host) = &self.host {
             let add_path = read_add_path(&host, &instance_uuid, &service_name)?;
             let patch_params = PatchParams {
                 patch_strategy: PatchStrategy::JSON,
