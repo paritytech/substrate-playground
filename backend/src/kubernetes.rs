@@ -5,19 +5,17 @@
 use k8s_openapi::api::core::v1::{
     ConfigMap, Container, Pod, PodSpec, Service, ServicePort, ServiceSpec,
 };
-use k8s_openapi::api::extensions::v1beta1::Ingress;
-use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
+use k8s_openapi::api::extensions::v1beta1::{HTTPIngressPath, HTTPIngressRuleValue, Ingress, IngressBackend, IngressRule};
+use k8s_openapi::apimachinery::pkg::{apis::meta::v1::ObjectMeta, util::intstr::IntOrString};
 use kube::{
     api::{
-        Api, DeleteParams, ListParams, Meta, PatchParams, PatchStrategy, PostParams,
+        Api, DeleteParams, ListParams, Meta, PostParams,
     },
     client::APIClient,
     config,
 };
-use log::info;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
-use serde_json::Value;
-use std::{collections::BTreeMap, error::Error, fs, path::Path, time::SystemTime};
+use std::{collections::BTreeMap, error::Error, time::SystemTime};
 use uuid::Uuid;
 
 const APP_LABEL: &str = "app";
@@ -108,26 +106,22 @@ fn create_service(instance_uuid: &str) -> Service {
     }
 }
 
-fn read_add_path(host: &str, instance_uuid: &str, service_name: &str) -> Result<Value, String> {
-    let subdomain = format!("{}.{}", instance_uuid, host);
-    fs::read_to_string(&Path::new("conf/add-theia-path.json"))
-        .map_err(error_to_string)
-        .and_then(|s| {
-            serde_json::from_str(
-                &s.replacen("%SERVICE_NAME%", service_name, 3)
-                    .replacen("%HOST%", &subdomain, 1),
-            )
-            .map_err(error_to_string)
-        })
+fn create_ingress_rule(subdomain: String, service_name: String) -> IngressRule {
+    let paths = vec![
+        create_ingress_path("/".to_string(), service_name.clone(), 3000),
+        create_ingress_path("/front-end".to_string(), service_name.clone(), 8000),
+        create_ingress_path("/wss".to_string(), service_name, 9944),
+    ];
+    IngressRule{ host: Some(subdomain), http: Some(HTTPIngressRuleValue{ paths }) }
 }
 
-/*
-fn read_remove_path(index: &str) -> Result<Value, String> {
-    utils::read(&Path::new("conf/remove-theia-path.json"))
-      .map_err(error_to_string)
-      .and_then(|s| serde_json::from_str(&s.replace("%INDEX%", &index)).map_err(error_to_string))
+fn create_ingress_path(path: String, name: String, port: i32) -> HTTPIngressPath {
+    HTTPIngressPath{ path: Some(path), backend: IngressBackend{ service_name: name, service_port: IntOrString::Int(port) }}
 }
-*/
+
+fn subdomain(host: &str, instance_uuid: &str) -> String {
+    format!("{}.{}", instance_uuid, host)
+}
 
 async fn config() -> Result<kube::config::Configuration, String> {
     config::load_kube_config()
@@ -209,10 +203,6 @@ impl Engine {
         } else {
             None
         };
-        // TODO failsafe
-        info!("HOST: {:?}", host);
-
-        // TODO load and monitor images
 
         Ok(Engine { host, namespace })
     }
@@ -320,7 +310,7 @@ impl Engine {
 
         // Deploy a new pod for this image
         let pod_api: Api<Pod> = Api::namespaced(client.clone(), &self.namespace);
-        let pod_name = pod_api
+        pod_api
             .create(
                 &PostParams::default(),
                 &create_pod(&user_uuid, &instance_uuid.clone(), image),
@@ -331,28 +321,25 @@ impl Engine {
 
         // Deploy the associated service
         let service_api: Api<Service> = Api::namespaced(client.clone(), &self.namespace);
+        let service = create_service(&instance_uuid.clone());
         let service_name = service_api
-            .create(&PostParams::default(), &create_service(&instance_uuid.clone()))
+            .create(&PostParams::default(), &service)
             .await
             .map(|o| o.metadata.unwrap().name.unwrap())
             .map_err(error_to_string)?;
 
         // Patch the ingress configuration to add the new path, if host is defined
         if let Some(host) = &self.host {
-            let add_path = read_add_path(&host, &instance_uuid, &service_name)?;
-            let patch_params = PatchParams {
-                patch_strategy: PatchStrategy::JSON,
-                ..PatchParams::default()
-            };
+            let subdomain = subdomain(host, &instance_uuid);
             let ingress_api: Api<Ingress> = Api::namespaced(client, &self.namespace);
-            ingress_api
-                .patch(
-                    INGRESS_NAME,
-                    &patch_params,
-                    serde_json::to_vec(&add_path).map_err(error_to_string)?,
-                )
-                .await
-                .map_err(error_to_string)?;
+            let mut ingress: Ingress = ingress_api.get(INGRESS_NAME).await.map_err(error_to_string)?.clone();
+            let mut spec = ingress.clone().spec.ok_or("dezf")?.clone();
+            let mut rules: Vec<IngressRule> = spec.clone().rules.unwrap();
+            rules.push(create_ingress_rule(subdomain, service_name));
+            spec.rules.replace(rules);
+            ingress.spec.replace(spec);
+
+            ingress_api.replace(INGRESS_NAME, &PostParams::default(), &ingress).await.map_err(error_to_string)?;
         }
 
         Ok(instance_uuid)
@@ -395,12 +382,17 @@ impl Engine {
             .await
             .map_err(|s| format!("Error {}", s))?;
 
-        /*let _ingress = Api::v1beta1Ingress(client).within(namespace);
-        //let aa: Value = ingress.get("playground-ingress").map_err(error_to_string)?;
-        let index = format!("{}", 0);
-        let remove_path: Value = read_remove_path(&index)?;
-        let patch_params = PatchParams{ patch_strategy: PatchStrategy::JSON , ..PatchParams::default() };
-        ingress.patch("playground-ingress", &patch_params, serde_json::to_vec(&remove_path).map_err(error_to_string)?).map_err(error_to_string)?;*/
+        if let Some(host) = &self.host {
+            let subdomain = subdomain(host, instance_uuid);
+            let ingress_api: Api<Ingress> = Api::namespaced(client, &self.namespace);
+            let mut ingress: Ingress = ingress_api.get(INGRESS_NAME).await.map_err(error_to_string)?.clone();
+            let mut spec = ingress.clone().spec.ok_or("dezf")?.clone();
+            let rules: Vec<IngressRule> = spec.clone().rules.unwrap().into_iter().filter(|rule| rule.clone().host.unwrap() != subdomain).collect();
+            spec.rules.replace(rules);
+            ingress.spec.replace(spec);
+
+            ingress_api.replace(INGRESS_NAME, &PostParams::default(), &ingress).await.map_err(error_to_string)?;
+        }
 
         Ok(())
     }
