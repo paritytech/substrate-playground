@@ -11,7 +11,7 @@
   "dependencies": {
     "@theia/core": "1.0.0",
     "gunzip-maybe": "1.4.1",
-    "shepherd.js": "7.0.4"
+    "shepherd.js": "7.1.2"
   },
   "devDependencies": {
     "typescript": "3.8.3"
