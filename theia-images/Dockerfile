@@ -16,16 +16,9 @@ ADD package.json .
 ADD lerna.json .
 ADD theia-playground theia-playground
 ADD theia-playground-extension theia-playground-extension
-RUN yarn --pure-lockfile && \
-    NODE_OPTIONS="--max_old_space_size=4096" yarn workspace @parity/theia-playground theia build && \
-    yarn workspace @parity/theia-playground theia download:plugins && \
-    yarn --production && \
-    yarn autoclean --init && \
-    echo *.ts >> .yarnclean && \
-    echo *.ts.map >> .yarnclean && \
-    echo *.spec.* >> .yarnclean && \
-    yarn autoclean --force && \
-    yarn cache clean
+RUN yarn && \
+    yarn workspace @parity/theia-playground theia build && \
+    yarn workspace @parity/theia-playground theia download:plugins
 
 ##########################
 #     Rust base          #
@@ -80,8 +73,7 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --de
     && rustup target add wasm32-unknown-unknown --toolchain $RUST_VERSION
 
 RUN cargo install --force --git https://github.com/alexcrichton/wasm-gc \
-    && cargo install --force --git https://github.com/paritytech/substrate subkey \
-    && cargo install --force --git https://github.com/paritytech/cargo-contract cargo-contract --features extrinsics
+    && cargo install --force --git https://github.com/paritytech/substrate subkey
 
 ##########################
 #  Substrate workshop    #

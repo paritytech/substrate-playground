@@ -4,7 +4,7 @@
     "prepare": "lerna run prepare"
   },
   "devDependencies": {
-    "lerna": "2.4.0"
+    "lerna": "3.20.2"
   },
   "workspaces": ["theia-playground-extension", "theia-playground"]
 }
