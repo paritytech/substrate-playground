@@ -19,9 +19,6 @@ else
 endif
 
 GKE_REGION=us-central1
-K8S_DEPLOYMENT_FILE_TEMPLATE=conf/k8s/deployment.yaml.tmpl
-PLAYGROUND_HOST=${IDENTIFIER}.substrate.dev
-PLAYGROUND_PORT="80"
 DOCKER_USERNAME=jeluard
 PLAYGROUND_DOCKER_IMAGE_NAME=${DOCKER_USERNAME}/substrate-playground
 THEIA_DOCKER_IMAGE_NAME=${DOCKER_USERNAME}/theia-substrate
@@ -54,22 +51,24 @@ dev-backend:
 # Build theia docker image
 build-theia-docker-image:
 	$(eval THEIA_DOCKER_IMAGE_VERSION=$(shell git rev-parse --short HEAD))
-	@cd theia-images; docker build -f Dockerfile --label git-commit=${THEIA_DOCKER_IMAGE_VERSION} -t ${THEIA_DOCKER_IMAGE_VERSION} . && docker image prune -f --filter label=stage=builder
-	docker tag ${THEIA_DOCKER_IMAGE_VERSION} gcr.io/${GOOGLE_PROJECT_ID}/${THEIA_DOCKER_IMAGE_NAME}
+	@cd theia-images; docker build -f Dockerfile --label git-commit=${THEIA_DOCKER_IMAGE_VERSION} -t ${THEIA_DOCKER_IMAGE_NAME}:${THEIA_DOCKER_IMAGE_VERSION} . && docker image prune -f --filter label=stage=builder
+	docker tag ${THEIA_DOCKER_IMAGE_NAME}:${THEIA_DOCKER_IMAGE_VERSION} gcr.io/${GOOGLE_PROJECT_ID}/${THEIA_DOCKER_IMAGE_NAME}
 
-# Push a newly built theia image on gcr.io
+# Push a newly built theia image on docker.io and gcr.io
 push-theia-docker-image: build-theia-docker-image
-	gcloud docker -- push gcr.io/${GOOGLE_PROJECT_ID}/${THEIA_DOCKER_IMAGE_NAME}
+	docker push ${THEIA_DOCKER_IMAGE_NAME}:${THEIA_DOCKER_IMAGE_VERSION}
+	docker push gcr.io/${GOOGLE_PROJECT_ID}/${THEIA_DOCKER_IMAGE_NAME}
 
 # Build playground docker image
 build-playground-docker-image:
 	$(eval PLAYGROUND_DOCKER_IMAGE_VERSION=$(shell git rev-parse --short HEAD))
-	docker build -f conf/Dockerfile --label git-commit=${PLAYGROUND_DOCKER_IMAGE_VERSION} -t ${PLAYGROUND_DOCKER_IMAGE_VERSION} . && docker image prune -f --filter label=stage=builder
-	docker tag ${PLAYGROUND_DOCKER_IMAGE_VERSION} gcr.io/${GOOGLE_PROJECT_ID}/${PLAYGROUND_DOCKER_IMAGE_NAME}
+	docker build -f conf/Dockerfile --label git-commit=${PLAYGROUND_DOCKER_IMAGE_VERSION} -t ${PLAYGROUND_DOCKER_IMAGE_NAME}:${PLAYGROUND_DOCKER_IMAGE_VERSION} . && docker image prune -f --filter label=stage=builder
+	docker tag ${PLAYGROUND_DOCKER_IMAGE_NAME}:${PLAYGROUND_DOCKER_IMAGE_VERSION} gcr.io/${GOOGLE_PROJECT_ID}/${PLAYGROUND_DOCKER_IMAGE_NAME}
 
-# Push a newly built playground image on gcr.io
+# Push a newly built playground image on docker.io and gcr.io
 push-playground-docker-image: build-playground-docker-image
-	gcloud docker -- push gcr.io/${GOOGLE_PROJECT_ID}/${PLAYGROUND_DOCKER_IMAGE_NAME}
+	docker push ${PLAYGROUND_DOCKER_IMAGE_NAME}:${PLAYGROUND_DOCKER_IMAGE_VERSION}
+	docker push gcr.io/${GOOGLE_PROJECT_ID}/${PLAYGROUND_DOCKER_IMAGE_NAME}
 
 ## Kubernetes deployment
 
@@ -82,61 +81,28 @@ k8s-assert:
 	@read -p $$'Ok to proceed? [yN]' answer; \
 	if [ "$${answer}" != "Y" ] ;then exit 1; fi
 
-k8s-setup-development:
+k8s-setup-development: k8s-assert
 	kubectl config use-context docker-for-desktop
 	kubectl config set-context --current --namespace=${IDENTIFIER}
 
-k8s-setup-gke:
-	kubectl config use-context gke_substrateplayground-252112_us-central1-a_substrate-playground
+k8s-setup-gke: k8s-assert
+	kubectl config use-context gke_substrateplayground-252112_us-central1-a_substrate-${IDENTIFIER}
 	kubectl config set-context --current --namespace=${IDENTIFIER}
 
-# Deploy nginx on kubernetes
-k8s-deploy-nginx: k8s-assert
-	$(eval PLAYGROUND_STATIC_IP=$(shell gcloud compute addresses describe ${IDENTIFIER} --region=${GKE_REGION} --format="value(address)"))
-	@cat conf/k8s/nginx.yaml | \
-	sed 's/\$${K8S_NAMESPACE}'"/${IDENTIFIER}/g" | \
-	sed 's/\$${PLAYGROUND_STATIC_IP}'"/${PLAYGROUND_STATIC_IP}/g" | \
-	kubectl apply --namespace=${IDENTIFIER} --record -f -
-
-# Undeploy nginx
-k8s-undeploy-nginx: k8s-assert
-	$(eval PLAYGROUND_STATIC_IP=$(shell gcloud compute addresses describe ${IDENTIFIER} --region=${GKE_REGION} --format="value(address)"))
-	@cat conf/k8s/nginx.yaml | \
-	sed 's/\$${K8S_NAMESPACE}'"/${IDENTIFIER}/g" | \
-	sed 's/\$${PLAYGROUND_STATIC_IP}'"/${PLAYGROUND_STATIC_IP}/g" | \
-	kubectl delete --namespace=${IDENTIFIER} -f -
+k8s-gke-static-ip: k8s-assert
+	gcloud compute addresses describe ${IDENTIFIER} --region=${GKE_REGION} --format="value(address)"
 
 # Deploy playground on kubernetes
 k8s-deploy-playground: k8s-assert
-ifeq ($(PLAYGROUND_DOCKER_IMAGE_VERSION), )
-	$(error 'PLAYGROUND_DOCKER_IMAGE_VERSION' must be defined)
-endif
-	@echo "Deploying ${PLAYGROUND_DOCKER_IMAGE_VERSION}"
-	@cat ${K8S_DEPLOYMENT_FILE_TEMPLATE} | \
-	sed 's/\$${ENVIRONMENT}'"/${ENVIRONMENT}/g" | \
-	sed 's/\$${K8S_NAMESPACE}'"/${IDENTIFIER}/g" | \
-	sed 's/\$${PLAYGROUND_PORT}'"/${PLAYGROUND_PORT}/g" | \
-	sed 's~\$${IMAGE}'"~${PLAYGROUND_DOCKER_IMAGE_VERSION}~g" | \
-	sed 's/\$${PLAYGROUND_HOST}'"/${PLAYGROUND_HOST}/g" | \
-	kubectl apply --namespace=${IDENTIFIER} --record -f -
+	kubectl apply --validate=true --record -k conf/k8s/overlays/${ENVIRONMENT}
 
 # Undeploy playground from kubernetes
 k8s-undeploy-playground: k8s-assert
-ifeq ($(PLAYGROUND_DOCKER_IMAGE_VERSION), )
-	$(error 'PLAYGROUND_DOCKER_IMAGE_VERSION' must be defined)
-endif
-	@echo "Undeploying ${PLAYGROUND_DOCKER_IMAGE_VERSION}"
-	@cat ${K8S_DEPLOYMENT_FILE_TEMPLATE} | \
-	sed 's/\$${ENVIRONMENT}'"/${ENVIRONMENT}/g" | \
-	sed 's/\$${K8S_NAMESPACE}'"/${IDENTIFIER}/g" | \
-	sed 's/\$${PLAYGROUND_PORT}'"/${PLAYGROUND_PORT}/g" | \
-	sed 's~\$${IMAGE}'"~${PLAYGROUND_DOCKER_IMAGE_VERSION}~g" | \
-	sed 's/\$${PLAYGROUND_HOST}'"/${PLAYGROUND_HOST}/g" | \
-	kubectl delete --namespace=${IDENTIFIER} -f -
+	kubectl delete -k conf/k8s/overlays/${ENVIRONMENT}
 
 # Undeploy all theia pods and services from kubernetes
 k8s-undeploy-theia: k8s-assert
-	kubectl delete pods,services -l app=theia-substrate --namespace=${IDENTIFIER}
+	kubectl delete pods,services -l app.kubernetes.io/component=theia --namespace=${IDENTIFIER}
 
 # Creates or replaces the `images` config map from `conf/k8s/images/*.properties`
 k8s-update-images-config: k8s-assert
