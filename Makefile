@@ -94,7 +94,7 @@ k8s-gke-static-ip: k8s-assert
 
 # Deploy playground on kubernetes
 k8s-deploy-playground: k8s-assert
-	kubectl apply --validate=true --record -k conf/k8s/overlays/${ENVIRONMENT}
+	kubectl apply --record -k conf/k8s/overlays/${ENVIRONMENT}
 
 # Undeploy playground from kubernetes
 k8s-undeploy-playground: k8s-assert
@@ -106,4 +106,4 @@ k8s-undeploy-theia: k8s-assert
 
 # Creates or replaces the `images` config map from `conf/k8s/images/*.properties`
 k8s-update-images-config: k8s-assert
-	kubectl create configmap theia-images --namespace=${IDENTIFIER} --from-env-file=conf/k8s/images/${ENVIRONMENT}.properties --dry-run -o yaml | kubectl apply -f -
+	kubectl create configmap theia-images --namespace=${IDENTIFIER} --from-file=conf/k8s/overlays/${ENVIRONMENT}/theia-images/ --dry-run -o yaml | kubectl apply -f -

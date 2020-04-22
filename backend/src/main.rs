@@ -7,7 +7,7 @@ mod manager;
 mod metrics;
 
 use crate::manager::Manager;
-use rocket::{http::Method, routes};
+use rocket::{config::Environment, http::Method, routes};
 use rocket_contrib::serve::StaticFiles;
 use rocket_cors::{AllowedOrigins, CorsOptions};
 use rocket_prometheus::PrometheusMetrics;
@@ -24,7 +24,7 @@ pub struct Context {
 async fn main() -> Result<(), Box<dyn Error>> {
     // Initialize log configuration. Reads `RUST_LOG` if any, otherwise fallsback to `default`
     if env::var("RUST_LOG").is_err() {
-        env::set_var("RUST_LOG", "info,kube=info");
+        env::set_var("RUST_LOG", "warn");
     }
     env_logger::init();
 
@@ -39,6 +39,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
         ..Default::default()
     }
     .to_cors()?;
+
+    log::info!("Running in {:?} mode", Environment::active()?);
 
     let manager = Manager::new().await?;
     manager.clone().spawn_background_thread();

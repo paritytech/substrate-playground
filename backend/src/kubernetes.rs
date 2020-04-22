@@ -18,10 +18,12 @@ use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::{collections::BTreeMap, error::Error, time::SystemTime};
 use uuid::Uuid;
 
-const APP_LABEL: &str = "app";
-const APP_VALUE: &str = "theia-substrate";
-const USER_UUID_LABEL: &str = "user-uuid";
-const INSTANCE_UUID_LABEL: &str = "instance-uuid";
+const APP_LABEL: &str = "app.kubernetes.io/name";
+const APP_VALUE: &str = "playground";
+const COMPONENT_LABEL: &str = "app.kubernetes.io/component";
+const COMPONENT_VALUE: &str = "theia";
+const OWNER_LABEL: &str = "app.kubernetes.io/owner";
+const INSTANCE_LABEL: &str = "app.kubernetes.io/instance";
 const INGRESS_NAME: &str = "ingress";
 
 fn error_to_string<T: std::fmt::Display>(err: T) -> String {
@@ -45,17 +47,18 @@ async fn list_by_selector<K: Clone + DeserializeOwned + Meta>(
 fn create_pod(user_uuid: &str, instance_uuid: &str, image: &str) -> Pod {
     let mut labels = BTreeMap::new();
     labels.insert(APP_LABEL.to_string(), APP_VALUE.to_string());
-    labels.insert(USER_UUID_LABEL.to_string(), user_uuid.to_string());
-    labels.insert(INSTANCE_UUID_LABEL.to_string(), instance_uuid.to_string());
+    labels.insert(COMPONENT_LABEL.to_string(), COMPONENT_VALUE.to_string());
+    labels.insert(OWNER_LABEL.to_string(), user_uuid.to_string());
+    labels.insert(INSTANCE_LABEL.to_string(), instance_uuid.to_string());
     Pod {
         metadata: Some(ObjectMeta {
-            generate_name: Some(format!("{}-", APP_VALUE).to_string()),
+            generate_name: Some(format!("{}-", COMPONENT_VALUE).to_string()),
             labels: Some(labels),
             ..Default::default()
         }),
         spec: Some(PodSpec {
             containers: vec![Container {
-                name: format!("{}-container", APP_VALUE).to_string(),
+                name: format!("{}-container", COMPONENT_VALUE).to_string(),
                 image: Some(image.to_string()),
                 ..Default::default()
             }],
@@ -68,12 +71,13 @@ fn create_pod(user_uuid: &str, instance_uuid: &str, image: &str) -> Pod {
 fn create_service(instance_uuid: &str) -> Service {
     let mut labels = BTreeMap::new();
     labels.insert(APP_LABEL.to_string(), APP_VALUE.to_string());
-    labels.insert(INSTANCE_UUID_LABEL.to_string(), instance_uuid.to_string());
+    labels.insert(COMPONENT_LABEL.to_string(), COMPONENT_VALUE.to_string());
+    labels.insert(INSTANCE_LABEL.to_string(), instance_uuid.to_string());
     let mut selectors = BTreeMap::new();
-    selectors.insert(INSTANCE_UUID_LABEL.to_string(), instance_uuid.to_string());
+    selectors.insert(INSTANCE_LABEL.to_string(), instance_uuid.to_string());
     Service {
         metadata: Some(ObjectMeta {
-            generate_name: Some(format!("{}-http-", APP_VALUE).to_string()),
+            generate_name: Some(format!("{}-http-", COMPONENT_VALUE).to_string()),
             labels: Some(labels),
             ..Default::default()
         }),
@@ -149,7 +153,7 @@ pub struct Engine {
     namespace: String,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct InstanceDetails {
     pub user_uuid: String,
     pub instance_uuid: String,
@@ -207,12 +211,12 @@ impl Engine {
         Ok(Engine { host, namespace })
     }
 
-    fn user_selector(user_uuid: &str) -> String {
-        format!("{}={}", USER_UUID_LABEL, user_uuid)
+    fn owner_selector(user_uuid: &str) -> String {
+        format!("{}={}", OWNER_LABEL, user_uuid)
     }
 
     fn instance_selector(instance_uuid: &str) -> String {
-        format!("{}={}", INSTANCE_UUID_LABEL, instance_uuid)
+        format!("{}={}", INSTANCE_LABEL, instance_uuid)
     }
 
     fn pod_to_instance(self, pod: &Pod) -> Result<InstanceDetails, String> {
@@ -232,8 +236,8 @@ impl Engine {
             .as_ref()
             .and_then(|md| {
                 Some((
-                    md.labels.clone()?.get(USER_UUID_LABEL)?.to_string(),
-                    md.labels.clone()?.get(INSTANCE_UUID_LABEL)?.to_string(),
+                    md.labels.clone()?.get(OWNER_LABEL)?.to_string(),
+                    md.labels.clone()?.get(INSTANCE_LABEL)?.to_string(),
                 ))
             })
             .ok_or("Metadata unavailable")?;
@@ -264,13 +268,13 @@ impl Engine {
         let config = config().await?;
         let client = APIClient::new(config);
         let pod_api: Api<Pod> = Api::namespaced(client, &self.namespace);
-        let pods = list_by_selector(&pod_api, Engine::user_selector(user_uuid)).await?;
+        let pods = list_by_selector(&pod_api, Engine::owner_selector(user_uuid)).await?;
         let names: Vec<String> = pods
             .iter()
             .flat_map(|pod| {
                 pod.metadata
                     .as_ref()
-                    .and_then(|md| Some(md.labels.clone()?.get(INSTANCE_UUID_LABEL)?.to_string()))
+                    .and_then(|md| Some(md.labels.clone()?.get(INSTANCE_LABEL)?.to_string()))
             })
             .collect::<Vec<_>>();
 
@@ -282,14 +286,14 @@ impl Engine {
         let client = APIClient::new(config);
         let pod_api: Api<Pod> = Api::namespaced(client, &self.namespace);
         let pods =
-            list_by_selector(&pod_api, format!("{}={}", APP_LABEL, APP_VALUE).to_string()).await?;
+            list_by_selector(&pod_api, format!("{}={}", COMPONENT_LABEL, COMPONENT_VALUE).to_string()).await?;
         let names = pods
             .iter()
             .flat_map(|pod| {
                 self.clone()
                     .pod_to_instance(pod)
                     .ok()
-                    .map(|i| (/*i.user_uuid*/ "".to_string(), i))
+                    .map(|i| (i.clone().user_uuid, i))
             })
             .collect();
 

@@ -5,19 +5,28 @@ metadata:
 spec:
   selector:
     matchLabels:
-      app: playground
+      app.kubernetes.io/component: http-server
   replicas: 1
   template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: http-server
+      annotations:
+        prometheus.io/scrape: "true"
     spec:
       serviceAccountName: default-service-account
       containers:
-      - image: gcr.io/substrateplayground-252112/jeluard/substrate-playground
+      - name: playground
+        image: gcr.io/substrateplayground-252112/jeluard/substrate-playground
         ports:
         - containerPort: 80
         env:
-        - name: PLAYGROUND_HOST
-          value: ${PLAYGROUND_HOST}
-        - name: ROCKET_PORT
-          value: "${PLAYGROUND_PORT}"
-        - name: ROCKET_ENV
-          value: ${ENVIRONMENT}
+          # See https://rocket.rs/v0.4/guide/configuration/
+          - name: ROCKET_ENV
+            value: "staging"
+          - name: ROCKET_PORT
+            value: "80"
+          - name: ROCKET_LOG
+            value: "normal"
+          - name: ROCKET_ADDRESS
+            value: "0.0.0.0"

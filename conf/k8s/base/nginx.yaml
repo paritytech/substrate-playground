@@ -1,9 +1,21 @@
-# From https://raw.githubusercontent.com/kubernetes/ingress-nginx/nginx-0.27.1/deploy/static/mandatory.yaml
+# See https://github.com/kubernetes/ingress-nginx/blob/master/docs/deploy/index.md#gce-gke
+# Copied from https://raw.githubusercontent.com/kubernetes/ingress-nginx/nginx-0.30.0/deploy/static/mandatory.yaml
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ingress-nginx
+  labels:
+    app.kubernetes.io/name: ingress-nginx
+    app.kubernetes.io/part-of: ingress-nginx
+
+---
 
 kind: ConfigMap
 apiVersion: v1
 metadata:
-  name: config
+  name: nginx-configuration
+  namespace: ingress-nginx
   labels:
     app.kubernetes.io/name: ingress-nginx
     app.kubernetes.io/part-of: ingress-nginx
@@ -12,7 +24,8 @@ metadata:
 kind: ConfigMap
 apiVersion: v1
 metadata:
-  name: config-tcp-services
+  name: tcp-services
+  namespace: ingress-nginx
   labels:
     app.kubernetes.io/name: ingress-nginx
     app.kubernetes.io/part-of: ingress-nginx
@@ -21,15 +34,18 @@ metadata:
 kind: ConfigMap
 apiVersion: v1
 metadata:
-  name: config-udp-services
+  name: udp-services
+  namespace: ingress-nginx
   labels:
     app.kubernetes.io/name: ingress-nginx
     app.kubernetes.io/part-of: ingress-nginx
+
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: service-account
+  name: nginx-ingress-serviceaccount
+  namespace: ingress-nginx
   labels:
     app.kubernetes.io/name: ingress-nginx
     app.kubernetes.io/part-of: ingress-nginx
@@ -38,7 +54,7 @@ metadata:
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRole
 metadata:
-  name: nginx-ingress-clusterrole-${K8S_NAMESPACE}
+  name: nginx-ingress-clusterrole
   labels:
     app.kubernetes.io/name: ingress-nginx
     app.kubernetes.io/part-of: ingress-nginx
@@ -96,7 +112,8 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: Role
 metadata:
-  name: role
+  name: nginx-ingress-role
+  namespace: ingress-nginx
   labels:
     app.kubernetes.io/name: ingress-nginx
     app.kubernetes.io/part-of: ingress-nginx
@@ -141,33 +158,35 @@ apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: RoleBinding
 metadata:
   name: nginx-ingress-role-nisa-binding
+  namespace: ingress-nginx
   labels:
     app.kubernetes.io/name: ingress-nginx
     app.kubernetes.io/part-of: ingress-nginx
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: role
+  name: nginx-ingress-role
 subjects:
   - kind: ServiceAccount
-    name: service-account
-    namespace: ${K8S_NAMESPACE}
+    name: nginx-ingress-serviceaccount
+    namespace: ingress-nginx
+
 ---
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRoleBinding
 metadata:
-  name: nginx-ingress-clusterrole-nisa-binding-${K8S_NAMESPACE}
+  name: nginx-ingress-clusterrole-nisa-binding
   labels:
     app.kubernetes.io/name: ingress-nginx
     app.kubernetes.io/part-of: ingress-nginx
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: nginx-ingress-clusterrole-${K8S_NAMESPACE}
+  name: nginx-ingress-clusterrole
 subjects:
   - kind: ServiceAccount
-    name: service-account
-    namespace: ${K8S_NAMESPACE}
+    name: nginx-ingress-serviceaccount
+    namespace: ingress-nginx
 
 ---
 
@@ -175,6 +194,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: nginx-ingress-controller
+  namespace: ingress-nginx
   labels:
     app.kubernetes.io/name: ingress-nginx
     app.kubernetes.io/part-of: ingress-nginx
@@ -195,17 +215,17 @@ spec:
     spec:
       # wait up to five minutes for the drain of connections
       terminationGracePeriodSeconds: 300
-      serviceAccountName: service-account
+      serviceAccountName: nginx-ingress-serviceaccount
       nodeSelector:
         kubernetes.io/os: linux
       containers:
         - name: nginx-ingress-controller
-          image: quay.io/kubernetes-ingress-controller/nginx-ingress-controller:0.27.1
+          image: quay.io/kubernetes-ingress-controller/nginx-ingress-controller:0.30.0
           args:
             - /nginx-ingress-controller
-            - --configmap=$(POD_NAMESPACE)/config
-            - --tcp-services-configmap=$(POD_NAMESPACE)/config-tcp-services
-            - --udp-services-configmap=$(POD_NAMESPACE)/config-udp-services
+            - --configmap=$(POD_NAMESPACE)/nginx-configuration
+            - --tcp-services-configmap=$(POD_NAMESPACE)/tcp-services
+            - --udp-services-configmap=$(POD_NAMESPACE)/udp-services
             - --publish-service=$(POD_NAMESPACE)/ingress-nginx
             - --annotations-prefix=nginx.ingress.kubernetes.io
           securityContext:
@@ -257,36 +277,39 @@ spec:
               exec:
                 command:
                   - /wait-shutdown
----
-  apiVersion: v1
-  kind: LimitRange
-  metadata:
-    name: ingress-nginx
-    labels:
-      app.kubernetes.io/name: ingress-nginx
-      app.kubernetes.io/part-of: ingress-nginx
-  spec:
-    limits:
-    - default:
-      min:
-        memory: 90Mi
-        cpu: 100m
-      type: Container
+
 ---
 
-# From https://raw.githubusercontent.com/kubernetes/ingress-nginx/nginx-0.27.1/deploy/static/provider/cloud-generic.yaml
-
-kind: Service
 apiVersion: v1
+kind: LimitRange
 metadata:
-  name: service
+  name: ingress-nginx
+  namespace: ingress-nginx
+  labels:
+    app.kubernetes.io/name: ingress-nginx
+    app.kubernetes.io/part-of: ingress-nginx
+spec:
+  limits:
+  - min:
+      memory: 90Mi
+      cpu: 100m
+    type: Container
+
+# From https://raw.githubusercontent.com/kubernetes/ingress-nginx/nginx-0.30.0/deploy/static/provider/cloud-generic.yaml
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: ingress-nginx
+  namespace: ingress-nginx
   labels:
     app.kubernetes.io/name: ingress-nginx
     app.kubernetes.io/part-of: ingress-nginx
 spec:
   externalTrafficPolicy: Local
   type: LoadBalancer
-  loadBalancerIP: ${PLAYGROUND_STATIC_IP}
   selector:
     app.kubernetes.io/name: ingress-nginx
     app.kubernetes.io/part-of: ingress-nginx

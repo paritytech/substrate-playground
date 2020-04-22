@@ -1,15 +1,21 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
+commonLabels:
+  app.kubernetes.io/environment: staging
+  app.kubernetes.io/version: "1.0"
+
 bases:
 - ../../base
 
+resources:
+- namespace.yaml
+
 namespace: playground-staging
-nameSuffix: -staging
 
 images:
 - name: gcr.io/substrateplayground-252112/jeluard/substrate-playground
-  newTag: 3.4.5
+  digest: sha256:b33808b4ecbb92fdad85aec909a1702600bebdd7aeb1f744c35f522d62be7a0b
 
 patches:
 - custom-load-balancer-ip.yaml
