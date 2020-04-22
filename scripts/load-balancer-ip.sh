@@ -1,1 +1,0 @@
-gcloud compute addresses describe playground-staging --region=us-central1 --format="value(address)"
