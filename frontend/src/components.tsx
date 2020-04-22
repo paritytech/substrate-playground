@@ -125,7 +125,7 @@ const loadingPhrases = [
 
 function Phase( {value}: {value: string}) {
     switch (value) {
-        case "Peding":
+        case "Pending":
             return <div>Deploying image</div>;
         case "Running":
             return <div>Creating your custom domain</div>;
