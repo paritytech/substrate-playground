@@ -10,7 +10,18 @@ kubectl config set-context --current --namespace=playground-staging
 PLAYGROUND_DOCKER_IMAGE_VERSION="gcr.io/substrateplayground-252112/jeluard/substrate-playground@_VERSION_" make k8s-deploy-playground
 ```
 
-## GCD
+## GKE
+
+Create a cluster
+Use the right context
+
+### Clusters
+
+When switching / recreating clusters it might be necessary to refresh credentials:
+
+```
+gcloud container clusters get-credentials  susbtrate-playground-staging --zone us-central1-a
+```
 
 Playground is currently deployed on playground.substrate.dev. The cluster is hosted on GKE and composed of some `n2-standard-4` pods.
 For more details about machines:
@@ -48,6 +59,12 @@ To get a wildcard certificate from let's encrypt (this applies to staging, repla
 
 https://certbot.eff.org/docs/using.html#manual
 
+First make sure that certbot is instalkled: `brew install certbot`
+
+Then request new challenges. Two DNS entries will have to be updated.
+
+For staging:
+
 ```
 sudo certbot certonly --manual --preferred-challenges dns --server https://acme-v02.api.letsencrypt.org/directory --manual-public-ip-logging-ok --agree-tos -m admin@parity.io -d *.playground-staging.substrate.dev -d playground-staging.substrate.dev
 
@@ -82,7 +99,6 @@ gcloud compute addresses describe playground --region=us-central1 --format="valu
 ```
 
 playground-staging        34.69.4.59      EXTERNAL                    us-central1          RESERVED
-playground-theia-staging  34.68.218.45    EXTERNAL                    us-central1          RESERVED
 
 ```
 gcloud compute addresses delete playground --global
@@ -110,19 +126,6 @@ kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/mast
 kubectl get ing ingress --namespace=playground-staging
 
 Should have an address
-
-## TLS support
-
-Setup certmanager: https://docs.cert-manager.io/en/latest/getting-started/install/kubernetes.html
-Setup an ACME Issuer: https://docs.cert-manager.io/en/latest/tasks/issuers/setup-acme/index.html
-kubectl describe issuer letsencrypt --namespace=playground-staging
-kubectl describe certificate playground-tls --namespace=playground-staging
-kubectl describe secret letsencrypt --namespace=playground-staging
-kubectl describe order playground-tls-3130649356 --namespace=playground-staging
-
-### Troubleshootings
-
-kubectl logs pod/cert-manager-f7f8bf74d-zrzkm --namespace=cert-manager
 
 kubectl port-forward playground-8586574b76-j7qbx 8080:80
 kubectl config set-context --current --namespace=playground-staging
