@@ -41,7 +41,7 @@ const lifecycle = Machine<Context>({
   context: {
     userUUID: userUUID,
     checkOccurences: 0,
-    template: "default",
+    template: "template",
   },
   states: {
       [setup]: {
