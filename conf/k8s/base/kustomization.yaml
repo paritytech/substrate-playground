@@ -1,8 +1,11 @@
-commonLabels:
-    app: playground
+#commonLabels:
+#    app.kubernetes.io/name: playground
+#    app.kubernetes.io/component: controller
+#    app.kubernetes.io/managed-by: kustomize
 resources:
     - cluster-role-binding.yaml
     - deployment.yaml
     - ingress.yaml
+    - nginx.yaml
     - service-account.yaml
     - service.yaml

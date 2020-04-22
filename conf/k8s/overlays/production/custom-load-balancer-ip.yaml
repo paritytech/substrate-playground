@@ -3,4 +3,4 @@ apiVersion: v1
 metadata:
   name: ingress-nginx
 spec:
-  loadBalancerIP: 34.69.4.59
+  loadBalancerIP: 35.202.224.243

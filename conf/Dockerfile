@@ -62,7 +62,7 @@ LABEL stage=builder
 FROM scratch
 
 ENV RUST_BACKTRACE=full\
-    RUST_LOG="error,$BINARY_NAME=info"
+    RUST_LOG="warn"
 
 COPY --from=builder-backend /opt/bin/$BINARY_NAME /
 COPY --from=builder-frontend /opt/dist/ /static
