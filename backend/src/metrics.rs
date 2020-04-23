@@ -38,10 +38,7 @@ impl Metrics {
                 &[Self::INSTANCE_UUID_LABEL],
             )?,
             deploy_duration: HistogramVec::new(
-                opts!(
-                    "deploy_duration",
-                    "Deployment duration in seconds"
-                ).into(),
+                opts!("deploy_duration", "Deployment duration in seconds").into(),
                 &[Self::INSTANCE_UUID_LABEL],
             )?,
         })

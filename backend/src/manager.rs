@@ -1,6 +1,6 @@
 use crate::kubernetes::{Engine, InstanceDetails};
 use crate::metrics::Metrics;
-use log::warn;
+use log::{error, warn};
 use std::{
     collections::BTreeMap,
     error::Error,
@@ -18,6 +18,7 @@ pub struct Manager {
 }
 
 impl Manager {
+    const FIVE_SECONDS: Duration = Duration::from_secs(5);
     const THREE_HOURS: Duration = Duration::from_secs(60 * 60 * 3);
 
     pub async fn new() -> Result<Self, Box<dyn Error>> {
@@ -33,37 +34,59 @@ impl Manager {
 
     pub fn spawn_background_thread(self) -> JoinHandle<()> {
         thread::spawn(move || loop {
-            thread::sleep(Duration::from_secs(5));
+            thread::sleep(Manager::FIVE_SECONDS);
 
+            // Track some deployments metrics
             let instances_thread = self.clone().instances.clone();
-            let instances2 = &mut *instances_thread.lock().unwrap();
-            let instances3 = instances2.clone();
-            for (user_uuid, instance_uuid) in instances3 {
-                if let Ok(details) = self.clone().get(&user_uuid, &instance_uuid) {
-                    let phase = details.phase;
-                    if phase != "Pending" && phase != "Unknown" {
-                        let res = instances2.remove(&user_uuid);
-                        self.clone().metrics.observe_deploy_duration(&instance_uuid, details.started_at.elapsed().unwrap().as_secs_f64());
+            if let Ok(mut instances2) = instances_thread.lock() {
+                let instances3 = &mut instances2.clone();
+                for (user_uuid, instance_uuid) in instances3 {
+                    match self.clone().get(&user_uuid, &instance_uuid) {
+                        Ok(details) => {
+                            let phase = details.phase;
+                            if phase != "Pending" && phase != "Unknown" {
+                                instances2.remove(user_uuid);
+                                if let Ok(duration) = details.started_at.elapsed() {
+                                    self.clone().metrics.observe_deploy_duration(
+                                        &instance_uuid,
+                                        duration.as_secs_f64(),
+                                    );
+                                } else {
+                                    error!("Failed to compute this instance lifetime");
+                                }
+                            }
+                        }
+                        Err(err) => warn!("Failed to call list_all: {}", err),
                     }
                 }
-                
+            } else {
+                error!("Failed to acquire instances lock");
             }
-            
+
             // Go through all Running pods and figure out if they have to be undeployed
-            let all_instances = self.clone().list_all().unwrap();
-            let instances = all_instances.iter().filter(|instance| instance.1.phase == "Running").collect::<BTreeMap<&String, &InstanceDetails>>();
-            for (_user_uuid, instance) in instances {
-                let uuid = &instance.instance_uuid;
-                if let Ok(duration) = instance.started_at.elapsed() {
-                    if duration > Manager::THREE_HOURS {
-                        match self.clone().undeploy(&uuid) {
-                            Ok(()) => (),
-                            Err(err) => warn!("Error while undeploying {}: {}", uuid, err),
+            match self.clone().list_all() {
+                Ok(all_instances) => {
+                    let instances = all_instances
+                        .iter()
+                        .filter(|instance| instance.1.phase == "Running")
+                        .collect::<BTreeMap<&String, &InstanceDetails>>();
+                    for (_user_uuid, instance) in instances {
+                        let uuid = &instance.instance_uuid;
+                        if let Ok(duration) = instance.started_at.elapsed() {
+                            if duration > Manager::THREE_HOURS {
+                                match self.clone().undeploy(&uuid) {
+                                    Ok(()) => (),
+                                    Err(err) => warn!("Error while undeploying {}: {}", uuid, err),
+                                }
+                            }
+                        } else {
+                            error!("Failed to compute this instance lifetime");
                         }
                     }
                 }
+                Err(err) => error!("Failed to call list_all: {}", err),
             }
-        })//)
+        })
     }
 }
 
@@ -88,15 +111,14 @@ impl Manager {
         let result = new_runtime()?.block_on(self.engine.deploy(&user_uuid, &template));
         match result.clone() {
             Ok(instance_uuid) => {
-                self.instances
-                    .lock()
-                    .unwrap()
-                    .insert(user_uuid.into(), instance_uuid.into());
+                if let Ok(mut instances) = self.instances.lock() {
+                    instances.insert(user_uuid.into(), instance_uuid.into());
+                } else {
+                    error!("Failed to acquire instances lock");
+                }
                 self.metrics.inc_deploy_counter(&user_uuid, &template);
             }
-            Err(_) => {
-                self.metrics.inc_deploy_failures_counter(&template);
-            }
+            Err(_) => self.metrics.inc_deploy_failures_counter(&template),
         }
         result
     }
@@ -104,12 +126,8 @@ impl Manager {
     pub fn undeploy(self, instance_uuid: &str) -> Result<(), String> {
         let result = new_runtime()?.block_on(self.engine.undeploy(&instance_uuid));
         match result {
-            Ok(_) => {
-                self.metrics.inc_undeploy_counter(&instance_uuid);
-            }
-            Err(_) => {
-                self.metrics.inc_undeploy_failures_counter(&instance_uuid);
-            }
+            Ok(_) => self.metrics.inc_undeploy_counter(&instance_uuid),
+            Err(_) => self.metrics.inc_undeploy_failures_counter(&instance_uuid),
         }
         result
     }

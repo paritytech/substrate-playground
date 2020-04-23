@@ -5,12 +5,12 @@
 use k8s_openapi::api::core::v1::{
     ConfigMap, Container, Pod, PodSpec, Service, ServicePort, ServiceSpec,
 };
-use k8s_openapi::api::extensions::v1beta1::{HTTPIngressPath, HTTPIngressRuleValue, Ingress, IngressBackend, IngressRule};
+use k8s_openapi::api::extensions::v1beta1::{
+    HTTPIngressPath, HTTPIngressRuleValue, Ingress, IngressBackend, IngressRule,
+};
 use k8s_openapi::apimachinery::pkg::{apis::meta::v1::ObjectMeta, util::intstr::IntOrString};
 use kube::{
-    api::{
-        Api, DeleteParams, ListParams, Meta, PostParams,
-    },
+    api::{Api, DeleteParams, ListParams, Meta, PostParams},
     client::APIClient,
     config,
 };
@@ -116,11 +116,20 @@ fn create_ingress_rule(subdomain: String, service_name: String) -> IngressRule {
         create_ingress_path("/front-end".to_string(), service_name.clone(), 8000),
         create_ingress_path("/wss".to_string(), service_name, 9944),
     ];
-    IngressRule{ host: Some(subdomain), http: Some(HTTPIngressRuleValue{ paths }) }
+    IngressRule {
+        host: Some(subdomain),
+        http: Some(HTTPIngressRuleValue { paths }),
+    }
 }
 
 fn create_ingress_path(path: String, name: String, port: i32) -> HTTPIngressPath {
-    HTTPIngressPath{ path: Some(path), backend: IngressBackend{ service_name: name, service_port: IntOrString::Int(port) }}
+    HTTPIngressPath {
+        path: Some(path),
+        backend: IngressBackend {
+            service_name: name,
+            service_port: IntOrString::Int(port),
+        },
+    }
 }
 
 fn subdomain(host: &str, instance_uuid: &str) -> String {
@@ -285,8 +294,11 @@ impl Engine {
         let config = config().await?;
         let client = APIClient::new(config);
         let pod_api: Api<Pod> = Api::namespaced(client, &self.namespace);
-        let pods =
-            list_by_selector(&pod_api, format!("{}={}", COMPONENT_LABEL, COMPONENT_VALUE).to_string()).await?;
+        let pods = list_by_selector(
+            &pod_api,
+            format!("{}={}", COMPONENT_LABEL, COMPONENT_VALUE).to_string(),
+        )
+        .await?;
         let names = pods
             .iter()
             .flat_map(|pod| {
@@ -320,7 +332,6 @@ impl Engine {
                 &create_pod(&user_uuid, &instance_uuid.clone(), image),
             )
             .await
-            .map(|o| o.metadata.unwrap().name.unwrap())
             .map_err(error_to_string)?;
 
         // Deploy the associated service
@@ -336,14 +347,21 @@ impl Engine {
         if let Some(host) = &self.host {
             let subdomain = subdomain(host, &instance_uuid);
             let ingress_api: Api<Ingress> = Api::namespaced(client, &self.namespace);
-            let mut ingress: Ingress = ingress_api.get(INGRESS_NAME).await.map_err(error_to_string)?.clone();
-            let mut spec = ingress.clone().spec.ok_or("dezf")?.clone();
-            let mut rules: Vec<IngressRule> = spec.clone().rules.unwrap();
+            let mut ingress: Ingress = ingress_api
+                .get(INGRESS_NAME)
+                .await
+                .map_err(error_to_string)?
+                .clone();
+            let mut spec = ingress.clone().spec.ok_or("No spec")?.clone();
+            let mut rules: Vec<IngressRule> = spec.clone().rules.ok_or("No rules")?;
             rules.push(create_ingress_rule(subdomain, service_name));
             spec.rules.replace(rules);
             ingress.spec.replace(spec);
 
-            ingress_api.replace(INGRESS_NAME, &PostParams::default(), &ingress).await.map_err(error_to_string)?;
+            ingress_api
+                .replace(INGRESS_NAME, &PostParams::default(), &ingress)
+                .await
+                .map_err(error_to_string)?;
         }
 
         Ok(instance_uuid)
@@ -389,13 +407,26 @@ impl Engine {
         if let Some(host) = &self.host {
             let subdomain = subdomain(host, instance_uuid);
             let ingress_api: Api<Ingress> = Api::namespaced(client, &self.namespace);
-            let mut ingress: Ingress = ingress_api.get(INGRESS_NAME).await.map_err(error_to_string)?.clone();
-            let mut spec = ingress.clone().spec.ok_or("dezf")?.clone();
-            let rules: Vec<IngressRule> = spec.clone().rules.unwrap().into_iter().filter(|rule| rule.clone().host.unwrap() != subdomain).collect();
+            let mut ingress: Ingress = ingress_api
+                .get(INGRESS_NAME)
+                .await
+                .map_err(error_to_string)?
+                .clone();
+            let mut spec = ingress.clone().spec.ok_or("No spec")?.clone();
+            let rules: Vec<IngressRule> = spec
+                .clone()
+                .rules
+                .unwrap()
+                .into_iter()
+                .filter(|rule| rule.clone().host.unwrap_or("unknown".to_string()) != subdomain)
+                .collect();
             spec.rules.replace(rules);
             ingress.spec.replace(spec);
 
-            ingress_api.replace(INGRESS_NAME, &PostParams::default(), &ingress).await.map_err(error_to_string)?;
+            ingress_api
+                .replace(INGRESS_NAME, &PostParams::default(), &ingress)
+                .await
+                .map_err(error_to_string)?;
         }
 
         Ok(())
