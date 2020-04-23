@@ -74,7 +74,7 @@
         "vscode-builtin-yaml": "https://github.com/theia-ide/vscode-builtin-extensions/releases/download/v1.39.1-prel/yaml-1.39.1-prel.vsix",
         "vscode-editorconfig": "https://github.com/theia-ide/editorconfig-vscode/releases/download/v0.14.4/EditorConfig-0.14.4.vsix",
         "vscode-eslint": "https://github.com/theia-ide/vscode-eslint/releases/download/release%2F2.0.15/vscode-eslint-2.0.15.vsix",
-        "vscode-substrate": "https://github.com/axelchalon/vscode-marketplace/releases/download/v0.1.0/substrate-marketplace-0.1.0.vsix"
+        "vscode-substrate": "https://github.com/axelchalon/vscode-marketplace/releases/download/v0.2.0/substrate-marketplace-0.2.0.vsix"
     },
     "scripts": {
         "prepare": "theia build --mode development",
