@@ -44,6 +44,14 @@ async fn list_by_selector<K: Clone + DeserializeOwned + Meta>(
         .map_err(|s| format!("Error {}", s))
 }
 
+pub fn pod_name(instance_uuid: &str) -> String {
+    format!("{}-{}", COMPONENT_VALUE, instance_uuid)
+}
+
+pub fn service_name(instance_uuid: &str) -> String {
+    format!("{}-service-{}", COMPONENT_VALUE, instance_uuid)
+}
+
 fn create_pod(user_uuid: &str, instance_uuid: &str, image: &str) -> Pod {
     let mut labels = BTreeMap::new();
     labels.insert(APP_LABEL.to_string(), APP_VALUE.to_string());
@@ -52,7 +60,7 @@ fn create_pod(user_uuid: &str, instance_uuid: &str, image: &str) -> Pod {
     labels.insert(INSTANCE_LABEL.to_string(), instance_uuid.to_string());
     Pod {
         metadata: Some(ObjectMeta {
-            generate_name: Some(format!("{}-", COMPONENT_VALUE).to_string()),
+            name: Some(pod_name(instance_uuid)),
             labels: Some(labels),
             ..Default::default()
         }),
@@ -77,7 +85,7 @@ fn create_service(instance_uuid: &str) -> Service {
     selectors.insert(INSTANCE_LABEL.to_string(), instance_uuid.to_string());
     Service {
         metadata: Some(ObjectMeta {
-            generate_name: Some(format!("{}-http-", COMPONENT_VALUE).to_string()),
+            name: Some(service_name(instance_uuid)),
             labels: Some(labels),
             ..Default::default()
         }),
@@ -206,11 +214,11 @@ impl Engine {
         let host = if let Ok(ingress) = ingress_api.get(INGRESS_NAME).await {
             ingress
                 .spec
-                .ok_or("message")?
+                .ok_or("No spec")?
                 .rules
-                .ok_or("message")?
+                .ok_or("No rules")?
                 .first()
-                .ok_or("message")?
+                .ok_or("Zero rule")?
                 .host
                 .clone()
         } else {
@@ -222,10 +230,6 @@ impl Engine {
 
     fn owner_selector(user_uuid: &str) -> String {
         format!("{}={}", OWNER_LABEL, user_uuid)
-    }
-
-    fn instance_selector(instance_uuid: &str) -> String {
-        format!("{}={}", INSTANCE_LABEL, instance_uuid)
     }
 
     fn pod_to_instance(self, pod: &Pod) -> Result<InstanceDetails, String> {
@@ -264,15 +268,12 @@ impl Engine {
         let config = config().await?;
         let client = APIClient::new(config);
         let pod_api: Api<Pod> = Api::namespaced(client, &self.namespace);
-        let pods = list_by_selector(&pod_api, Engine::instance_selector(instance_uuid)).await?;
-        let pod = pods
-            .first()
-            .ok_or_else(|| format!("No matching service for {}", instance_uuid))?;
+        let pod = pod_api.get(&pod_name(instance_uuid)).await.map_err(error_to_string)?;
 
-        Ok(self.pod_to_instance(pod)?)
+        Ok(self.pod_to_instance(&pod)?)
     }
 
-    /// Lists all currently running instances for an identified user
+    /// Lists all currently running instances an identified user
     pub async fn list(self, user_uuid: &str) -> Result<Vec<String>, String> {
         let config = config().await?;
         let client = APIClient::new(config);
@@ -312,6 +313,34 @@ impl Engine {
         Ok(names)
     }
 
+    pub async fn patch_ingress(self, instance_uuids: Vec<String>) -> Result<(), String> {
+        if let Some(host) = &self.host {
+            let config = config().await?;
+            let client = APIClient::new(config);
+            let ingress_api:  Api<Ingress> = Api::namespaced(client, &self.namespace);
+            let mut ingress: Ingress = ingress_api
+                .get(INGRESS_NAME)
+                .await
+                .map_err(error_to_string)?
+                .clone();
+            let mut spec = ingress.clone().spec.ok_or("No spec")?.clone();
+            let mut rules: Vec<IngressRule> = spec.clone().rules.ok_or("No rules")?;
+            for instance_uuid in instance_uuids {
+                let subdomain = subdomain(host, &instance_uuid);
+                rules.push(create_ingress_rule(subdomain.clone(), service_name(&instance_uuid)));
+            }
+            spec.rules.replace(rules);
+            ingress.spec.replace(spec);
+
+            ingress_api
+                .replace(INGRESS_NAME, &PostParams::default(), &ingress)
+                .await
+                .map_err(error_to_string)?;
+        }
+
+        Ok(())
+    }
+
     pub async fn deploy(self, user_uuid: &str, template: &str) -> Result<String, String> {
         let config = config().await?;
         let client = APIClient::new(config);
@@ -337,32 +366,12 @@ impl Engine {
         // Deploy the associated service
         let service_api: Api<Service> = Api::namespaced(client.clone(), &self.namespace);
         let service = create_service(&instance_uuid.clone());
-        let service_name = service_api
+        service_api
             .create(&PostParams::default(), &service)
             .await
-            .map(|o| o.metadata.unwrap().name.unwrap())
             .map_err(error_to_string)?;
 
-        // Patch the ingress configuration to add the new path, if host is defined
-        if let Some(host) = &self.host {
-            let subdomain = subdomain(host, &instance_uuid);
-            let ingress_api: Api<Ingress> = Api::namespaced(client, &self.namespace);
-            let mut ingress: Ingress = ingress_api
-                .get(INGRESS_NAME)
-                .await
-                .map_err(error_to_string)?
-                .clone();
-            let mut spec = ingress.clone().spec.ok_or("No spec")?.clone();
-            let mut rules: Vec<IngressRule> = spec.clone().rules.ok_or("No rules")?;
-            rules.push(create_ingress_rule(subdomain, service_name));
-            spec.rules.replace(rules);
-            ingress.spec.replace(spec);
-
-            ingress_api
-                .replace(INGRESS_NAME, &PostParams::default(), &ingress)
-                .await
-                .map_err(error_to_string)?;
-        }
+        self.patch_ingress(vec![instance_uuid.clone()]).await?;
 
         Ok(instance_uuid)
     }
@@ -372,35 +381,14 @@ impl Engine {
         let config = config().await?;
         let client = APIClient::new(config);
         let service_api: Api<Service> = Api::namespaced(client.clone(), &self.namespace);
-        let selector = Engine::instance_selector(instance_uuid);
-        let services = list_by_selector(&service_api, selector.clone()).await?;
-        let service_name = services
-            .first()
-            .ok_or_else(|| format!("No matching service for {}", instance_uuid))?
-            .metadata
-            .as_ref()
-            .ok_or_else(|| format!("No metadata for {}", instance_uuid))?
-            .name
-            .as_ref()
-            .ok_or_else(|| format!("No name for {}", instance_uuid))?;
         service_api
-            .delete(&service_name, &DeleteParams::default())
+            .delete(&service_name(instance_uuid), &DeleteParams::default())
             .await
             .map_err(|s| format!("Error {}", s))?;
 
         let pod_api: Api<Pod> = Api::namespaced(client.clone(), &self.namespace);
-        let pods = list_by_selector(&pod_api, selector).await?;
-        let pod_name = pods
-            .first()
-            .ok_or_else(|| format!("No matching pod for {}", instance_uuid))?
-            .metadata
-            .as_ref()
-            .ok_or_else(|| format!("No metadata for {}", instance_uuid))?
-            .name
-            .as_ref()
-            .ok_or_else(|| format!("No name for {}", instance_uuid))?;
         pod_api
-            .delete(&pod_name, &DeleteParams::default())
+            .delete(&pod_name(instance_uuid), &DeleteParams::default())
             .await
             .map_err(|s| format!("Error {}", s))?;
 

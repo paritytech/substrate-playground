@@ -15,7 +15,7 @@ namespace: playground-staging
 
 images:
 - name: gcr.io/substrateplayground-252112/jeluard/substrate-playground
-  digest: sha256:b33808b4ecbb92fdad85aec909a1702600bebdd7aeb1f744c35f522d62be7a0b
+  digest: sha256:41294e53f7fc7c0c3edcce278b1b031bcaf5fe51eabc2d23052692e653acb73d
 
 patches:
 - custom-load-balancer-ip.yaml

@@ -24,12 +24,22 @@ impl Manager {
     pub async fn new() -> Result<Self, Box<dyn Error>> {
         let metrics = Metrics::new()?;
         let engine = Engine::new().await?;
-        let manager = Manager {
+        // Go through all existing instances and update the ingress
+        match engine.clone().list_all().await {
+            Ok(all_instances) => {
+                let instances = all_instances
+                    .iter()
+                    .filter(|instance| instance.1.phase == "Running")
+                    .collect::<BTreeMap<&String, &InstanceDetails>>();
+                engine.clone().patch_ingress(instances.iter().map(|i| i.1.instance_uuid.clone()).collect()).await?;
+            }
+            Err(err) => error!("Failed to call list_all: {}. Existing instances won't be accessible", err),
+        }
+        Ok(Manager {
             engine,
             metrics,
-            instances: Arc::new(Mutex::new(BTreeMap::new())),
-        };
-        Ok(manager)
+            instances: Arc::new(Mutex::new(BTreeMap::new())), // Temp map used to track instance deployment time
+        })
     }
 
     pub fn spawn_background_thread(self) -> JoinHandle<()> {
@@ -56,7 +66,7 @@ impl Manager {
                                 }
                             }
                         }
-                        Err(err) => warn!("Failed to call list_all: {}", err),
+                        Err(err) => warn!("Failed to call get: {}", err),
                     }
                 }
             } else {
