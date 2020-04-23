@@ -41,7 +41,7 @@ jobs:
           components: rustfmt, clippy
       - uses: actions/checkout@v2
       - name: Check Formatting
-        run: cargo check
+        run: cargo check-fmt
         working-directory: ./backend
       - name: Lint
         run: cargo lint
