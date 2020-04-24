@@ -9,7 +9,6 @@ bases:
 - ../../base
 
 resources:
-- namespace.yaml
 - resource-quota.yaml
 
 namespace: playground
