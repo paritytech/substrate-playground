@@ -3,7 +3,7 @@
 //! * https://docs.rs/k8s-openapi/0.5.1/k8s_openapi/api/core/v1/struct.ServiceSpec.html
 
 use k8s_openapi::api::core::v1::{
-    ConfigMap, Container, Pod, PodSpec, Service, ServicePort, ServiceSpec,
+    ConfigMap, Container, EnvVar, Pod, PodSpec, Service, ServicePort, ServiceSpec,
 };
 use k8s_openapi::api::extensions::v1beta1::{
     HTTPIngressPath, HTTPIngressRuleValue, Ingress, IngressBackend, IngressRule,
@@ -53,7 +53,7 @@ pub fn service_name(instance_uuid: &str) -> String {
     format!("{}-service-{}", COMPONENT_VALUE, instance_uuid)
 }
 
-fn create_pod(user_uuid: &str, instance_uuid: &str, image: &str) -> Pod {
+fn create_pod(user_uuid: &str, instance_uuid: &str, template: &InstanceTemplate) -> Pod {
     let mut labels = BTreeMap::new();
     labels.insert(APP_LABEL.to_string(), APP_VALUE.to_string());
     labels.insert(COMPONENT_LABEL.to_string(), COMPONENT_VALUE.to_string());
@@ -68,7 +68,16 @@ fn create_pod(user_uuid: &str, instance_uuid: &str, image: &str) -> Pod {
         spec: Some(PodSpec {
             containers: vec![Container {
                 name: format!("{}-container", COMPONENT_VALUE).to_string(),
-                image: Some(image.to_string()),
+                image: Some(template.image.to_string()),
+                env: template.env.clone().map(|m| {
+                    m.into_iter()
+                        .map(|(k, v)| EnvVar {
+                            name: k,
+                            value: Some(v),
+                            ..Default::default()
+                        })
+                        .collect()
+                }),
                 ..Default::default()
             }],
             ..Default::default()
@@ -390,7 +399,7 @@ impl Engine {
         pod_api
             .create(
                 &PostParams::default(),
-                &create_pod(&user_uuid, &instance_uuid.clone(), &template.image),
+                &create_pod(&user_uuid, &instance_uuid.clone(), &template),
             )
             .await
             .map_err(error_to_string)?;
