@@ -1092,6 +1092,7 @@ dependencies = [
  "rocket_prometheus",
  "serde",
  "serde_json",
+ "serde_yaml",
  "tokio",
  "uuid",
 ]

@@ -1,1 +1,1 @@
-gcr.io/substrateplayground-252112/jeluard/theia-substrate@sha256:d0c004e8ac4c866e28cde82951aafd4c1d0a70debe119145d0ae4a908a16c4b3
+image: gcr.io/substrateplayground-252112/jeluard/theia-substrate@sha256:d0c004e8ac4c866e28cde82951aafd4c1d0a70debe119145d0ae4a908a16c4b3
