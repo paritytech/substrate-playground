@@ -8,14 +8,11 @@ commonLabels:
 bases:
 - ../../base
 
-resources:
-- namespace.yaml
-
 namespace: playground-staging
 
 images:
 - name: gcr.io/substrateplayground-252112/jeluard/substrate-playground
-  digest: sha256:41294e53f7fc7c0c3edcce278b1b031bcaf5fe51eabc2d23052692e653acb73d
+  digest: sha256:d95d40feca69098cf3e51c31a3bad67667db59c1e443c8664e14626bdf2b0536
 
 patches:
 - custom-load-balancer-ip.yaml
