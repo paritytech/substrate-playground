@@ -15,6 +15,7 @@ use kube::{
     config,
 };
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use serde_yaml::from_str;
 use std::{collections::BTreeMap, error::Error, time::SystemTime};
 use uuid::Uuid;
 
@@ -164,6 +165,17 @@ async fn get_config_map(
         .and_then(|o| o.data.ok_or_else(|| "No data field".to_string()))
 }
 
+pub async fn get_theia_images(
+    client: APIClient,
+    namespace: &str,
+) -> Result<BTreeMap<String, InstanceTemplate>, String> {
+    get_config_map(client, namespace, "theia-images")
+        .await?
+        .into_iter()
+        .map(|(k, v)| from_str(&v).map_err(error_to_string).map(|v2| (k, v2)))
+        .collect()
+}
+
 #[derive(Clone)]
 pub struct Engine {
     host: Option<String>,
@@ -177,6 +189,13 @@ pub struct InstanceDetails {
     pub phase: String,
     pub url: String,
     pub started_at: SystemTime,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct InstanceTemplate {
+    pub image: String,
+    pub env: Option<BTreeMap<String, String>>,
+    pub ports: Option<BTreeMap<u8, u8>>,
 }
 
 impl InstanceDetails {
@@ -276,6 +295,13 @@ impl Engine {
         Ok(self.pod_to_instance(&pod)?)
     }
 
+    pub async fn get_theia_images(self) -> Result<BTreeMap<String, InstanceTemplate>, String> {
+        let config = config().await?;
+        let client = APIClient::new(config);
+
+        Ok(get_theia_images(client, &self.namespace).await?)
+    }
+
     /// Lists all currently running instances an identified user
     pub async fn list(self, user_uuid: &str) -> Result<Vec<String>, String> {
         let config = config().await?;
@@ -347,14 +373,14 @@ impl Engine {
         Ok(())
     }
 
-    pub async fn deploy(self, user_uuid: &str, template: &str) -> Result<String, String> {
+    pub async fn deploy(self, user_uuid: &str, template_id: &str) -> Result<String, String> {
         let config = config().await?;
         let client = APIClient::new(config);
         // Access the right image id
-        let images = get_config_map(client.clone(), &self.namespace, "theia-images").await?;
-        let image = images
-            .get(&template.to_string())
-            .ok_or_else(|| format!("Unknow image {}", template))?;
+        let templates = get_theia_images(client.clone(), &self.namespace).await?;
+        let template = templates
+            .get(&template_id.to_string())
+            .ok_or_else(|| format!("Unknow image {}", template_id))?;
 
         // Create a unique ID for this instance
         let instance_uuid = format!("{}", Uuid::new_v4());
@@ -364,7 +390,7 @@ impl Engine {
         pod_api
             .create(
                 &PostParams::default(),
-                &create_pod(&user_uuid, &instance_uuid.clone(), image),
+                &create_pod(&user_uuid, &instance_uuid.clone(), &template.image),
             )
             .await
             .map_err(error_to_string)?;
