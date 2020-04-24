@@ -1,4 +1,4 @@
-use crate::kubernetes::{Engine, InstanceDetails};
+use crate::kubernetes::{Engine, InstanceDetails, InstanceTemplate};
 use crate::metrics::Metrics;
 use log::{error, warn};
 use std::{
@@ -118,6 +118,10 @@ fn new_runtime() -> Result<Runtime, String> {
 impl Manager {
     pub fn get(self, _user_uuid: &str, instance_uuid: &str) -> Result<InstanceDetails, String> {
         new_runtime()?.block_on(self.engine.get(&instance_uuid))
+    }
+
+    pub fn get_images(self) -> Result<BTreeMap<String, InstanceTemplate>, String> {
+        new_runtime()?.block_on(self.engine.get_theia_images())
     }
 
     pub fn list(&self, user_uuid: &str) -> Result<Vec<String>, String> {

@@ -26,6 +26,12 @@ pub fn get(state: State<'_, Context>, user_uuid: String, instance_uuid: String) 
     result_to_jsonrpc(manager.get(&user_uuid, &instance_uuid))
 }
 
+#[get("/images")]
+pub fn get_images(state: State<'_, Context>) -> JsonValue {
+    let manager = state.manager.clone();
+    result_to_jsonrpc(manager.get_images())
+}
+
 /// Deploy `template` Docker container for `user_uuid`.
 #[post("/<user_uuid>?<template>")]
 pub fn deploy(state: State<'_, Context>, user_uuid: String, template: String) -> JsonValue {

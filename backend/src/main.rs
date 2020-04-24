@@ -49,7 +49,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .attach(prometheus.clone())
         .attach(cors)
         .mount("/", StaticFiles::from("./static"))
-        .mount("/api", routes![api::deploy, api::get, api::list])
+        .mount(
+            "/api",
+            routes![api::deploy, api::get, api::get_images, api::list],
+        )
         .mount("/metrics", prometheus)
         .manage(Context { manager })
         .launch();
