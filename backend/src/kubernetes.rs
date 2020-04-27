@@ -268,7 +268,10 @@ impl Engine {
         let config = config().await?;
         let client = APIClient::new(config);
         let pod_api: Api<Pod> = Api::namespaced(client, &self.namespace);
-        let pod = pod_api.get(&pod_name(instance_uuid)).await.map_err(error_to_string)?;
+        let pod = pod_api
+            .get(&pod_name(instance_uuid))
+            .await
+            .map_err(error_to_string)?;
 
         Ok(self.pod_to_instance(&pod)?)
     }
@@ -317,7 +320,7 @@ impl Engine {
         if let Some(host) = &self.host {
             let config = config().await?;
             let client = APIClient::new(config);
-            let ingress_api:  Api<Ingress> = Api::namespaced(client, &self.namespace);
+            let ingress_api: Api<Ingress> = Api::namespaced(client, &self.namespace);
             let mut ingress: Ingress = ingress_api
                 .get(INGRESS_NAME)
                 .await
@@ -327,7 +330,10 @@ impl Engine {
             let mut rules: Vec<IngressRule> = spec.clone().rules.ok_or("No rules")?;
             for instance_uuid in instance_uuids {
                 let subdomain = subdomain(host, &instance_uuid);
-                rules.push(create_ingress_rule(subdomain.clone(), service_name(&instance_uuid)));
+                rules.push(create_ingress_rule(
+                    subdomain.clone(),
+                    service_name(&instance_uuid),
+                ));
             }
             spec.rules.replace(rules);
             ingress.spec.replace(spec);

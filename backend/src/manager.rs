@@ -31,9 +31,20 @@ impl Manager {
                     .iter()
                     .filter(|instance| instance.1.phase == "Running")
                     .collect::<BTreeMap<&String, &InstanceDetails>>();
-                engine.clone().patch_ingress(instances.iter().map(|i| i.1.instance_uuid.clone()).collect()).await?;
+                engine
+                    .clone()
+                    .patch_ingress(
+                        instances
+                            .iter()
+                            .map(|i| i.1.instance_uuid.clone())
+                            .collect(),
+                    )
+                    .await?;
             }
-            Err(err) => error!("Failed to call list_all: {}. Existing instances won't be accessible", err),
+            Err(err) => error!(
+                "Failed to call list_all: {}. Existing instances won't be accessible",
+                err
+            ),
         }
         Ok(Manager {
             engine,
