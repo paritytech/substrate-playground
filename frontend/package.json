@@ -12,6 +12,7 @@
   "dependencies": {
     "@material-ui/core": "4.9.12",
     "@xstate/react": "0.8.1",
+    "marked": "^1.0.0",
     "react": "16.13.1",
     "react-dom": "16.13.1",
     "react-spring": "8.0.27",
