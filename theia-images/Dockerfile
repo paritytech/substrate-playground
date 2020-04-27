@@ -57,9 +57,7 @@ ENV HOME=/home/substrate \
     THEIA_DEFAULT_PLUGINS=local-dir:/home/theia/theia-playground/plugins \
     USE_LOCAL_GIT=true \
     HOST=0.0.0.0 \
-    PUBLIC_URL=. \
-    REACT_APP_PROVIDER_SOCKET= \
-    VSCODE_API_VERSION=1.42.0
+    VSCODE_API_VERSION=1.44.0
 
 USER substrate
 

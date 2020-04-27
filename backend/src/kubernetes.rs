@@ -26,6 +26,7 @@ const COMPONENT_VALUE: &str = "theia";
 const OWNER_LABEL: &str = "app.kubernetes.io/owner";
 const INSTANCE_LABEL: &str = "app.kubernetes.io/instance";
 const INGRESS_NAME: &str = "ingress";
+const TEMPLATE_ANNOTATION: &str = "playground.substrate.io/template";
 
 fn error_to_string<T: std::fmt::Display>(err: T) -> String {
     format!("{}", err)
@@ -53,23 +54,27 @@ pub fn service_name(instance_uuid: &str) -> String {
     format!("{}-service-{}", COMPONENT_VALUE, instance_uuid)
 }
 
-fn create_pod(user_uuid: &str, instance_uuid: &str, template: &InstanceTemplate) -> Pod {
+fn create_pod(user_uuid: &str, instance_uuid: &str, instance_template: &InstanceTemplate) -> Result<Pod, String> {
     let mut labels = BTreeMap::new();
     labels.insert(APP_LABEL.to_string(), APP_VALUE.to_string());
     labels.insert(COMPONENT_LABEL.to_string(), COMPONENT_VALUE.to_string());
     labels.insert(OWNER_LABEL.to_string(), user_uuid.to_string());
     labels.insert(INSTANCE_LABEL.to_string(), instance_uuid.to_string());
-    Pod {
+    let mut annotations = BTreeMap::new();
+    annotations.insert(TEMPLATE_ANNOTATION.to_string(), serde_yaml::to_string(instance_template).map_err(error_to_string)?);
+
+    Ok(Pod {
         metadata: Some(ObjectMeta {
             name: Some(pod_name(instance_uuid)),
             labels: Some(labels),
+            annotations: Some(annotations),
             ..Default::default()
         }),
         spec: Some(PodSpec {
             containers: vec![Container {
                 name: format!("{}-container", COMPONENT_VALUE).to_string(),
-                image: Some(template.image.to_string()),
-                env: template.env.clone().map(|m| {
+                image: Some(instance_template.image.to_string()),
+                env: instance_template.env.clone().map(|m| {
                     m.into_iter()
                         .map(|(k, v)| EnvVar {
                             name: k,
@@ -83,10 +88,10 @@ fn create_pod(user_uuid: &str, instance_uuid: &str, template: &InstanceTemplate)
             ..Default::default()
         }),
         ..Default::default()
-    }
+    })
 }
 
-fn create_service(instance_uuid: &str) -> Service {
+fn create_service(instance_uuid: &str, _template: &InstanceTemplate) -> Service {
     let mut labels = BTreeMap::new();
     labels.insert(APP_LABEL.to_string(), APP_VALUE.to_string());
     labels.insert(COMPONENT_LABEL.to_string(), COMPONENT_VALUE.to_string());
@@ -128,7 +133,7 @@ fn create_service(instance_uuid: &str) -> Service {
     }
 }
 
-fn create_ingress_rule(subdomain: String, service_name: String) -> IngressRule {
+fn create_ingress_rule(subdomain: String, service_name: String, _template: &InstanceTemplate) -> IngressRule {
     let paths = vec![
         create_ingress_path("/".to_string(), service_name.clone(), 3000),
         create_ingress_path("/front-end".to_string(), service_name.clone(), 8000),
@@ -174,15 +179,11 @@ async fn get_config_map(
         .and_then(|o| o.data.ok_or_else(|| "No data field".to_string()))
 }
 
-pub async fn get_theia_images(
+pub async fn get_templates(
     client: APIClient,
     namespace: &str,
-) -> Result<BTreeMap<String, InstanceTemplate>, String> {
-    get_config_map(client, namespace, "theia-images")
-        .await?
-        .into_iter()
-        .map(|(k, v)| from_str(&v).map_err(error_to_string).map(|v2| (k, v2)))
-        .collect()
+) -> Result<BTreeMap<String, String>, String> {
+    get_config_map(client, namespace, "theia-images").await
 }
 
 #[derive(Clone)]
@@ -195,6 +196,7 @@ pub struct Engine {
 pub struct InstanceDetails {
     pub user_uuid: String,
     pub instance_uuid: String,
+    pub template: InstanceTemplate,
     pub phase: String,
     pub url: String,
     pub started_at: SystemTime,
@@ -212,6 +214,7 @@ impl InstanceDetails {
         engine: Engine,
         user_uuid: String,
         instance_uuid: String,
+        template: &InstanceTemplate,
         phase: String,
         started_at: SystemTime,
     ) -> Self {
@@ -219,6 +222,7 @@ impl InstanceDetails {
             user_uuid: user_uuid.clone(),
             instance_uuid: instance_uuid.clone(),
             phase,
+            template: template.clone(),
             url: InstanceDetails::url(engine, instance_uuid),
             started_at,
         }
@@ -272,13 +276,14 @@ impl Engine {
             })
             .ok_or("PodStatus unavailable")?;
 
-        let (user_uuid, instance_uuid) = pod
+        let (user_uuid, instance_uuid, template) = pod
             .metadata
             .as_ref()
             .and_then(|md| {
                 Some((
                     md.labels.clone()?.get(OWNER_LABEL)?.to_string(),
                     md.labels.clone()?.get(INSTANCE_LABEL)?.to_string(),
+                    md.annotations.clone()?.get(TEMPLATE_ANNOTATION)?.to_string(),
                 ))
             })
             .ok_or("Metadata unavailable")?;
@@ -287,6 +292,7 @@ impl Engine {
             self,
             user_uuid,
             instance_uuid,
+            &from_str(&template).map_err(error_to_string)?,
             phase,
             started_at,
         ))
@@ -304,11 +310,14 @@ impl Engine {
         Ok(self.pod_to_instance(&pod)?)
     }
 
-    pub async fn get_theia_images(self) -> Result<BTreeMap<String, InstanceTemplate>, String> {
+    pub async fn get_templates(self) -> Result<BTreeMap<String, InstanceTemplate>, String> {
         let config = config().await?;
         let client = APIClient::new(config);
 
-        Ok(get_theia_images(client, &self.namespace).await?)
+        Ok(get_templates(client, &self.namespace).await?
+            .into_iter()
+            .map(|(k, v)| from_str(&v).map_err(error_to_string).map(|v2| (k, v2)))
+            .collect::<Result<BTreeMap<String, InstanceTemplate>, String>>()?)
     }
 
     /// Lists all currently running instances an identified user
@@ -351,7 +360,7 @@ impl Engine {
         Ok(names)
     }
 
-    pub async fn patch_ingress(self, instance_uuids: Vec<String>) -> Result<(), String> {
+    pub async fn patch_ingress(self, instances: BTreeMap<String, &InstanceTemplate>) -> Result<(), String> {
         if let Some(host) = &self.host {
             let config = config().await?;
             let client = APIClient::new(config);
@@ -363,11 +372,12 @@ impl Engine {
                 .clone();
             let mut spec = ingress.clone().spec.ok_or("No spec")?.clone();
             let mut rules: Vec<IngressRule> = spec.clone().rules.ok_or("No rules")?;
-            for instance_uuid in instance_uuids {
-                let subdomain = subdomain(host, &instance_uuid);
+            for (uuid, template) in instances {
+                let subdomain = subdomain(host, &uuid);
                 rules.push(create_ingress_rule(
                     subdomain.clone(),
-                    service_name(&instance_uuid),
+                    service_name(&uuid),
+                    template,
                 ));
             }
             spec.rules.replace(rules);
@@ -386,33 +396,37 @@ impl Engine {
         let config = config().await?;
         let client = APIClient::new(config);
         // Access the right image id
-        let templates = get_theia_images(client.clone(), &self.namespace).await?;
+        let templates = get_templates(client.clone(), &self.namespace).await?;
         let template = templates
             .get(&template_id.to_string())
             .ok_or_else(|| format!("Unknow image {}", template_id))?;
+        let instance_template = &from_str(template).map_err(error_to_string)?;
 
         // Create a unique ID for this instance
         let instance_uuid = format!("{}", Uuid::new_v4());
 
+        // TODO attach template id and content as annotation
         // Deploy a new pod for this image
         let pod_api: Api<Pod> = Api::namespaced(client.clone(), &self.namespace);
         pod_api
             .create(
                 &PostParams::default(),
-                &create_pod(&user_uuid, &instance_uuid.clone(), &template),
+                &create_pod(&user_uuid, &instance_uuid.clone(), instance_template)?,
             )
             .await
             .map_err(error_to_string)?;
 
         // Deploy the associated service
         let service_api: Api<Service> = Api::namespaced(client.clone(), &self.namespace);
-        let service = create_service(&instance_uuid.clone());
+        let service = create_service(&instance_uuid.clone(), instance_template);
         service_api
             .create(&PostParams::default(), &service)
             .await
             .map_err(error_to_string)?;
 
-        self.patch_ingress(vec![instance_uuid.clone()]).await?;
+        let mut instances = BTreeMap::new();
+        instances.insert(instance_uuid.clone(), instance_template);
+        self.patch_ingress(instances).await?;
 
         Ok(instance_uuid)
     }

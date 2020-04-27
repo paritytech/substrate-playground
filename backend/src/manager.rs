@@ -36,8 +36,9 @@ impl Manager {
                     .patch_ingress(
                         instances
                             .iter()
-                            .map(|i| i.1.instance_uuid.clone())
+                            .map(|i| (i.1.instance_uuid.clone(), &i.1.template))
                             .collect(),
+                            // TODO get back template
                     )
                     .await?;
             }
@@ -120,8 +121,8 @@ impl Manager {
         new_runtime()?.block_on(self.engine.get(&instance_uuid))
     }
 
-    pub fn get_images(self) -> Result<BTreeMap<String, InstanceTemplate>, String> {
-        new_runtime()?.block_on(self.engine.get_theia_images())
+    pub fn get_templates(self) -> Result<BTreeMap<String, InstanceTemplate>, String> {
+        new_runtime()?.block_on(self.engine.get_templates())
     }
 
     pub fn list(&self, user_uuid: &str) -> Result<Vec<String>, String> {
