@@ -205,6 +205,8 @@ pub struct InstanceDetails {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct InstanceTemplate {
     pub image: String,
+    pub name: String,
+    pub description: String,
     pub env: Option<BTreeMap<String, String>>,
     pub ports: Option<BTreeMap<u8, u8>>,
 }
