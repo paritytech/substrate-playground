@@ -1,9 +1,16 @@
 import React, { useState } from "react";
 import { useSpring, animated } from 'react-spring'
+import Button from '@material-ui/core/Button';
 import Dialog from '@material-ui/core/Dialog';
 import DialogContent from '@material-ui/core/DialogContent';
 import DialogContentText from '@material-ui/core/DialogContentText';
 import DialogTitle from '@material-ui/core/DialogTitle';
+import Divider from '@material-ui/core/Divider';
+import List from '@material-ui/core/List';
+import ListItem from '@material-ui/core/ListItem';
+import ListItemText from '@material-ui/core/ListItemText';
+import Typography from '@material-ui/core/Typography';
+import marked from 'marked';
 import { useHover, useInterval, useWindowMaxDimension } from './hooks';
 import { useLifecycle, checking, deploy, deployed, deploying, failed, initial, restart, show } from './lifecycle';
 import frontendImage from './../assets/help/front-end.png';
@@ -173,6 +180,44 @@ function Nav({setShowHelp}: {setShowHelp: (_: boolean) => void}) {
     );
 }
 
+function TemplateSelector({templates, onSelect, hoverRef}) {
+    const [selection, select] = useState(templates[0]);
+    const border = "1px solid #3c3c3c";
+    return (
+        <div ref={hoverRef} style={{display: "flex", flexDirection: "column", backgroundColor: "black", width: "50vw", height: "50vh"}}>
+            <Typography variant="h5" noWrap style={{padding: 10}}>Select a template</Typography>
+            <div style={{display: "flex", flexDirection: "row", flex: 1, borderTop: border, borderBottom: border, minHeight: 0}}>
+                <List style={{borderRight: border, overflow: "auto"}}>
+                    {templates.map((template, index: number) => (
+                    <ListItem button key={index} onClick={() => select(template)}>
+                        <ListItemText primary={template.name} />
+                    </ListItem>
+                    ))}
+                </List>
+                <Typography component="div" style={{margin: 20, overflow: "auto"}}>
+                    <div dangerouslySetInnerHTML={{__html:marked(selection.description)}}></div>
+                </Typography>
+            </div>
+            <div style={{display: "flex", justifyContent: "flex-end", paddingRight: 20, paddingTop: 10, paddingBottom: 10}}>
+                <Button variant="contained" color="primary" onClick={() => onSelect(selection.id)}>
+                    Create
+                </Button>
+            </div>
+        </div>
+    );
+}
+
+function ExistingInstance({onClick, hoverRef}) {
+    return (
+        <div style={{display: "flex", flexDirection: "column", alignItems: "center"}}>
+            <h1>You already have an instance running.</h1>
+            <div ref={hoverRef} className="cta" onClick={onClick}>
+                <span>Join it!</span>
+            </div>
+        </div>
+    );
+}
+
 export function MainPanel() {
     const [state, send] = useLifecycle();
     const [showHelp, setShowHelp] = useState(false);
@@ -181,7 +226,7 @@ export function MainPanel() {
     if (state.matches(deployed)) {
         return <Theia url={state.context.instanceURL} />;
     } else {
-        const instances = state.context.instances;
+        const {instances, templates} = state.context;
         return (
             <React.Fragment>
                 <Background isHovered={isHovered} />
@@ -191,16 +236,10 @@ export function MainPanel() {
                 {state.matches(initial) &&
                     <div className="box-fullscreen box-text">
                         <Nav setShowHelp={setShowHelp} />
-                        <h1>
-                            Start hacking your substrate runtime in a web based VSCode like IDE
-                        </h1>
+
                         {instances?.length == 0
-                            ? <div ref={hoverRef} className="cta" onClick={() => {send(deploy);}}>
-                                <span>Experiment!</span>
-                            </div>
-                            : <div ref={hoverRef} className="cta" onClick={() => {send(show);}}>
-                                <span>You already have an instance running. Join it!</span>
-                            </div>
+                            ? <TemplateSelector hoverRef={hoverRef} templates={templates} onSelect={(template) => {send(deploy, {template: template});}} />
+                            : <ExistingInstance hoverRef={hoverRef} onClick={() => {send(show);}} />
                         }
                     </div>
                 }

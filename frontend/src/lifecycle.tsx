@@ -1,7 +1,7 @@
 import { useMachine } from '@xstate/react';
 import { v4 as uuidv4 } from 'uuid';
 import { assign, Machine } from 'xstate';
-import { deployImage, getInstanceDetails, getUserDetails } from './api';
+import { deployImage, getInstanceDetails, getTemplates, getUserDetails } from './api';
 import { fetchWithTimeout } from './utils';
 
 const key = "userUUID";
@@ -14,6 +14,7 @@ export interface Context {
   instanceUUID?: string;
   instanceURL?: string;
   instances?: Array<string>;
+  templates?: Array<string>;
   phase?: string;
   checkOccurences: number;
   error?: string
@@ -49,13 +50,18 @@ const lifecycle = Machine<Context>({
           src: async (context, _event) => {
             const response = (await getUserDetails(context.userUUID));
             if (response.error) {
-              throw response
+              throw response;
             }
-            return response;
+            const response2 = (await getTemplates());
+            if (response2.error) {
+              throw response2;
+            }
+            return {instances: response.result, templates: response2.result};
           },
           onDone: {
             target: initial,
-            actions: assign({instances: (_context, event) => event.data.result})
+            actions: assign({instances: (_context, event) => event.data.instances,
+                             templates: (_context, event) => event.data.templates})
           },
           onError: {
             target: failed,
@@ -70,8 +76,8 @@ const lifecycle = Machine<Context>({
       },
       [deploying]: {
         invoke: {
-          src: (context, _event) => async (callback, _onReceive) => {
-            const {result, error} = await deployImage(context.userUUID, context.template);
+          src: (context, event) => async (callback) => {
+            const {result, error} = await deployImage(context.userUUID, event.template);
             if (result) {
               callback({type: success, uuid: result});
             } else {

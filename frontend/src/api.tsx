@@ -20,6 +20,13 @@ export async function getUserDetails(userUUID: string) {
     }));
 }
 
+export async function getTemplates() {
+    return fromResponse(await fetchWithTimeout(`/api/templates`, {
+        method: 'GET',
+        headers: headers
+    }));
+}
+
 // See https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#pod-phase
 type Phase = "Pending" | "Running" | "Succeeded" | "Failed" | "Unknown";
 
