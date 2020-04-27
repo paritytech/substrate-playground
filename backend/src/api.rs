@@ -5,8 +5,6 @@ use rocket::{get, post, State};
 use rocket_contrib::{json, json::JsonValue};
 use serde::Serialize;
 
-// TODO add image templates endpoint
-
 fn result_to_jsonrpc<T: Serialize>(res: Result<T, String>) -> JsonValue {
     match res {
         Ok(val) => json!({ "result": val }),
@@ -26,10 +24,10 @@ pub fn get(state: State<'_, Context>, user_uuid: String, instance_uuid: String) 
     result_to_jsonrpc(manager.get(&user_uuid, &instance_uuid))
 }
 
-#[get("/images")]
-pub fn get_images(state: State<'_, Context>) -> JsonValue {
+#[get("/templates")]
+pub fn get_templates(state: State<'_, Context>) -> JsonValue {
     let manager = state.manager.clone();
-    result_to_jsonrpc(manager.get_images())
+    result_to_jsonrpc(manager.get_templates())
 }
 
 /// Deploy `template` Docker container for `user_uuid`.
