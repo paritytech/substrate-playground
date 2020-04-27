@@ -6,9 +6,10 @@ type JSONRPCResponse<T> = { result: T} | { error: string };
 
 async function fromResponse(response: Response) {
     try {
+        // Here the JSON is already in JSON-RPC format so return as-is
         return await response.json();
     } catch {
-        return {error: response.statusText || "Failed to parse returned JSON"};
+        return {error: (!response.ok && response.statusText) || "Internal error: failed to parse returned JSON"};
     }
 }
 

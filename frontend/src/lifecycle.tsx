@@ -47,11 +47,15 @@ const lifecycle = Machine<Context>({
       [setup]: {
         invoke: {
           src: async (context, _event) => {
-            return (await getUserDetails(context.userUUID));
+            const response = (await getUserDetails(context.userUUID));
+            if (response.error) {
+              throw response
+            }
+            return response;
           },
           onDone: {
             target: initial,
-            actions: assign({ instances: (_context, event) => event.data.result})
+            actions: assign({instances: (_context, event) => event.data.result})
           },
           onError: {
             target: failed,
@@ -61,7 +65,7 @@ const lifecycle = Machine<Context>({
       },
       [initial]: {
         on: {[show]: {target: checking,
-                      actions: assign({ instanceUUID: (context, _event) => context.instances[0] })},
+                      actions: assign({ instanceUUID: (context, _event) => context.instances[0]})},
              [deploy]: {target: deploying}}
       },
       [deploying]: {
