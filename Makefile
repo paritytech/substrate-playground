@@ -53,7 +53,7 @@ dev-backend:
 # Build theia docker image
 build-theia-docker-image:
 	$(eval THEIA_DOCKER_IMAGE_VERSION=$(shell git rev-parse --short HEAD))
-	@cd theia-images; docker build -f Dockerfile --label org.opencontainers.image.version =${THEIA_DOCKER_IMAGE_VERSION} -t ${THEIA_DOCKER_IMAGE_NAME}:${THEIA_DOCKER_IMAGE_VERSION} . && docker image prune -f --filter label=stage=builder
+	@cd templates; docker build -f Dockerfile --label org.opencontainers.image.version =${THEIA_DOCKER_IMAGE_VERSION} -t ${THEIA_DOCKER_IMAGE_NAME}:${THEIA_DOCKER_IMAGE_VERSION} . && docker image prune -f --filter label=stage=builder
 	docker tag ${THEIA_DOCKER_IMAGE_NAME}:${THEIA_DOCKER_IMAGE_VERSION} gcr.io/${GOOGLE_PROJECT_ID}/${THEIA_DOCKER_IMAGE_NAME}
 
 # Push a newly built theia image on docker.io and gcr.io
@@ -110,4 +110,4 @@ k8s-undeploy-theia: k8s-assert
 
 # Creates or replaces the `images` config map from `conf/k8s/images/*.properties`
 k8s-update-images-config: k8s-assert
-	kubectl create configmap theia-images --namespace=${IDENTIFIER} --from-file=conf/k8s/overlays/${ENVIRONMENT}/theia-images/ --dry-run -o yaml | kubectl apply -f -
+	kubectl create configmap templates --namespace=${IDENTIFIER} --from-file=conf/k8s/overlays/${ENVIRONMENT}/templates/ --dry-run -o yaml | kubectl apply -f -

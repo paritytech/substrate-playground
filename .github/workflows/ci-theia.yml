@@ -3,7 +3,7 @@ name: Continuous Integration Theia
 on:
   pull_request:
     paths:
-      - 'theia-images/**'
+      - 'templates/**'
 
 jobs:
   frontend:
@@ -18,7 +18,7 @@ jobs:
           node-version: "10.x"
       - name: Install
         run: yarn install --check-files
-        working-directory: ./theia-images
+        working-directory: ./templates
       - name: Build
         run: yarn workspace @parity/theia-playground theia build
-        working-directory: ./theia-images
+        working-directory: ./templates

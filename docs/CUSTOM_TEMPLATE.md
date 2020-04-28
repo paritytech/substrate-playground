@@ -5,7 +5,7 @@ Customize image generation
 Custom vscode plugins
 Custom .substrate-playground.yaml
 
-Bot builds images, then pushes PR to update theia-images/ID/
+Bot builds images, then pushes PR to update templates/ID/
 
 # Startup
 
