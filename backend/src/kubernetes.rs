@@ -1,7 +1,7 @@
 //! Find more details here:
 //! * https://docs.rs/k8s-openapi/0.5.1/k8s_openapi/api/core/v1/struct.ServiceStatus.html
 //! * https://docs.rs/k8s-openapi/0.5.1/k8s_openapi/api/core/v1/struct.ServiceSpec.html
-
+use crate::template::Template;
 use k8s_openapi::api::core::v1::{
     ConfigMap, Container, EnvVar, Pod, PodSpec, Service, ServicePort, ServiceSpec,
 };
@@ -15,7 +15,6 @@ use kube::{
     config,
 };
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
-use serde_yaml::from_str;
 use std::{collections::BTreeMap, error::Error, time::SystemTime};
 use uuid::Uuid;
 
@@ -57,7 +56,7 @@ pub fn service_name(instance_uuid: &str) -> String {
 fn create_pod(
     user_uuid: &str,
     instance_uuid: &str,
-    instance_template: &InstanceTemplate,
+    instance_template: &Template,
 ) -> Result<Pod, String> {
     let mut labels = BTreeMap::new();
     labels.insert(APP_LABEL.to_string(), APP_VALUE.to_string());
@@ -67,7 +66,7 @@ fn create_pod(
     let mut annotations = BTreeMap::new();
     annotations.insert(
         TEMPLATE_ANNOTATION.to_string(),
-        serde_yaml::to_string(instance_template).map_err(error_to_string)?,
+        instance_template.to_string(),
     );
 
     Ok(Pod {
@@ -100,7 +99,7 @@ fn create_pod(
     })
 }
 
-fn create_service(instance_uuid: &str, template: &InstanceTemplate) -> Service {
+fn create_service(instance_uuid: &str, template: &Template) -> Service {
     let mut labels = BTreeMap::new();
     labels.insert(APP_LABEL.to_string(), APP_VALUE.to_string());
     labels.insert(COMPONENT_LABEL.to_string(), COMPONENT_VALUE.to_string());
@@ -142,7 +141,7 @@ fn create_service(instance_uuid: &str, template: &InstanceTemplate) -> Service {
 fn create_ingress_rule(
     subdomain: String,
     service_name: String,
-    template: &InstanceTemplate,
+    template: &Template,
 ) -> IngressRule {
     IngressRule {
         host: Some(subdomain),
@@ -207,39 +206,10 @@ pub struct Engine {
 pub struct InstanceDetails {
     pub user_uuid: String,
     pub instance_uuid: String,
-    pub template: InstanceTemplate,
+    pub template: Template,
     pub phase: String,
     pub url: String,
     pub started_at: SystemTime,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct InstanceTemplate {
-    pub image: String,
-    pub name: String,
-    pub description: String,
-    pub runtime: Option<InstanceRuntimeTemplate>,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct InstanceRuntimeTemplate {
-    pub env: Option<Vec<NameValuePair>>,
-    pub ports: Option<Vec<Port>>,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct NameValuePair {
-    pub name: String,
-    pub value: String,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct Port {
-    pub name: String,
-    pub protocol: Option<String>,
-    pub path: String,
-    pub port: i32,
-    pub target: Option<i32>,
 }
 
 impl InstanceDetails {
@@ -247,7 +217,7 @@ impl InstanceDetails {
         engine: Engine,
         user_uuid: String,
         instance_uuid: String,
-        template: &InstanceTemplate,
+        template: &Template,
         phase: String,
         started_at: SystemTime,
     ) -> Self {
@@ -328,7 +298,7 @@ impl Engine {
             self,
             user_uuid,
             instance_uuid,
-            &from_str(&template).map_err(error_to_string)?,
+            &Template::parse(&template)?,
             phase,
             started_at,
         ))
@@ -346,15 +316,15 @@ impl Engine {
         Ok(self.pod_to_instance(&pod)?)
     }
 
-    pub async fn get_templates(self) -> Result<BTreeMap<String, InstanceTemplate>, String> {
+    pub async fn get_templates(self) -> Result<BTreeMap<String, Template>, String> {
         let config = config().await?;
         let client = APIClient::new(config);
 
         Ok(get_templates(client, &self.namespace)
             .await?
             .into_iter()
-            .map(|(k, v)| from_str(&v).map_err(error_to_string).map(|v2| (k, v2)))
-            .collect::<Result<BTreeMap<String, InstanceTemplate>, String>>()?)
+            .map(|(k, v)| Template::parse(&v).map(|v2| (k, v2)))
+            .collect::<Result<BTreeMap<String, Template>, String>>()?)
     }
 
     /// Lists all currently running instances an identified user
@@ -399,7 +369,7 @@ impl Engine {
 
     pub async fn patch_ingress(
         self,
-        instances: BTreeMap<String, &InstanceTemplate>,
+        instances: BTreeMap<String, &Template>,
     ) -> Result<(), String> {
         if let Some(host) = &self.host {
             let config = config().await?;
@@ -440,7 +410,7 @@ impl Engine {
         let template = templates
             .get(&template_id.to_string())
             .ok_or_else(|| format!("Unknow image {}", template_id))?;
-        let instance_template = &from_str(template).map_err(error_to_string)?;
+        let instance_template = &Template::parse(&template)?;
 
         // Create a unique ID for this instance
         let instance_uuid = format!("{}", Uuid::new_v4());
