@@ -74,15 +74,15 @@ fn create_pod(user_uuid: &str, instance_uuid: &str, instance_template: &Instance
             containers: vec![Container {
                 name: format!("{}-container", COMPONENT_VALUE).to_string(),
                 image: Some(instance_template.image.to_string()),
-                env: instance_template.env.clone().map(|m| {
+                env: instance_template.runtime.as_ref().and_then(|r| r.env.clone().map(|m| {
                     m.into_iter()
-                        .map(|(k, v)| EnvVar {
-                            name: k,
-                            value: Some(v),
+                        .map(|p| EnvVar {
+                            name: p.name,
+                            value: Some(p.value),
                             ..Default::default()
                         })
                         .collect()
-                }),
+                })),
                 ..Default::default()
             }],
             ..Default::default()
@@ -207,8 +207,19 @@ pub struct InstanceTemplate {
     pub image: String,
     pub name: String,
     pub description: String,
-    pub env: Option<BTreeMap<String, String>>,
+    pub runtime: Option<InstanceRuntimeTemplate>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct InstanceRuntimeTemplate {
+    pub env: Option<Vec<NameValuePair>>,
     pub ports: Option<BTreeMap<u8, u8>>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct NameValuePair {
+    pub name: String,
+    pub value: String,
 }
 
 impl InstanceDetails {

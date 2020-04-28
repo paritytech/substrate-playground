@@ -5,6 +5,9 @@ description: |
 
   Contains both frontent and backend projects.
 
-env:
-    - PUBLIC_URL: "."
-    - REACT_APP_PROVIDER_SOCKET: ""
+runtime:
+  env:
+    - name: PUBLIC_URL
+      value: "."
+    - name: REACT_APP_PROVIDER_SOCKET
+      value: ""
