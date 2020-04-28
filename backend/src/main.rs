@@ -5,6 +5,7 @@ mod api;
 mod kubernetes;
 mod manager;
 mod metrics;
+mod template;
 
 use crate::manager::Manager;
 use rocket::{config::Environment, http::Method, routes};

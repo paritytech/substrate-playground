@@ -1,5 +1,6 @@
-use crate::kubernetes::{Engine, InstanceDetails, InstanceTemplate};
+use crate::kubernetes::{Engine, InstanceDetails};
 use crate::metrics::Metrics;
+use crate::template::Template;
 use log::{error, warn};
 use std::{
     collections::BTreeMap,
@@ -121,7 +122,7 @@ impl Manager {
         new_runtime()?.block_on(self.engine.get(&instance_uuid))
     }
 
-    pub fn get_templates(self) -> Result<BTreeMap<String, InstanceTemplate>, String> {
+    pub fn get_templates(self) -> Result<BTreeMap<String, Template>, String> {
         new_runtime()?.block_on(self.engine.get_templates())
     }
 
