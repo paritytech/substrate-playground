@@ -183,7 +183,7 @@ pub async fn get_templates(
     client: APIClient,
     namespace: &str,
 ) -> Result<BTreeMap<String, String>, String> {
-    get_config_map(client, namespace, "theia-images").await
+    get_config_map(client, namespace, "templates").await
 }
 
 #[derive(Clone)]
