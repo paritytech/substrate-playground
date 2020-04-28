@@ -11,3 +11,16 @@ runtime:
       value: "."
     - name: REACT_APP_PROVIDER_SOCKET
       value: ""
+  ports:
+    - name: web
+      protocol: TCP
+      path: /
+      port: 3000
+    - name: front-end
+      protocol: TCP
+      path: /front-end
+      port: 8000
+    - name: wss
+      protocol: TCP
+      path: /wss
+      port: 9944
