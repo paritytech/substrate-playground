@@ -39,7 +39,6 @@ impl Manager {
                             .iter()
                             .map(|i| (i.1.instance_uuid.clone(), &i.1.template))
                             .collect(),
-                        // TODO get back template
                     )
                     .await?;
             }
