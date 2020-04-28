@@ -9,7 +9,7 @@ import { GettingStartedWidget } from './getting-started/getting-started-widget';
 import { WidgetFactory, FrontendApplicationContribution, bindViewContribution } from '@theia/core/lib/browser';
 import { LocationMapper } from '@theia/mini-browser/lib/browser/location-mapper-service';
 import { ContainerModule } from "inversify";
-import '../../src/browser/style/index.css';
+import './style/index.css';
 
 export default new ContainerModule(bind => {
     // add your contribution bindings here
