@@ -54,14 +54,21 @@ pub fn service_name(instance_uuid: &str) -> String {
     format!("{}-service-{}", COMPONENT_VALUE, instance_uuid)
 }
 
-fn create_pod(user_uuid: &str, instance_uuid: &str, instance_template: &InstanceTemplate) -> Result<Pod, String> {
+fn create_pod(
+    user_uuid: &str,
+    instance_uuid: &str,
+    instance_template: &InstanceTemplate,
+) -> Result<Pod, String> {
     let mut labels = BTreeMap::new();
     labels.insert(APP_LABEL.to_string(), APP_VALUE.to_string());
     labels.insert(COMPONENT_LABEL.to_string(), COMPONENT_VALUE.to_string());
     labels.insert(OWNER_LABEL.to_string(), user_uuid.to_string());
     labels.insert(INSTANCE_LABEL.to_string(), instance_uuid.to_string());
     let mut annotations = BTreeMap::new();
-    annotations.insert(TEMPLATE_ANNOTATION.to_string(), serde_yaml::to_string(instance_template).map_err(error_to_string)?);
+    annotations.insert(
+        TEMPLATE_ANNOTATION.to_string(),
+        serde_yaml::to_string(instance_template).map_err(error_to_string)?,
+    );
 
     Ok(Pod {
         metadata: Some(ObjectMeta {
@@ -74,15 +81,17 @@ fn create_pod(user_uuid: &str, instance_uuid: &str, instance_template: &Instance
             containers: vec![Container {
                 name: format!("{}-container", COMPONENT_VALUE).to_string(),
                 image: Some(instance_template.image.to_string()),
-                env: instance_template.runtime.as_ref().and_then(|r| r.env.clone().map(|m| {
-                    m.into_iter()
-                        .map(|p| EnvVar {
-                            name: p.name,
-                            value: Some(p.value),
-                            ..Default::default()
-                        })
-                        .collect()
-                })),
+                env: instance_template.runtime.as_ref().and_then(|r| {
+                    r.env.clone().map(|m| {
+                        m.into_iter()
+                            .map(|p| EnvVar {
+                                name: p.name,
+                                value: Some(p.value),
+                                ..Default::default()
+                            })
+                            .collect()
+                    })
+                }),
                 ..Default::default()
             }],
             ..Default::default()
@@ -91,13 +100,14 @@ fn create_pod(user_uuid: &str, instance_uuid: &str, instance_template: &Instance
     })
 }
 
-fn create_service(instance_uuid: &str, _template: &InstanceTemplate) -> Service {
+fn create_service(instance_uuid: &str, template: &InstanceTemplate) -> Service {
     let mut labels = BTreeMap::new();
     labels.insert(APP_LABEL.to_string(), APP_VALUE.to_string());
     labels.insert(COMPONENT_LABEL.to_string(), COMPONENT_VALUE.to_string());
     labels.insert(INSTANCE_LABEL.to_string(), instance_uuid.to_string());
     let mut selectors = BTreeMap::new();
     selectors.insert(INSTANCE_LABEL.to_string(), instance_uuid.to_string());
+
     Service {
         metadata: Some(ObjectMeta {
             name: Some(service_name(instance_uuid)),
@@ -107,51 +117,52 @@ fn create_service(instance_uuid: &str, _template: &InstanceTemplate) -> Service 
         spec: Some(ServiceSpec {
             type_: Some("NodePort".to_string()),
             selector: Some(selectors),
-            ports: Some(vec![
-                ServicePort {
-                    name: Some("web".to_string()),
-                    protocol: Some("TCP".to_string()),
-                    port: 3000,
-                    ..Default::default()
-                },
-                ServicePort {
-                    name: Some("front-end".to_string()),
-                    protocol: Some("TCP".to_string()),
-                    port: 8000,
-                    ..Default::default()
-                },
-                ServicePort {
-                    name: Some("wss".to_string()),
-                    protocol: Some("TCP".to_string()),
-                    port: 9944,
-                    ..Default::default()
-                },
-            ]),
+            ports: template.runtime.as_ref().and_then(|r| {
+                r.ports.clone().and_then(|ports| {
+                    Some(
+                        ports
+                            .iter()
+                            .map(|port| ServicePort {
+                                name: Some(port.clone().name),
+                                protocol: port.clone().protocol,
+                                port: port.port,
+                                target_port: port.clone().target.map(|p| IntOrString::Int(p)),
+                                ..Default::default()
+                            })
+                            .collect(),
+                    )
+                })
+            }),
             ..Default::default()
         }),
         ..Default::default()
     }
 }
 
-fn create_ingress_rule(subdomain: String, service_name: String, _template: &InstanceTemplate) -> IngressRule {
-    let paths = vec![
-        create_ingress_path("/".to_string(), service_name.clone(), 3000),
-        create_ingress_path("/front-end".to_string(), service_name.clone(), 8000),
-        create_ingress_path("/wss".to_string(), service_name, 9944),
-    ];
+fn create_ingress_rule(
+    subdomain: String,
+    service_name: String,
+    template: &InstanceTemplate,
+) -> IngressRule {
     IngressRule {
         host: Some(subdomain),
-        http: Some(HTTPIngressRuleValue { paths }),
-    }
-}
-
-fn create_ingress_path(path: String, name: String, port: i32) -> HTTPIngressPath {
-    HTTPIngressPath {
-        path: Some(path),
-        backend: IngressBackend {
-            service_name: name,
-            service_port: IntOrString::Int(port),
-        },
+        http: template.runtime.as_ref().and_then(|r| {
+            r.ports.clone().and_then(|ports| {
+                Some(HTTPIngressRuleValue { paths:
+                    ports
+                        .iter()
+                        .map(|port| HTTPIngressPath {
+                            path: Some(port.clone().path),
+                            backend: IngressBackend {
+                                service_name: service_name.clone(),
+                                service_port: IntOrString::Int(port.port),
+                            },
+                        })
+                        .collect(),
+                    }
+                )
+            })
+        }),
     }
 }
 
@@ -213,13 +224,22 @@ pub struct InstanceTemplate {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct InstanceRuntimeTemplate {
     pub env: Option<Vec<NameValuePair>>,
-    pub ports: Option<BTreeMap<u8, u8>>,
+    pub ports: Option<Vec<Port>>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct NameValuePair {
     pub name: String,
     pub value: String,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct Port {
+    pub name: String,
+    pub protocol: Option<String>,
+    pub path: String,
+    pub port: i32,
+    pub target: Option<i32>,
 }
 
 impl InstanceDetails {
@@ -296,7 +316,10 @@ impl Engine {
                 Some((
                     md.labels.clone()?.get(OWNER_LABEL)?.to_string(),
                     md.labels.clone()?.get(INSTANCE_LABEL)?.to_string(),
-                    md.annotations.clone()?.get(TEMPLATE_ANNOTATION)?.to_string(),
+                    md.annotations
+                        .clone()?
+                        .get(TEMPLATE_ANNOTATION)?
+                        .to_string(),
                 ))
             })
             .ok_or("Metadata unavailable")?;
@@ -327,7 +350,8 @@ impl Engine {
         let config = config().await?;
         let client = APIClient::new(config);
 
-        Ok(get_templates(client, &self.namespace).await?
+        Ok(get_templates(client, &self.namespace)
+            .await?
             .into_iter()
             .map(|(k, v)| from_str(&v).map_err(error_to_string).map(|v2| (k, v2)))
             .collect::<Result<BTreeMap<String, InstanceTemplate>, String>>()?)
@@ -373,7 +397,10 @@ impl Engine {
         Ok(names)
     }
 
-    pub async fn patch_ingress(self, instances: BTreeMap<String, &InstanceTemplate>) -> Result<(), String> {
+    pub async fn patch_ingress(
+        self,
+        instances: BTreeMap<String, &InstanceTemplate>,
+    ) -> Result<(), String> {
         if let Some(host) = &self.host {
             let config = config().await?;
             let client = APIClient::new(config);
