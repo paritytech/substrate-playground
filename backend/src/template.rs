@@ -1,6 +1,6 @@
-use std::fmt::{self, Display, Formatter};
 use serde::{Deserialize, Serialize};
 use serde_yaml::from_str;
+use std::fmt::{self, Display, Formatter};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Template {
@@ -8,6 +8,7 @@ pub struct Template {
     pub name: String,
     pub description: String,
     pub runtime: Option<RuntimeConfiguration>,
+    pub build: BuildConfiguration,
 }
 
 impl Template {
@@ -18,7 +19,11 @@ impl Template {
 
 impl Display for Template {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", serde_yaml::to_string(self).map_err(|_| fmt::Error{})?)
+        write!(
+            f,
+            "{}",
+            serde_yaml::to_string(self).map_err(|_| fmt::Error {})?
+        )
     }
 }
 
@@ -41,4 +46,25 @@ pub struct Port {
     pub path: String,
     pub port: i32,
     pub target: Option<i32>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct BuildConfiguration {
+    pub base: String,
+    pub extensions: Option<Vec<NameURLPair>>,
+    pub repositories: Option<Vec<NameURLPair>>,
+    pub commands: Option<Vec<Command>>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct NameURLPair {
+    pub name: String,
+    pub url: String,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct Command {
+    pub name: String,
+    pub run: String,
+    pub working_directory: String,
 }

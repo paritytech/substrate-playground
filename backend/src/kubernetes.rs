@@ -147,8 +147,8 @@ fn create_ingress_rule(
         host: Some(subdomain),
         http: template.runtime.as_ref().and_then(|r| {
             r.ports.clone().and_then(|ports| {
-                Some(HTTPIngressRuleValue { paths:
-                    ports
+                Some(HTTPIngressRuleValue {
+                    paths: ports
                         .iter()
                         .map(|port| HTTPIngressPath {
                             path: Some(port.clone().path),
@@ -158,8 +158,7 @@ fn create_ingress_rule(
                             },
                         })
                         .collect(),
-                    }
-                )
+                })
             })
         }),
     }
@@ -367,10 +366,7 @@ impl Engine {
         Ok(names)
     }
 
-    pub async fn patch_ingress(
-        self,
-        instances: BTreeMap<String, &Template>,
-    ) -> Result<(), String> {
+    pub async fn patch_ingress(self, instances: BTreeMap<String, &Template>) -> Result<(), String> {
         if let Some(host) = &self.host {
             let config = config().await?;
             let client = APIClient::new(config);
@@ -415,7 +411,6 @@ impl Engine {
         // Create a unique ID for this instance
         let instance_uuid = format!("{}", Uuid::new_v4());
 
-        // TODO attach template id and content as annotation
         // Deploy a new pod for this image
         let pod_api: Api<Pod> = Api::namespaced(client.clone(), &self.namespace);
         pod_api
