@@ -26,6 +26,7 @@ const OWNER_LABEL: &str = "app.kubernetes.io/owner";
 const INSTANCE_LABEL: &str = "app.kubernetes.io/instance";
 const INGRESS_NAME: &str = "ingress";
 const TEMPLATE_ANNOTATION: &str = "playground.substrate.io/template";
+const THEIA_WEB_PORT: i32 = 3000;
 
 fn error_to_string<T: std::fmt::Display>(err: T) -> String {
     format!("{}", err)
@@ -107,6 +108,32 @@ fn create_service(instance_uuid: &str, template: &Template) -> Service {
     let mut selectors = BTreeMap::new();
     selectors.insert(INSTANCE_LABEL.to_string(), instance_uuid.to_string());
 
+    // The theia port itself is mandatory
+    let mut ports = vec![ServicePort {
+        name: Some("web".to_string()),
+        protocol: Some("TCP".to_string()),
+        port: THEIA_WEB_PORT,
+        ..Default::default()
+    }];
+    if let Some(mut template_ports) = template.runtime.as_ref().and_then(|r| {
+        r.ports.clone().and_then(|ports| {
+            Some(
+                ports
+                    .iter()
+                    .map(|port| ServicePort {
+                        name: Some(port.clone().name),
+                        protocol: port.clone().protocol,
+                        port: port.port,
+                        target_port: port.clone().target.map(|p| IntOrString::Int(p)),
+                        ..Default::default()
+                    })
+                    .collect::<Vec<ServicePort>>(),
+            )
+        })
+    }) {
+        ports.append(&mut template_ports);
+    };
+
     Service {
         metadata: Some(ObjectMeta {
             name: Some(service_name(instance_uuid)),
@@ -116,22 +143,7 @@ fn create_service(instance_uuid: &str, template: &Template) -> Service {
         spec: Some(ServiceSpec {
             type_: Some("NodePort".to_string()),
             selector: Some(selectors),
-            ports: template.runtime.as_ref().and_then(|r| {
-                r.ports.clone().and_then(|ports| {
-                    Some(
-                        ports
-                            .iter()
-                            .map(|port| ServicePort {
-                                name: Some(port.clone().name),
-                                protocol: port.clone().protocol,
-                                port: port.port,
-                                target_port: port.clone().target.map(|p| IntOrString::Int(p)),
-                                ..Default::default()
-                            })
-                            .collect(),
-                    )
-                })
-            }),
+            ports: Some(ports),
             ..Default::default()
         }),
         ..Default::default()
@@ -143,24 +155,34 @@ fn create_ingress_rule(
     service_name: String,
     template: &Template,
 ) -> IngressRule {
+    let mut paths = vec![HTTPIngressPath {
+        path: Some("/".to_string()),
+        backend: IngressBackend {
+            service_name: service_name.clone(),
+            service_port: IntOrString::Int(THEIA_WEB_PORT),
+        },
+    }];
+    if let Some(mut template_paths) = template.runtime.as_ref().and_then(|r| {
+        r.ports.clone().and_then(|ports| {
+            Some(
+                ports
+                    .iter()
+                    .map(|port| HTTPIngressPath {
+                        path: Some(port.clone().path),
+                        backend: IngressBackend {
+                            service_name: service_name.clone(),
+                            service_port: IntOrString::Int(port.port),
+                        },
+                    })
+                    .collect(),
+            )
+        })
+    }) {
+        paths.append(&mut template_paths);
+    };
     IngressRule {
         host: Some(subdomain),
-        http: template.runtime.as_ref().and_then(|r| {
-            r.ports.clone().and_then(|ports| {
-                Some(HTTPIngressRuleValue {
-                    paths: ports
-                        .iter()
-                        .map(|port| HTTPIngressPath {
-                            path: Some(port.clone().path),
-                            backend: IngressBackend {
-                                service_name: service_name.clone(),
-                                service_port: IntOrString::Int(port.port),
-                            },
-                        })
-                        .collect(),
-                })
-            })
-        }),
+        http: Some(HTTPIngressRuleValue { paths }),
     }
 }
 
