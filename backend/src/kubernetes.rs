@@ -348,22 +348,21 @@ impl Engine {
             .collect::<Result<BTreeMap<String, Template>, String>>()?)
     }
 
-    /// Lists all currently running instances an identified user
-    pub async fn list(self, user_uuid: &str) -> Result<Vec<String>, String> {
+    /// Lists all currently running instances for an identified user
+    pub async fn list(self, user_uuid: &str) -> Result<Vec<InstanceDetails>, String> {
         let config = config().await?;
         let client = APIClient::new(config);
         let pod_api: Api<Pod> = Api::namespaced(client, &self.namespace);
         let pods = list_by_selector(&pod_api, Engine::owner_selector(user_uuid)).await?;
-        let names: Vec<String> = pods
+
+        Ok(pods
             .iter()
             .flat_map(|pod| {
-                pod.metadata
-                    .as_ref()
-                    .and_then(|md| Some(md.labels.clone()?.get(INSTANCE_LABEL)?.to_string()))
+                self.clone()
+                    .pod_to_instance(pod)
+                    .ok()
             })
-            .collect::<Vec<_>>();
-
-        Ok(names)
+            .collect::<Vec<_>>())
     }
 
     pub async fn list_all(&self) -> Result<BTreeMap<String, InstanceDetails>, String> {
@@ -375,7 +374,8 @@ impl Engine {
             format!("{}={}", COMPONENT_LABEL, COMPONENT_VALUE).to_string(),
         )
         .await?;
-        let names = pods
+
+        Ok(pods
             .iter()
             .flat_map(|pod| {
                 self.clone()
@@ -383,9 +383,7 @@ impl Engine {
                     .ok()
                     .map(|i| (i.clone().user_uuid, i))
             })
-            .collect();
-
-        Ok(names)
+            .collect())
     }
 
     pub async fn patch_ingress(self, instances: BTreeMap<String, &Template>) -> Result<(), String> {

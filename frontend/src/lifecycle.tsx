@@ -69,7 +69,7 @@ const lifecycle = Machine<Context>({
       },
       [initial]: {
         on: {[show]: {target: checking,
-                      actions: assign({ instanceUUID: (context, _event) => context.instances && context.instances[0]})},
+                      actions: assign({ instanceUUID: (_, event) => event.instance.instance_uuid})},
              [deploy]: {target: deploying}}
       },
       [deploying]: {
