@@ -141,7 +141,7 @@ impl Manager {
         match result.clone() {
             Ok(instance_uuid) => {
                 if let Ok(mut instances) = self.instances.lock() {
-                    instances.insert(user_uuid.into(), instance_uuid.into());
+                    instances.insert(user_uuid.into(), instance_uuid);
                 } else {
                     error!("Failed to acquire instances lock");
                 }
