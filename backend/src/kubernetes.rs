@@ -357,11 +357,7 @@ impl Engine {
 
         Ok(pods
             .iter()
-            .flat_map(|pod| {
-                self.clone()
-                    .pod_to_instance(pod)
-                    .ok()
-            })
+            .flat_map(|pod| self.clone().pod_to_instance(pod).ok())
             .collect::<Vec<_>>())
     }
 

@@ -99,7 +99,9 @@ impl Manager {
                             if duration > Manager::THREE_HOURS {
                                 match self.clone().undeploy(&user_uuid, &instance_uuid) {
                                     Ok(()) => (),
-                                    Err(err) => warn!("Error while undeploying {}: {}", instance_uuid, err),
+                                    Err(err) => {
+                                        warn!("Error while undeploying {}: {}", instance_uuid, err)
+                                    }
                                 }
                             }
                         } else {

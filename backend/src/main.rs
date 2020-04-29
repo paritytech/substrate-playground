@@ -13,7 +13,6 @@ use rocket_contrib::serve::StaticFiles;
 use rocket_cors::{AllowedOrigins, CorsOptions};
 use rocket_prometheus::PrometheusMetrics;
 use std::{env, error::Error};
-use tokio;
 
 pub struct Context {
     manager: Manager,
@@ -52,7 +51,13 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .mount("/", StaticFiles::from("./static"))
         .mount(
             "/api",
-            routes![api::deploy, api::get, api::get_templates, api::list, api::undeploy],
+            routes![
+                api::deploy,
+                api::get,
+                api::get_templates,
+                api::list,
+                api::undeploy
+            ],
         )
         .mount("/metrics", prometheus)
         .manage(Context { manager })
