@@ -8,6 +8,7 @@ import DialogActions from '@material-ui/core/DialogActions';
 import DialogContent from '@material-ui/core/DialogContent';
 import DialogContentText from '@material-ui/core/DialogContentText';
 import DialogTitle from '@material-ui/core/DialogTitle';
+import Divider from '@material-ui/core/Divider';
 import List from '@material-ui/core/List';
 import ListItem from '@material-ui/core/ListItem';
 import ListItemText from '@material-ui/core/ListItemText';
@@ -191,30 +192,38 @@ function Nav({setShowHelp}: {setShowHelp: (_: boolean) => void}) {
 
 function TemplateSelector({templates, hoverRef, onSelect, onErrorClick}) {
     const [selection, select] = useState(templates[0]);
-    const border = "1px solid #3c3c3c";
     if (templates.length != 0) {
         return (
-            <div ref={hoverRef} style={{display: "flex", flexDirection: "column", backgroundColor: "black", width: "50vw", height: "50vh"}}>
-                <Typography variant="h5" noWrap style={{padding: 10}}>Select a template</Typography>
-                <div style={{display: "flex", flexDirection: "row", flex: 1, borderTop: border, borderBottom: border, minHeight: 0}}>
-                    <List style={{borderRight: border, overflow: "auto"}}>
+        <Dialog
+            open={true}
+            scroll={"paper"}
+            aria-labelledby="scroll-dialog-title"
+            aria-describedby="scroll-dialog-description"
+            maxWidth="xl"
+        >
+            <DialogTitle id="scroll-dialog-title">Select a template</DialogTitle>
+            <DialogContent dividers={true}>
+                <div style={{display: "flex", flexDirection: "row", flex: 1, minHeight: 0}}>
+                    <List style={{overflow: "auto"}}>
                         {templates.map((template, index: number) => (
                         <ListItem button key={index} onClick={() => select(template)}>
                             <ListItemText primary={template.name} />
                         </ListItem>
                         ))}
                     </List>
+                    <Divider flexItem={true} orientation={"vertical"} light={true} />
                     {selection &&
-                    <Typography component="div" style={{margin: 20, overflow: "auto"}}>
+                    <Typography component="div" style={{margin: 20, overflow: "auto", textAlign: "left"}}>
                         <div dangerouslySetInnerHTML={{__html:marked(selection.description)}}></div>
                     </Typography>}
                 </div>
-                <div style={{display: "flex", justifyContent: "flex-end", paddingRight: 20, paddingTop: 10, paddingBottom: 10}}>
-                    <Button variant="contained" color="primary" onClick={() => onSelect(selection.id)}>
-                        Create
-                    </Button>
-                </div>
-            </div>
+            </DialogContent>
+            <DialogActions ref={hoverRef}>
+                <Button onClick={() => onSelect(selection.id)} color="primary">
+                    Create
+                </Button>
+            </DialogActions>
+        </Dialog>
         );
     } else {
         return <ErrorMessage reason={"No template available"} onClick={onErrorClick} />
