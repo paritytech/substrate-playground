@@ -52,7 +52,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .mount("/", StaticFiles::from("./static"))
         .mount(
             "/api",
-            routes![api::deploy, api::get, api::get_templates, api::list],
+            routes![api::deploy, api::get, api::get_templates, api::list, api::undeploy],
         )
         .mount("/metrics", prometheus)
         .manage(Context { manager })

@@ -1,7 +1,7 @@
 //! HTTP endpoints exposed in /api context
 
 use crate::Context;
-use rocket::{get, post, State};
+use rocket::{delete, get, post, State};
 use rocket_contrib::{json, json::JsonValue};
 use serde::Serialize;
 
@@ -35,4 +35,10 @@ pub fn get_templates(state: State<'_, Context>) -> JsonValue {
 pub fn deploy(state: State<'_, Context>, user_uuid: String, template: String) -> JsonValue {
     let manager = state.manager.clone();
     result_to_jsonrpc(manager.deploy(&user_uuid, &template))
+}
+
+#[delete("/<user_uuid>/<instance_uuid>")]
+pub fn undeploy(state: State<'_, Context>, user_uuid: String, instance_uuid: String) -> JsonValue {
+    let manager = state.manager.clone();
+    result_to_jsonrpc(manager.undeploy(&user_uuid, &instance_uuid))
 }
