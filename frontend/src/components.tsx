@@ -225,7 +225,7 @@ export function MainPanel() {
     if (state.matches(deployed)) {
         return <Theia url={state.context.instanceURL} />;
     } else {
-        const {instances, templates} = state.context;
+        const {instances, templates, phase, error} = state.context;
         return (
             <React.Fragment>
                 <Background isHovered={isHovered} />
@@ -244,11 +244,11 @@ export function MainPanel() {
                 }
 
                 {state.matches(deploying) || state.matches(checking) &&
-                    <Loading phase={state.context.phase} />
+                    <Loading phase={phase} />
                 }
     
                 {state.matches(failed) &&
-                    <ErrorMessage reason={state.context.error} onClick={() => {window.history.replaceState(null, "", window.location.pathname); send(restart)}} />
+                    <ErrorMessage reason={error} onClick={() => send(restart)} />
                 }
             </React.Fragment>
         );

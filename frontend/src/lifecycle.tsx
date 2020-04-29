@@ -10,7 +10,6 @@ localStorage.setItem(key, userUUID);
 
 export interface Context {
   userUUID: string;
-  template?: string;
   instanceUUID?: string;
   instanceURL?: string;
   instances?: Array<string>;
@@ -42,7 +41,6 @@ const lifecycle = Machine<Context>({
   context: {
     userUUID: userUUID,
     checkOccurences: 0,
-    template: "template",
   },
   states: {
       [setup]: {
@@ -71,7 +69,7 @@ const lifecycle = Machine<Context>({
       },
       [initial]: {
         on: {[show]: {target: checking,
-                      actions: assign({ instanceUUID: (context, _event) => context.instances[0]})},
+                      actions: assign({ instanceUUID: (context, _event) => context.instances && context.instances[0]})},
              [deploy]: {target: deploying}}
       },
       [deploying]: {
@@ -90,7 +88,7 @@ const lifecycle = Machine<Context>({
           }
         },
         on: {
-          [restart]: initial,
+          [restart]: setup,
           [success]: { target: checking,
                        actions: assign({ instanceUUID: (_context, event) => event.uuid })},
           [failure]: { target: failed,
@@ -102,19 +100,21 @@ const lifecycle = Machine<Context>({
         invoke: {
           src: (context, _event) => async (callback, _onReceive) => {
             const {result, error} = await getInstanceDetails(context.userUUID, context.instanceUUID);
-            const {phase, url} = result;
-            if (phase == "Running") {
-              if ((await fetchWithTimeout(url).catch((err) => err)).ok) {
-                callback({type: success, url: url});
-                return;
+            if (result) {
+              const {phase, url} = result;
+              if (phase == "Running") {
+                if ((await fetchWithTimeout(url).catch((err) => err)).ok) {
+                  callback({type: success, url: url});
+                  return;
+                }
               }
+  
+              if (phase && context.checkOccurences < 60 * 10) {
+                setTimeout(() => callback({type: progress, phase: phase}), 1000);
+                return;
+              } 
             }
-
-            if (phase && context.checkOccurences < 60 * 10) {
-              setTimeout(() => callback({type: progress, phase: phase}), 1000);
-            } else {
-              callback({type: failure, error: error || "Too long to deploy"});
-            }
+            callback({type: failure, error: error || "Too long to deploy"});
           },
           onError: {
             target: failed,
@@ -122,10 +122,10 @@ const lifecycle = Machine<Context>({
           },
         },
         on: {
-          [restart]: initial,
+          [restart]: setup,
           [progress]: { target: checking,
                         actions: assign({ checkOccurences: (context, _event) => context.checkOccurences + 1,
-                                          phase: (_context, event) => event.phase }) },
+                                          phase: (_context, event) => event.phase}) },
           [success]: { target: deployed,
                        actions: assign({ instanceURL: (_context, event) => event.url })},
           [failure]: { target: failed,
@@ -133,10 +133,10 @@ const lifecycle = Machine<Context>({
         }
       },
       [deployed]: {
-        on: { [restart]: initial }
+        on: { [restart]: setup }
       },
       [failed]: {
-        on: { [restart]: initial }
+        on: { [restart]: setup }
       }
   }
 },
