@@ -79,7 +79,7 @@ fn create_pod(
         }),
         spec: Some(PodSpec {
             containers: vec![Container {
-                name: format!("{}-container", COMPONENT_VALUE).to_string(),
+                name: format!("{}-container", COMPONENT_VALUE),
                 image: Some(instance_template.image.to_string()),
                 env: instance_template.runtime.as_ref().and_then(|r| {
                     r.env.clone().map(|m| {
@@ -116,19 +116,17 @@ fn create_service(instance_uuid: &str, template: &Template) -> Service {
         ..Default::default()
     }];
     if let Some(mut template_ports) = template.runtime.as_ref().and_then(|r| {
-        r.ports.clone().and_then(|ports| {
-            Some(
-                ports
-                    .iter()
-                    .map(|port| ServicePort {
-                        name: Some(port.clone().name),
-                        protocol: port.clone().protocol,
-                        port: port.port,
-                        target_port: port.clone().target.map(|p| IntOrString::Int(p)),
-                        ..Default::default()
-                    })
-                    .collect::<Vec<ServicePort>>(),
-            )
+        r.ports.clone().map(|ports| {
+            ports
+                .iter()
+                .map(|port| ServicePort {
+                    name: Some(port.clone().name),
+                    protocol: port.clone().protocol,
+                    port: port.port,
+                    target_port: port.clone().target.map(IntOrString::Int),
+                    ..Default::default()
+                })
+                .collect::<Vec<ServicePort>>()
         })
     }) {
         ports.append(&mut template_ports);
@@ -163,19 +161,17 @@ fn create_ingress_rule(
         },
     }];
     if let Some(mut template_paths) = template.runtime.as_ref().and_then(|r| {
-        r.ports.clone().and_then(|ports| {
-            Some(
-                ports
-                    .iter()
-                    .map(|port| HTTPIngressPath {
-                        path: Some(port.clone().path),
-                        backend: IngressBackend {
-                            service_name: service_name.clone(),
-                            service_port: IntOrString::Int(port.port),
-                        },
-                    })
-                    .collect(),
-            )
+        r.ports.clone().map(|ports| {
+            ports
+                .iter()
+                .map(|port| HTTPIngressPath {
+                    path: Some(port.clone().path),
+                    backend: IngressBackend {
+                        service_name: service_name.clone(),
+                        service_port: IntOrString::Int(port.port),
+                    },
+                })
+                .collect()
         })
     }) {
         paths.append(&mut template_paths);
@@ -243,7 +239,7 @@ impl InstanceDetails {
         started_at: SystemTime,
     ) -> Self {
         InstanceDetails {
-            user_uuid: user_uuid.clone(),
+            user_uuid,
             instance_uuid: instance_uuid.clone(),
             phase,
             template: template.clone(),
@@ -482,7 +478,9 @@ impl Engine {
                 .rules
                 .unwrap()
                 .into_iter()
-                .filter(|rule| rule.clone().host.unwrap_or("unknown".to_string()) != subdomain)
+                .filter(|rule| {
+                    rule.clone().host.unwrap_or_else(|| "unknown".to_string()) != subdomain
+                })
                 .collect();
             spec.rules.replace(rules);
             ingress.spec.replace(spec);
