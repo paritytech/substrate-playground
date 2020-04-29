@@ -125,7 +125,7 @@ impl Manager {
         new_runtime()?.block_on(self.engine.get_templates())
     }
 
-    pub fn list(&self, user_uuid: &str) -> Result<Vec<String>, String> {
+    pub fn list(&self, user_uuid: &str) -> Result<Vec<InstanceDetails>, String> {
         new_runtime()?.block_on(self.clone().engine.list(&user_uuid))
     }
 

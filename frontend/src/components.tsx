@@ -1,13 +1,23 @@
 import React, { useState } from "react";
 import { useSpring, animated } from 'react-spring'
 import Button from '@material-ui/core/Button';
+import Card from '@material-ui/core/Card';
+import CardContent from '@material-ui/core/CardContent';
 import Dialog from '@material-ui/core/Dialog';
+import DialogActions from '@material-ui/core/DialogActions';
 import DialogContent from '@material-ui/core/DialogContent';
 import DialogContentText from '@material-ui/core/DialogContentText';
 import DialogTitle from '@material-ui/core/DialogTitle';
 import List from '@material-ui/core/List';
 import ListItem from '@material-ui/core/ListItem';
 import ListItemText from '@material-ui/core/ListItemText';
+import Table from '@material-ui/core/Table';
+import TableBody from '@material-ui/core/TableBody';
+import TableCell from '@material-ui/core/TableCell';
+import TableContainer from '@material-ui/core/TableContainer';
+import TableHead from '@material-ui/core/TableHead';
+import TableRow from '@material-ui/core/TableRow';
+import Paper from '@material-ui/core/Paper';
 import Typography from '@material-ui/core/Typography';
 import marked from 'marked';
 import { useHover, useInterval, useWindowMaxDimension } from './hooks';
@@ -179,41 +189,145 @@ function Nav({setShowHelp}: {setShowHelp: (_: boolean) => void}) {
     );
 }
 
-function TemplateSelector({templates, onSelect, hoverRef}) {
+function TemplateSelector({templates, hoverRef, onSelect, onErrorClick}) {
     const [selection, select] = useState(templates[0]);
     const border = "1px solid #3c3c3c";
+    if (templates.length != 0) {
+        return (
+            <div ref={hoverRef} style={{display: "flex", flexDirection: "column", backgroundColor: "black", width: "50vw", height: "50vh"}}>
+                <Typography variant="h5" noWrap style={{padding: 10}}>Select a template</Typography>
+                <div style={{display: "flex", flexDirection: "row", flex: 1, borderTop: border, borderBottom: border, minHeight: 0}}>
+                    <List style={{borderRight: border, overflow: "auto"}}>
+                        {templates.map((template, index: number) => (
+                        <ListItem button key={index} onClick={() => select(template)}>
+                            <ListItemText primary={template.name} />
+                        </ListItem>
+                        ))}
+                    </List>
+                    {selection &&
+                    <Typography component="div" style={{margin: 20, overflow: "auto"}}>
+                        <div dangerouslySetInnerHTML={{__html:marked(selection.description)}}></div>
+                    </Typography>}
+                </div>
+                <div style={{display: "flex", justifyContent: "flex-end", paddingRight: 20, paddingTop: 10, paddingBottom: 10}}>
+                    <Button variant="contained" color="primary" onClick={() => onSelect(selection.id)}>
+                        Create
+                    </Button>
+                </div>
+            </div>
+        );
+    } else {
+        return <ErrorMessage reason={"No template available"} onClick={onErrorClick} />
+    }
+}
+
+function EnvTable({envs}) {
     return (
-        <div ref={hoverRef} style={{display: "flex", flexDirection: "column", backgroundColor: "black", width: "50vw", height: "50vh"}}>
-            <Typography variant="h5" noWrap style={{padding: 10}}>Select a template</Typography>
-            <div style={{display: "flex", flexDirection: "row", flex: 1, borderTop: border, borderBottom: border, minHeight: 0}}>
-                <List style={{borderRight: border, overflow: "auto"}}>
-                    {templates.map((template, index: number) => (
-                    <ListItem button key={index} onClick={() => select(template)}>
-                        <ListItemText primary={template.name} />
-                    </ListItem>
-                    ))}
-                </List>
-                <Typography component="div" style={{margin: 20, overflow: "auto"}}>
-                    <div dangerouslySetInnerHTML={{__html:marked(selection.description)}}></div>
-                </Typography>
-            </div>
-            <div style={{display: "flex", justifyContent: "flex-end", paddingRight: 20, paddingTop: 10, paddingBottom: 10}}>
-                <Button variant="contained" color="primary" onClick={() => onSelect(selection.id)}>
-                    Create
-                </Button>
-            </div>
-        </div>
+    <TableContainer component={Paper}>
+        <Table size="small" aria-label="a dense table">
+          <TableHead>
+            <TableRow>
+              <TableCell>Name</TableCell>
+              <TableCell align="right">Value</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {envs.map((env) => (
+              <TableRow key={env.name}>
+                <TableCell component="th" scope="row">
+                  {env.name}
+                </TableCell>
+                <TableCell align="right">{env.value}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
     );
 }
 
-function ExistingInstance({onClick, hoverRef}) {
+function PortsTable({ports}) {
     return (
-        <div style={{display: "flex", flexDirection: "column", alignItems: "center"}}>
-            <h1>You already have an instance running.</h1>
-            <div ref={hoverRef} className="cta" onClick={onClick}>
-                <span>Join it!</span>
+    <TableContainer component={Paper}>
+        <Table size="small" aria-label="a dense table">
+          <TableHead>
+            <TableRow>
+              <TableCell>Name</TableCell>
+              <TableCell align="right">Value</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {ports.map((port) => (
+              <TableRow key={port.name}>
+                <TableCell component="th" scope="row">
+                  {port.name}
+                </TableCell>
+                <TableCell align="right">{port.port}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    );
+}
+
+function Instance({instance}) {
+    const {instance_uuid, started_at, template, phase} = instance;
+    const {image, name, description, runtime} = template;
+    const {env, ports} = runtime;
+    return (
+    <Card style={{margin: 20}} variant="outlined">
+        <CardContent>
+            <Typography>
+            {name} ({instance_uuid})
+            </Typography>
+            <Typography color="textSecondary" gutterBottom>
+            Started at {started_at}, {phase}
+            </Typography>
+            <Typography color="textSecondary">
+            {image}
+            </Typography>
+            <Typography color="textSecondary">
+            {description}
+            </Typography>
+            <div style={{display: "flex", paddingTop: 20}}>
+                <div style={{flex: 1, paddingRight: 10}}>
+                    <Typography variant="h6" id="tableTitle" component="div">
+                    Environment
+                    </Typography>
+                    <EnvTable envs={env} />
+                </div>
+                <div style={{flex: 1}}>
+                    <Typography variant="h6" id="tableTitle" component="div">
+                    Ports
+                    </Typography>
+                    <PortsTable ports={ports} />
+                </div>
             </div>
-        </div>
+        </CardContent>
+    </Card>
+    );
+}
+
+function ExistingInstances({instances, onClick, hoverRef}) {
+    const instance = instances[0]; // A single instance per user is supported for now
+    return (
+    <Dialog
+        open={true}
+        scroll={"paper"}
+        aria-labelledby="scroll-dialog-title"
+        aria-describedby="scroll-dialog-description"
+    >
+        <DialogTitle id="scroll-dialog-title">Running instance</DialogTitle>
+        <DialogContent dividers={true}>
+            <Instance instance={instance} />
+        </DialogContent>
+        <DialogActions ref={hoverRef}>
+            <Button onClick={() => onClick(instance)} color="primary">
+                Connect
+            </Button>
+        </DialogActions>
+    </Dialog>
     );
 }
 
@@ -237,8 +351,8 @@ export function MainPanel() {
                 {state.matches(initial) &&
                     <div className="box-fullscreen box-text">
                         {instances?.length == 0
-                            ? <TemplateSelector hoverRef={hoverRef} templates={templates} onSelect={(template) => {send(deploy, {template: template});}} />
-                            : <ExistingInstance hoverRef={hoverRef} onClick={() => {send(show);}} />
+                            ? <TemplateSelector hoverRef={hoverRef} templates={templates} onSelect={(template) => {send(deploy, {template: template});}} onErrorClick={() => send(restart)} />
+                            : <ExistingInstances hoverRef={hoverRef} onClick={(instance) => send(show, {instance: instance})} instances={instances} />
                         }
                     </div>
                 }
