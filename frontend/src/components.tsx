@@ -5,7 +5,6 @@ import Dialog from '@material-ui/core/Dialog';
 import DialogContent from '@material-ui/core/DialogContent';
 import DialogContentText from '@material-ui/core/DialogContentText';
 import DialogTitle from '@material-ui/core/DialogTitle';
-import Divider from '@material-ui/core/Divider';
 import List from '@material-ui/core/List';
 import ListItem from '@material-ui/core/ListItem';
 import ListItemText from '@material-ui/core/ListItemText';
@@ -13,13 +12,13 @@ import Typography from '@material-ui/core/Typography';
 import marked from 'marked';
 import { useHover, useInterval, useWindowMaxDimension } from './hooks';
 import { useLifecycle, checking, deploy, deployed, deploying, failed, initial, restart, show } from './lifecycle';
-import frontendImage from './../assets/help/front-end.png';
-import initialImage from './../assets/help/initial.png';
-import newTerminalImage from './../assets/help/new-terminal.png';
-import polkadotJSAppsImage from './../assets/help/polkadotjs-apps.png';
-import terminalFrontendImage from './../assets/help/terminal-front-end.png';
-import terminalFrontendServeImage from './../assets/help/terminal-front-end-serve.png';
-import terminalNodeImage from './../assets/help/terminal-node.png';
+import frontendImage from './../public/help/front-end.png';
+import initialImage from './../public/help/initial.png';
+import newTerminalImage from './../public/help/new-terminal.png';
+import polkadotJSAppsImage from './../public/help/polkadotjs-apps.png';
+import terminalFrontendImage from './../public/help/terminal-front-end.png';
+import terminalFrontendServeImage from './../public/help/terminal-front-end-serve.png';
+import terminalNodeImage from './../public/help/terminal-node.png';
 
 export function HelpPanel({open, onClose}: {open: boolean, onClose: () => void}) {
     return (
@@ -231,12 +230,12 @@ export function MainPanel() {
             <React.Fragment>
                 <Background isHovered={isHovered} />
 
+                <Nav setShowHelp={setShowHelp} />
+
                 <HelpPanel open={showHelp} onClose={() => setShowHelp(false)} />
 
                 {state.matches(initial) &&
                     <div className="box-fullscreen box-text">
-                        <Nav setShowHelp={setShowHelp} />
-
                         {instances?.length == 0
                             ? <TemplateSelector hoverRef={hoverRef} templates={templates} onSelect={(template) => {send(deploy, {template: template});}} />
                             : <ExistingInstance hoverRef={hoverRef} onClick={() => {send(show);}} />
