@@ -17,8 +17,7 @@ ADD lerna.json .
 ADD theia-playground theia-playground
 ADD theia-playground-extension theia-playground-extension
 RUN yarn && \
-    yarn workspace @parity/theia-playground theia build && \
-    yarn workspace @parity/theia-playground theia download:plugins
+    yarn build
 
 ##########################
 #     Rust base          #

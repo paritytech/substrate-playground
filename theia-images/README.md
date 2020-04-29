@@ -7,9 +7,18 @@ A substrate ready Docker image based on theia.
 ```
 nvm use 10
 yarn
-yarn workspace @parity/theia-playground download:plugins
-yarn workspace @parity/theia-playground start
+yarn dev
 ```
+
+## Build
+
+```
+nvm use 10
+yarn
+yarn build
+```
+
+## Docker image
 
 Run the image via:
 
