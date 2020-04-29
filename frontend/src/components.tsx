@@ -309,7 +309,7 @@ function Instance({instance}) {
     );
 }
 
-function ExistingInstances({instances, onClick, hoverRef}) {
+function ExistingInstances({instances, onStopClick, onConnectClick, hoverRef}) {
     const instance = instances[0]; // A single instance per user is supported for now
     return (
     <Dialog
@@ -323,6 +323,9 @@ function ExistingInstances({instances, onClick, hoverRef}) {
             <Instance instance={instance} />
         </DialogContent>
         <DialogActions ref={hoverRef}>
+            <Button onClick={() => onClick(instance)} color="secondary">
+                Stop
+            </Button>
             <Button onClick={() => onClick(instance)} color="primary">
                 Connect
             </Button>
@@ -352,7 +355,7 @@ export function MainPanel() {
                     <div className="box-fullscreen box-text">
                         {instances?.length == 0
                             ? <TemplateSelector hoverRef={hoverRef} templates={templates} onSelect={(template) => {send(deploy, {template: template});}} onErrorClick={() => send(restart)} />
-                            : <ExistingInstances hoverRef={hoverRef} onClick={(instance) => send(show, {instance: instance})} instances={instances} />
+                            : <ExistingInstances hoverRef={hoverRef} onConnectClick={(instance) => send(show, {instance: instance})} onStopClick={(instance) => send(show, {instance: instance})} instances={instances} />
                         }
                     </div>
                 }

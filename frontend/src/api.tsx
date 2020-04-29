@@ -43,3 +43,10 @@ export async function deployImage(userUUID: string, template: string) {
         headers: headers
     }));
 }
+
+export async function stopInstance(userUUID: string, instanceUUID: string) {
+    return fromResponse(await fetchWithTimeout(`/api/${userUUID}/${instanceUUID}`, {
+        method: 'DELETE',
+        headers: headers
+    }));
+}

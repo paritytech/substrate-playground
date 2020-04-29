@@ -93,12 +93,13 @@ impl Manager {
                         .filter(|instance| instance.1.phase == "Running")
                         .collect::<BTreeMap<&String, &InstanceDetails>>();
                     for (_user_uuid, instance) in instances {
-                        let uuid = &instance.instance_uuid;
+                        let user_uuid = &instance.instance_uuid;
+                        let instance_uuid = &instance.instance_uuid;
                         if let Ok(duration) = instance.started_at.elapsed() {
                             if duration > Manager::THREE_HOURS {
-                                match self.clone().undeploy(&uuid) {
+                                match self.clone().undeploy(&user_uuid, &instance_uuid) {
                                     Ok(()) => (),
-                                    Err(err) => warn!("Error while undeploying {}: {}", uuid, err),
+                                    Err(err) => warn!("Error while undeploying {}: {}", instance_uuid, err),
                                 }
                             }
                         } else {
@@ -149,7 +150,7 @@ impl Manager {
         result
     }
 
-    pub fn undeploy(self, instance_uuid: &str) -> Result<(), String> {
+    pub fn undeploy(self, _user_uuid: &str, instance_uuid: &str) -> Result<(), String> {
         let result = new_runtime()?.block_on(self.engine.undeploy(&instance_uuid));
         match result {
             Ok(_) => self.metrics.inc_undeploy_counter(&instance_uuid),

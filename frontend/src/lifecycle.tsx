@@ -1,7 +1,7 @@
 import { useMachine } from '@xstate/react';
 import { v4 as uuidv4 } from 'uuid';
 import { assign, Machine } from 'xstate';
-import { deployImage, getInstanceDetails, getTemplates, getUserDetails } from './api';
+import { deployImage, getInstanceDetails, getTemplates, getUserDetails, stopInstance } from './api';
 import { fetchWithTimeout } from './utils';
 
 const key = "userUUID";
@@ -22,6 +22,7 @@ export interface Context {
 export const setup = "@state/SETUP";
 export const initial = "@state/INITIAL";
 export const deploying = "@state/DEPLOYING";
+export const stopping = "@state/STOPPING";
 export const checking = "@state/CHECKING";
 export const deployed = "@state/DEPLOYED";
 export const failed = "@state/FAILED";
@@ -32,6 +33,7 @@ export const failure = "@event/FAILURE";
 
 export const show = "@action/SHOW";
 export const deploy = "@action/DEPLOY";
+export const stop = "@action/STOP";
 export const restart = "@action/RESTART";
 const loading = "@activity/LOADING";
 
@@ -70,7 +72,31 @@ const lifecycle = Machine<Context>({
       [initial]: {
         on: {[show]: {target: checking,
                       actions: assign({ instanceUUID: (_, event) => event.instance.instance_uuid})},
+             [stop]: {target: stopping,
+                      actions: assign({ instanceUUID: (_, event) => event.instance.instance_uuid})},
              [deploy]: {target: deploying}}
+      },
+      [stopping]: {
+        invoke: {
+          src: (context, event) => async (callback) => {
+            const {result, error} = await stopInstance(context.userUUID, context.instanceUUID);
+            if (result) {
+              callback({type: success, uuid: result});
+            } else {
+              callback({type: failure, error: error});
+            }
+          },
+          onError: {
+            target: failed,
+            actions: assign({ error: (_context, event) => event.data.error})
+          }
+        },
+        on: {
+          [restart]: setup,
+          [success]: { target: setup},
+          [failure]: { target: failed,
+                       actions: assign({ error: (_context, event) => event.error }) }
+        }
       },
       [deploying]: {
         invoke: {
