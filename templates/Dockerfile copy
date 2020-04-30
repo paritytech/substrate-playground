@@ -17,7 +17,8 @@ ADD lerna.json .
 ADD theia-playground theia-playground
 ADD theia-playground-extension theia-playground-extension
 RUN yarn && \
-    yarn build
+    yarn workspace @parity/theia-playground theia build && \
+    yarn workspace @parity/theia-playground theia download:plugins
 
 ##########################
 #     Rust base          #
@@ -71,6 +72,21 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --de
 
 RUN cargo install --force --git https://github.com/alexcrichton/wasm-gc \
     && cargo install --force --git https://github.com/paritytech/substrate subkey
+
+##########################
+#  Substrate workshop    #
+##########################
+
+WORKDIR $HOME/workspace
+
+RUN git clone https://github.com/substrate-developer-hub/substrate-node-template && \
+    git clone https://github.com/substrate-developer-hub/substrate-front-end-template && \
+    git clone https://github.com/substrate-developer-hub/recipes
+
+RUN cd $HOME/workspace/substrate-front-end-template && yarn \
+    && cd $HOME/workspace/substrate-node-template && cargo build --release
+
+EXPOSE 3000 8000 9944 30333
 
 WORKDIR /home/theia/theia-playground/
 ENTRYPOINT [ "dumb-init", "node", "--always-compact", "--max-old-space-size=64", "src-gen/backend/main.js", "/home/substrate/workspace", "--hostname=0.0.0.0" ] 
