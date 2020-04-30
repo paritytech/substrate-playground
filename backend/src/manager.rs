@@ -1,4 +1,4 @@
-use crate::kubernetes::{Engine, InstanceDetails};
+use crate::kubernetes::{Engine, InstanceDetails, PodDetails};
 use crate::metrics::Metrics;
 use crate::template::Template;
 use log::{error, warn};
@@ -30,7 +30,7 @@ impl Manager {
             Ok(all_instances) => {
                 let instances = all_instances
                     .iter()
-                    .filter(|instance| instance.1.phase == "Running")
+                    .filter(|instance| instance.1.details.phase == "Running")
                     .collect::<BTreeMap<&String, &InstanceDetails>>();
                 engine
                     .clone()
@@ -63,12 +63,12 @@ impl Manager {
             if let Ok(mut instances2) = instances_thread.lock() {
                 let instances3 = &mut instances2.clone();
                 for (user_uuid, instance_uuid) in instances3 {
-                    match self.clone().get(&user_uuid, &instance_uuid) {
+                    match self.clone().get_instance(&user_uuid, &instance_uuid) {
                         Ok(details) => {
-                            let phase = details.phase;
+                            let phase = details.details.phase;
                             if phase != "Pending" && phase != "Unknown" {
                                 instances2.remove(user_uuid);
-                                if let Ok(duration) = details.started_at.elapsed() {
+                                if let Ok(duration) = details.details.started_at.elapsed() {
                                     self.clone().metrics.observe_deploy_duration(
                                         &instance_uuid,
                                         duration.as_secs_f64(),
@@ -90,12 +90,12 @@ impl Manager {
                 Ok(all_instances) => {
                     let instances = all_instances
                         .iter()
-                        .filter(|instance| instance.1.phase == "Running")
+                        .filter(|instance| instance.1.details.phase == "Running")
                         .collect::<BTreeMap<&String, &InstanceDetails>>();
                     for (_user_uuid, instance) in instances {
                         let user_uuid = &instance.instance_uuid;
                         let instance_uuid = &instance.instance_uuid;
-                        if let Ok(duration) = instance.started_at.elapsed() {
+                        if let Ok(duration) = instance.details.started_at.elapsed() {
                             if duration > Manager::THREE_HOURS {
                                 match self.clone().undeploy(&user_uuid, &instance_uuid) {
                                     Ok(()) => (),
@@ -120,8 +120,16 @@ fn new_runtime() -> Result<Runtime, String> {
 }
 
 impl Manager {
-    pub fn get(self, _user_uuid: &str, instance_uuid: &str) -> Result<InstanceDetails, String> {
-        new_runtime()?.block_on(self.engine.get(&instance_uuid))
+    pub fn get(self) -> Result<PodDetails, String> {
+        new_runtime()?.block_on(self.engine.get())
+    }
+
+    pub fn get_instance(
+        self,
+        _user_uuid: &str,
+        instance_uuid: &str,
+    ) -> Result<InstanceDetails, String> {
+        new_runtime()?.block_on(self.engine.get_instance(&instance_uuid))
     }
 
     pub fn get_templates(self) -> Result<BTreeMap<String, Template>, String> {
