@@ -12,6 +12,12 @@ fn result_to_jsonrpc<T: Serialize>(res: Result<T, String>) -> JsonValue {
     }
 }
 
+#[get("/")]
+pub fn get(state: State<'_, Context>) -> JsonValue {
+    let manager = state.manager.clone();
+    result_to_jsonrpc(manager.get())
+}
+
 #[get("/<user_uuid>")]
 pub fn list(state: State<'_, Context>, user_uuid: String) -> JsonValue {
     let manager = state.manager.clone();
@@ -19,9 +25,13 @@ pub fn list(state: State<'_, Context>, user_uuid: String) -> JsonValue {
 }
 
 #[get("/<user_uuid>/<instance_uuid>")]
-pub fn get(state: State<'_, Context>, user_uuid: String, instance_uuid: String) -> JsonValue {
+pub fn get_instance(
+    state: State<'_, Context>,
+    user_uuid: String,
+    instance_uuid: String,
+) -> JsonValue {
     let manager = state.manager.clone();
-    result_to_jsonrpc(manager.get(&user_uuid, &instance_uuid))
+    result_to_jsonrpc(manager.get_instance(&user_uuid, &instance_uuid))
 }
 
 #[get("/templates")]

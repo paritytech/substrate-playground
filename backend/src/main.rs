@@ -54,6 +54,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             routes![
                 api::deploy,
                 api::get,
+                api::get_instance,
                 api::get_templates,
                 api::list,
                 api::undeploy

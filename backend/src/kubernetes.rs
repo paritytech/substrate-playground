@@ -82,6 +82,8 @@ fn pod_env_variables(template: &Template, user_uuid: &str, instance_uuid: &str) 
 
 fn create_pod(user_uuid: &str, instance_uuid: &str, template: &Template) -> Result<Pod, String> {
     let mut labels = BTreeMap::new();
+    // TODO fetch docker image labels and add them to the pod.
+    // Can be done by querying dockerhub (https://docs.docker.com/registry/spec/api/)
     labels.insert(APP_LABEL.to_string(), APP_VALUE.to_string());
     labels.insert(COMPONENT_LABEL.to_string(), COMPONENT_VALUE.to_string());
     labels.insert(OWNER_LABEL.to_string(), user_uuid.to_string());
@@ -168,11 +170,7 @@ fn create_ingress_path(path: &str, service_name: &str, service_port: i32) -> HTT
 }
 
 fn create_ingress_paths(service_name: String, template: &Template) -> Vec<HTTPIngressPath> {
-    let mut paths = vec![create_ingress_path(
-        "/",
-        &service_name,
-        THEIA_WEB_PORT,
-    )];
+    let mut paths = vec![create_ingress_path("/", &service_name, THEIA_WEB_PORT)];
     if let Some(mut template_paths) = template.runtime.as_ref().and_then(|r| {
         r.ports.clone().map(|ports| {
             ports
@@ -230,9 +228,8 @@ pub struct InstanceDetails {
     pub user_uuid: String,
     pub instance_uuid: String,
     pub template: Template,
-    pub phase: String,
     pub url: String,
-    pub started_at: SystemTime,
+    pub details: PodDetails,
 }
 
 impl InstanceDetails {
@@ -241,16 +238,14 @@ impl InstanceDetails {
         user_uuid: String,
         instance_uuid: String,
         template: &Template,
-        phase: String,
-        started_at: SystemTime,
+        details: PodDetails,
     ) -> Self {
         InstanceDetails {
             user_uuid,
             instance_uuid: instance_uuid.clone(),
-            phase,
             template: template.clone(),
             url: InstanceDetails::url(engine, instance_uuid),
-            started_at,
+            details,
         }
     }
 
@@ -259,6 +254,33 @@ impl InstanceDetails {
             format!("//{}.{}", instance_uuid, host)
         } else {
             format!("//{}", instance_uuid)
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct PodDetails {
+    // Docker labels (https://github.com/opencontainers/image-spec/blob/master/annotations.md)
+    pub title: Option<String>,
+    pub description: Option<String>,
+    pub version: Option<String>,
+    pub revision: Option<String>,
+    pub url: Option<String>,
+    // PodStatus
+    pub started_at: SystemTime,
+    pub phase: String,
+}
+
+impl Default for PodDetails {
+    fn default() -> Self {
+        Self {
+            title: None,
+            description: None,
+            version: None,
+            revision: None,
+            url: None,
+            started_at: SystemTime::UNIX_EPOCH,
+            phase: "".to_string(),
         }
     }
 }
@@ -291,17 +313,6 @@ impl Engine {
     }
 
     fn pod_to_instance(self, pod: &Pod) -> Result<InstanceDetails, String> {
-        let (phase, started_at): (String, SystemTime) = pod
-            .status // https://docs.rs/k8s-openapi/0.7.1/k8s_openapi/api/core/v1/struct.PodStatus.html
-            .as_ref()
-            .and_then(|pod_status| {
-                Some((
-                    pod_status.clone().phase?,
-                    pod_status.clone().start_time?.0.into(),
-                ))
-            })
-            .ok_or("PodStatus unavailable")?;
-
         let (user_uuid, instance_uuid, template) = pod
             .metadata
             .as_ref()
@@ -318,16 +329,54 @@ impl Engine {
             .ok_or("Metadata unavailable")?;
 
         Ok(InstanceDetails::new(
-            self,
+            self.clone(),
             user_uuid,
             instance_uuid,
             &Template::parse(&template)?,
-            phase,
-            started_at,
+            Self::pod_to_details(self, pod)?,
         ))
     }
 
-    pub async fn get(self, instance_uuid: &str) -> Result<InstanceDetails, String> {
+    fn pod_to_details(self, pod: &Pod) -> Result<PodDetails, String> {
+        let (phase, started_at): (String, SystemTime) = pod
+            .status // https://docs.rs/k8s-openapi/0.7.1/k8s_openapi/api/core/v1/struct.PodStatus.html
+            .as_ref()
+            .and_then(|pod_status| {
+                Some((
+                    pod_status.clone().phase?,
+                    pod_status.clone().start_time?.0.into(),
+                ))
+            })
+            .ok_or("PodStatus unavailable")?;
+
+        pod.metadata
+            .as_ref()
+            .and_then(|md| {
+                Some((
+                    //TODO extract relevant labels
+                    md.labels.clone()?.get(OWNER_LABEL)?.to_string(),
+                    md.labels.clone()?.get(INSTANCE_LABEL)?.to_string(),
+                ))
+            })
+            .ok_or("Metadata unavailable")?;
+
+        Ok(PodDetails {
+            phase,
+            started_at,
+            ..Default::default()
+        })
+    }
+
+    pub async fn get(self) -> Result<PodDetails, String> {
+        let config = config().await?;
+        let client = APIClient::new(config);
+        let pod_api: Api<Pod> = Api::namespaced(client, &self.namespace);
+        let pod = pod_api.get("TODO").await.map_err(error_to_string)?;
+
+        Ok(self.pod_to_details(&pod)?)
+    }
+
+    pub async fn get_instance(self, instance_uuid: &str) -> Result<InstanceDetails, String> {
         let config = config().await?;
         let client = APIClient::new(config);
         let pod_api: Api<Pod> = Api::namespaced(client, &self.namespace);
