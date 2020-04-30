@@ -24,7 +24,7 @@ import Paper from '@material-ui/core/Paper';
 import Typography from '@material-ui/core/Typography';
 import marked from 'marked';
 import { useHover, useInterval, useWindowMaxDimension } from './hooks';
-import { useLifecycle, checking, deploy, deployed, deploying, failed, initial, restart, show } from './lifecycle';
+import { useLifecycle, checking, deploy, deploying, failed, initial, restart, show, stop } from './lifecycle';
 import frontendImage from './../public/help/front-end.png';
 import initialImage from './../public/help/initial.png';
 import newTerminalImage from './../public/help/new-terminal.png';
@@ -32,7 +32,7 @@ import polkadotJSAppsImage from './../public/help/polkadotjs-apps.png';
 import terminalFrontendImage from './../public/help/terminal-front-end.png';
 import terminalFrontendServeImage from './../public/help/terminal-front-end-serve.png';
 import terminalNodeImage from './../public/help/terminal-node.png';
-import { Container } from "@material-ui/core";
+import { useParams } from "react-router-dom";
 
 export function HelpPanel({open, onClose}: {open: boolean, onClose: () => void}) {
     return (
@@ -170,7 +170,10 @@ export function Loading({phase}: {phase?: string}) {
     );
 }
 
-export function Theia({url}: {url: string}) {
+export function TheiaPanel() {
+    const { uuid } = useParams();
+    const url = `//${uuid}.${window.location.hostname}`;
+    // TODO handle loading and error handling
     return (
         <div>
             <iframe src={url} frameBorder="0" style={{overflow:"hidden",height:"100vh",width:"100vm"}} height="100%" width="100%"></iframe>
@@ -353,31 +356,27 @@ export function MainPanel() {
     const [showHelp, setShowHelp] = useState(false);
     const [hoverRef, isHovered] = useHover<string>();
 
-    if (state.matches(deployed)) {
-        return <Theia url={state.context.instanceURL} />;
-    } else {
-        const {instances, templates, phase} = state.context;
-        return (
-            <React.Fragment>
-                <Background isHovered={isHovered} />
+    const {instances, templates, phase} = state.context;
+    return (
+        <React.Fragment>
+            <Background isHovered={isHovered} />
 
-                <Nav setShowHelp={setShowHelp} />
+            <Nav setShowHelp={setShowHelp} />
 
-                <HelpPanel open={showHelp} onClose={() => setShowHelp(false)} />
+            <HelpPanel open={showHelp} onClose={() => setShowHelp(false)} />
 
-                {(state.matches(initial) || state.matches(failed)) &&
-                    <div className="box-fullscreen box-text">
-                        {instances?.length == 0
-                            ? <TemplateSelector hoverRef={hoverRef} state={state} templates={templates} onRetryClick={() => send(restart)} onSelect={(template) => send(deploy, {template: template})} onErrorClick={() => send(restart)} />
-                            : <ExistingInstances hoverRef={hoverRef} onConnectClick={(instance) => send(show, {instance: instance})} onStopClick={(instance) => send(show, {instance: instance})} instances={instances} />
-                        }
-                    </div>
-                }
+            {(state.matches(initial) || state.matches(failed)) &&
+                <div className="box-fullscreen box-text">
+                    {instances?.length == 0
+                        ? <TemplateSelector hoverRef={hoverRef} state={state} templates={templates} onRetryClick={() => send(restart)} onSelect={(template) => send(deploy, {template: template})} onErrorClick={() => send(restart)} />
+                        : <ExistingInstances hoverRef={hoverRef} onConnectClick={(instance) => send(show, {instance: instance})} onStopClick={(instance) => send(stop, {instance: instance})} instances={instances} />
+                    }
+                </div>
+            }
 
-                {state.matches(deploying) || state.matches(checking) &&
-                    <Loading phase={phase} />
-                }
-            </React.Fragment>
-        );
-    }
+            {state.matches(deploying) || state.matches(checking) &&
+                <Loading phase={phase} />
+            }
+        </React.Fragment>
+    );
 }
