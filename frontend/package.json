@@ -15,7 +15,7 @@
     "react": "16.13.1",
     "react-dom": "16.13.1",
     "react-spring": "8.0.27",
-    "uuid": "7.0.3",
+    "uuid": "8.0.0",
     "xstate": "4.9.1"
   },
   "devDependencies": {
