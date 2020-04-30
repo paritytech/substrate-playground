@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { useSpring, animated } from 'react-spring'
+import { Alert, AlertTitle } from '@material-ui/lab';
 import Button from '@material-ui/core/Button';
+import Box from '@material-ui/core/Box';
 import Card from '@material-ui/core/Card';
 import CardContent from '@material-ui/core/CardContent';
 import Dialog from '@material-ui/core/Dialog';
@@ -30,6 +32,7 @@ import polkadotJSAppsImage from './../public/help/polkadotjs-apps.png';
 import terminalFrontendImage from './../public/help/terminal-front-end.png';
 import terminalFrontendServeImage from './../public/help/terminal-front-end-serve.png';
 import terminalNodeImage from './../public/help/terminal-node.png';
+import { Container } from "@material-ui/core";
 
 export function HelpPanel({open, onClose}: {open: boolean, onClose: () => void}) {
     return (
@@ -115,17 +118,11 @@ export function Background({isHovered}: {isHovered: boolean}) {
 
 export function ErrorMessage({reason, onClick}: {reason?: string, onClick: () => void}) {
     return (
-        <div className="box-fullscreen box-text">
-            <h1>
-                Oops! Looks like something went wrong :(
-            </h1>
-            {reason &&
-            <h2>{reason}</h2>
-            }
-            <div className="cta" onClick={onClick}>
-                <span>Try again!</span>
-            </div>
-        </div>
+        <Alert severity="error" style={{padding: 20}}
+                action={<Button onClick={onClick}>TRY AGAIN</Button>}>
+            <AlertTitle>Oops! Looks like something went wrong :(</AlertTitle>
+            <Box component="span" display="block">{reason}</Box>
+        </Alert>
     );
 }
 
@@ -184,50 +181,55 @@ export function Theia({url}: {url: string}) {
 function Nav({setShowHelp}: {setShowHelp: (_: boolean) => void}) {
     return (
         <div style={{fontSize: 20, fontWeight: "bold", color: "#FF1864",padding: "0.9em 2em 1em 3.3em", position: "fixed", top: 20, right: 20, cursor: "pointer"}}>
-            <span style={{padding: 10}} onClick={() => window.open("https://docs.google.com/forms/d/e/1FAIpQLSdXpq_fHqS_ow4nC7EpGmrC_XGX_JCIRzAqB1vaBtoZrDW-ZQ/viewform?edit_requested=true")}>Send Feedback</span>
-            <span onClick={() => setShowHelp(true)}>Help</span>
+            <Button color="primary" variant="contained" style={{marginRight: 10}} onClick={() => window.open("https://docs.google.com/forms/d/e/1FAIpQLSdXpq_fHqS_ow4nC7EpGmrC_XGX_JCIRzAqB1vaBtoZrDW-ZQ/viewform?edit_requested=true")}>Send Feedback</Button>
+            <Button color="primary" variant="contained" onClick={() => setShowHelp(true)}>Help</Button>
         </div>
     );
 }
 
-function TemplateSelector({templates, hoverRef, onSelect, onErrorClick}) {
+function TemplateSelector({templates, hoverRef, onSelect, onErrorClick, onRetryClick, state}) {
     const [selection, select] = useState(templates[0]);
-    if (templates.length != 0) {
-        return (
-        <Dialog
-            open={true}
-            scroll={"paper"}
-            aria-labelledby="scroll-dialog-title"
-            aria-describedby="scroll-dialog-description"
-            maxWidth="xl"
-        >
-            <DialogTitle id="scroll-dialog-title">Select a template</DialogTitle>
-            <DialogContent dividers={true}>
-                <div style={{display: "flex", flexDirection: "row", flex: 1, minHeight: 0}}>
-                    <List style={{overflow: "auto"}}>
-                        {templates.map((template, index: number) => (
-                        <ListItem button key={index} onClick={() => select(template)}>
-                            <ListItemText primary={template.name} />
-                        </ListItem>
-                        ))}
-                    </List>
-                    <Divider flexItem={true} orientation={"vertical"} light={true} />
-                    {selection &&
-                    <Typography component="div" style={{margin: 20, overflow: "auto", textAlign: "left"}}>
-                        <div dangerouslySetInnerHTML={{__html:marked(selection.description)}}></div>
-                    </Typography>}
-                </div>
-            </DialogContent>
-            <DialogActions ref={hoverRef}>
-                <Button onClick={() => onSelect(selection.id)} color="primary">
-                    Create
-                </Button>
-            </DialogActions>
-        </Dialog>
-        );
-    } else {
-        return <ErrorMessage reason={"No template available"} onClick={onErrorClick} />
-    }
+    const templatesAvailable = templates.length != 0;
+    return (
+    <Dialog
+        open={true}
+        scroll={"paper"}
+        aria-labelledby="scroll-dialog-title"
+        aria-describedby="scroll-dialog-description"
+        maxWidth="md"
+    >
+        <DialogTitle id="scroll-dialog-title">Select a template</DialogTitle>
+        <DialogContent style={{padding: 0}} dividers={true}>
+            {state.matches(failed)
+                ? <ErrorMessage reason={state.context.error} onClick={onRetryClick} />
+                : (templatesAvailable
+                    ? <div style={{display: "flex", flexDirection: "row", flex: 1, minHeight: 0}}>
+                        <List style={{flex: 1, padding: 0, overflow: "auto"}}>
+                            {templates.map((template, index: number) => (
+                            <ListItem button key={index} onClick={() => select(template)}>
+                                <ListItemText primary={template.name} />
+                            </ListItem>
+                            ))}
+                        </List>
+                        <Divider flexItem={true} orientation={"vertical"} light={true} />
+                        {selection &&
+                        <Typography component="div" style={{flex: 6, margin: 20, overflow: "auto", textAlign: "left"}}>
+                            <div dangerouslySetInnerHTML={{__html:marked(selection.description)}}></div>
+                        </Typography>}
+                    </div>
+                    : <ErrorMessage reason={"No template available"} onClick={onErrorClick} />
+                )
+            }
+            
+            
+        </DialogContent>
+        <DialogActions ref={hoverRef}>
+            <Button onClick={() => onSelect(selection.name)} color="primary" variant="contained" disableElevation disabled={!templatesAvailable || state.matches(failed)}>
+                Create
+            </Button>
+        </DialogActions>
+    </Dialog>
+    );
 }
 
 function EnvTable({envs}) {
@@ -262,6 +264,7 @@ function PortsTable({ports}) {
           <TableHead>
             <TableRow>
               <TableCell>Name</TableCell>
+              <TableCell align="right">Path</TableCell>
               <TableCell align="right">Value</TableCell>
             </TableRow>
           </TableHead>
@@ -271,6 +274,7 @@ function PortsTable({ports}) {
                 <TableCell component="th" scope="row">
                   {port.name}
                 </TableCell>
+                <TableCell align="right">{port.path}</TableCell>
                 <TableCell align="right">{port.port}</TableCell>
               </TableRow>
             ))}
@@ -280,9 +284,13 @@ function PortsTable({ports}) {
     );
 }
 
+function formatDate(t: number) {
+    return new Date(t).toISOString();
+}
+
 function Instance({instance}) {
     const {instance_uuid, started_at, template, phase} = instance;
-    const {image, name, description, runtime} = template;
+    const {name, runtime} = template;
     const {env, ports} = runtime;
     return (
     <Card style={{margin: 20}} variant="outlined">
@@ -291,13 +299,10 @@ function Instance({instance}) {
             {name} ({instance_uuid})
             </Typography>
             <Typography color="textSecondary" gutterBottom>
-            Started at {started_at}, {phase}
+            Started at {formatDate(started_at.secs_since_epoch)}
             </Typography>
-            <Typography color="textSecondary">
-            {image}
-            </Typography>
-            <Typography color="textSecondary">
-            {description}
+            <Typography color="textSecondary" gutterBottom>
+            Phase: <em>{phase}</em>
             </Typography>
             <div style={{display: "flex", paddingTop: 20}}>
                 <div style={{flex: 1, paddingRight: 10}}>
@@ -332,10 +337,10 @@ function ExistingInstances({instances, onStopClick, onConnectClick, hoverRef}) {
             <Instance instance={instance} />
         </DialogContent>
         <DialogActions ref={hoverRef}>
-            <Button onClick={() => onClick(instance)} color="secondary">
+            <Button onClick={() => onStopClick(instance)} color="secondary" variant="outlined" disableElevation>
                 Stop
             </Button>
-            <Button onClick={() => onClick(instance)} color="primary">
+            <Button onClick={() => onConnectClick(instance)} color="primary" variant="contained" disableElevation>
                 Connect
             </Button>
         </DialogActions>
@@ -351,7 +356,7 @@ export function MainPanel() {
     if (state.matches(deployed)) {
         return <Theia url={state.context.instanceURL} />;
     } else {
-        const {instances, templates, phase, error} = state.context;
+        const {instances, templates, phase} = state.context;
         return (
             <React.Fragment>
                 <Background isHovered={isHovered} />
@@ -360,10 +365,10 @@ export function MainPanel() {
 
                 <HelpPanel open={showHelp} onClose={() => setShowHelp(false)} />
 
-                {state.matches(initial) &&
+                {(state.matches(initial) || state.matches(failed)) &&
                     <div className="box-fullscreen box-text">
                         {instances?.length == 0
-                            ? <TemplateSelector hoverRef={hoverRef} templates={templates} onSelect={(template) => {send(deploy, {template: template});}} onErrorClick={() => send(restart)} />
+                            ? <TemplateSelector hoverRef={hoverRef} state={state} templates={templates} onRetryClick={() => send(restart)} onSelect={(template) => send(deploy, {template: template})} onErrorClick={() => send(restart)} />
                             : <ExistingInstances hoverRef={hoverRef} onConnectClick={(instance) => send(show, {instance: instance})} onStopClick={(instance) => send(show, {instance: instance})} instances={instances} />
                         }
                     </div>
@@ -371,10 +376,6 @@ export function MainPanel() {
 
                 {state.matches(deploying) || state.matches(checking) &&
                     <Loading phase={phase} />
-                }
-    
-                {state.matches(failed) &&
-                    <ErrorMessage reason={error} onClick={() => send(restart)} />
                 }
             </React.Fragment>
         );
