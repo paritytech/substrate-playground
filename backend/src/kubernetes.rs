@@ -54,21 +54,40 @@ pub fn service_name(instance_uuid: &str) -> String {
     format!("{}-service-{}", COMPONENT_VALUE, instance_uuid)
 }
 
-fn create_pod(
-    user_uuid: &str,
-    instance_uuid: &str,
-    instance_template: &Template,
-) -> Result<Pod, String> {
+fn create_env_var(name: &str, value: &str) -> EnvVar {
+    EnvVar {
+        name: name.to_string(),
+        value: Some(value.to_string()),
+        ..Default::default()
+    }
+}
+
+fn pod_env_variables(template: &Template, user_uuid: &str, instance_uuid: &str) -> Vec<EnvVar> {
+    let mut envs = vec![
+        create_env_var("SUBSTRATE_PLAYGROUND", ""),
+        create_env_var("SUBSTRATE_PLAYGROUND_USER", user_uuid),
+        create_env_var("SUBSTRATE_PLAYGROUND_INSTANCE", instance_uuid),
+    ];
+    if let Some(mut template_envs) = template.runtime.as_ref().and_then(|r| {
+        r.env.clone().map(|envs| {
+            envs.iter()
+                .map(|env| create_env_var(&env.name, &env.value))
+                .collect::<Vec<EnvVar>>()
+        })
+    }) {
+        envs.append(&mut template_envs);
+    };
+    envs
+}
+
+fn create_pod(user_uuid: &str, instance_uuid: &str, template: &Template) -> Result<Pod, String> {
     let mut labels = BTreeMap::new();
     labels.insert(APP_LABEL.to_string(), APP_VALUE.to_string());
     labels.insert(COMPONENT_LABEL.to_string(), COMPONENT_VALUE.to_string());
     labels.insert(OWNER_LABEL.to_string(), user_uuid.to_string());
     labels.insert(INSTANCE_LABEL.to_string(), instance_uuid.to_string());
     let mut annotations = BTreeMap::new();
-    annotations.insert(
-        TEMPLATE_ANNOTATION.to_string(),
-        instance_template.to_string(),
-    );
+    annotations.insert(TEMPLATE_ANNOTATION.to_string(), template.to_string());
 
     Ok(Pod {
         metadata: Some(ObjectMeta {
@@ -80,18 +99,8 @@ fn create_pod(
         spec: Some(PodSpec {
             containers: vec![Container {
                 name: format!("{}-container", COMPONENT_VALUE),
-                image: Some(instance_template.image.to_string()),
-                env: instance_template.runtime.as_ref().and_then(|r| {
-                    r.env.clone().map(|m| {
-                        m.into_iter()
-                            .map(|p| EnvVar {
-                                name: p.name,
-                                value: Some(p.value),
-                                ..Default::default()
-                            })
-                            .collect()
-                    })
-                }),
+                image: Some(template.image.to_string()),
+                env: Some(pod_env_variables(template, user_uuid, instance_uuid)),
                 ..Default::default()
             }],
             ..Default::default()
@@ -148,38 +157,35 @@ fn create_service(instance_uuid: &str, template: &Template) -> Service {
     }
 }
 
-fn create_ingress_rule(
-    subdomain: String,
-    service_name: String,
-    template: &Template,
-) -> IngressRule {
-    let mut paths = vec![HTTPIngressPath {
-        path: Some("/".to_string()),
+fn create_ingress_path(path: &str, service_name: &str, service_port: i32) -> HTTPIngressPath {
+    HTTPIngressPath {
+        path: Some(path.to_string()),
         backend: IngressBackend {
-            service_name: service_name.clone(),
-            service_port: IntOrString::Int(THEIA_WEB_PORT),
+            service_name: service_name.to_string(),
+            service_port: IntOrString::Int(service_port),
         },
-    }];
+    }
+}
+
+fn create_ingress_paths(service_name: String, template: &Template) -> Vec<HTTPIngressPath> {
+    let mut paths = vec![create_ingress_path(
+        "/",
+        &service_name,
+        THEIA_WEB_PORT,
+    )];
     if let Some(mut template_paths) = template.runtime.as_ref().and_then(|r| {
         r.ports.clone().map(|ports| {
             ports
                 .iter()
-                .map(|port| HTTPIngressPath {
-                    path: Some(port.clone().path),
-                    backend: IngressBackend {
-                        service_name: service_name.clone(),
-                        service_port: IntOrString::Int(port.port),
-                    },
+                .map(|port| {
+                    create_ingress_path(&port.clone().path, &service_name.clone(), port.port)
                 })
                 .collect()
         })
     }) {
         paths.append(&mut template_paths);
     };
-    IngressRule {
-        host: Some(subdomain),
-        http: Some(HTTPIngressRuleValue { paths }),
-    }
+    paths
 }
 
 fn subdomain(host: &str, instance_uuid: &str) -> String {
@@ -392,11 +398,12 @@ impl Engine {
             let mut rules: Vec<IngressRule> = spec.clone().rules.ok_or("No rules")?;
             for (uuid, template) in instances {
                 let subdomain = subdomain(host, &uuid);
-                rules.push(create_ingress_rule(
-                    subdomain.clone(),
-                    service_name(&uuid),
-                    template,
-                ));
+                rules.push(IngressRule {
+                    host: Some(subdomain.clone()),
+                    http: Some(HTTPIngressRuleValue {
+                        paths: create_ingress_paths(service_name(&uuid), template),
+                    }),
+                });
             }
             spec.rules.replace(rules);
             ingress.spec.replace(spec);
