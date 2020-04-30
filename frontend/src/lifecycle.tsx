@@ -13,6 +13,7 @@ export interface Context {
   instanceUUID?: string;
   instanceURL?: string;
   instances?: Array<string>;
+  template?: string;
   templates?: Array<string>;
   phase?: string;
   checkOccurences: number;
@@ -74,7 +75,8 @@ const lifecycle = Machine<Context>({
                       actions: assign({ instanceUUID: (_, event) => event.instance.instance_uuid})},
              [stop]: {target: stopping,
                       actions: assign({ instanceUUID: (_, event) => event.instance.instance_uuid})},
-             [deploy]: {target: deploying}}
+             [deploy]: {target: deploying,
+                        actions: assign({ template: (_, event) => event.template})}}
       },
       [stopping]: {
         invoke: {
@@ -100,8 +102,8 @@ const lifecycle = Machine<Context>({
       },
       [deploying]: {
         invoke: {
-          src: (context, event) => async (callback) => {
-            const {result, error} = await deployImage(context.userUUID, event.template);
+          src: (context, _) => async (callback) => {
+            const {result, error} = await deployImage(context.userUUID, context.template);
             if (result) {
               callback({type: success, uuid: result});
             } else {
