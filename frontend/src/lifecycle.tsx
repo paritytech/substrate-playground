@@ -25,7 +25,6 @@ export const initial = "@state/INITIAL";
 export const deploying = "@state/DEPLOYING";
 export const stopping = "@state/STOPPING";
 export const checking = "@state/CHECKING";
-export const deployed = "@state/DEPLOYED";
 export const failed = "@state/FAILED";
 
 export const progress = "@event/PROGESS";
@@ -49,7 +48,7 @@ const lifecycle = Machine<Context>({
       [setup]: {
         invoke: {
           src: async (context, _event) => {
-            const response = (await getUserDetails(context.userUUID));
+            /*const response = (await getUserDetails(context.userUUID));
             if (response.error) {
               throw response;
             }
@@ -57,7 +56,22 @@ const lifecycle = Machine<Context>({
             if (response2.error) {
               throw response2;
             }
-            return {instances: response.result, templates: response2.result};
+            return {instances: response.result, templates: response2.result};*/
+
+            let description = `#frdsfd
+
+* dsfds
+* dsfdsf
+
+dsfds dsfdsf dsf dsf dsf dsf dsf dsf dsfdsf dsf ds fds fdsf ds fds fds 
+dsf dsfds fds  dsfhyrtu ytu ytuy tu tu yrtu ytu ytu ytu ytu ytu ty uyt aa aaa aa aa aa dsf dsfds fds  dsfhyrtu ytu ytuy tu tu yrtu ytu ytu ytu ytu ytu ty uyt aa aaa aa aa aa dsf dsfds fds  dsfhyrtu ytu ytuy tu tu yrtu ytu ytu ytu ytu ytu ty uyt aa aaa aa aa aa
+
+## erez`;
+            let runtime = {env: [{name: "SOME_ENV", value: "1234"}], ports: [{name: "web", protocol: "TCP", path: "/", port: 123, target: 123}]};
+            let build = {base: "", extensions: [{name: "", value: ""}], repositories: [{name: "", value: ""}], commands: [{name: "", run: "", working_directory: ""}]};
+            let template = {image: "gcr.io/substrateplayground-252112/jeluard/theia-substrate@sha256:0b3ec9ad567d0f5b0eed8a0fc2b1fa3fe1cca24cc02416047d71f83770b05e34", name: "workshop", description: description, runtime: runtime, build: build}
+            let instance = {user_uuid: "", instance_uuid: "", template: template, phase: "starting", url: "", started_at: {secs_since_epoch: 1588254730}};
+            return {instances: [], templates: [template]};
           },
           onDone: {
             target: initial,
@@ -132,7 +146,7 @@ const lifecycle = Machine<Context>({
               const {phase, url} = result;
               if (phase == "Running") {
                 if ((await fetchWithTimeout(url).catch((err) => err)).ok) {
-                  callback({type: success, url: url});
+                  window.location.assign(`/{context.instanceUUID}`);
                   return;
                 }
               }
@@ -154,14 +168,9 @@ const lifecycle = Machine<Context>({
           [progress]: { target: checking,
                         actions: assign({ checkOccurences: (context, _event) => context.checkOccurences + 1,
                                           phase: (_context, event) => event.phase}) },
-          [success]: { target: deployed,
-                       actions: assign({ instanceURL: (_context, event) => event.url })},
           [failure]: { target: failed,
                        actions: assign({ error: (_context, event) => event.error }) }
         }
-      },
-      [deployed]: {
-        on: { [restart]: setup }
       },
       [failed]: {
         on: { [restart]: setup }
