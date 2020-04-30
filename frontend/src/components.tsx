@@ -8,7 +8,6 @@ import CardContent from '@material-ui/core/CardContent';
 import Dialog from '@material-ui/core/Dialog';
 import DialogActions from '@material-ui/core/DialogActions';
 import DialogContent from '@material-ui/core/DialogContent';
-import DialogContentText from '@material-ui/core/DialogContentText';
 import DialogTitle from '@material-ui/core/DialogTitle';
 import Divider from '@material-ui/core/Divider';
 import List from '@material-ui/core/List';
@@ -25,60 +24,7 @@ import Typography from '@material-ui/core/Typography';
 import marked from 'marked';
 import { useHover, useInterval, useWindowMaxDimension } from './hooks';
 import { useLifecycle, checking, deploy, deploying, failed, initial, restart, show, stop } from './lifecycle';
-import frontendImage from './../public/help/front-end.png';
-import initialImage from './../public/help/initial.png';
-import newTerminalImage from './../public/help/new-terminal.png';
-import polkadotJSAppsImage from './../public/help/polkadotjs-apps.png';
-import terminalFrontendImage from './../public/help/terminal-front-end.png';
-import terminalFrontendServeImage from './../public/help/terminal-front-end-serve.png';
-import terminalNodeImage from './../public/help/terminal-node.png';
 import { useParams } from "react-router-dom";
-
-export function HelpPanel({open, onClose}: {open: boolean, onClose: () => void}) {
-    return (
-        <Dialog aria-labelledby="help-dialog" open={open} onClose={onClose} scroll="paper" maxWidth="lg">
-            <DialogTitle>Getting started with the playground</DialogTitle>
-            <DialogContent dividers={true} style={{display: "flex", flexDirection: "column", alignItems: "center", padding: 100}}>
-                <DialogContentText>
-                    Playground is the simplest way to get started with Substrate.
-                    From the comfort of your browser, hack and start a remotely-accessible node.
-                    It gives you access to an IDE similar to VS Code, with full terminal support.
-                    <br />
-                    This help page will guide you through the process of starting a stock node and accessing it via external web UIs.
-                    <br />
-                    To give it a try, just click the <em>Experiment!</em> button.
-                </DialogContentText>
-                <img src={initialImage} style={{width: 800}} />
-                <DialogContentText style={{paddingTop: 50}}>
-                    First, create a new terminal.
-                </DialogContentText>
-                <img src={newTerminalImage} style={{width: 300}} />
-                <DialogContentText style={{paddingTop: 50}}>
-                    This terminal will host our new Substrate node.
-                    It can be started with the following command: <code>./target/release/node-template --dev --ws-external</code>
-                </DialogContentText>
-                <img src={terminalNodeImage} style={{width: 800}} />
-                <DialogContentText style={{paddingTop: 50}}>
-                    Create a second terminal.
-                    This terminal will host the HTTP server serving the code from <code>substrate-front-end-template</code>.
-                    This can be done by executing the following command: <code>yarn build && yarn serve</code>
-                </DialogContentText>
-                <img src={terminalFrontendImage} style={{width: 800}} />
-                <DialogContentText style={{paddingTop: 50}}>
-                    Wait for the following output before proceding to the next step.
-                </DialogContentText>
-                <img src={terminalFrontendServeImage} style={{width: 500}} />
-                <DialogContentText style={{paddingTop: 50}}>
-                    The regular PolkadotJS Apps can be used to browse your node. Just follow the <em>Polkadot Apps</em> link.
-                </DialogContentText>
-                <img src={polkadotJSAppsImage} style={{width: 500}} />
-                <DialogContentText style={{paddingTop: 50}}>
-                    Similarly, you can access the front-end template. Just follow the <em>Front end</em> link.
-                </DialogContentText>
-                <img src={frontendImage} style={{width: 800}} />
-            </DialogContent>
-        </Dialog>);
-}
 
 export function Background({isHovered}: {isHovered: boolean}) {
     const blurFactor = isHovered ? 0 : 10;
@@ -181,11 +127,10 @@ export function TheiaPanel() {
     );
 }
 
-function Nav({setShowHelp}: {setShowHelp: (_: boolean) => void}) {
+function Nav() {
     return (
         <div style={{fontSize: 20, fontWeight: "bold", color: "#FF1864",padding: "0.9em 2em 1em 3.3em", position: "fixed", top: 20, right: 20, cursor: "pointer"}}>
             <Button color="primary" variant="contained" style={{marginRight: 10}} onClick={() => window.open("https://docs.google.com/forms/d/e/1FAIpQLSdXpq_fHqS_ow4nC7EpGmrC_XGX_JCIRzAqB1vaBtoZrDW-ZQ/viewform?edit_requested=true")}>Send Feedback</Button>
-            <Button color="primary" variant="contained" onClick={() => setShowHelp(true)}>Help</Button>
         </div>
     );
 }
@@ -353,7 +298,6 @@ function ExistingInstances({instances, onStopClick, onConnectClick, hoverRef}) {
 
 export function MainPanel() {
     const [state, send] = useLifecycle();
-    const [showHelp, setShowHelp] = useState(false);
     const [hoverRef, isHovered] = useHover<string>();
 
     const {instances, templates, phase} = state.context;
@@ -361,9 +305,7 @@ export function MainPanel() {
         <React.Fragment>
             <Background isHovered={isHovered} />
 
-            <Nav setShowHelp={setShowHelp} />
-
-            <HelpPanel open={showHelp} onClose={() => setShowHelp(false)} />
+            <Nav />
 
             {(state.matches(initial) || state.matches(failed)) &&
                 <div className="box-fullscreen box-text">
