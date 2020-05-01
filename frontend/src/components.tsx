@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useSpring, animated } from 'react-spring'
 import { Alert, AlertTitle } from '@material-ui/lab';
+import AppBar from '@material-ui/core/AppBar';
 import Button from '@material-ui/core/Button';
 import Box from '@material-ui/core/Box';
 import Card from '@material-ui/core/Card';
@@ -10,6 +11,8 @@ import DialogActions from '@material-ui/core/DialogActions';
 import DialogContent from '@material-ui/core/DialogContent';
 import DialogTitle from '@material-ui/core/DialogTitle';
 import Divider from '@material-ui/core/Divider';
+import FeedbackIcon from '@material-ui/icons/Feedback';
+import IconButton from '@material-ui/core/IconButton';
 import List from '@material-ui/core/List';
 import ListItem from '@material-ui/core/ListItem';
 import ListItemText from '@material-ui/core/ListItemText';
@@ -19,12 +22,17 @@ import TableCell from '@material-ui/core/TableCell';
 import TableContainer from '@material-ui/core/TableContainer';
 import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
+import Toolbar from '@material-ui/core/Toolbar';
 import Paper from '@material-ui/core/Paper';
 import Typography from '@material-ui/core/Typography';
 import marked from 'marked';
 import { useHover, useInterval, useWindowMaxDimension } from './hooks';
 import { useLifecycle, checking, deploy, deploying, failed, initial, restart, show, stop } from './lifecycle';
 import { useParams } from "react-router-dom";
+import Fade from '@material-ui/core/Fade';
+import Slide from '@material-ui/core/Slide';
+import Zoom from '@material-ui/core/Zoom';
+import { TransitionProps } from '@material-ui/core/transitions';
 
 export function Background({isHovered}: {isHovered: boolean}) {
     const blurFactor = isHovered ? 0 : 10;
@@ -64,7 +72,7 @@ export function Background({isHovered}: {isHovered: boolean}) {
 
 export function ErrorMessage({reason, onClick}: {reason?: string, onClick: () => void}) {
     return (
-        <Alert severity="error" style={{padding: 20}}
+        <Alert severity="error" style={{flex: 1, padding: 20, alignItems: "center"}}
                 action={<Button onClick={onClick}>TRY AGAIN</Button>}>
             <AlertTitle>Oops! Looks like something went wrong :(</AlertTitle>
             <Box component="span" display="block">{reason}</Box>
@@ -129,54 +137,56 @@ export function TheiaPanel() {
 
 function Nav() {
     return (
-        <div style={{fontSize: 20, fontWeight: "bold", color: "#FF1864",padding: "0.9em 2em 1em 3.3em", position: "fixed", top: 20, right: 20, cursor: "pointer"}}>
-            <Button color="primary" variant="contained" style={{marginRight: 10}} onClick={() => window.open("https://docs.google.com/forms/d/e/1FAIpQLSdXpq_fHqS_ow4nC7EpGmrC_XGX_JCIRzAqB1vaBtoZrDW-ZQ/viewform?edit_requested=true")}>Send Feedback</Button>
-        </div>
+        <AppBar position="fixed">
+            <Toolbar>
+                <Typography variant="h6">
+                    Playground
+                </Typography>
+                <IconButton
+                    aria-label="account of current user"
+                    aria-controls="menu-appbar"
+                    aria-haspopup="true"
+                    onClick={() => window.open("https://docs.google.com/forms/d/e/1FAIpQLSdXpq_fHqS_ow4nC7EpGmrC_XGX_JCIRzAqB1vaBtoZrDW-ZQ/viewform?edit_requested=true")}
+                    color="inherit"
+                >
+                    <FeedbackIcon />
+                </IconButton>
+            </Toolbar>
+        </AppBar>
     );
 }
 
-function TemplateSelector({templates, hoverRef, onSelect, onErrorClick, onRetryClick, state}) {
+function TemplateSelector({templates, hoverRef, onSelect, onRetryClick, state}) {
     const [selection, select] = useState(templates[0]);
-    const templatesAvailable = templates.length != 0;
+    const templatesAvailable = templates?.length > 0;
     return (
-    <Dialog
-        open={true}
-        scroll={"paper"}
-        aria-labelledby="scroll-dialog-title"
-        aria-describedby="scroll-dialog-description"
-        maxWidth="md"
-    >
+    <div ref={hoverRef}>
         <DialogTitle id="scroll-dialog-title">Select a template</DialogTitle>
-        <DialogContent style={{padding: 0}} dividers={true}>
-            {state.matches(failed)
-                ? <ErrorMessage reason={state.context.error} onClick={onRetryClick} />
-                : (templatesAvailable
-                    ? <div style={{display: "flex", flexDirection: "row", flex: 1, minHeight: 0}}>
-                        <List style={{flex: 1, padding: 0, overflow: "auto"}}>
-                            {templates.map((template, index: number) => (
-                            <ListItem button key={index} onClick={() => select(template)}>
-                                <ListItemText primary={template.name} />
-                            </ListItem>
-                            ))}
-                        </List>
-                        <Divider flexItem={true} orientation={"vertical"} light={true} />
-                        {selection &&
-                        <Typography component="div" style={{flex: 6, margin: 20, overflow: "auto", textAlign: "left"}}>
-                            <div dangerouslySetInnerHTML={{__html:marked(selection.description)}}></div>
-                        </Typography>}
-                    </div>
-                    : <ErrorMessage reason={"No template available"} onClick={onErrorClick} />
-                )
+        <DialogContent style={{display: "flex", padding: 0, height: "30vh"}} dividers={true}>
+            {(!state.matches(failed) && templatesAvailable)
+                ? <div style={{display: "flex", flexDirection: "row", minHeight: 0, height: "inherit"}}>
+                    <List style={{flex: 1, padding: 0, overflow: "auto"}}>
+                        {templates.map((template, index: number) => (
+                        <ListItem button key={index} onClick={() => select(template)}>
+                            <ListItemText primary={template.name} />
+                        </ListItem>
+                        ))}
+                    </List>
+                    <Divider flexItem={true} orientation={"vertical"} light={true} />
+                    {selection &&
+                    <Typography component="div" style={{flex: 6, margin: 20, overflow: "auto", textAlign: "left"}}>
+                        <div dangerouslySetInnerHTML={{__html:marked(selection.description)}}></div>
+                    </Typography>}
+                </div>
+                : <ErrorMessage reason={state.context.error} onClick={onRetryClick} />
             }
-            
-            
         </DialogContent>
-        <DialogActions ref={hoverRef}>
+        <DialogActions>
             <Button onClick={() => onSelect(selection.name)} color="primary" variant="contained" disableElevation disabled={!templatesAvailable || state.matches(failed)}>
                 Create
             </Button>
         </DialogActions>
-    </Dialog>
+    </div>
     );
 }
 
@@ -272,14 +282,10 @@ function Instance({instance}) {
 }
 
 function ExistingInstances({instances, onStopClick, onConnectClick, hoverRef}) {
-    const instance = instances[0]; // A single instance per user is supported for now
+     // A single instance per user is supported for now
+    const instance = instances[0];
     return (
-    <Dialog
-        open={true}
-        scroll={"paper"}
-        aria-labelledby="scroll-dialog-title"
-        aria-describedby="scroll-dialog-description"
-    >
+    <div>
         <DialogTitle id="scroll-dialog-title">Running instance</DialogTitle>
         <DialogContent dividers={true}>
             <Instance instance={instance} />
@@ -292,33 +298,47 @@ function ExistingInstances({instances, onStopClick, onConnectClick, hoverRef}) {
                 Connect
             </Button>
         </DialogActions>
-    </Dialog>
+    </div>
     );
 }
 
+const Transition = React.forwardRef(function Transition(
+    props: TransitionProps & { children?: React.ReactElement<any, any> },
+    ref: React.Ref<unknown>,
+  ) {
+    return <Zoom direction="up" ref={ref} {...props} />;
+  });
+
 export function MainPanel() {
     const [state, send] = useLifecycle();
-    const [hoverRef, isHovered] = useHover<string>();
+    const [hoverRef, isHovered] = useHover();
 
-    const {instances, templates, phase} = state.context;
+    const {instances, templates} = state.context;
+
     return (
         <React.Fragment>
             <Background isHovered={isHovered} />
 
             <Nav />
 
-            {(state.matches(initial) || state.matches(failed)) &&
-                <div className="box-fullscreen box-text">
-                    {instances?.length == 0
+            <Dialog
+                open={true}
+                scroll={"paper"}
+                aria-labelledby="scroll-dialog-title"
+                aria-describedby="scroll-dialog-description"
+                TransitionComponent={Transition}
+                keepMounted
+                fullWidth
+                maxWidth="md"
+            >
+                {(instances && instances.length) > 0
+                    ? <ExistingInstances hoverRef={hoverRef} onConnectClick={(instance) => send(show, {instance: instance})} onStopClick={(instance) => send(stop, {instance: instance})} instances={instances} />
+                    : (instances
                         ? <TemplateSelector hoverRef={hoverRef} state={state} templates={templates} onRetryClick={() => send(restart)} onSelect={(template) => send(deploy, {template: template})} onErrorClick={() => send(restart)} />
-                        : <ExistingInstances hoverRef={hoverRef} onConnectClick={(instance) => send(show, {instance: instance})} onStopClick={(instance) => send(stop, {instance: instance})} instances={instances} />
-                    }
-                </div>
-            }
+                        : <ErrorMessage reason={"No template available"} onClick={() => send(restart)} />
+                }
+            </Dialog>
 
-            {state.matches(deploying) || state.matches(checking) &&
-                <Loading phase={phase} />
-            }
         </React.Fragment>
     );
 }
