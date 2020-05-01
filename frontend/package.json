@@ -11,11 +11,12 @@
   },
   "dependencies": {
     "@material-ui/core": "^4.9.12",
+    "@material-ui/icons": "^4.9.1",
     "@material-ui/lab": "^4.0.0-alpha.51",
     "@xstate/react": "0.8.1",
     "history": "^4.10.1",
     "marked": "^1.0.0",
-    "react": ">=15",
+    "react": "^16.13.1",
     "react-dom": "^16.13.1",
     "react-router-dom": "^5.1.2",
     "react-spring": "8.0.27",
