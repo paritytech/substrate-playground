@@ -27,17 +27,16 @@ export const stopping = "@state/STOPPING";
 export const checking = "@state/CHECKING";
 export const failed = "@state/FAILED";
 
-export const progress = "@event/PROGESS";
 export const success = "@event/SUCCESS";
 export const failure = "@event/FAILURE";
 
-export const show = "@action/SHOW";
 export const deploy = "@action/DEPLOY";
 export const stop = "@action/STOP";
 export const restart = "@action/RESTART";
 const loading = "@activity/LOADING";
 
-const lifecycle = Machine<Context>({
+function lifecycle(history) {
+  return Machine<Context>({
   id: 'lifecycle',
   initial: setup,
   context: {
@@ -70,9 +69,7 @@ const lifecycle = Machine<Context>({
         }
       },
       [initial]: {
-        on: {[show]: {target: checking,
-                      actions: assign({ instanceUUID: (_, event) => event.instance.instance_uuid})},
-             [stop]: {target: stopping,
+        on: {[stop]: {target: stopping,
                       actions: assign({ instanceUUID: (_, event) => event.instance.instance_uuid})},
              [deploy]: {target: deploying,
                         actions: assign({ template: (_, event) => event.template})}}
@@ -126,22 +123,7 @@ const lifecycle = Machine<Context>({
         activities: [loading],
         invoke: {
           src: (context, _event) => async (callback, _onReceive) => {
-            const {result, error} = await getInstanceDetails(context.userUUID, context.instanceUUID);
-            if (result) {
-              const {phase, url} = result;
-              if (phase == "Running") {
-                if ((await fetchWithTimeout(url).catch((err) => err)).ok) {
-                  window.location.assign(`/{context.instanceUUID}`);
-                  return;
-                }
-              }
-  
-              if (phase && context.checkOccurences < 60 * 10) {
-                setTimeout(() => callback({type: progress, phase: phase}), 1000);
-                return;
-              } 
-            }
-            callback({type: failure, error: error || "Too long to deploy"});
+            history.push(`/${context.instanceUUID}`);
           },
           onError: {
             target: failed,
@@ -150,9 +132,6 @@ const lifecycle = Machine<Context>({
         },
         on: {
           [restart]: setup,
-          [progress]: { target: checking,
-                        actions: assign({ checkOccurences: (context, _event) => context.checkOccurences + 1,
-                                          phase: (_context, event) => event.phase}) },
           [failure]: { target: failed,
                        actions: assign({ error: (_context, event) => event.error }) }
         }
@@ -170,8 +149,8 @@ const lifecycle = Machine<Context>({
       return () => document.body.classList.remove(className);
     }
   },
-});
+})};
 
-export function useLifecycle() {
-    return useMachine(lifecycle);
+export function useLifecycle(history) {
+    return useMachine(lifecycle(history), { devTools: true });
 }

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useSpring, animated } from 'react-spring'
 import { Alert, AlertTitle } from '@material-ui/lab';
 import AppBar from '@material-ui/core/AppBar';
@@ -27,21 +27,33 @@ import Paper from '@material-ui/core/Paper';
 import Typography from '@material-ui/core/Typography';
 import marked from 'marked';
 import { useHover, useInterval, useWindowMaxDimension } from './hooks';
-import { useLifecycle, checking, deploy, deploying, failed, initial, restart, show, stop } from './lifecycle';
+import { useLifecycle, checking, deploy, deploying, failed, initial, restart, setup, stop } from './lifecycle';
 import { useParams } from "react-router-dom";
-import Fade from '@material-ui/core/Fade';
-import Slide from '@material-ui/core/Slide';
 import Zoom from '@material-ui/core/Zoom';
 import { TransitionProps } from '@material-ui/core/transitions';
+import { Container } from "@material-ui/core";
+import { getInstanceDetails } from "./api";
+import { fetchWithTimeout } from "./utils";
 
-export function Background({isHovered}: {isHovered: boolean}) {
-    const blurFactor = isHovered ? 0 : 10;
+export function Background({state}: {state: string}) {
+    const preloading = state == "PRELOADING";
+    const loading = state == "LOADING";
+    const blurFactor = preloading ? 0 : 10;
     const dimension = useWindowMaxDimension();
+
+    useEffect(() => {
+        const className = "loading";
+        if (loading) {
+            document.body.classList.add(className);
+        }
+        return () => { document.body.classList.remove(className); }
+      });
+
     return (
         <React.Fragment>
             <div className="box-bg box-fullscreen bg-screen" style={{filter: `blur(${blurFactor}px)`}}></div>
             <div className="box-bg box-fullscreen">
-                <div id="svgBox" className="box-svg" data-state={isHovered ? 2 : 1} style={{width: dimension, height: dimension}}>
+                <div id="svgBox" className="box-svg" data-state={preloading ? 2 : 1} style={{width: dimension, height: dimension}}>
                     <svg id="svg" width={dimension} height={dimension} viewBox="0 0 1535 1535" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M0 483.5H1535" stroke="#C4C4C4" strokeWidth="120"/>
                         <path d="M0 820H1535" stroke="#DBDCDC" strokeWidth="120"/>
@@ -72,7 +84,7 @@ export function Background({isHovered}: {isHovered: boolean}) {
 
 export function ErrorMessage({reason, onClick}: {reason?: string, onClick: () => void}) {
     return (
-        <Alert severity="error" style={{flex: 1, padding: 20, alignItems: "center"}}
+        <Alert severity="error" style={{width: "100%", padding: 20, alignItems: "center"}}
                 action={<Button onClick={onClick}>TRY AGAIN</Button>}>
             <AlertTitle>Oops! Looks like something went wrong :(</AlertTitle>
             <Box component="span" display="block">{reason}</Box>
@@ -101,7 +113,7 @@ function Phase( {value}: {value: string}) {
     return null;
 }
 
-export function Loading({phase}: {phase?: string}) {
+export function Loading({phase, retry = 0}: {phase?: string, retry?: number}) {
     const [phrase, setPhrase] = useState(loadingPhrases[0]);
     const [props, set] = useSpring(() => ({opacity: 1}));
 
@@ -113,10 +125,10 @@ export function Loading({phase}: {phase?: string}) {
     }, 3000);
 
     return (
-        <div className="box-fullscreen box-text">
-            <span>Please wait, because</span>
+        <div style={{display: "flex", justifyContent: "center", alignItems: "center", height: "100vh", flexDirection: "column", textAlign: "center"}}>
+            <Typography variant="h3">Please wait, because</Typography>
             <animated.h1 style={props}>{phrase}</animated.h1>
-            {false &&
+            {(retry > 10) &&
                 <div>It looks like it takes longer than expected to load. Please be patient :)</div>}
             {phase &&
                 <Phase value={phase} />}
@@ -126,19 +138,52 @@ export function Loading({phase}: {phase?: string}) {
 
 export function TheiaPanel() {
     const { uuid } = useParams();
-    const url = `//${uuid}.${window.location.hostname}`;
-    // TODO handle loading and error handling
-    return (
+    const maxRetries = 10;
+    const [data, setData] = useState({});
+
+    useEffect(() => {
+        async function fetchData() {
+            const { result, error } = await getInstanceDetails(localStorage.getItem("userUUID"), uuid);
+            if (error) {
+                setData({type: "ERROR"});
+            }
+            const phase = result?.phase;
+            if (phase == "Running") {
+                // Check URL is fine
+                if((await fetchWithTimeout('/api/${localStorage.getItem("userUUID")}/${uuid}')).ok) {
+                    setData({type: "SUCCESS", url: result.url});
+                    return;
+                }
+            }
+
+            const retry = data.retry ?? 0;
+            if (retry < maxRetries) {
+                setData({type: "LOADING", phase: phase, retry: retry + 1});
+            } else if (retry == maxRetries) {
+                setData({type: "ERROR", value: "Couldn't access the theia instance", action: () => setData({})});
+            }
+        }
+
+        if (data.type != "ERROR") {
+            fetchData();
+        }
+      }, [data, uuid]);
+
+    if(data.type == "SUCCESS") {
+        return (
         <div>
-            <iframe src={url} frameBorder="0" style={{overflow:"hidden",height:"100vh",width:"100vm"}} height="100%" width="100%"></iframe>
+            <iframe src={data.url} frameBorder="0" style={{overflow:"hidden",height:"100vh",width:"100vm"}} height="100%" width="100%"></iframe>
         </div>
-    );
+        );
+    } else {
+        return <Wrapper state={data} />
+    }
 }
 
 function Nav() {
     return (
         <AppBar position="fixed">
-            <Toolbar>
+            <Toolbar style={{justifyContent: "space-between"}}>
                 <Typography variant="h6">
                     Playground
                 </Typography>
@@ -156,15 +201,15 @@ function Nav() {
     );
 }
 
-function TemplateSelector({templates, hoverRef, onSelect, onRetryClick, state}) {
+function TemplateSelector({templates, onSelect, onRetryClick, state}) {
     const [selection, select] = useState(templates[0]);
     const templatesAvailable = templates?.length > 0;
     return (
-    <div ref={hoverRef}>
+    <React.Fragment>
         <DialogTitle id="scroll-dialog-title">Select a template</DialogTitle>
-        <DialogContent style={{display: "flex", padding: 0, height: "30vh"}} dividers={true}>
+        <DialogContent style={{display: "flex", padding: 0, alignItems: "center"}} dividers={true}>
             {(!state.matches(failed) && templatesAvailable)
-                ? <div style={{display: "flex", flexDirection: "row", minHeight: 0, height: "inherit"}}>
+                ? <div style={{display: "flex", flexDirection: "row", minHeight: 0, height: "100%"}}>
                     <List style={{flex: 1, padding: 0, overflow: "auto"}}>
                         {templates.map((template, index: number) => (
                         <ListItem button key={index} onClick={() => select(template)}>
@@ -178,7 +223,7 @@ function TemplateSelector({templates, hoverRef, onSelect, onRetryClick, state}) 
                         <div dangerouslySetInnerHTML={{__html:marked(selection.description)}}></div>
                     </Typography>}
                 </div>
-                : <ErrorMessage reason={state.context.error} onClick={onRetryClick} />
+                : <ErrorMessage reason={"Can't find any template. Is the templates configuration incorrect."} onClick={onRetryClick} />
             }
         </DialogContent>
         <DialogActions>
@@ -186,7 +231,7 @@ function TemplateSelector({templates, hoverRef, onSelect, onRetryClick, state}) 
                 Create
             </Button>
         </DialogActions>
-    </div>
+    </React.Fragment>
     );
 }
 
@@ -281,24 +326,21 @@ function Instance({instance}) {
     );
 }
 
-function ExistingInstances({instances, onStopClick, onConnectClick, hoverRef}) {
+function ExistingInstances({instances, onStopClick, onConnectClick}) {
      // A single instance per user is supported for now
     const instance = instances[0];
     return (
-    <div>
+    <React.Fragment>
         <DialogTitle id="scroll-dialog-title">Running instance</DialogTitle>
         <DialogContent dividers={true}>
             <Instance instance={instance} />
         </DialogContent>
-        <DialogActions ref={hoverRef}>
-            <Button onClick={() => onStopClick(instance)} color="secondary" variant="outlined" disableElevation>
-                Stop
-            </Button>
+        <DialogActions>
             <Button onClick={() => onConnectClick(instance)} color="primary" variant="contained" disableElevation>
                 Connect
             </Button>
         </DialogActions>
-    </div>
+    </React.Fragment>
     );
 }
 
@@ -309,18 +351,39 @@ const Transition = React.forwardRef(function Transition(
     return <Zoom direction="up" ref={ref} {...props} />;
   });
 
-export function MainPanel() {
-    const [state, send] = useLifecycle();
+export function MainPanel({ match, history }) {
+    const [state, send] = useLifecycle(history);
     const [hoverRef, isHovered] = useHover();
 
     const {instances, templates} = state.context;
 
+    function gstate() {
+        if (state.matches(setup) || state.matches(deploying) || state.matches(checking)) {
+            return {type: "LOADING"};
+        } else if (isHovered) {
+            return {type: "PRELOADING"};
+        } else {
+            if (!(instances?.length + templates?.length > 0)) {
+                return {type: "ERROR", value: "No templates", action: () => send(restart)};
+            }
+        }
+    }
+
+    function content() {
+        if (state.matches(initial)) {
+            if (instances?.length > 0) {
+                return <ExistingInstances onConnectClick={(instance) => history.push(`/${instance.instance_uuid}`)} onStopClick={(instance) => send(stop, {instance: instance})} instances={instances} />;
+            } else {
+                return <TemplateSelector state={state} templates={templates} onRetryClick={() => send(restart)} onSelect={(template) => send(deploy, {template: template})} onErrorClick={() => send(restart)} />;
+            }
+        }
+    }
+
+    const conten = content();
+
     return (
-        <React.Fragment>
-            <Background isHovered={isHovered} />
-
-            <Nav />
-
+        <Wrapper state={gstate()}>
+            {conten &&
             <Dialog
                 open={true}
                 scroll={"paper"}
@@ -331,13 +394,42 @@ export function MainPanel() {
                 fullWidth
                 maxWidth="md"
             >
-                {(instances && instances.length) > 0
-                    ? <ExistingInstances hoverRef={hoverRef} onConnectClick={(instance) => send(show, {instance: instance})} onStopClick={(instance) => send(stop, {instance: instance})} instances={instances} />
-                    : (instances
-                        ? <TemplateSelector hoverRef={hoverRef} state={state} templates={templates} onRetryClick={() => send(restart)} onSelect={(template) => send(deploy, {template: template})} onErrorClick={() => send(restart)} />
-                        : <ErrorMessage reason={"No template available"} onClick={() => send(restart)} />
-                }
+                <div ref={hoverRef} style={{display: "flex", flexDirection: "column", height: "60vh"}}>
+                {conten}
+                </div>
             </Dialog>
+            }
+        </Wrapper>
+    );
+}
+
+function WrappedContent({ state, content? }) {
+    switch(state?.type) {
+        case "ERROR":
+            const { value, action } = state;
+            return (
+            <Container style={{display: "flex", alignItems: "center", height: "100vh"}}>
+                <ErrorMessage reason={value || "Unknown error"} onClick={action} />
+            </Container>
+            );
+        case "LOADING":
+            const { phase, retry } = state;
+            return <Loading phase={phase} retry={retry} />;
+        default:
+            return content || <div></div>;
+    }
+}
+
+// state: PRELOADING, LOADING, ERROR (message, action) {type: value:}
+export function Wrapper({ state, children }) {
+    const type = state?.type;
+    return (
+        <React.Fragment>
+            <Background state={type} />
+
+            <Nav />
+
+            <WrappedContent state={state} content={children} />
 
         </React.Fragment>
     );
