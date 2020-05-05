@@ -1,7 +1,7 @@
 import { MutableRefObject, useCallback, useState, useEffect, useRef } from "react";
 
 /*
- * Based on https://codesandbox.io/s/usehover-v2-jxfdp
+ * Based on https://gist.github.com/gragland/cfc4089e2f5d98dde5033adc44da53f8#gistcomment-3022446
  */
 export function useHover() {
   const [value, setValue] = useState(false);
