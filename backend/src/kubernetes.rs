@@ -433,7 +433,7 @@ impl Engine {
             .collect())
     }
 
-    pub async fn patch_ingress(self, instances: BTreeMap<String, &Template>) -> Result<(), String> {
+    pub async fn patch_ingress(&self, instances: BTreeMap<String, &Template>) -> Result<(), String> {
         if let Some(host) = &self.host {
             let config = config().await?;
             let client = APIClient::new(config);
@@ -478,9 +478,16 @@ impl Engine {
 
         // Create a unique ID for this instance
         let instance_uuid = format!("{}", Uuid::new_v4());
+        let namespace = &self.namespace;
+        
+        let pod_api: Api<Pod> = Api::namespaced(client.clone(), namespace);
+
+        // Define the correct route
+        let mut instances = BTreeMap::new();
+        instances.insert(instance_uuid.clone(), instance_template);
+        self.patch_ingress(instances).await?;
 
         // Deploy a new pod for this image
-        let pod_api: Api<Pod> = Api::namespaced(client.clone(), &self.namespace);
         pod_api
             .create(
                 &PostParams::default(),
@@ -490,16 +497,12 @@ impl Engine {
             .map_err(error_to_string)?;
 
         // Deploy the associated service
-        let service_api: Api<Service> = Api::namespaced(client.clone(), &self.namespace);
+        let service_api: Api<Service> = Api::namespaced(client.clone(), namespace);
         let service = create_service(&instance_uuid.clone(), instance_template);
         service_api
             .create(&PostParams::default(), &service)
             .await
             .map_err(error_to_string)?;
-
-        let mut instances = BTreeMap::new();
-        instances.insert(instance_uuid.clone(), instance_template);
-        self.patch_ingress(instances).await?;
 
         Ok(instance_uuid)
     }
