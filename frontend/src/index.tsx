@@ -26,7 +26,7 @@ function App() {
 }
 
 if (process.env.NODE_ENV === 'development') {
-  intercept({noInstance: false});
+  intercept({noInstance: true});
 }
 
 ReactDOM.render(

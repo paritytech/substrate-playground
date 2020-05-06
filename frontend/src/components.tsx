@@ -6,10 +6,6 @@ import Button from '@material-ui/core/Button';
 import Box from '@material-ui/core/Box';
 import Card from '@material-ui/core/Card';
 import CardContent from '@material-ui/core/CardContent';
-import Dialog from '@material-ui/core/Dialog';
-import DialogActions from '@material-ui/core/DialogActions';
-import DialogContent from '@material-ui/core/DialogContent';
-import DialogTitle from '@material-ui/core/DialogTitle';
 import Divider from '@material-ui/core/Divider';
 import FeedbackIcon from '@material-ui/icons/Feedback';
 import IconButton from '@material-ui/core/IconButton';
@@ -30,6 +26,7 @@ import { useHover, useInterval, useWindowMaxDimension } from './hooks';
 import { useLifecycle, checking, deploy, deploying, failed, initial, restart, setup, stop } from './lifecycle';
 import { useParams } from "react-router-dom";
 import Zoom from '@material-ui/core/Zoom';
+import Fade from '@material-ui/core/Fade';
 import { TransitionProps } from '@material-ui/core/transitions';
 import { Container } from "@material-ui/core";
 import { getInstanceDetails } from "./api";
@@ -207,8 +204,9 @@ function TemplateSelector({templates, onSelect, onRetryClick, state}) {
     const templatesAvailable = templates?.length > 0;
     return (
     <React.Fragment>
-        <DialogTitle id="scroll-dialog-title">Select a template</DialogTitle>
-        <DialogContent style={{display: "flex", padding: 0, alignItems: "center"}} dividers={true}>
+        <Typography variant="h5" style={{padding: 20}}>Select a template</Typography>
+        <Divider orientation="horizontal" />
+        <Container style={{display: "flex", flex: 1, padding: 0, alignItems: "center", overflowY: "auto"}}>
             {(!state.matches(failed) && templatesAvailable)
                 ? <div style={{display: "flex", flexDirection: "row", minHeight: 0, height: "100%"}}>
                     <List style={{flex: 1, padding: 0, overflow: "auto"}}>
@@ -220,18 +218,19 @@ function TemplateSelector({templates, onSelect, onRetryClick, state}) {
                     </List>
                     <Divider flexItem={true} orientation={"vertical"} light={true} />
                     {selection &&
-                    <Typography component="div" style={{flex: 6, margin: 20, overflow: "auto", textAlign: "left"}}>
+                    <Typography component="div" style={{flex: 6, marginLeft: 20, marginRight: 20, overflow: "auto", textAlign: "left"}}>
                         <div dangerouslySetInnerHTML={{__html:marked(selection.description)}}></div>
                     </Typography>}
                 </div>
                 : <ErrorMessage reason={"Can't find any template. Is the templates configuration incorrect."} onClick={onRetryClick} />
             }
-        </DialogContent>
-        <DialogActions>
+        </Container>
+        <Divider orientation="horizontal" />
+        <Container style={{display: "flex", flexDirection: "column", alignItems: "flex-end", paddingTop: 10, paddingBottom: 10}}>
             <Button onClick={() => onSelect(selection.name)} color="primary" variant="contained" disableElevation disabled={!templatesAvailable || state.matches(failed)}>
                 Create
             </Button>
-        </DialogActions>
+        </Container>
     </React.Fragment>
     );
 }
@@ -332,18 +331,22 @@ function ExistingInstances({instances, onStopClick, onConnectClick}) {
     const instance = instances[0];
     return (
     <React.Fragment>
-        <DialogTitle id="scroll-dialog-title">Running instance</DialogTitle>
-        <DialogContent style={{display: "flex", flexDirection: "column", justifyContent: "center"}} dividers={true}>
+        <Typography variant="h5" style={{padding: 20}}>Running instance</Typography>
+        <Divider orientation="horizontal" />
+        <Container style={{display: "flex", flex: 1, padding: 0, justifyContent: "center", alignItems: "center", overflowY: "auto"}}>
             <Instance instance={instance} />
-        </DialogContent>
-        <DialogActions>
-            <Button onClick={() => onStopClick(instance)} color="secondary" variant="outlined" disableElevation>
-                Stop
-            </Button>
-            <Button onClick={() => onConnectClick(instance)} color="primary" variant="contained" disableElevation>
-                Connect
-            </Button>
-        </DialogActions>
+        </Container>
+        <Divider orientation="horizontal" />
+        <Container style={{display: "flex", flexDirection: "column", alignItems: "flex-end", paddingTop: 10, paddingBottom: 10}}>
+            <div>
+                <Button style={{marginRight: 10}} onClick={() => onStopClick(instance)} color="secondary" variant="outlined" disableElevation>
+                    Stop
+                </Button>
+                <Button onClick={() => onConnectClick(instance)} color="primary" variant="contained" disableElevation>
+                    Connect
+                </Button>
+            </div>
+        </Container>
     </React.Fragment>
     );
 }
@@ -389,26 +392,17 @@ export function MainPanel({ match, history }) {
     return (
         <Wrapper state={gstate()}>
             {conten &&
-            <Dialog
-                open={true}
-                scroll={"paper"}
-                aria-labelledby="scroll-dialog-title"
-                aria-describedby="scroll-dialog-description"
-                TransitionComponent={Transition}
-                keepMounted
-                fullWidth
-                maxWidth="md"
-            >
-                <div ref={hoverRef} style={{display: "flex", flexDirection: "column", height: "60vh"}}>
+            <Container style={{display: "flex", justifyContent: "center", alignItems: "center", height: "100vh"}}>
+                <Paper ref={hoverRef} style={{display: "flex", flexDirection: "column", height: "60vh", width: "60vw"}} elevation={3}>
                 {conten}
-                </div>
-            </Dialog>
+                </Paper>
+            </Container>
             }
         </Wrapper>
     );
 }
 
-function WrappedContent({ state, content? }) {
+function WrappedContent({ style, state, content }) {
     switch(state?.type) {
         case "ERROR":
             const { value, action } = state;
@@ -421,7 +415,8 @@ function WrappedContent({ state, content? }) {
             const { phase, retry } = state;
             return <Loading phase={phase} retry={retry} />;
         default:
-            return content || <div></div>;
+            console.log(style)
+            return <div style={style}>{content}</div>;
     }
 }
 
@@ -429,13 +424,15 @@ function WrappedContent({ state, content? }) {
 export function Wrapper({ state, children }) {
     const type = state?.type;
     return (
-        <React.Fragment>
-            <Background state={type} />
+    <React.Fragment>
+        <Background state={type} />
 
-            <Nav />
+        <Nav />
 
+        <Fade in appear>
             <WrappedContent state={state} content={children} />
+        </Fade>
 
-        </React.Fragment>
+    </React.Fragment>
     );
 }
