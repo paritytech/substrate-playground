@@ -25,8 +25,17 @@ function App() {
   );
 }
 
-if (process.env.NODE_ENV === 'development') {
-  intercept({noInstance: true});
+function devMode() {
+  const param = new URLSearchParams(window.location.search).get('devMode');
+  if (param) {
+    return param === "true";
+  }
+  return process.env.NODE_ENV === 'development';
+}
+
+if (devMode()) {
+  console.log("Installing HTTP interceptor");
+  intercept({});
 }
 
 ReactDOM.render(
