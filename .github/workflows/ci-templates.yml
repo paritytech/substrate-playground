@@ -1,4 +1,4 @@
-name: Continuous Integration Theia
+name: Continuous Integration for Templates
 
 on:
   pull_request:
