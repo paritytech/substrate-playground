@@ -135,7 +135,7 @@ export function Loading({phase, retry = 0}: {phase?: string, retry?: number}) {
 
 export function TheiaPanel() {
     const { uuid } = useParams();
-    const maxRetries = 10;
+    const maxRetries = 5*60;
     const [data, setData] = useState({});
 
     useEffect(() => {
@@ -156,7 +156,8 @@ export function TheiaPanel() {
 
             const retry = data.retry ?? 0;
             if (retry < maxRetries) {
-                setData({type: "LOADING", phase: phase, retry: retry + 1});
+                setTimeout(() => setData({type: "LOADING", phase: phase, retry: retry + 1}), 1000);
+                
             } else if (retry == maxRetries) {
                 setData({type: "ERROR", value: "Couldn't access the theia instance", action: () => setData({})});
             }
@@ -227,7 +228,7 @@ function TemplateSelector({templates, onSelect, onRetryClick, state}) {
         </Container>
         <Divider orientation="horizontal" />
         <Container style={{display: "flex", flexDirection: "column", alignItems: "flex-end", paddingTop: 10, paddingBottom: 10}}>
-            <Button onClick={() => onSelect(selection.name)} color="primary" variant="contained" disableElevation disabled={!templatesAvailable || state.matches(failed)}>
+            <Button onClick={() => onSelect(selection.id)} color="primary" variant="contained" disableElevation disabled={!templatesAvailable || state.matches(failed)}>
                 Create
             </Button>
         </Container>
@@ -293,6 +294,7 @@ function formatDate(t: number) {
 
 function Instance({instance}) {
     const {instance_uuid, started_at, template, phase} = instance;
+    console.log(instance)
     const {name, runtime} = template;
     const {env, ports} = runtime;
     return (
@@ -302,7 +304,7 @@ function Instance({instance}) {
             {name} ({instance_uuid})
             </Typography>
             <Typography color="textSecondary" gutterBottom>
-            Started at {formatDate(started_at.secs_since_epoch)}
+            Started at {formatDate(started_at?.secs_since_epoch)}
             </Typography>
             <Typography color="textSecondary" gutterBottom>
             Phase: <em>{phase}</em>
@@ -415,7 +417,6 @@ function WrappedContent({ style, state, content }) {
             const { phase, retry } = state;
             return <Loading phase={phase} retry={retry} />;
         default:
-            console.log(style)
             return <div style={style}>{content}</div>;
     }
 }
