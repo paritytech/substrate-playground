@@ -62,11 +62,17 @@ fn create_env_var(name: &str, value: &str) -> EnvVar {
     }
 }
 
-fn pod_env_variables(template: &Template, user_uuid: &str, instance_uuid: &str) -> Vec<EnvVar> {
+fn pod_env_variables(
+    template: &Template,
+    host: &str,
+    user_uuid: &str,
+    instance_uuid: &str,
+) -> Vec<EnvVar> {
     let mut envs = vec![
         create_env_var("SUBSTRATE_PLAYGROUND", ""),
         create_env_var("SUBSTRATE_PLAYGROUND_USER", user_uuid),
         create_env_var("SUBSTRATE_PLAYGROUND_INSTANCE", instance_uuid),
+        create_env_var("SUBSTRATE_PLAYGROUND_HOSTNAME", host),
     ];
     if let Some(mut template_envs) = template.runtime.as_ref().and_then(|r| {
         r.env.clone().map(|envs| {
@@ -80,7 +86,12 @@ fn pod_env_variables(template: &Template, user_uuid: &str, instance_uuid: &str) 
     envs
 }
 
-fn create_pod(user_uuid: &str, instance_uuid: &str, template: &Template) -> Result<Pod, String> {
+fn create_pod(
+    host: &str,
+    user_uuid: &str,
+    instance_uuid: &str,
+    template: &Template,
+) -> Result<Pod, String> {
     let mut labels = BTreeMap::new();
     // TODO fetch docker image labels and add them to the pod.
     // Can be done by querying dockerhub (https://docs.docker.com/registry/spec/api/)
@@ -102,7 +113,7 @@ fn create_pod(user_uuid: &str, instance_uuid: &str, template: &Template) -> Resu
             containers: vec![Container {
                 name: format!("{}-container", COMPONENT_VALUE),
                 image: Some(template.image.to_string()),
-                env: Some(pod_env_variables(template, user_uuid, instance_uuid)),
+                env: Some(pod_env_variables(template, host, user_uuid, instance_uuid)),
                 ..Default::default()
             }],
             ..Default::default()
@@ -219,7 +230,7 @@ pub async fn get_templates(
 
 #[derive(Clone)]
 pub struct Engine {
-    host: Option<String>,
+    host: String,
     namespace: String,
 }
 
@@ -250,11 +261,7 @@ impl InstanceDetails {
     }
 
     fn url(engine: Engine, instance_uuid: String) -> String {
-        if let Some(host) = engine.host {
-            format!("//{}.{}", instance_uuid, host)
-        } else {
-            format!("//{}", instance_uuid)
-        }
+        format!("https://{}.{}", instance_uuid, engine.host)
     }
 }
 
@@ -300,9 +307,11 @@ impl Engine {
                 .first()
                 .ok_or("Zero rule")?
                 .host
+                .as_ref()
+                .ok_or("No host")?
                 .clone()
         } else {
-            None
+            "localhost".to_string()
         };
 
         Ok(Engine { host, namespace })
@@ -433,35 +442,36 @@ impl Engine {
             .collect())
     }
 
-    pub async fn patch_ingress(&self, instances: BTreeMap<String, &Template>) -> Result<(), String> {
-        if let Some(host) = &self.host {
-            let config = config().await?;
-            let client = APIClient::new(config);
-            let ingress_api: Api<Ingress> = Api::namespaced(client, &self.namespace);
-            let mut ingress: Ingress = ingress_api
-                .get(INGRESS_NAME)
-                .await
-                .map_err(error_to_string)?
-                .clone();
-            let mut spec = ingress.clone().spec.ok_or("No spec")?.clone();
-            let mut rules: Vec<IngressRule> = spec.clone().rules.ok_or("No rules")?;
-            for (uuid, template) in instances {
-                let subdomain = subdomain(host, &uuid);
-                rules.push(IngressRule {
-                    host: Some(subdomain.clone()),
-                    http: Some(HTTPIngressRuleValue {
-                        paths: create_ingress_paths(service_name(&uuid), template),
-                    }),
-                });
-            }
-            spec.rules.replace(rules);
-            ingress.spec.replace(spec);
-
-            ingress_api
-                .replace(INGRESS_NAME, &PostParams::default(), &ingress)
-                .await
-                .map_err(error_to_string)?;
+    pub async fn patch_ingress(
+        &self,
+        instances: BTreeMap<String, &Template>,
+    ) -> Result<(), String> {
+        let config = config().await?;
+        let client = APIClient::new(config);
+        let ingress_api: Api<Ingress> = Api::namespaced(client, &self.namespace);
+        let mut ingress: Ingress = ingress_api
+            .get(INGRESS_NAME)
+            .await
+            .map_err(error_to_string)?
+            .clone();
+        let mut spec = ingress.clone().spec.ok_or("No spec")?.clone();
+        let mut rules: Vec<IngressRule> = spec.clone().rules.ok_or("No rules")?;
+        for (uuid, template) in instances {
+            let subdomain = subdomain(&self.host, &uuid);
+            rules.push(IngressRule {
+                host: Some(subdomain.clone()),
+                http: Some(HTTPIngressRuleValue {
+                    paths: create_ingress_paths(service_name(&uuid), template),
+                }),
+            });
         }
+        spec.rules.replace(rules);
+        ingress.spec.replace(spec);
+
+        ingress_api
+            .replace(INGRESS_NAME, &PostParams::default(), &ingress)
+            .await
+            .map_err(error_to_string)?;
 
         Ok(())
     }
@@ -479,7 +489,7 @@ impl Engine {
         // Create a unique ID for this instance
         let instance_uuid = format!("{}", Uuid::new_v4());
         let namespace = &self.namespace;
-        
+
         let pod_api: Api<Pod> = Api::namespaced(client.clone(), namespace);
 
         // Define the correct route
@@ -491,7 +501,12 @@ impl Engine {
         pod_api
             .create(
                 &PostParams::default(),
-                &create_pod(&user_uuid, &instance_uuid.clone(), instance_template)?,
+                &create_pod(
+                    &self.host,
+                    &user_uuid,
+                    &instance_uuid.clone(),
+                    instance_template,
+                )?,
             )
             .await
             .map_err(error_to_string)?;
@@ -523,32 +538,28 @@ impl Engine {
             .await
             .map_err(|s| format!("Error {}", s))?;
 
-        if let Some(host) = &self.host {
-            let subdomain = subdomain(host, instance_uuid);
-            let ingress_api: Api<Ingress> = Api::namespaced(client, &self.namespace);
-            let mut ingress: Ingress = ingress_api
-                .get(INGRESS_NAME)
-                .await
-                .map_err(error_to_string)?
-                .clone();
-            let mut spec = ingress.clone().spec.ok_or("No spec")?.clone();
-            let rules: Vec<IngressRule> = spec
-                .clone()
-                .rules
-                .unwrap()
-                .into_iter()
-                .filter(|rule| {
-                    rule.clone().host.unwrap_or_else(|| "unknown".to_string()) != subdomain
-                })
-                .collect();
-            spec.rules.replace(rules);
-            ingress.spec.replace(spec);
+        let subdomain = subdomain(&self.host, instance_uuid);
+        let ingress_api: Api<Ingress> = Api::namespaced(client, &self.namespace);
+        let mut ingress: Ingress = ingress_api
+            .get(INGRESS_NAME)
+            .await
+            .map_err(error_to_string)?
+            .clone();
+        let mut spec = ingress.clone().spec.ok_or("No spec")?.clone();
+        let rules: Vec<IngressRule> = spec
+            .clone()
+            .rules
+            .unwrap()
+            .into_iter()
+            .filter(|rule| rule.clone().host.unwrap_or_else(|| "unknown".to_string()) != subdomain)
+            .collect();
+        spec.rules.replace(rules);
+        ingress.spec.replace(spec);
 
-            ingress_api
-                .replace(INGRESS_NAME, &PostParams::default(), &ingress)
-                .await
-                .map_err(error_to_string)?;
-        }
+        ingress_api
+            .replace(INGRESS_NAME, &PostParams::default(), &ingress)
+            .await
+            .map_err(error_to_string)?;
 
         Ok(())
     }
