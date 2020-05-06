@@ -78,10 +78,10 @@ function lifecycle(history) {
         invoke: {
           src: (context, event) => async (callback) => {
             const {result, error} = await stopInstance(context.userUUID, context.instanceUUID);
-            if (result) {
-              callback({type: success, uuid: result});
-            } else {
+            if (error != undefined) {
               callback({type: failure, error: error});
+            } else {
+              callback({type: success});
             }
           },
           onError: {
@@ -100,10 +100,10 @@ function lifecycle(history) {
         invoke: {
           src: (context, _) => async (callback) => {
             const {result, error} = await deployImage(context.userUUID, context.template);
-            if (result) {
-              callback({type: success, uuid: result});
-            } else {
+            if (error != undefined) {
               callback({type: failure, error: error});
+            } else {
+              callback({type: success, uuid: result});
             }
           },
           onError: {
