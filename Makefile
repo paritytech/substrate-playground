@@ -96,7 +96,6 @@ k8s-gke-static-ip: k8s-assert
 
 # Deploy playground on kubernetes
 k8s-deploy-playground: k8s-assert
-	kubectl create namespace ${ENVIRONMENT}
 	kubectl apply --record -k conf/k8s/overlays/${ENVIRONMENT}
 
 # Undeploy playground from kubernetes
