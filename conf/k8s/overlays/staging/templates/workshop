@@ -22,24 +22,24 @@ runtime:
       port: 9944
   # tasks: TODO, see https://www.gitpod.io/docs/config-start-tasks/
 
-build:
-  base: gcr.io/substrateplayground-252112/jeluard/theia-substrate@sha256:0b3ec9ad567d0f5b0eed8a0fc2b1fa3fe1cca24cc02416047d71f83770b05e34
-  extensions: []
-  repositories:
-    - name: substrate-node-template
-      url: https://github.com/substrate-developer-hub/substrate-node-template
-    - name: substrate-front-end-template
-      url: https://github.com/substrate-developer-hub/substrate-front-end-template
-    - name: substrate-node-template
-      url: https://github.com/substrate-developer-hub/substrate-node-template
-  resources:
-    - url:
-      dest: file/
-  includes-defaults: true (include vscode files)
-  commands:
-    - name: Build substrate-front-end-template
-      run: yarn
-      working-directory: ./substrate-front-end-template
-    - name: Build substrate-node-template
-      run: cargo build --release
-      working-directory: ./substrate-node-template
+#build:
+#  base: gcr.io/substrateplayground-252112/jeluard/theia-substrate@sha256:0b3ec9ad567d0f5b0eed8a0fc2b1fa3fe1cca24cc02416047d71f83770b05e34
+#  extensions: []
+#  repositories:
+#    - name: substrate-node-template
+#      url: https://github.com/substrate-developer-hub/substrate-node-template
+#    - name: substrate-front-end-template
+#      url: https://github.com/substrate-developer-hub/substrate-front-end-template
+#    - name: substrate-node-template
+#      url: https://github.com/substrate-developer-hub/substrate-node-template
+#  resources:
+#    - url:
+#      dest: file/
+#  includes-defaults: true (include vscode files)
+#  commands:
+#    - name: Build substrate-front-end-template
+#      run: yarn
+#      working-directory: ./substrate-front-end-template
+#    - name: Build substrate-node-template
+#      run: cargo build --release
+#      working-directory: ./substrate-node-template
