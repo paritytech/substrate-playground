@@ -55,7 +55,7 @@ function lifecycle(history) {
             if (response2.error) {
               throw response2;
             }
-            return {instances: response.result, templates: response2.result};
+            return {instances: response.result, templates: Object.entries(response2.result).map(([k, v]) => {v["id"] = k; return v;})};
           },
           onDone: {
             target: initial,

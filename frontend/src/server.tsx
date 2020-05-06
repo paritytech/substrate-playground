@@ -1,14 +1,6 @@
 import { Polly, Timing } from '@pollyjs/core';
 import FetchAdapter from '@pollyjs/adapter-fetch';
 
-Polly.register(FetchAdapter);
-
-const polly = new Polly('Sign In', {
-  adapters: ['fetch'],
-  logging: false,
-});
-const { server } = polly;
-
 let description = `#frdsfd
 
 * dsfds
@@ -24,10 +16,17 @@ let template = {image: "gcr.io/substrateplayground-252112/jeluard/theia-substrat
 let instance = {user_uuid: "", instance_uuid: "1234", template: template, phase: "starting", url: "", started_at: {secs_since_epoch: 1588254730}};
 
 export function intercept({noInstance = true, delay = 100}: {noInstance?: boolean, delay?: number}) {
+  Polly.register(FetchAdapter);
+
+  const polly = new Polly('Sign In', {
+    adapters: ['fetch'],
+    logging: false,
+  });
+  const { server } = polly;
   server.get('/api/templates').intercept(async (req, res) => {
     await server.timeout(delay);
     res.status(200).json({
-      result: [template],
+      result: {workshop: template},
     });
   });
   server.get('/theia').intercept(async (req, res) => {

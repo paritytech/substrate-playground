@@ -6,7 +6,7 @@
     "lint": "npx eslint ./src/ --ext .js,.jsx,.jsx,.ts,.tsx",
     "dev": "parcel dev public/index.html",
     "watch": "parcel watch public/index.html",
-    "build": "parcel build public/index.html && cp -R public/* dist/",
+    "build": "parcel build public/index.html && mkdir -p dist/assets/ && cp -R public/assets/* dist/assets/ && cp public/robots.txt dist/",
     "clean": "rm -rf node_modules/ dist/ .cache/ yarn.lock"
   },
   "dependencies": {
