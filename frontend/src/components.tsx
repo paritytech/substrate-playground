@@ -146,6 +146,7 @@ export function TheiaPanel() {
             const { result, error } = await getInstanceDetails(localStorage.getItem("userUUID"), uuid);
             if (error) {
                 setData({type: "ERROR"});
+                return;
             }
             const phase = result?.phase;
             if (phase == "Running") {
@@ -164,7 +165,7 @@ export function TheiaPanel() {
             }
         }
 
-        if (data.type != "ERROR") {
+        if (data.type != "ERROR" && data.type != "SUCCESS") {
             fetchData();
         }
       }, [data, uuid]);
@@ -296,8 +297,8 @@ function Instance({instance}) {
     const {name, runtime} = template;
     const {env, ports} = runtime;
     return (
-    <Card style={{margin: 20}} variant="outlined">
-        <CardContent>
+    <Card style={{display: "flex", flexDirection: "column", margin: 20}} variant="outlined">
+        <CardContent style={{height: "100%", overflow: "auto"}}>
             <Typography>
             {name} ({instance_uuid})
             </Typography>
@@ -332,10 +333,13 @@ function ExistingInstances({instances, onStopClick, onConnectClick}) {
     return (
     <React.Fragment>
         <DialogTitle id="scroll-dialog-title">Running instance</DialogTitle>
-        <DialogContent dividers={true}>
+        <DialogContent style={{display: "flex", flexDirection: "column", justifyContent: "center"}} dividers={true}>
             <Instance instance={instance} />
         </DialogContent>
         <DialogActions>
+            <Button onClick={() => onStopClick(instance)} color="secondary" variant="outlined" disableElevation>
+                Stop
+            </Button>
             <Button onClick={() => onConnectClick(instance)} color="primary" variant="contained" disableElevation>
                 Connect
             </Button>
@@ -360,6 +364,8 @@ export function MainPanel({ match, history }) {
     function gstate() {
         if (state.matches(setup) || state.matches(deploying) || state.matches(checking)) {
             return {type: "LOADING"};
+        } else if (state.matches(failed)) {
+            return {type: "ERROR", action: () => send(restart)};
         } else if (isHovered) {
             return {type: "PRELOADING"};
         } else {
@@ -380,7 +386,6 @@ export function MainPanel({ match, history }) {
     }
 
     const conten = content();
-
     return (
         <Wrapper state={gstate()}>
             {conten &&
