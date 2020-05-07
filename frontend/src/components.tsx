@@ -145,11 +145,12 @@ export function TheiaPanel() {
                 setData({type: "ERROR"});
                 return;
             }
-            const phase = result?.phase;
+            const phase = result?.details?.phase;
             if (phase == "Running") {
                 // Check URL is fine
-                if((await fetchWithTimeout('/api/${localStorage.getItem("userUUID")}/${uuid}')).ok) {
-                    setData({type: "SUCCESS", url: result.url});
+                const url = result.url;
+                if((await fetchWithTimeout(url)).ok) {
+                    setData({type: "SUCCESS", url: url});
                     return;
                 }
             }
@@ -268,8 +269,8 @@ function PortsTable({ports}) {
           <TableHead>
             <TableRow>
               <TableCell>Name</TableCell>
-              <TableCell align="right">Path</TableCell>
-              <TableCell align="right">Value</TableCell>
+              <TableCell>Path</TableCell>
+              <TableCell>Value</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -278,8 +279,8 @@ function PortsTable({ports}) {
                 <TableCell component="th" scope="row">
                   {port.name}
                 </TableCell>
-                <TableCell align="right">{port.path}</TableCell>
-                <TableCell align="right">{port.port}</TableCell>
+                <TableCell>{port.path}</TableCell>
+                <TableCell>{port.port}</TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -289,25 +290,31 @@ function PortsTable({ports}) {
 }
 
 function formatDate(t: number) {
-    return new Date(t).toISOString();
+    try {
+        return new Date(t).toISOString();
+    } catch {
+    }
 }
 
 function Instance({instance}) {
-    const {instance_uuid, started_at, template, phase} = instance;
+    const {instance_uuid, details, template} = instance;
     console.log(instance)
     const {name, runtime} = template;
     const {env, ports} = runtime;
+    const date = formatDate(details?.started_at?.secs_since_epoch);
     return (
-    <Card style={{display: "flex", flexDirection: "column", margin: 20}} variant="outlined">
-        <CardContent style={{height: "100%", overflow: "auto"}}>
+    <Card style={{ margin: 20, alignSelf: "baseline"}} variant="outlined">
+        <CardContent>
             <Typography>
             {name} ({instance_uuid})
             </Typography>
+            {date &&
             <Typography color="textSecondary" gutterBottom>
-            Started at {formatDate(started_at?.secs_since_epoch)}
+            Started at {date}
             </Typography>
+            }
             <Typography color="textSecondary" gutterBottom>
-            Phase: <em>{phase}</em>
+            Phase: <em>{details.phase}</em>
             </Typography>
             <div style={{display: "flex", paddingTop: 20}}>
                 <div style={{flex: 1, paddingRight: 10}}>
@@ -335,7 +342,7 @@ function ExistingInstances({instances, onStopClick, onConnectClick}) {
     <React.Fragment>
         <Typography variant="h5" style={{padding: 20}}>Running instance</Typography>
         <Divider orientation="horizontal" />
-        <Container style={{display: "flex", flex: 1, padding: 0, justifyContent: "center", alignItems: "center", overflowY: "auto"}}>
+        <Container style={{display: "flex", flex: 1, padding: 0, justifyContent: "center", overflowY: "auto"}}>
             <Instance instance={instance} />
         </Container>
         <Divider orientation="horizontal" />
