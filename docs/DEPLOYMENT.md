@@ -1,3 +1,11 @@
+# Update playground image
+
+* build and push new image (`make push-playground-docker-image`)
+* 
+* select right context (`ENVIRONMENT=staging make k8s-setup-gke`)
+* deploy on GKE (`ENVIRONMENT=staging make k8s-deploy-playground`)
+
+
 # Kubernetes
 
 Kubernetes is used as a deployment platform for the playground. It can be deployed on GCE or locally via minikube.
