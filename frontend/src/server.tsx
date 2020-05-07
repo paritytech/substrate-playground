@@ -6,8 +6,16 @@ let description = `#frdsfd
 * dsfds
 * dsfdsf
 
+* dsfds
+* dsfdsf
+
+* dsfds
+* dsfdsf
+
+* dsfds
+* dsfdsf
+
 dsfds dsfdsf dsf dsf dsf dsf dsf dsf dsfdsf dsf ds fds fdsf ds fds fds 
-dsf dsfds fds  dsfhyrtu ytu ytuy tu tu yrtu ytu ytu ytu ytu ytu ty uyt aa aaa aa aa aa dsf dsfds fds  dsfhyrtu ytu ytuy tu tu yrtu ytu ytu ytu ytu ytu ty uyt aa aaa aa aa aa dsf dsfds fds  dsfhyrtu ytu ytuy tu tu yrtu ytu ytu ytu ytu ytu ty uyt aa aaa aa aa aa
 
 ## erez`;
 let runtime = {env: [{name: "SOME_ENV", value: "1234"}], ports: [{name: "web", protocol: "TCP", path: "/", port: 123, target: 123}]};
@@ -27,7 +35,7 @@ export function intercept({noInstance = true, delay = 100}: {noInstance?: boolea
   server.get('/api/templates').intercept(async (req, res) => {
     await server.timeout(delay);
     res.status(200).json({
-      result: {workshop: template},
+      result: {workshop: template, workshop2: template, workshop3: template, workshop4: template, workshop5: template, workshop6: template, workshop7: template},
     });
   });
   server.get('/theia').intercept(async (req, res) => {
@@ -37,7 +45,7 @@ export function intercept({noInstance = true, delay = 100}: {noInstance?: boolea
   server.get('/api/:uuuid/:iuuid').intercept(async (req, res) => {
     await server.timeout(delay);
     res.status(200).json({
-      result: instanceDetails,
+      error: "Some error"//instanceDetails,
     });
   });
   server.get('/api/:uuuid').intercept(async (req, res) => {

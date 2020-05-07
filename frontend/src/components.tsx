@@ -142,7 +142,7 @@ export function TheiaPanel() {
         async function fetchData() {
             const { result, error } = await getInstanceDetails(localStorage.getItem("userUUID"), uuid);
             if (error) {
-                setData({type: "ERROR"});
+                setData({type: "ERROR", value: error, action: () => setData({})});
                 return;
             }
             const phase = result?.details?.phase;
@@ -210,8 +210,8 @@ function TemplateSelector({templates, onSelect, onRetryClick, state}) {
         <Divider orientation="horizontal" />
         <Container style={{display: "flex", flex: 1, padding: 0, alignItems: "center", overflowY: "auto"}}>
             {(!state.matches(failed) && templatesAvailable)
-                ? <div style={{display: "flex", flexDirection: "row", minHeight: 0, height: "100%"}}>
-                    <List style={{flex: 1, padding: 0, overflow: "auto"}}>
+                ? <div style={{display: "flex", flex: 1, flexDirection: "row", minHeight: 0, height: "100%"}}>
+                    <List style={{paddingTop: 0, paddingBottom: 0, overflowY: "auto"}}>
                         {templates.map((template, index: number) => (
                         <ListItem button key={index} onClick={() => select(template)}>
                             <ListItemText primary={template.name} />
@@ -220,7 +220,7 @@ function TemplateSelector({templates, onSelect, onRetryClick, state}) {
                     </List>
                     <Divider flexItem={true} orientation={"vertical"} light={true} />
                     {selection &&
-                    <Typography component="div" style={{flex: 6, marginLeft: 20, marginRight: 20, overflow: "auto", textAlign: "left"}}>
+                    <Typography component="div" style={{width: "100%", marginLeft: 20, overflow: "auto", textAlign: "left"}}>
                         <div dangerouslySetInnerHTML={{__html:marked(selection.description)}}></div>
                     </Typography>}
                 </div>
@@ -298,7 +298,6 @@ function formatDate(t: number) {
 
 function Instance({instance}) {
     const {instance_uuid, details, template} = instance;
-    console.log(instance)
     const {name, runtime} = template;
     const {env, ports} = runtime;
     const date = formatDate(details?.started_at?.secs_since_epoch);
@@ -377,7 +376,7 @@ export function MainPanel({ match, history }) {
         if (state.matches(setup) || state.matches(deploying) || state.matches(checking)) {
             return {type: "LOADING"};
         } else if (state.matches(failed)) {
-            return {type: "ERROR", action: () => send(restart)};
+            return {type: "ERROR", value: state.context.error,  action: () => send(restart)};
         } else if (isHovered) {
             return {type: "PRELOADING"};
         } else {
