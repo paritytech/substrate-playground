@@ -81,7 +81,7 @@ function lifecycle(history) {
             if (error != undefined) {
               callback({type: failure, error: error});
             } else {
-              callback({type: success});
+              setTimeout(() => callback({type: success}), 1000);
             }
           },
           onError: {
