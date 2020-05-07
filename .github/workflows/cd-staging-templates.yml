@@ -1,4 +1,4 @@
-name: Continuous Deployment on staging for Templates
+name: Continuous Deployment Templates staging
 
 on:
   push:

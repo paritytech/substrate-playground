@@ -1,4 +1,4 @@
-name: Continuous Deployment on staging Playground
+name: Continuous Deployment Playground staging
 
 on:
   push:

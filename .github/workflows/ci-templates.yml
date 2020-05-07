@@ -1,4 +1,4 @@
-name: Continuous Integration for Templates
+name: Continuous Integration Templates
 
 on:
   pull_request:
