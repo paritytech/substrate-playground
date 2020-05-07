@@ -77,12 +77,9 @@ function lifecycle(history) {
       [stopping]: {
         invoke: {
           src: (context, event) => async (callback) => {
-            const {result, error} = await stopInstance(context.userUUID, context.instanceUUID);
-            if (error != undefined) {
-              callback({type: failure, error: error});
-            } else {
-              setTimeout(() => callback({type: success}), 1000);
-            }
+            await stopInstance(context.userUUID, context.instanceUUID);
+            // Ignore failures, consider that this call is idempotent
+            setTimeout(() => callback({type: success}), 2000);
           },
           onError: {
             target: failed,
