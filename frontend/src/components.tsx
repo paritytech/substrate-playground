@@ -371,6 +371,7 @@ export function MainPanel({ match, history }) {
     const [hoverRef, isHovered] = useHover();
 
     const {instances, templates} = state.context;
+    const runningInstances = instances?.filter(instance => instance?.details?.phase === "Running");
 
     function gstate() {
         if (state.matches(setup) || state.matches(deploying) || state.matches(checking)) {
@@ -380,7 +381,7 @@ export function MainPanel({ match, history }) {
         } else if (isHovered) {
             return {type: "PRELOADING"};
         } else {
-            if (!(instances?.length + templates?.length > 0)) {
+            if (!(runningInstances?.length + templates?.length > 0)) {
                 return {type: "ERROR", value: "No templates", action: () => send(restart)};
             }
         }
@@ -388,8 +389,8 @@ export function MainPanel({ match, history }) {
 
     function content() {
         if (state.matches(initial)) {
-            if (instances?.length > 0) {
-                return <ExistingInstances onConnectClick={(instance) => history.push(`/${instance.instance_uuid}`)} onStopClick={(instance) => send(stop, {instance: instance})} instances={instances} />;
+            if (runningInstances?.length > 0) {
+                return <ExistingInstances onConnectClick={(instance) => history.push(`/${instance.instance_uuid}`)} onStopClick={(instance) => send(stop, {instance: instance})} instances={runningInstances} />;
             } else {
                 return <TemplateSelector state={state} templates={templates} onRetryClick={() => send(restart)} onSelect={(template) => send(deploy, {template: template})} onErrorClick={() => send(restart)} />;
             }

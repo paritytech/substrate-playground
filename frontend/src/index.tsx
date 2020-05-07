@@ -35,7 +35,7 @@ function devMode() {
 
 if (devMode()) {
   console.log("Installing HTTP interceptor");
-  intercept({noInstance: true});
+  intercept({noInstance: false});
 }
 
 ReactDOM.render(
