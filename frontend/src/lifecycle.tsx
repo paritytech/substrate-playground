@@ -79,7 +79,22 @@ function lifecycle(history) {
           src: (context, event) => async (callback) => {
             await stopInstance(context.userUUID, context.instanceUUID);
             // Ignore failures, consider that this call is idempotent
-            setTimeout(() => callback({type: success}), 2000);
+
+            async function waitForRemoval(count: number) {
+              if (count > 10) {
+                callback({type: failure, error: "Failed to stop instance in time"});
+              }
+
+              const { error } = await getInstanceDetails(context.userUUID, context.instanceUUID);
+              if (error) {
+                // The instance doesn't exist anymore, stopping is done
+                callback({type: success});
+              } else {
+                setTimeout(() => waitForRemoval(count + 1), 1000);
+              }
+            }
+
+            await waitForRemoval(0);
           },
           onError: {
             target: failed,
@@ -137,15 +152,6 @@ function lifecycle(history) {
         on: { [restart]: setup }
       }
   }
-},
-{
-  activities: {
-    [loading]: () => {
-      const className = "loading";
-      document.body.classList.add(className);
-      return () => document.body.classList.remove(className);
-    }
-  },
 })};
 
 export function useLifecycle(history) {
