@@ -53,7 +53,7 @@ dev-backend:
 # Build theia docker image
 build-theia-docker-image:
 	$(eval THEIA_DOCKER_IMAGE_VERSION=$(shell git rev-parse --short HEAD))
-	@cd templates; docker build -f Dockerfile --label org.opencontainers.image.version =${THEIA_DOCKER_IMAGE_VERSION} -t ${THEIA_DOCKER_IMAGE_NAME}:${THEIA_DOCKER_IMAGE_VERSION} . && docker image prune -f --filter label=stage=builder
+	@cd templates; docker build -f Dockerfile --label org.opencontainers.image.version=${THEIA_DOCKER_IMAGE_VERSION} -t ${THEIA_DOCKER_IMAGE_NAME}:${THEIA_DOCKER_IMAGE_VERSION} --rm . && docker image prune -f --filter label=stage=builder
 	docker tag ${THEIA_DOCKER_IMAGE_NAME}:${THEIA_DOCKER_IMAGE_VERSION} gcr.io/${GOOGLE_PROJECT_ID}/${THEIA_DOCKER_IMAGE_NAME}
 
 # Push a newly built theia image on docker.io and gcr.io
