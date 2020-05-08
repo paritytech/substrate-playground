@@ -81,7 +81,7 @@ function lifecycle(history) {
             // Ignore failures, consider that this call is idempotent
 
             async function waitForRemoval(count: number) {
-              if (count > 10) {
+              if (count > 30) {
                 callback({type: failure, error: "Failed to stop instance in time"});
               }
 

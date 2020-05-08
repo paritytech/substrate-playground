@@ -7,6 +7,6 @@ function timeout<T>(promise: Promise<T>, ms: number): Promise<T> {
     });
   }
 
-export async function fetchWithTimeout(url: string, opts: Object = {}, ms: number = 3000): Promise<Response>  {
+export async function fetchWithTimeout(url: string, opts: Object = {cache: "no-store"}, ms: number = 3000): Promise<Response>  {
     return timeout(fetch(url, opts), ms).catch(error => error);
 }
