@@ -287,7 +287,7 @@ function PortsTable({ports}) {
 
 function formatDate(t: number) {
     try {
-        return new Date(t).toISOString();
+        return new Date(1000*t).toISOString();
     } catch {
     }
 }
