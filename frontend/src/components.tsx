@@ -23,7 +23,7 @@ import Paper from '@material-ui/core/Paper';
 import Typography from '@material-ui/core/Typography';
 import marked from 'marked';
 import { useHover, useInterval, useWindowMaxDimension } from './hooks';
-import { useLifecycle, checking, deploy, deploying, failed, initial, restart, setup, stop } from './lifecycle';
+import { useLifecycle, checking, deploy, deploying, failed, initial, restart, setup, stop, stopping } from './lifecycle';
 import { useParams } from "react-router-dom";
 import Zoom from '@material-ui/core/Zoom';
 import Fade from '@material-ui/core/Fade';
@@ -140,11 +140,7 @@ export function TheiaPanel() {
 
     useEffect(() => {
         async function fetchData() {
-            const { result, error } = await getInstanceDetails(localStorage.getItem("userUUID"), uuid);
-            if (error) {
-                setData({type: "ERROR", value: error, action: () => setData({})});
-                return;
-            }
+            const { result } = await getInstanceDetails(localStorage.getItem("userUUID"), uuid);
             const phase = result?.details?.phase;
             if (phase == "Running") {
                 // Check URL is fine
@@ -374,7 +370,7 @@ export function MainPanel({ match, history }) {
     const runningInstances = instances?.filter(instance => instance?.details?.phase === "Running");
 
     function gstate() {
-        if (state.matches(setup) || state.matches(deploying) || state.matches(checking)) {
+        if (state.matches(setup) || state.matches(stopping) || state.matches(deploying) || state.matches(checking)) {
             return {type: "LOADING"};
         } else if (state.matches(failed)) {
             return {type: "ERROR", value: state.context.error,  action: () => send(restart)};

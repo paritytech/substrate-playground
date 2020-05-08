@@ -45,7 +45,7 @@ export function intercept({noInstance = true, delay = 100}: {noInstance?: boolea
   server.get('/api/:uuuid/:iuuid').intercept(async (req, res) => {
     await server.timeout(delay);
     res.status(200).json({
-      error: "Some error"//instanceDetails,
+      result: instanceDetails,
     });
   });
   server.get('/api/:uuuid').intercept(async (req, res) => {
