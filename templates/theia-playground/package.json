@@ -1,6 +1,6 @@
 {
     "name": "@parity/theia-playground",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "theia": {
         "target": "browser",
         "frontend": {
@@ -71,12 +71,14 @@
         "vscode-builtin-node-debug2": "https://github.com/theia-ide/vscode-node-debug2/releases/download/v1.33.0/node-debug2-1.33.0.vsix",
         "vscode-builtin-rust": "https://github.com/theia-ide/vscode-builtin-extensions/releases/download/v1.39.1-prel/rust-1.39.1-prel.vsix",
         "vscode-builtin-shellscript": "https://github.com/theia-ide/vscode-builtin-extensions/releases/download/v1.39.1-prel/shellscript-1.39.1-prel.vsix",
+        "vscode-builtin-theme-monokai": "https://open-vsx.org/api/vscode/theme-monokai/1.39.1/file/vscode.theme-monokai-1.39.1.vsix",
         "vscode-builtin-typescript": "https://github.com/theia-ide/vscode-builtin-extensions/releases/download/v1.39.1-prel/typescript-1.39.1-prel.vsix",
         "vscode-builtin-typescript-language-features": "https://github.com/theia-ide/vscode-builtin-extensions/releases/download/v1.39.1-prel/typescript-language-features-1.39.1-prel.vsix",
         "vscode-builtin-yaml": "https://github.com/theia-ide/vscode-builtin-extensions/releases/download/v1.39.1-prel/yaml-1.39.1-prel.vsix",
         "vscode-editorconfig": "https://github.com/theia-ide/editorconfig-vscode/releases/download/v0.14.4/EditorConfig-0.14.4.vsix",
         "vscode-eslint": "https://github.com/theia-ide/vscode-eslint/releases/download/release%2F2.0.15/vscode-eslint-2.0.15.vsix",
         "vscode-substrate": "https://github.com/axelchalon/vscode-marketplace/releases/download/v0.3.0/substrate-marketplace-0.3.0.vsix",
+        "vscode-references-view": "https://open-vsx.org/api/ms-vscode/references-view/0.0.47/file/ms-vscode.references-view-0.0.47.vsix",
         "rls-vscode": "https://github.com/rust-lang/rls-vscode/releases/download/v0.7.6/rust.vsix"
     },
     "scripts": {

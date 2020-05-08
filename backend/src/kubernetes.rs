@@ -18,7 +18,7 @@ use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::{collections::BTreeMap, error::Error, time::SystemTime};
 use uuid::Uuid;
 
-const APP_LABEL: &str = "app.kubernetes.io/name";
+const APP_LABEL: &str = "app.kubernetes.io/part-of";
 const APP_VALUE: &str = "playground";
 const COMPONENT_LABEL: &str = "app.kubernetes.io/component";
 const COMPONENT_VALUE: &str = "theia";

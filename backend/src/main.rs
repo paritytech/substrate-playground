@@ -9,7 +9,6 @@ mod template;
 
 use crate::manager::Manager;
 use rocket::{config::Environment, http::Method, routes};
-use rocket_contrib::serve::StaticFiles;
 use rocket_cors::{AllowedOrigins, CorsOptions};
 use rocket_prometheus::PrometheusMetrics;
 use std::{env, error::Error};
@@ -48,9 +47,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let error = rocket::ignite()
         .attach(prometheus.clone())
         .attach(cors)
-        .mount("/", StaticFiles::from("./static"))
+
         .mount(
-            "/api",
+            "/",
             routes![
                 api::deploy,
                 api::get,
