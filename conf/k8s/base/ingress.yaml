@@ -3,7 +3,6 @@ kind: Ingress
 metadata:
   name: ingress
   annotations:
-    kubernetes.io/ingress.global-static-ip-name: playground-staging
     kubernetes.io/ingress.class: "nginx"
     nginx.ingress.kubernetes.io/enable-cors: "true"
     nginx.ingress.kubernetes.io/cors-allow-methods: "GET, OPTIONS"
@@ -19,10 +18,13 @@ spec:
     - __TO_REPLACE__
     secretName: playground-tls
   rules:
-  - host: __TO_REPLACE__
-    http:
+  - http:
       paths:
       - path: /
         backend:
-          serviceName: service
+          serviceName: ui-service
+          servicePort: 80
+      - path: /api
+        backend:
+          serviceName: server-service
           servicePort: 80

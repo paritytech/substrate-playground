@@ -11,7 +11,10 @@ resources:
 - ../../base
 
 images:
-- name: gcr.io/substrateplayground-252112/jeluard/substrate-playground
+- name: gcr.io/substrateplayground-252112/jeluard/substrate-playground-server
+  digest: sha256:9d2ff79cb85e1755c27700e7d831384ff46d40d0882aa0d7b8f8f14a1549ef4c
+- name: gcr.io/substrateplayground-252112/jeluard/substrate-playground-ui
+  digest: sha256:9d2ff79cb85e1755c27700e7d831384ff46d40d0882aa0d7b8f8f14a1549ef4c
 
 patches:
 - patch: |-
