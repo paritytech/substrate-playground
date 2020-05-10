@@ -477,6 +477,10 @@ impl Engine {
     }
 
     pub async fn deploy(self, user_uuid: &str, template_id: &str) -> Result<String, String> {
+        if !self.clone().list(&user_uuid).await?.is_empty() {
+            return Err("One instance is already running".to_string());
+        }
+
         let config = config().await?;
         let client = APIClient::new(config);
         // Access the right image id
