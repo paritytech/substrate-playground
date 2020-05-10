@@ -2,7 +2,6 @@ import { useMachine } from '@xstate/react';
 import { v4 as uuidv4 } from 'uuid';
 import { assign, Machine } from 'xstate';
 import { deployImage, getInstanceDetails, getTemplates, getUserDetails, stopInstance } from './api';
-import { fetchWithTimeout } from './utils';
 
 const key = "userUUID";
 const userUUID = localStorage.getItem(key) || uuidv4();
@@ -24,48 +23,64 @@ export const setup = "@state/SETUP";
 export const initial = "@state/INITIAL";
 export const deploying = "@state/DEPLOYING";
 export const stopping = "@state/STOPPING";
-export const checking = "@state/CHECKING";
 export const failed = "@state/FAILED";
 
 export const success = "@event/SUCCESS";
 export const failure = "@event/FAILURE";
 
+export const check = "@action/CHECK";
 export const deploy = "@action/DEPLOY";
 export const stop = "@action/STOP";
 export const restart = "@action/RESTART";
-const loading = "@activity/LOADING";
 
-function lifecycle(history) {
+// TODO read origin call from github and extract template?
+function lifecycle(history, location) {
+  const template = new URLSearchParams(location.search).get("deploy");
   return Machine<Context>({
   id: 'lifecycle',
   initial: setup,
   context: {
     userUUID: userUUID,
     checkOccurences: 0,
+    template: template,
   },
   states: {
       [setup]: {
         invoke: {
-          src: async (context, _event) => {
+          src: (context, _event) => async (callback) =>  {
             const response = (await getUserDetails(context.userUUID));
             if (response.error) {
               throw response;
             }
+
             const response2 = (await getTemplates());
             if (response2.error) {
               throw response2;
             }
-            return {instances: response.result, templates: Object.entries(response2.result).map(([k, v]) => {v["id"] = k; return v;})};
-          },
-          onDone: {
-            target: initial,
-            actions: assign({instances: (_context, event) => event.data.instances,
-                             templates: (_context, event) => event.data.templates})
+
+            const instances = response.result;
+            const templates = response2.result;
+            if (context.template && instances?.length === 0) {
+              if (templates[context.template]) {
+                callback({type: deploy, template: context.template});
+              } else {
+                throw {error: `Unknown template ${context.template}`}
+              }
+            }
+
+            callback({type: check, data: {instances: response.result, templates: Object.entries(templates).map(([k, v]) => {v["id"] = k; return v;})}});
           },
           onError: {
             target: failed,
             actions: assign({ error: (_context, event) => event.data.error})
           }
+        },
+        on: {
+          [deploy]: { target: deploying,
+                      actions: assign({template: (_context, event) => event.template}) },
+          [check]: { target: initial,
+                     actions: assign({instances: (_context, event) => event.data.instances,
+                                      templates: (_context, event) => event.data.templates}) }
         }
       },
       [initial]: {
@@ -115,32 +130,13 @@ function lifecycle(history) {
             if (error != undefined) {
               callback({type: failure, error: error});
             } else {
-              callback({type: success, uuid: result});
+              history.push(`/${result}`);
             }
           },
           onError: {
             target: failed,
             actions: assign({ error: (_context, event) => event.data.error})
           }
-        },
-        on: {
-          [restart]: setup,
-          [success]: { target: checking,
-                       actions: assign({ instanceUUID: (_context, event) => event.uuid })},
-          [failure]: { target: failed,
-                       actions: assign({ error: (_context, event) => event.error }) }
-        }
-      },
-      [checking]: {
-        activities: [loading],
-        invoke: {
-          src: (context, _event) => async (callback, _onReceive) => {
-            history.push(`/${context.instanceUUID}`);
-          },
-          onError: {
-            target: failed,
-            actions: assign({ error: (_context, event) => event.data.message}),
-          },
         },
         on: {
           [restart]: setup,
@@ -154,6 +150,6 @@ function lifecycle(history) {
   }
 })};
 
-export function useLifecycle(history) {
-    return useMachine(lifecycle(history), { devTools: true });
+export function useLifecycle(history, location) {
+    return useMachine(lifecycle(history, location), { devTools: true });
 }
