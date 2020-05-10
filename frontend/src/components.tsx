@@ -23,7 +23,7 @@ import Paper from '@material-ui/core/Paper';
 import Typography from '@material-ui/core/Typography';
 import marked from 'marked';
 import { useHover, useInterval, useWindowMaxDimension } from './hooks';
-import { useLifecycle, checking, deploy, deploying, failed, initial, restart, setup, stop, stopping } from './lifecycle';
+import { useLifecycle, deploy, deploying, failed, initial, restart, setup, stop, stopping } from './lifecycle';
 import { useParams } from "react-router-dom";
 import Zoom from '@material-ui/core/Zoom';
 import Fade from '@material-ui/core/Fade';
@@ -136,7 +136,7 @@ export function Loading({phase, retry = 0}: {phase?: string, retry?: number}) {
 export function TheiaPanel() {
     const { uuid } = useParams();
     const maxRetries = 5*60;
-    const [data, setData] = useState({});
+    const [data, setData] = useState({type: "LOADING"});
 
     useEffect(() => {
         async function fetchData() {
@@ -362,15 +362,15 @@ const Transition = React.forwardRef(function Transition(
     return <Zoom direction="up" ref={ref} {...props} />;
   });
 
-export function MainPanel({ match, history }) {
-    const [state, send] = useLifecycle(history);
+export function MainPanel({ history, location }) {
+    const [state, send] = useLifecycle(history, location);
     const [hoverRef, isHovered] = useHover();
 
     const {instances, templates} = state.context;
     const runningInstances = instances?.filter(instance => instance?.details?.phase === "Running");
 
     function gstate() {
-        if (state.matches(setup) || state.matches(stopping) || state.matches(deploying) || state.matches(checking)) {
+        if (state.matches(setup) || state.matches(stopping) || state.matches(deploying)) {
             return {type: "LOADING"};
         } else if (state.matches(failed)) {
             return {type: "ERROR", value: state.context.error,  action: () => send(restart)};
