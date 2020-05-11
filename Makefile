@@ -24,6 +24,11 @@ PLAYGROUND_DOCKER_IMAGE_NAME=${DOCKER_USERNAME}/substrate-playground
 THEIA_DOCKER_IMAGE_NAME=${DOCKER_USERNAME}/theia-substrate
 GOOGLE_PROJECT_ID=substrateplayground-252112
 
+COLOR_BOLD:= $(shell tput bold)
+COLOR_RED:= $(shell tput bold; tput setaf 1)
+COLOR_GREEN:= $(shell tput bold; tput setaf 2)
+COLOR_RESET:= $(shell tput sgr0)
+
 # Show this help.
 help:
 	@awk '/^#/{c=substr($$0,3);next}c&&/^[[:alpha:]][[:print:]]+:/{print substr($$1,1,index($$1,":")),c}1{c=0}' $(MAKEFILE_LIST) | column -s: -t
@@ -73,11 +78,6 @@ push-playground-docker-image: build-playground-docker-image
 	docker push gcr.io/${GOOGLE_PROJECT_ID}/${PLAYGROUND_DOCKER_IMAGE_NAME}
 
 ## Kubernetes deployment
-
-COLOR_BOLD=`tput bold`
-COLOR_RED=`tput bold; tput setaf 1`
-COLOR_GREEN=`tput bold; tput setaf 2`
-COLOR_RESET=`tput sgr0`
 
 k8s-assert:
 	$(eval CURRENT_NAMESPACE=$(shell kubectl config view --minify --output 'jsonpath={..namespace}'))
