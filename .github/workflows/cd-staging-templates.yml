@@ -4,48 +4,15 @@ on:
   push:
     branches:
       - develop
+    paths:
+      - 'templates/**'
 
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
     steps:
-      # https://github.com/actions/checkout
-      - uses: actions/checkout@v2
-      - uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
-        with:
-          # GCLOUD_KEY is the base64 of the gcloud service account JSON file
-          # Get the JSON file from https://console.cloud.google.com/iam-admin/serviceaccounts?authuser=1&hl=fr&project=substrateplayground-252112&folder=&organizationId=&supportedpurview=project
-          # ... -> Actions -> Create Key
-          # then base64 substrateplayground-XXX.json | tr -d \\n
-          service_account_key: ${{ secrets.GCLOUD_KEY }}
-          export_default_credentials: true
-      - run: gcloud auth configure-docker
-      - run: echo "::set-env name=ACCESS_TOKEN::$(gcloud auth print-access-token)"
-      - uses: docker/build-push-action@v1 # https://github.com/docker/build-push-action
-        with:
-          username: oauth2accesstoken
-          password: ${{ env.ACCESS_TOKEN }}
-          dockerfile: conf/Dockerfile
-          repository: substrateplayground-252112/jeluard/substrate-playground
-          registry: gcr.io
-          tags: latest
-          add_git_labels: true
-          tag_with_ref: true
-          tag_with_sha: true
-
-#  deploy:
-#    needs: [build]
-#    - uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
-#      with:
-#        version: '270.0.0'
-#        service_account_email: ${{ secrets.SA_EMAIL }}
-#        service_account_key: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
-
-    # Configure docker to use the gcloud command-line tool as a credential helper
-#    - run: |
-#        gcloud auth configure-docker
-
-#    - name: Publish
-#      if: github.ref == 'refs/heads/master' or contains(github.ref, "release")
-#      run: |
-#        docker push gcr.io/$GKE_PROJECT/$IMAGE:$GITHUB_SHA
+      - name: Deploy templates
+        run: make k8s-update-images-config
+        env:
+          ENVIRONMENT: staging
+          SKIP_ACK: true
