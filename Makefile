@@ -107,7 +107,7 @@ k8s-setup-gke: k8s-assert
 k8s-gke-static-ip: k8s-assert
 	gcloud compute addresses describe ${IDENTIFIER} --region=${GKE_REGION} --format="value(address)"
 
-k8s-update-playground-version: k8s-assert
+k8s-update-playground-version:
 	$(eval PLAYGROUND_DOCKER_IMAGE_VERSION=$(shell git rev-parse --short HEAD))
 	$(eval PLAYGROUND_DOCKER_IMAGE_DIGEST=$(shell docker images gcr.io/${GOOGLE_PROJECT_ID}/${PLAYGROUND_DOCKER_IMAGE_NAME} --filter="label=org.opencontainers.image.version=${PLAYGROUND_DOCKER_IMAGE_VERSION}" --digests --format '{{ .Digest }}'))
 	@if [ "${PLAYGROUND_DOCKER_IMAGE_DIGEST}" != "" ] ;then \

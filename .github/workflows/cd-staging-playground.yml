@@ -39,6 +39,7 @@ jobs:
         env:
           ENVIRONMENT: staging
           SKIP_ACK: true
+          TERM: xterm-256color
       - name: Commit files
         run: |
           git add .
@@ -46,7 +47,4 @@ jobs:
           git config --local user.name "GitHub Action"
           git commit -m "ci: Updated playground image" -a | exit 0
       - name: Deploy on GKE
-        run: make k8s-deploy-playground
-        env:
-          ENVIRONMENT: staging
-          SKIP_ACK: true
+        run: kustomize build conf/k8s/overlays/staging/ | kubectl apply --record -f -
