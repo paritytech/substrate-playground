@@ -74,13 +74,18 @@ push-playground-docker-image: build-playground-docker-image
 
 ## Kubernetes deployment
 
+COLOR_BOLD=`tput bold`
+COLOR_RED=`tput bold; tput setaf 1`
+COLOR_GREEN=`tput bold; tput setaf 2`
+COLOR_RESET=`tput sgr0`
+
 k8s-assert:
 	$(eval CURRENT_NAMESPACE=$(shell kubectl config view --minify --output 'jsonpath={..namespace}'))
 	$(eval CURRENT_CONTEXT=$(shell kubectl config current-context))
-	@echo $$'You are about to interact with the \e[31m'"${ENVIRONMENT}"$$'\e[0m environment. (Modify the environment by setting the \e[31m'ENVIRONMENT$$'\e[0m variable)'
-	@echo $$'(namespace: \e[31m'"${CURRENT_NAMESPACE}"$$'\e[0m, context: \e[31m'"${CURRENT_CONTEXT}"$$'\e[0m)'
+	@echo "You are about to interact with the ${COLOR_GREEN}${ENVIRONMENT}${COLOR_RESET} environment. (Modify the environment by setting the ${COLOR_BOLD}'ENVIRONMENT'${COLOR_RESET} variable)"
+	@echo "(namespace: ${COLOR_GREEN}${CURRENT_NAMESPACE}${COLOR_RESET}, context: ${COLOR_GREEN}${CURRENT_CONTEXT}${COLOR_RESET})"
 	@if [ "${CURRENT_NAMESPACE}" != "${IDENTIFIER}" ] ;then \
-	  read -p $$'Current namespace (${CURRENT_NAMESPACE}) doesn\'t match environment. Update to "${IDENTIFIER}"? [yN]' proceed; \
+	  read -p "Current namespace (${COLOR_GREEN}${CURRENT_NAMESPACE}${COLOR_RESET}) doesn't match environment. Update to ${COLOR_RED}${IDENTIFIER}${COLOR_RESET}? [yN]" proceed; \
 	  if [ "$${proceed}" == "Y" ] ;then \
 	  	kubectl config set-context --current --namespace=${IDENTIFIER}; \
 	  else \
@@ -109,7 +114,7 @@ k8s-update-playground-version: k8s-assert
 	  cd conf/k8s/overlays/${ENVIRONMENT}/; \
 	  kustomize edit set image gcr.io/${GOOGLE_PROJECT_ID}/${PLAYGROUND_DOCKER_IMAGE_NAME}@${PLAYGROUND_DOCKER_IMAGE_DIGEST}; \
 	else \
-	  >&2 echo $$'Make sure playground image \e[31m${PLAYGROUND_DOCKER_IMAGE_VERSION}\e[0m has been published'; \
+	  >&2 echo "Make sure playground image ${COLOR_GREEN}${PLAYGROUND_DOCKER_IMAGE_VERSION}${COLOR_RESET} has been published"; \
 	  exit 1; \
 	fi
 
