@@ -79,9 +79,17 @@ k8s-assert:
 	$(eval CURRENT_CONTEXT=$(shell kubectl config current-context))
 	@echo $$'You are about to interact with the \e[31m'"${ENVIRONMENT}"$$'\e[0m environment. (Modify the environment by setting the \e[31m'ENVIRONMENT$$'\e[0m variable)'
 	@echo $$'(namespace: \e[31m'"${CURRENT_NAMESPACE}"$$'\e[0m, context: \e[31m'"${CURRENT_CONTEXT}"$$'\e[0m)'
-	@if [ "${CURRENT_NAMESPACE}" != "${IDENTIFIER}" ] ;then read -p $$'Current namespace (${CURRENT_NAMESPACE}) doesn\'t match environment. Update to "${IDENTIFIER}"? [yN]' proceed; if [ "$${proceed}" == "Y" ] ;then kubectl config set-context --current --namespace=${IDENTIFIER}; else exit 1; fi; fi
-	@read -p $$'Ok to proceed? [yN]' answer; \
-	if [ "$${answer}" != "Y" ] ;then exit 1; fi
+	@if [ "${CURRENT_NAMESPACE}" != "${IDENTIFIER}" ] ;then \
+	  read -p $$'Current namespace (${CURRENT_NAMESPACE}) doesn\'t match environment. Update to "${IDENTIFIER}"? [yN]' proceed; \
+	  if [ "$${proceed}" == "Y" ] ;then \
+	  	kubectl config set-context --current --namespace=${IDENTIFIER}; \
+	  else \
+		exit 1; \
+	  fi; \
+	fi
+ifeq ($(SKIP_ACK), )
+	@read -p $$'Ok to proceed? [yN]' answer; if [ "$${answer}" != "Y" ] ;then exit 1; fi
+endif
 
 k8s-setup-development: k8s-assert
 	kubectl config use-context docker-for-desktop
@@ -94,9 +102,20 @@ k8s-setup-gke: k8s-assert
 k8s-gke-static-ip: k8s-assert
 	gcloud compute addresses describe ${IDENTIFIER} --region=${GKE_REGION} --format="value(address)"
 
+k8s-update-playground-version: k8s-assert
+	$(eval PLAYGROUND_DOCKER_IMAGE_VERSION=$(shell git rev-parse --short HEAD))
+	$(eval PLAYGROUND_DOCKER_IMAGE_DIGEST=$(shell docker images gcr.io/${GOOGLE_PROJECT_ID}/${PLAYGROUND_DOCKER_IMAGE_NAME} --filter="label=org.opencontainers.image.version=${PLAYGROUND_DOCKER_IMAGE_VERSION}" --digests --format '{{ .Digest }}'))
+	@if [ "${PLAYGROUND_DOCKER_IMAGE_DIGEST}" != "" ] ;then \
+	  cd conf/k8s/overlays/${ENVIRONMENT}/; \
+	  kustomize edit set image gcr.io/${GOOGLE_PROJECT_ID}/${PLAYGROUND_DOCKER_IMAGE_NAME}@${PLAYGROUND_DOCKER_IMAGE_DIGEST}; \
+	else \
+	  >&2 echo $$'Make sure playground image \e[31m${PLAYGROUND_DOCKER_IMAGE_VERSION}\e[0m has been published'; \
+	  exit 1; \
+	fi
+
 # Deploy playground on kubernetes
 k8s-deploy-playground: k8s-assert
-	kubectl apply --record -k conf/k8s/overlays/${ENVIRONMENT}
+	kustomize build conf/k8s/overlays/${ENVIRONMENT}/ | kubectl apply --record -f -
 
 # Undeploy playground from kubernetes
 k8s-undeploy-playground: k8s-assert

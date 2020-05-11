@@ -5,22 +5,34 @@ commonLabels:
   app.kubernetes.io/environment: staging
   app.kubernetes.io/version: "1.0"
 
-bases:
-- ../../base
-
 namespace: playground-staging
+
+resources:
+- ../../base
 
 images:
 - name: gcr.io/substrateplayground-252112/jeluard/substrate-playground
-  digest: sha256:64171c29cc9da023f284dd10931b2aa785fb8f300d6e825e7125bcc3ddabcfaf
 
 patches:
-- custom-load-balancer-ip.yaml
-
-patchesJson6902:
-- target:
+- patch: |-
+    - op: replace
+      path: /spec/rules/0/host
+      value: playground-staging.substrate.dev
+    - op: replace
+      path: /spec/tls/0/hosts/0
+      value: '*.playground-staging.substrate.dev'
+  target:
     group: extensions
-    version: v1beta1
     kind: Ingress
     name: ingress
-  path: ingress-patch.yaml
+    version: v1beta1
+
+patchesStrategicMerge:
+- |-
+  apiVersion: v1
+  kind: Service
+  metadata:
+    name: ingress-nginx
+    namespace: ingress-nginx
+  spec:
+    loadBalancerIP: 34.69.4.59

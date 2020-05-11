@@ -32,20 +32,19 @@ jobs:
           add_git_labels: true
           tag_with_ref: true
           tag_with_sha: true
-
-#  deploy:
-#    needs: [build]
-#    - uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
-#      with:
-#        version: '270.0.0'
-#        service_account_email: ${{ secrets.SA_EMAIL }}
-#        service_account_key: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
-
-    # Configure docker to use the gcloud command-line tool as a credential helper
-#    - run: |
-#        gcloud auth configure-docker
-
-#    - name: Publish
-#      if: github.ref == 'refs/heads/master' or contains(github.ref, "release")
-#      run: |
-#        docker push gcr.io/$GKE_PROJECT/$IMAGE:$GITHUB_SHA
+      - name: Update version
+        run: make k8s-update-playground-version
+        env:
+          ENVIRONMENT: staging
+          SKIP_ACK: true
+      - name: Commit files
+        run: |
+          git add .
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git commit -m "ci: Updated playground image" -a | exit 0
+      - name: Deploy on GKE
+        run: make k8s-deploy-playground
+        env:
+          ENVIRONMENT: staging
+          SKIP_ACK: true
