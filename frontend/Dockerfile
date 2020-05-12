@@ -7,11 +7,11 @@
 #         Frontend       #
 ##########################
 
-FROM node:alpine AS builder-frontend
+FROM node:alpine AS builder
 
 WORKDIR /opt
 
-COPY frontend .
+COPY . .
 
 ENV PARCEL_WORKERS=1
 
@@ -25,17 +25,13 @@ RUN apk add --no-cache --virtual .gyp \
 LABEL stage=builder
 
 ##########################
-#         Runtime        #
+#          Nginx         #
 ##########################
 
-FROM scratch
+FROM nginx
 
-// TODO NGINX
+COPY ./conf/nginx.conf /etc/nginx/conf.d/default.conf
 
-ENV RUST_BACKTRACE=full\
-    RUST_LOG="warn"
+WORKDIR /usr/share/nginx/html
 
-COPY --from=builder-backend /opt/bin/$BINARY_NAME /
-COPY --from=builder-frontend /opt/dist/ /static
-
-CMD ["/playground"]
+COPY --from=builder /opt/dist/ .
