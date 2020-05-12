@@ -38,7 +38,8 @@ jobs:
         run: |-
           curl -sfLo kustomize https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv3.5.5/kustomize_v3.5.5_linux_amd64.tar.gz
           tar zxvf kustomize*
-          chmod u+x ./kustomize    
+          chmod u+x ./kustomize  
+        working-directory: conf/k8s/overlays/staging
       - name: Update version
         run: ./kustomize edit set image gcr.io/substrateplayground-252112/jeluard/substrate-playground:sha-${GITHUB_SHA::7}
         working-directory: conf/k8s/overlays/staging
