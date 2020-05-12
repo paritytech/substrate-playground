@@ -40,7 +40,8 @@ jobs:
           tar zxvf kustomize*
           chmod u+x ./kustomize    
       - name: Update version
-        run: ./kustomize edit set image gcr.io/substrateplayground-252112/jeluard/substrate-playground:sha-$GITHUB_SHA
+        run: ./kustomize edit set image gcr.io/substrateplayground-252112/jeluard/substrate-playground:sha-${GITHUB_SHA::7}
+        working-directory: conf/k8s/overlays/staging
       - uses: stefanzweifel/git-auto-commit-action@v4.2.0
         with:
           commit_message: "ci: Updated playground image"
