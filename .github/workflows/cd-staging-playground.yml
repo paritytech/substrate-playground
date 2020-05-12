@@ -15,7 +15,6 @@ jobs:
       - uses: actions/checkout@v2
         with:
           token: ${{ secrets.PAT_TOKEN }}
-          persist-credentials: false
       - uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
         with:
           # GCLOUD_KEY is the base64 of the gcloud service account JSON file
