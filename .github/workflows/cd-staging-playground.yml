@@ -44,7 +44,8 @@ jobs:
         run: ./kustomize edit set image gcr.io/substrateplayground-252112/jeluard/substrate-playground:sha-${GITHUB_SHA::7}
         working-directory: conf/k8s/overlays/staging
       - name: Deploy on GKE
-        run: ./kustomize build conf/k8s/overlays/staging/ | kubectl apply --record -f -
+        run: ./kustomize build | kubectl apply --record -f -
+        working-directory: conf/k8s/overlays/staging
       - name: Commit files
         run: |
           git config --local user.email "action@github.com"
