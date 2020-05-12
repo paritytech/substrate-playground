@@ -8,7 +8,7 @@ on:
       - 'templates/**'
 
 env:
-  GKE_CLUSTER: substrate-playground-staging
+  GKE_CLUSTER: susbtrate-playground-staging
   GKE_ZONE: us-central1-a
 
 jobs:
