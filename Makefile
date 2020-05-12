@@ -109,14 +109,7 @@ k8s-gke-static-ip: k8s-assert
 
 k8s-update-playground-version:
 	$(eval PLAYGROUND_DOCKER_IMAGE_VERSION=$(shell git rev-parse --short HEAD))
-	$(eval PLAYGROUND_DOCKER_IMAGE_DIGEST=$(shell docker images gcr.io/${GOOGLE_PROJECT_ID}/${PLAYGROUND_DOCKER_IMAGE_NAME} --filter="label=org.opencontainers.image.version=sha-${PLAYGROUND_DOCKER_IMAGE_VERSION}" --digests --format '{{ .Digest }}'))
-	@if [ "${PLAYGROUND_DOCKER_IMAGE_DIGEST}" != "" ] ;then \
-	  cd conf/k8s/overlays/${ENVIRONMENT}/; \
-	  kustomize edit set image gcr.io/${GOOGLE_PROJECT_ID}/${PLAYGROUND_DOCKER_IMAGE_NAME}:sha-${PLAYGROUND_DOCKER_IMAGE_VERSION}; \
-	else \
-	  >&2 echo "Make sure playground image ${COLOR_GREEN}sha-${PLAYGROUND_DOCKER_IMAGE_VERSION}${COLOR_RESET} has been published"; \
-	  exit 1; \
-	fi
+	kustomize edit set image gcr.io/${GOOGLE_PROJECT_ID}/${PLAYGROUND_DOCKER_IMAGE_NAME}:sha-${PLAYGROUND_DOCKER_IMAGE_VERSION};
 
 # Deploy playground on kubernetes
 k8s-deploy-playground: k8s-assert
