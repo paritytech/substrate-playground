@@ -38,6 +38,8 @@ if (devMode()) {
   intercept({noInstance: true});
 }
 
+console.log(`Version ${process.env.GITHUB_SHA}`)
+
 ReactDOM.render(
     <App />,
     document.querySelector("main")
