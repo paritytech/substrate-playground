@@ -46,11 +46,11 @@ jobs:
       - name: Deploy on GKE
         run: ./kustomize build conf/k8s/overlays/staging/ | kubectl apply --record -f -
       - name: Commit files
-          run: |
-            git config --local user.email "action@github.com"
-            git config --local user.name "GitHub Action"
-            git commit -m "ci: Updated playground image" -a
-        - name: Push changes
-          uses: ad-m/github-push-action@master
-          with:
-            github_token: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git commit -m "ci: Updated playground image" -a
+      - name: Push changes
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
