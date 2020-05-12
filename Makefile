@@ -58,23 +58,23 @@ dev-backend:
 # Build theia docker image
 build-theia-docker-image:
 	$(eval THEIA_DOCKER_IMAGE_VERSION=$(shell git rev-parse --short HEAD))
-	@cd templates; docker build -f Dockerfile --label org.opencontainers.image.version=${THEIA_DOCKER_IMAGE_VERSION} -t ${THEIA_DOCKER_IMAGE_NAME}:${THEIA_DOCKER_IMAGE_VERSION} --rm . && docker image prune -f --filter label=stage=builder
-	docker tag ${THEIA_DOCKER_IMAGE_NAME}:${THEIA_DOCKER_IMAGE_VERSION} gcr.io/${GOOGLE_PROJECT_ID}/${THEIA_DOCKER_IMAGE_NAME}
+	@cd templates; docker build -f Dockerfile --label org.opencontainers.image.version=${THEIA_DOCKER_IMAGE_VERSION} -t ${THEIA_DOCKER_IMAGE_NAME}:sha-${THEIA_DOCKER_IMAGE_VERSION} --rm . && docker image prune -f --filter label=stage=builder
+	docker tag ${THEIA_DOCKER_IMAGE_NAME}:sha-${THEIA_DOCKER_IMAGE_VERSION} gcr.io/${GOOGLE_PROJECT_ID}/${THEIA_DOCKER_IMAGE_NAME}
 
 # Push a newly built theia image on docker.io and gcr.io
 push-theia-docker-image: build-theia-docker-image
-	docker push ${THEIA_DOCKER_IMAGE_NAME}:${THEIA_DOCKER_IMAGE_VERSION}
+	docker push ${THEIA_DOCKER_IMAGE_NAME}:sha-${THEIA_DOCKER_IMAGE_VERSION}
 	docker push gcr.io/${GOOGLE_PROJECT_ID}/${THEIA_DOCKER_IMAGE_NAME}
 
 # Build playground docker image
 build-playground-docker-image:
 	$(eval PLAYGROUND_DOCKER_IMAGE_VERSION=$(shell git rev-parse --short HEAD))
-	docker build -f conf/Dockerfile --label org.opencontainers.image.version=${PLAYGROUND_DOCKER_IMAGE_VERSION} -t ${PLAYGROUND_DOCKER_IMAGE_NAME}:${PLAYGROUND_DOCKER_IMAGE_VERSION} . && docker image prune -f --filter label=stage=builder
-	docker tag ${PLAYGROUND_DOCKER_IMAGE_NAME}:${PLAYGROUND_DOCKER_IMAGE_VERSION} gcr.io/${GOOGLE_PROJECT_ID}/${PLAYGROUND_DOCKER_IMAGE_NAME}
+	docker build -f conf/Dockerfile --label org.opencontainers.image.version=${PLAYGROUND_DOCKER_IMAGE_VERSION} -t ${PLAYGROUND_DOCKER_IMAGE_NAME}:sha-${PLAYGROUND_DOCKER_IMAGE_VERSION} . && docker image prune -f --filter label=stage=builder
+	docker tag ${PLAYGROUND_DOCKER_IMAGE_NAME}:sha-${PLAYGROUND_DOCKER_IMAGE_VERSION} gcr.io/${GOOGLE_PROJECT_ID}/${PLAYGROUND_DOCKER_IMAGE_NAME}
 
 # Push a newly built playground image on docker.io and gcr.io
 push-playground-docker-image: build-playground-docker-image
-	docker push ${PLAYGROUND_DOCKER_IMAGE_NAME}:${PLAYGROUND_DOCKER_IMAGE_VERSION}
+	docker push ${PLAYGROUND_DOCKER_IMAGE_NAME}:sha-${PLAYGROUND_DOCKER_IMAGE_VERSION}
 	docker push gcr.io/${GOOGLE_PROJECT_ID}/${PLAYGROUND_DOCKER_IMAGE_NAME}
 
 ## Kubernetes deployment
@@ -109,7 +109,7 @@ k8s-gke-static-ip: k8s-assert
 
 k8s-update-playground-version:
 	$(eval PLAYGROUND_DOCKER_IMAGE_VERSION=$(shell git rev-parse --short HEAD))
-	$(eval PLAYGROUND_DOCKER_IMAGE_DIGEST=$(shell docker images gcr.io/${GOOGLE_PROJECT_ID}/${PLAYGROUND_DOCKER_IMAGE_NAME} --filter="label=org.opencontainers.image.version=${PLAYGROUND_DOCKER_IMAGE_VERSION}" --digests --format '{{ .Digest }}'))
+	$(eval PLAYGROUND_DOCKER_IMAGE_DIGEST=$(shell docker images gcr.io/${GOOGLE_PROJECT_ID}/${PLAYGROUND_DOCKER_IMAGE_NAME} --filter="label=org.opencontainers.image.version=sha-${PLAYGROUND_DOCKER_IMAGE_VERSION}" --digests --format '{{ .Digest }}'))
 	@if [ "${PLAYGROUND_DOCKER_IMAGE_DIGEST}" != "" ] ;then \
 	  cd conf/k8s/overlays/${ENVIRONMENT}/; \
 	  kustomize edit set image gcr.io/${GOOGLE_PROJECT_ID}/${PLAYGROUND_DOCKER_IMAGE_NAME}@${PLAYGROUND_DOCKER_IMAGE_DIGEST}; \
