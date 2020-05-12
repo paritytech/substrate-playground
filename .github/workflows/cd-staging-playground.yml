@@ -37,15 +37,12 @@ jobs:
       - name: Set up Kustomize
         run: |-
           curl -sfLo kustomize https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv3.5.5/kustomize_v3.5.5_linux_amd64.tar.gz
+          tar zxvf kustomize*
           chmod u+x ./kustomize    
       - name: Update version
         run: ./kustomize edit set image gcr.io/substrateplayground-252112/jeluard/substrate-playground:sha-$GITHUB_SHA
-      - name: Commit files
-        run: |
-          git add .
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git commit -m "ci: Updated playground image" -a | exit 0
-          git push
+      - uses: stefanzweifel/git-auto-commit-action@v4.2.0
+        with:
+          commit_message: "ci: Updated playground image"
       - name: Deploy on GKE
         run: ./kustomize build conf/k8s/overlays/staging/ | kubectl apply --record -f -
