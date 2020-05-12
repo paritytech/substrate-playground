@@ -59,8 +59,9 @@ dev-backend:
 # Build theia docker image
 build-theia-docker-image:
 	$(eval THEIA_DOCKER_IMAGE_VERSION=$(shell git rev-parse --short HEAD))
-	@cd templates; docker build -f Dockerfile --label org.opencontainers.image.version=${THEIA_DOCKER_IMAGE_VERSION} -t ${THEIA_DOCKER_IMAGE_NAME}:sha-${THEIA_DOCKER_IMAGE_VERSION} --rm . && docker image prune -f --filter label=stage=builder
+	@cd templates; docker build --force-rm -f Dockerfile --label org.opencontainers.image.version=${THEIA_DOCKER_IMAGE_VERSION} -t ${THEIA_DOCKER_IMAGE_NAME}:sha-${THEIA_DOCKER_IMAGE_VERSION} .
 	docker tag ${THEIA_DOCKER_IMAGE_NAME}:sha-${THEIA_DOCKER_IMAGE_VERSION} gcr.io/${GOOGLE_PROJECT_ID}/${THEIA_DOCKER_IMAGE_NAME}
+	docker image prune -f --filter label=stage=builder
 
 # Push a newly built theia image on docker.io and gcr.io
 push-theia-docker-image: build-theia-docker-image
@@ -70,10 +71,11 @@ push-theia-docker-image: build-theia-docker-image
 # Build backend docker image
 build-backend-docker-image:
 	$(eval PLAYGROUND_DOCKER_IMAGE_VERSION=$(shell git rev-parse --short HEAD))
-	docker build -f backend/Dockerfile --label org.opencontainers.image.version=${PLAYGROUND_DOCKER_IMAGE_VERSION} -t ${PLAYGROUND_SERVER_DOCKER_IMAGE_NAME}:sha-${PLAYGROUND_DOCKER_IMAGE_VERSION} . && docker image prune -f --filter label=stage=builder
+	@cd backend; docker build --force-rm -f Dockerfile --label org.opencontainers.image.version=${PLAYGROUND_DOCKER_IMAGE_VERSION} -t ${PLAYGROUND_SERVER_DOCKER_IMAGE_NAME}:sha-${PLAYGROUND_DOCKER_IMAGE_VERSION} .
 	docker tag ${PLAYGROUND_SERVER_DOCKER_IMAGE_NAME}:sha-${PLAYGROUND_DOCKER_IMAGE_VERSION} gcr.io/${GOOGLE_PROJECT_ID}/${PLAYGROUND_SERVER_DOCKER_IMAGE_NAME}
-	docker build -f frontend/Dockerfile --label org.opencontainers.image.version=${PLAYGROUND_DOCKER_IMAGE_VERSION} -t ${PLAYGROUND_UI_DOCKER_IMAGE_NAME}:sha-${PLAYGROUND_DOCKER_IMAGE_VERSION} . && docker image prune -f --filter label=stage=builder
+	@cd frontend; docker build --force-rm -f Dockerfile --label org.opencontainers.image.version=${PLAYGROUND_DOCKER_IMAGE_VERSION} -t ${PLAYGROUND_UI_DOCKER_IMAGE_NAME}:sha-${PLAYGROUND_DOCKER_IMAGE_VERSION} .
 	docker tag ${PLAYGROUND_UI_DOCKER_IMAGE_NAME}:sha-${PLAYGROUND_DOCKER_IMAGE_VERSION} gcr.io/${GOOGLE_PROJECT_ID}/${PLAYGROUND_UI_DOCKER_IMAGE_NAME}
+	docker image prune -f --filter label=stage=builder
 
 # Push newly built backend images on docker.io and gcr.io
 push-backend-docker-image: build-backend-docker-image
