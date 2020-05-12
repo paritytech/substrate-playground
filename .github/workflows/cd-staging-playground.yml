@@ -13,8 +13,6 @@ jobs:
     steps:
       # https://github.com/actions/checkout
       - uses: actions/checkout@v2
-        with:
-          token: ${{ secrets.PAT_TOKEN }}
       - uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
         with:
           # GCLOUD_KEY is the base64 of the gcloud service account JSON file
@@ -45,8 +43,14 @@ jobs:
       - name: Update version
         run: ./kustomize edit set image gcr.io/substrateplayground-252112/jeluard/substrate-playground:sha-${GITHUB_SHA::7}
         working-directory: conf/k8s/overlays/staging
-      - uses: stefanzweifel/git-auto-commit-action@v4.2.0
-        with:
-          commit_message: "ci: Updated playground image"
       - name: Deploy on GKE
         run: ./kustomize build conf/k8s/overlays/staging/ | kubectl apply --record -f -
+      - name: Commit files
+          run: |
+            git config --local user.email "action@github.com"
+            git config --local user.name "GitHub Action"
+            git commit -m "ci: Updated playground image" -a
+        - name: Push changes
+          uses: ad-m/github-push-action@master
+          with:
+            github_token: ${{ secrets.GITHUB_TOKEN }}
