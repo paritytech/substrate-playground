@@ -1,6 +1,0 @@
-*/.git/
-*/target/
-*/.cache/
-*/node_modules/
-*/dist/
-Dockerfile
