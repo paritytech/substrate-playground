@@ -13,18 +13,14 @@ metadata:
     #  }
     # nginx.ingress.kubernetes.io/cors-allow-origin: "https://${PLAYGROUND_HOST}"
 spec:
-  tls:
-  - hosts:
-    - __TO_REPLACE__
-    secretName: playground-tls
   rules:
   - http:
       paths:
       - path: /
         backend:
-          serviceName: ui-service
+          serviceName: backend-ui-service
           servicePort: 80
       - path: /api
         backend:
-          serviceName: server-service
+          serviceName: backend-api-service
           servicePort: 80

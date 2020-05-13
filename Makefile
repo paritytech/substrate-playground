@@ -20,8 +20,8 @@ endif
 
 GKE_REGION=us-central1
 DOCKER_USERNAME=jeluard
-PLAYGROUND_SERVER_DOCKER_IMAGE_NAME=${DOCKER_USERNAME}/substrate-playground-server
-PLAYGROUND_UI_DOCKER_IMAGE_NAME=${DOCKER_USERNAME}/substrate-playground-ui
+PLAYGROUND_BACKEND_API_DOCKER_IMAGE_NAME=${DOCKER_USERNAME}/substrate-playground-backend-api
+PLAYGROUND_BACKEND_UI_DOCKER_IMAGE_NAME=${DOCKER_USERNAME}/substrate-playground-backend-ui
 THEIA_DOCKER_IMAGE_NAME=${DOCKER_USERNAME}/theia-substrate
 GOOGLE_PROJECT_ID=substrateplayground-252112
 
@@ -71,18 +71,18 @@ push-theia-docker-image: build-theia-docker-image
 # Build backend docker images
 build-backend-docker-images:
 	$(eval PLAYGROUND_DOCKER_IMAGE_VERSION=$(shell git rev-parse --short HEAD))
-	@cd backend; docker build --force-rm -f Dockerfile --build-arg GITHUB_SHA="${PLAYGROUND_DOCKER_IMAGE_VERSION}" --label org.opencontainers.image.version=${PLAYGROUND_DOCKER_IMAGE_VERSION} -t ${PLAYGROUND_SERVER_DOCKER_IMAGE_NAME}:sha-${PLAYGROUND_DOCKER_IMAGE_VERSION} .
-	docker tag ${PLAYGROUND_SERVER_DOCKER_IMAGE_NAME}:sha-${PLAYGROUND_DOCKER_IMAGE_VERSION} gcr.io/${GOOGLE_PROJECT_ID}/${PLAYGROUND_SERVER_DOCKER_IMAGE_NAME}
-	@cd frontend; docker build --force-rm -f Dockerfile --label org.opencontainers.image.version=${PLAYGROUND_DOCKER_IMAGE_VERSION} -t ${PLAYGROUND_UI_DOCKER_IMAGE_NAME}:sha-${PLAYGROUND_DOCKER_IMAGE_VERSION} .
-	docker tag ${PLAYGROUND_UI_DOCKER_IMAGE_NAME}:sha-${PLAYGROUND_DOCKER_IMAGE_VERSION} gcr.io/${GOOGLE_PROJECT_ID}/${PLAYGROUND_UI_DOCKER_IMAGE_NAME}
+	@cd backend; docker build --force-rm -f Dockerfile --build-arg GITHUB_SHA="${PLAYGROUND_DOCKER_IMAGE_VERSION}" --label org.opencontainers.image.version=${PLAYGROUND_DOCKER_IMAGE_VERSION} -t ${PLAYGROUND_BACKEND_API_DOCKER_IMAGE_NAME}:sha-${PLAYGROUND_DOCKER_IMAGE_VERSION} .
+	docker tag ${PLAYGROUND_BACKEND_API_DOCKER_IMAGE_NAME}:sha-${PLAYGROUND_DOCKER_IMAGE_VERSION} gcr.io/${GOOGLE_PROJECT_ID}/${PLAYGROUND_BACKEND_API_DOCKER_IMAGE_NAME}
+	@cd frontend; docker build --force-rm -f Dockerfile --label org.opencontainers.image.version=${PLAYGROUND_DOCKER_IMAGE_VERSION} -t ${PLAYGROUND_BACKEND_UI_DOCKER_IMAGE_NAME}:sha-${PLAYGROUND_DOCKER_IMAGE_VERSION} .
+	docker tag ${PLAYGROUND_BACKEND_UI_DOCKER_IMAGE_NAME}:sha-${PLAYGROUND_DOCKER_IMAGE_VERSION} gcr.io/${GOOGLE_PROJECT_ID}/${PLAYGROUND_BACKEND_UI_DOCKER_IMAGE_NAME}
 	docker image prune -f --filter label=stage=builder
 
 # Push newly built backend images on docker.io and gcr.io
 push-backend-docker-images: build-backend-docker-images
-	docker push ${PLAYGROUND_SERVER_DOCKER_IMAGE_NAME}:sha-${PLAYGROUND_DOCKER_IMAGE_VERSION}
-	docker push gcr.io/${GOOGLE_PROJECT_ID}/${PLAYGROUND_SERVER_DOCKER_IMAGE_NAME}
-	docker push ${PLAYGROUND_UI_DOCKER_IMAGE_NAME}:sha-${PLAYGROUND_DOCKER_IMAGE_VERSION}
-	docker push gcr.io/${GOOGLE_PROJECT_ID}/${PLAYGROUND_UI_DOCKER_IMAGE_NAME}
+	docker push ${PLAYGROUND_BACKEND_API_DOCKER_IMAGE_NAME}:sha-${PLAYGROUND_DOCKER_IMAGE_VERSION}
+	docker push gcr.io/${GOOGLE_PROJECT_ID}/${PLAYGROUND_BACKEND_API_DOCKER_IMAGE_NAME}
+	docker push ${PLAYGROUND_BACKEND_UI_DOCKER_IMAGE_NAME}:sha-${PLAYGROUND_DOCKER_IMAGE_VERSION}
+	docker push gcr.io/${GOOGLE_PROJECT_ID}/${PLAYGROUND_BACKEND_UI_DOCKER_IMAGE_NAME}
 
 ## Kubernetes deployment
 
@@ -108,7 +108,7 @@ k8s-setup-development: k8s-assert
 	kubectl config set-context --current --namespace=${IDENTIFIER}
 
 k8s-setup-gke: k8s-assert
-	kubectl config use-context gke_substrateplayground-252112_us-central1-a_substrate-${IDENTIFIER}
+	kubectl config use-context gke_substrateplayground-252112_us-central1-a_susbtrate-${IDENTIFIER}
 	kubectl config set-context --current --namespace=${IDENTIFIER}
 
 k8s-gke-static-ip: k8s-assert
@@ -116,8 +116,8 @@ k8s-gke-static-ip: k8s-assert
 
 k8s-update-playground-version:
 	$(eval PLAYGROUND_DOCKER_IMAGE_VERSION=$(shell git rev-parse --short HEAD))
-	kustomize edit set image gcr.io/${GOOGLE_PROJECT_ID}/${PLAYGROUND_SERVER_DOCKER_IMAGE_NAME}:sha-${PLAYGROUND_DOCKER_IMAGE_VERSION};
-	kustomize edit set image gcr.io/${GOOGLE_PROJECT_ID}/${PLAYGROUND_UI_DOCKER_IMAGE_NAME}:sha-${PLAYGROUND_DOCKER_IMAGE_VERSION};
+	kustomize edit set image gcr.io/${GOOGLE_PROJECT_ID}/${PLAYGROUND_BACKEND_API_DOCKER_IMAGE_NAME}:sha-${PLAYGROUND_DOCKER_IMAGE_VERSION};
+	kustomize edit set image gcr.io/${GOOGLE_PROJECT_ID}/${PLAYGROUND_BACKEND_UI_DOCKER_IMAGE_NAME}:sha-${PLAYGROUND_DOCKER_IMAGE_VERSION};
 
 # Deploy playground on kubernetes
 k8s-deploy-playground: k8s-assert
@@ -126,11 +126,14 @@ k8s-deploy-playground: k8s-assert
 # Undeploy playground from kubernetes
 k8s-undeploy-playground: k8s-assert
 	# Do not delete `${ENVIRONMENT}` namespace as it would remove all ConfigMaps/Secrets too
-	kubectl delete -k conf/k8s/overlays/${ENVIRONMENT}
+	kustomize build conf/k8s/overlays/${ENVIRONMENT}/ | kubectl delete -f -
 
 # Undeploy all theia pods and services from kubernetes
 k8s-undeploy-theia: k8s-assert
 	kubectl delete pods,services -l app.kubernetes.io/component=theia --namespace=${IDENTIFIER}
+
+k8s-create-namespace: k8s-assert
+	kubectl create namespace ${ENVIRONMENT}
 
 # Creates or replaces the `templates` config map from `conf/k8s/overlays/ENVIRONMENT/templates`
 k8s-update-templates-config: k8s-assert

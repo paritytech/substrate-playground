@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: backend-api-pod
+  labels:
+    app.kubernetes.io/component: backend-api
+  annotations:
+    prometheus.io/scrape: "true"
+spec:
+  serviceAccountName: default-service-account
+  containers:
+  - name: backend-api
+    image: gcr.io/substrateplayground-252112/jeluard/substrate-playground-backend-api
+    ports:
+    - containerPort: 80
+    env:
+      # See https://rocket.rs/v0.4/guide/configuration/
+      - name: ROCKET_ENV
+        value: "staging"
+      - name: ROCKET_PORT
+        value: "80"
+      - name: ROCKET_LOG
+        value: "normal"
+      - name: ROCKET_ADDRESS
+        value: "0.0.0.0"
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "250m"
+      limits:
+        memory: "512Mi"
+        cpu: "500m"

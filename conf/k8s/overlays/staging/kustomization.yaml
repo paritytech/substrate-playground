@@ -11,19 +11,16 @@ resources:
 - ../../base
 
 images:
-- name: gcr.io/substrateplayground-252112/jeluard/substrate-playground-server
-  digest: sha256:9d2ff79cb85e1755c27700e7d831384ff46d40d0882aa0d7b8f8f14a1549ef4c
-- name: gcr.io/substrateplayground-252112/jeluard/substrate-playground-ui
-  digest: sha256:9d2ff79cb85e1755c27700e7d831384ff46d40d0882aa0d7b8f8f14a1549ef4c
+- name: gcr.io/substrateplayground-252112/jeluard/substrate-playground-backend-api
+  digest: sha256:a6c091e9174eae38a08aa3553290f37f55522dafed0b318fc4b0fe9b18f46f29
+- name: gcr.io/substrateplayground-252112/jeluard/substrate-playground-backend-ui
+  digest: sha256:7d31998b984391a01f32ec32ac9a37baa02863d3f3f91b75397f9e0795fd33b2
 
 patches:
 - patch: |-
     - op: replace
       path: /spec/rules/0/host
       value: playground-staging.substrate.dev
-    - op: replace
-      path: /spec/tls/0/hosts/0
-      value: '*.playground-staging.substrate.dev'
   target:
     group: extensions
     kind: Ingress
@@ -39,3 +36,13 @@ patchesStrategicMerge:
     namespace: ingress-nginx
   spec:
     loadBalancerIP: 34.69.4.59
+- |-
+  apiVersion: extensions/v1beta1
+  kind: Ingress
+  metadata:
+    name: ingress
+  spec:
+    tls:
+    - hosts:
+      - '*.playground-staging.substrate.dev'
+      secretName: playground-tls
