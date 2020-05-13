@@ -13,6 +13,13 @@ async function fromResponse(response: Response) {
     }
 }
 
+export async function getDetails() {
+    return fromResponse(await fetchWithTimeout(`/api/`, {
+        method: 'GET',
+        headers: headers
+    }));
+}
+
 export async function getUserDetails(userUUID: string) {
     return fromResponse(await fetchWithTimeout(`/api/${userUUID}`, {
         method: 'GET',

@@ -1,13 +1,14 @@
 import { useMachine } from '@xstate/react';
 import { v4 as uuidv4 } from 'uuid';
 import { assign, Machine } from 'xstate';
-import { deployImage, getInstanceDetails, getTemplates, getUserDetails, stopInstance } from './api';
+import { deployImage, getDetails, getInstanceDetails, getTemplates, getUserDetails, stopInstance } from './api';
 
 const key = "userUUID";
 const userUUID = localStorage.getItem(key) || uuidv4();
 localStorage.setItem(key, userUUID);
 
 export interface Context {
+  details?: object,
   userUUID: string;
   instanceUUID?: string;
   instanceURL?: string;
@@ -58,6 +59,11 @@ function lifecycle(history, location) {
               throw response2;
             }
 
+            const response3 = (await getDetails());
+            if (response3.error) {
+              throw response3;
+            }
+
             const instances = response.result;
             const templates = response2.result;
             if (context.template && instances?.length === 0) {
@@ -68,7 +74,7 @@ function lifecycle(history, location) {
               }
             }
 
-            callback({type: check, data: {instances: response.result, templates: Object.entries(templates).map(([k, v]) => {v["id"] = k; return v;})}});
+            callback({type: check, data: {details: response3.result, instances: response.result, templates: Object.entries(templates).map(([k, v]) => {v["id"] = k; return v;})}});
           },
           onError: {
             target: failed,
@@ -80,7 +86,8 @@ function lifecycle(history, location) {
                       actions: assign({template: (_context, event) => event.template}) },
           [check]: { target: initial,
                      actions: assign({instances: (_context, event) => event.data.instances,
-                                      templates: (_context, event) => event.data.templates}) }
+                                      templates: (_context, event) => event.data.templates,
+                                      details: (_context, event) => event.data.details}) }
         }
       },
       [initial]: {

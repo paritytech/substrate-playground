@@ -32,6 +32,12 @@ export function intercept({noInstance = true, delay = 100}: {noInstance?: boolea
     logging: false,
   });
   const { server } = polly;
+  server.get('/api').intercept(async (req, res) => {
+    await server.timeout(delay);
+    res.status(200).json({
+      result: {version: "1.23"},
+    });
+  });
   server.get('/api/templates').intercept(async (req, res) => {
     await server.timeout(delay);
     res.status(200).json({
