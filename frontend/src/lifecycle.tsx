@@ -73,7 +73,7 @@ function lifecycle(history, location) {
               }
             }
 
-            callback({type: check, data: {details: response3.result, instances: response.result, templates: Object.entries(templates).map(([k, v]) => {v["id"] = k; return v;})}});
+            callback({type: check, data: {details: response3.result, instances: instances, templates: Object.entries(templates).map(([k, v]) => {v["id"] = k; return v;})}});
           },
           onError: {
             target: failed,
@@ -90,7 +90,8 @@ function lifecycle(history, location) {
         }
       },
       [initial]: {
-        on: {[stop]: {target: stopping,
+        on: {[restart]: setup,
+             [stop]: {target: stopping,
                       actions: assign({ instanceUUID: (_, event) => event.instance.instance_uuid})},
              [deploy]: {target: deploying,
                         actions: assign({ template: (_, event) => event.template})}}

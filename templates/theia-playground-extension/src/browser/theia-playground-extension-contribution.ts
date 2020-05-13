@@ -1,7 +1,9 @@
 import { injectable, inject } from "inversify";
-import { MAIN_MENU_BAR, CommandContribution, CommandRegistry, MenuContribution, MenuModelRegistry } from "@theia/core/lib/common";
+import { CommandContribution, CommandRegistry, MenuContribution, MenuModelRegistry } from "@theia/core/lib/common";
+import { CommonMenus } from "@theia/core/lib/browser";
+import { ConnectionStatusService, ConnectionStatus } from '@theia/core/lib/browser/connection-status-service';
 import { MaybePromise } from '@theia/core/lib/common/types';
-import URI from '@theia/core/lib/common/uri';
+import { FileNavigatorContribution } from '@theia/navigator/lib/browser/navigator-contribution';
 import { LocationMapper } from '@theia/mini-browser/lib/browser/location-mapper-service';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 import { FileDownloadService } from '@theia/filesystem/lib/browser/download/file-download-service';
@@ -20,21 +22,6 @@ const HOME = "/home/substrate/workspace";
 export const SendFeedbackCommand = {
     id: 'TheiaSubstrateExtension.send-feedback-command',
     label: "Send feedback"
-};
-
-export const CompileNodeTerminalCommand = {
-    id: 'TheiaSubstrateExtension.compile-node-terminal-command',
-    label: "Compile Node"
-};
-
-export const StartNodeTerminalCommand = {
-    id: 'TheiaSubstrateExtension.start-node-terminal-command',
-    label: "Start Node"
-};
-
-export const PurgeChainTerminalCommand = {
-    id: 'TheiaSubstrateExtension.purge-chain-terminal-command',
-    label: "Purge chain"
 };
 
 export const OpenPolkadotAppsCommand = {
@@ -57,11 +44,6 @@ export const TourCommand = {
     label: "Take the tour"
 };
 
-export const DownloadArchiveCommand = {
-    id: 'TheiaSubstrateExtension.download-archive-command',
-    label: "Download archive"
-};
-
 async function newTerminal(terminalService: TerminalService, id: string, cwd: string, command: string) {
     let terminalWidget = await terminalService.newTerminal({cwd: cwd, id: id});
     await terminalWidget.start();
@@ -71,6 +53,9 @@ async function newTerminal(terminalService: TerminalService, id: string, cwd: st
 
 @injectable()
 export class TheiaSubstrateExtensionCommandContribution implements CommandContribution {
+
+    @inject(FileNavigatorContribution)
+    protected readonly fileNavigatorContribution: FileNavigatorContribution;
 
     @inject(TerminalService)
     protected readonly terminalService: TerminalService;
@@ -84,6 +69,9 @@ export class TheiaSubstrateExtensionCommandContribution implements CommandContri
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
 
+    @inject(ConnectionStatusService)
+    protected readonly connectionStatusService: ConnectionStatusService;
+
     registerCommands(registry: CommandRegistry): void {
         const tour = new Shepherd.Tour({
             defaultStepOptions: {
@@ -96,10 +84,11 @@ export class TheiaSubstrateExtensionCommandContribution implements CommandContri
             id: 'node-step',
             text: 'Create a terminal and launch your local substrate node.',
             buttons: [
-              {
+                // TODO
+              /*{
                 text: 'Open a node terminal',
                 action: () => this.commandRegistry.executeCommand(StartNodeTerminalCommand.id)
-              },
+              },*/
               {
                 text: 'Next',
                 action: tour.next
@@ -143,15 +132,6 @@ export class TheiaSubstrateExtensionCommandContribution implements CommandContri
         registry.registerCommand(SendFeedbackCommand, {
             execute: () => window.open('https://docs.google.com/forms/d/e/1FAIpQLSdXpq_fHqS_ow4nC7EpGmrC_XGX_JCIRzAqB1vaBtoZrDW-ZQ/viewform?edit_requested=true')
         });
-        registry.registerCommand(CompileNodeTerminalCommand, {
-            execute: () => newTerminal(this.terminalService, "compile-node", `${HOME}/substrate-node-template`, "cargo build --release\r")
-        });
-        registry.registerCommand(StartNodeTerminalCommand, {
-            execute: () => newTerminal(this.terminalService, "start-node", `${HOME}/substrate-node-template`, "./target/release/node-template --dev --ws-external\r")
-        });
-        registry.registerCommand(PurgeChainTerminalCommand, {
-            execute: () => newTerminal(this.terminalService, "purge-chain", `${HOME}/substrate-node-template`, "./target/release/node-template purge-chain --dev\r")
-        });
         registry.registerCommand(OpenPolkadotAppsCommand, {
             execute: () => window.open(polkadotAppsURL)
         });
@@ -164,12 +144,62 @@ export class TheiaSubstrateExtensionCommandContribution implements CommandContri
         registry.registerCommand(TourCommand, {
             execute: () => tour.start()
         });
-        registry.registerCommand(DownloadArchiveCommand, {
-            execute: async () => {
-                const uris = this.workspaceService.tryGetRoots().map(r => new URI(r.uri));
-                this.downloadService.download(uris);
+
+        function answer(type: string, uuid?: string, data?: any): void {
+            window.parent.postMessage({type: type, uuid: uuid, data: data}, "*");
+        }
+
+        function updateStatus(status: ConnectionStatus): void {
+            if (status === ConnectionStatus.OFFLINE) {
+                answer("extension-offline");
+            } else {
+                answer("extension-online");
             }
-        });
+        }
+
+        // Listen to message from parent frame
+        window.addEventListener('message', async (o) => {
+            const type = o.data.type;
+            const name = o.data.name;
+            const data = o.data.data;
+            const uuid = o.data.uuid;
+            const status = this.connectionStatusService.currentStatus;
+
+            if (status === ConnectionStatus.OFFLINE) {
+                answer("extension-answer-offline", uuid);
+                return;
+            }
+
+            switch (type) {
+                case "action": {
+                    try {
+                        const result = await registry.executeCommand(name, data);
+                        answer("extension-answer", uuid, result);
+                    } catch (error) {
+                        answer("extension-answer-error", uuid, {name: error.name, message: error.message});
+                    }
+                    break;
+                }
+                case "list-actions": {
+                    answer("extension-answer", uuid, registry.commands);
+                    break;
+                }
+                default:
+                    if (type) {
+                        const message = `Unknown extension type ${type}`;
+                        console.error(message, o);
+                        answer("extension-answer-error", uuid, message);
+                    }
+                    break;
+            }
+        }, false);
+
+        this.connectionStatusService.onStatusChange(() => updateStatus(this.connectionStatusService.currentStatus));
+
+        const online = this.connectionStatusService.currentStatus === ConnectionStatus.ONLINE;
+        answer(online ? "extension-online" : "extension-offline");
+
+        //this.fileNavigatorContribution.openView({activate: true}); 
     }
 
 }
@@ -178,38 +208,20 @@ export class TheiaSubstrateExtensionCommandContribution implements CommandContri
 export class TheiaSubstrateExtensionMenuContribution implements MenuContribution {
 
     registerMenus(menus: MenuModelRegistry): void {
-        const SUBSTRATE = [...MAIN_MENU_BAR, '8_playground'];
-        const SUBSTRATE_LINKS = [...SUBSTRATE, '1_links'];
-        const SUBSTRATE_TOUR = [...SUBSTRATE, '2_tour'];
-        const SUBSTRATE_FEEDBACK = [...SUBSTRATE, '3_feedback'];
-        menus.registerSubmenu(SUBSTRATE, 'Substrate');
+        const SUBSTRATE_LINKS = [...CommonMenus.HELP, '1_links'];
+        const SUBSTRATE_TOUR = [...CommonMenus.HELP, '2_tour'];
+        const SUBSTRATE_FEEDBACK = [...CommonMenus.HELP, '3_feedback'];
         menus.registerMenuAction(SUBSTRATE_LINKS, {
             commandId: GettingStartedCommand.id,
             order: "1"
         });
         menus.registerMenuAction(SUBSTRATE_LINKS, {
-            commandId: CompileNodeTerminalCommand.id,
-            order: "2"
-        });
-        menus.registerMenuAction(SUBSTRATE_LINKS, {
-            commandId: StartNodeTerminalCommand.id,
+            commandId: StartFrontEndTerminalCommand.id,
             order: "3"
         });
         menus.registerMenuAction(SUBSTRATE_LINKS, {
-            commandId: PurgeChainTerminalCommand.id,
-            order: "4"
-        });
-        menus.registerMenuAction(SUBSTRATE_LINKS, {
-            commandId: OpenPolkadotAppsCommand.id,
-            order: "5"
-        });
-        menus.registerMenuAction(SUBSTRATE_LINKS, {
-            commandId: StartFrontEndTerminalCommand.id,
-            order: "6"
-        });
-        menus.registerMenuAction(SUBSTRATE_LINKS, {
             commandId: OpenFrontEndCommand.id,
-            order: "7"
+            order: "4"
         });
         menus.registerMenuAction(SUBSTRATE_TOUR, {
             commandId: TourCommand.id
@@ -217,10 +229,8 @@ export class TheiaSubstrateExtensionMenuContribution implements MenuContribution
         menus.registerMenuAction(SUBSTRATE_FEEDBACK, {
             commandId: SendFeedbackCommand.id
         });
-        menus.registerMenuAction(SUBSTRATE_FEEDBACK, {
-            commandId: DownloadArchiveCommand.id
-        });
     }
+
 }
 
 function isLocalhost(location: string): boolean {
@@ -228,7 +238,7 @@ function isLocalhost(location: string): boolean {
 }
 
 /*
- Replca localhost access with proper name
+ Replace localhost access with DNS
 */@injectable()
 export class HTTPLocationMapper implements LocationMapper {
 

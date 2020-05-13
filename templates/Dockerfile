@@ -70,9 +70,9 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --de
     && rustup component add rls rust-analysis rust-src clippy rustfmt llvm-tools-preview \
     && rustup target add wasm32-unknown-unknown --toolchain $RUST_VERSION
 
-RUN cargo install --force --git https://github.com/alexcrichton/wasm-gc \
-    && cargo install --force --git https://github.com/paritytech/substrate subkey \
-    && cargo install substrate-deps
+#RUN cargo install --force --git https://github.com/alexcrichton/wasm-gc \
+#    && cargo install --force --git https://github.com/paritytech/substrate subkey \
+#    && cargo install substrate-deps
 
 ##########################
 #  Substrate workshop    #
@@ -84,8 +84,8 @@ RUN git clone https://github.com/substrate-developer-hub/substrate-node-template
     git clone https://github.com/substrate-developer-hub/substrate-front-end-template && \
     git clone https://github.com/substrate-developer-hub/recipes
 
-RUN cd $HOME/workspace/substrate-front-end-template && yarn \
-    && cd $HOME/workspace/substrate-node-template && cargo build --release
+#RUN cd $HOME/workspace/substrate-front-end-template && yarn \
+#    && cd $HOME/workspace/substrate-node-template && cargo build --release
 
 EXPOSE 3000 8000 9944 30333
 
