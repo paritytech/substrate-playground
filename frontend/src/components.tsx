@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useSpring, animated } from 'react-spring'
 import { Alert, AlertTitle } from '@material-ui/lab';
 import AppBar from '@material-ui/core/AppBar';
@@ -6,6 +6,7 @@ import Button from '@material-ui/core/Button';
 import Box from '@material-ui/core/Box';
 import Card from '@material-ui/core/Card';
 import CardContent from '@material-ui/core/CardContent';
+import Checkbox from '@material-ui/core/Checkbox';
 import Dialog from '@material-ui/core/Dialog';
 import DialogActions from '@material-ui/core/DialogActions';
 import DialogContent from '@material-ui/core/DialogContent';
@@ -28,15 +29,22 @@ import Toolbar from '@material-ui/core/Toolbar';
 import Paper from '@material-ui/core/Paper';
 import Typography from '@material-ui/core/Typography';
 import marked from 'marked';
-import { useHover, useInterval, useWindowMaxDimension } from './hooks';
-import { useLifecycle, deploy, deploying, failed, initial, restart, setup, stop, stopping } from './lifecycle';
-import { useParams } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 import Zoom from '@material-ui/core/Zoom';
 import Fade from '@material-ui/core/Fade';
 import { TransitionProps } from '@material-ui/core/transitions';
 import { Container } from "@material-ui/core";
+import { URI } from 'vscode-uri';
 import { getInstanceDetails } from "./api";
+import { Discoverer, Instance, Responder } from "./connect";
+import { useHover, useInterval, useWindowMaxDimension } from './hooks';
+import { useLifecycle, deploy, deploying, failed, initial, restart, setup, stop, stopping } from './lifecycle';
 import { fetchWithTimeout } from "./utils";
+
+import InputLabel from '@material-ui/core/InputLabel';
+import MenuItem from '@material-ui/core/MenuItem';
+import FormControl from '@material-ui/core/FormControl';
+import Select from '@material-ui/core/Select';
 
 export function Background({state}: {state: string}) {
     const preloading = state == "PRELOADING";
@@ -50,7 +58,7 @@ export function Background({state}: {state: string}) {
             document.body.classList.add(className);
         }
         return () => { document.body.classList.remove(className); }
-      });
+    });
 
     return (
         <React.Fragment>
@@ -139,10 +147,188 @@ export function Loading({phase, retry = 0}: {phase?: string, retry?: number}) {
     );
 }
 
+function useDiscovery() {
+    const [instances, setInstances] = useState([]);
+
+    useEffect(() => {
+        const refresher = (_) => setInstances(Array.from(discoverer.instances.entries()));
+        const discoverer = new Discoverer(refresher, refresher);
+        return () => { discoverer.close(); }
+    }, []);
+
+    return instances;
+}
+
+function InstanceController() {
+    const instances = useDiscovery();
+    const [selectedInstance, setInstance] = useState(null);
+    const [commands, setCommands] = useState(null);
+    const [command, setCommand] = useState(null);
+    const [result, setResult] = useState(null);
+
+    useEffect(() => {
+        const onlyInstance = instances.length == 1 ? instances[0] : null;
+        if (onlyInstance) {
+            selectInstance(onlyInstance[1]);
+        }
+    }, [instances]);
+
+    async function selectInstance(instance) {
+        setInstance(instance);
+        const commands = await instance.list();
+        setCommands(commands);
+    }
+
+    async function executeCommand(command, data) {
+        try {
+            const result = await selectedInstance.execute(command, data);
+            setResult(result);
+        } catch (error) {
+            console.log("error", error);
+        }
+    }
+
+    const handleChange = (event: React.ChangeEvent<{ value: unknown }>) => {
+        setCommand(event.target.value as string);
+    };
+
+    async function startNode() {
+        await executeCommand("substrateCommands.runCommand");
+    }
+
+    async function openFile() {
+        const uri = URI.parse("file:///home/substrate/workspace/recipes/README.md", false);
+        await executeCommand("vscode.open", uri);
+    }
+
+    async function gotoLine() {
+        await executeCommand("workbench.action.gotoLine", {lineNumber: "10", at: "top"});
+    }
+
+    async function cursorMove() {
+        await executeCommand("cursorMove", {to: "top", by: "line"});
+    }
+
+    if (instances.length > 0) {
+    return (
+    <div style={{flex: 1, display: "flex", flexDirection: "column", alignItems: "center", margin: 20}}>
+        {selectedInstance &&
+        <Typography variant="h6">
+            Instance #{selectedInstance.uuid}
+        </Typography>
+        }
+        {(instances && !selectedInstance) &&
+        <ul>
+        {instances.map((value, index) => {
+            return (
+                <li key={index}>
+                    <div>{value[0]}</div>
+                    <Checkbox checked={selectedInstance?.uuid == value[0]} onChange={async () => await selectInstance(value[1])}></button>
+                </li>
+            );
+        })}
+        </ul>
+        }
+        {commands &&
+        <div style={{display: "flex", alignItems: "center", justifyContent: "space-between", margin: 20}}>
+            <FormControl style={{minWidth: 120}}>
+                <InputLabel id="commands">Commands</InputLabel>
+                <Select
+                labelId="commands"
+                value={command}
+                onChange={handleChange}
+                >
+                {commands.filter(({id, label}) => id && label && label != "").map(({id, label}, index) =>
+                     return <MenuItem key={id} value={id}>{label}</MenuItem>;
+                )}
+                </Select>
+            </FormControl>
+            <Button style={{marginLeft: 40}} color="primary" variant="contained" disableElevation onClick={() => executeCommand(command)}>EXECUTE</Button>
+        </div>
+        }
+        {selectedInstance &&
+        <>
+            <Button style={{marginTop: 10}} color="primary" variant="contained" disableElevation onClick={startNode}>START NODE</Button>
+            <div style={{marginTop: 10}}>
+                <Button color="primary" variant="contained" disableElevation onClick={openFile}>OPEN FILE</Button>
+            </div>
+            <div style={{marginTop: 10}}>
+                <Button color="primary" variant="contained" disableElevation onClick={gotoLine}>GOTO LINE</Button>
+            </div>
+            <div style={{marginTop: 10}}>
+                <Button color="primary" variant="contained" disableElevation onClick={cursorMove}>CURSOR MOVE</Button>
+            </div>
+        </>}
+    </div>
+    );
+    } else {
+        return (
+        <div style={{flex: 1, display: "flex", alignItems: "center", justifyContent: "center"}}>
+            <Typography variant="h6">
+                No instance detected
+            </Typography>
+        </div>
+        );
+    }
+            // TODO change branch
+            // TODO GO TO LINE
+}
+
+function useQuery() {
+  return new URLSearchParams(useLocation().search);
+}
+
+export function ControllerPanel() {
+    return (
+        <div style={{display: "flex", height: "100vh"}}>
+            <InstanceController />
+        </div>
+    );
+}
+
 export function TheiaPanel({ history }) {
+    const query = useQuery();
     const { uuid } = useParams();
     const maxRetries = 5*60;
+    const ref = useRef();
     const [data, setData] = useState({type: "LOADING"});
+
+    useEffect(() => {
+        const responder = new Responder(uuid, (o) => {
+            const el = ref.current;
+            if (el) {
+                el.contentWindow.postMessage(o.data, "*")
+            } else {
+                console.error("No accessible iframe instance");
+            }
+        });
+
+        const processMessage = (o) => {
+            const type = o.data.type;
+            switch (type) {
+                case "extension-online":
+                    responder.announce();
+                    break;
+                /* TODO ignore offline for now, too trigger happy
+                case "extension-offline":
+                    setData({type: "ERROR", value: "Instance went offline", action: () => history.push("/")});
+                    responder.unannounce();
+                    break;*/
+                case "extension-answer-offline":
+                case "extension-answer-error":
+                    console.error(`Error while processing message`, o);
+                case "extension-answer":
+                    // Got an answer from the instance, respond back
+                    responder.respond(o.data);
+                    break;
+                default:
+                    console.error(`Unknown instance message type ${type}`, o);
+                    break;
+            }
+        };
+        window.addEventListener('message', processMessage, false);
+        return () => { responder.close(); window.removeEventListener('message', processMessage, false); }
+    }, []);
 
     useEffect(() => {
         async function fetchData() {
@@ -178,11 +364,23 @@ export function TheiaPanel({ history }) {
       }, [data, uuid]);
 
     if(data.type == "SUCCESS") {
-        return (
-        <div>
-            <iframe src={data.url} frameBorder="0" style={{overflow:"hidden",height:"100vh",width:"100vm"}} height="100%" width="100%"></iframe>
-        </div>
-        );
+        const controller = query.get("controller");
+        if (controller) {
+            return (
+
+            <div style={{display: "flex", height: "100vh"}}>
+                <InstanceController />
+                <iframe id="theia" ref={ref} src={data.url} frameBorder="0" width="50%"></iframe>
+            </div>
+            );
+        } else {
+            return (
+            <div>
+                <iframe id="theia" ref={ref} src={data.url} frameBorder="0" style={{overflow:"hidden",height:"100vh",width:"100vm"}} height="100%" width="100%"></iframe>
+            </div>
+            );
+        }
+
     } else {
         return <Wrapper state={data} />
     }
@@ -307,7 +505,7 @@ function formatDate(t: number) {
     }
 }
 
-function Instance({instance}) {
+function InstanceDetails({instance}) {
     const {instance_uuid, pod, template} = instance;
     const {name, runtime} = template;
     const {env, ports} = runtime;
@@ -353,7 +551,7 @@ function ExistingInstances({instances, onStopClick, onConnectClick}) {
         <Typography variant="h5" style={{padding: 20}}>Running instance</Typography>
         <Divider orientation="horizontal" />
         <Container style={{display: "flex", flex: 1, padding: 0, justifyContent: "center", overflowY: "auto"}}>
-            <Instance instance={instance} />
+            <InstanceDetails instance={instance} />
         </Container>
         <Divider orientation="horizontal" />
         <Container style={{display: "flex", flexDirection: "column", alignItems: "flex-end", paddingTop: 10, paddingBottom: 10}}>
@@ -381,7 +579,21 @@ export function MainPanel({ history, location }) {
     const [state, send] = useLifecycle(history, location);
     const [hoverRef, isHovered] = useHover();
 
+    useEffect(() => {
+        // Force refresh each time instances set changes
+        const refresh = () => send(restart);
+        const discoverer = new Discoverer(refresh, refresh);
+        return () => { discoverer.close(); }
+    }, []);
+
     const {instances, templates} = state.context;
+
+    /* TODO show all instances, with specific UI
+message: "The node was low on resource: memory. Container theia-container was using 2367104Ki, which exceeds its request of 90Mi. "
+phase: "Failed"
+reason: "Evicted"
+startTime: "2020-05-18T17:15:20Z"
+    */
     const runningInstances = instances?.filter(instance => instance?.pod?.details?.status?.phase === "Running");
 
     function gstate() {

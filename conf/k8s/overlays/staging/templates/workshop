@@ -1,4 +1,4 @@
-image: gcr.io/substrateplayground-252112/jeluard/theia-substrate@sha256:357df07825525135a4000c207ca86ed8be6e2582fb712d8645dd1b13c96bf87c
+image: gcr.io/substrateplayground-252112/jeluard/theia-substrate@sha256:2bf940c54f09c5d898dea9a6fab117ca645b1cf582e9ac38bef4c72a3133661b
 name: "Workshop"
 description: |
   ## A set of templates used during Workshops
@@ -25,6 +25,13 @@ runtime:
 build:
   base: sha256:0b3ec9ad567d0f5b0eed8a0fc2b1fa3fe1cca24cc02416047d71f83770b05e34
 #  extensions: []
+#  repositories:
+#    - name: substrate-node-template
+#      url: https://github.com/substrate-developer-hub/substrate-node-template
+#    - name: substrate-front-end-template
+#      url: https://github.com/substrate-developer-hub/substrate-front-end-template
+#    - name: substrate-node-template
+#      url: https://github.com/substrate-developer-hub/substrate-node-template
 #  resources:
 #    - url:
 #      dest: file/

@@ -1,9 +1,9 @@
 import * as React from "react";
 import ReactDOM from "react-dom";
 import { createMuiTheme, ThemeProvider } from '@material-ui/core/styles';
-import { Router, Route } from "react-router-dom";
+import { Route, Router, Switch } from "react-router-dom";
 import { createBrowserHistory } from "history";
-import { MainPanel, TheiaPanel } from './components';
+import { ControllerPanel, MainPanel, TheiaPanel } from './components';
 import { intercept } from './server';
 
 const history = createBrowserHistory();
@@ -18,8 +18,11 @@ function App() {
   return (
     <ThemeProvider theme={theme}>
       <Router history={history}>
-        <Route exact path={"/"} component={MainPanel} />
-        <Route path={"/:uuid"} component={TheiaPanel} />
+        <Switch>
+          <Route exact path={"/"} component={MainPanel} />
+          <Route exact path={"/controller"} component={ControllerPanel} />
+          <Route path={"/:uuid"} component={TheiaPanel} />
+        </Switch>
       </Router>
     </ThemeProvider>
   );
@@ -42,6 +45,8 @@ const version = process.env.GITHUB_SHA;
 if (version) {
   console.log(`Version ${version}`);
 }
+
+//document.domain = "substrate.dev";
 
 ReactDOM.render(
     <App />,
