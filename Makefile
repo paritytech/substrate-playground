@@ -124,6 +124,6 @@ k8s-undeploy-playground: k8s-assert
 k8s-undeploy-theia: k8s-assert
 	kubectl delete pods,services -l app.kubernetes.io/component=theia --namespace=${IDENTIFIER}
 
-# Creates or replaces the `images` config map from `conf/k8s/images/*.properties`
-k8s-update-images-config: k8s-assert
+# Creates or replaces the `templates` config map from `conf/k8s/overlays/ENVIRONMENT/templates`
+k8s-update-templates-config: k8s-assert
 	kubectl create configmap templates --namespace=${IDENTIFIER} --from-file=conf/k8s/overlays/${ENVIRONMENT}/templates/ --dry-run -o yaml | kubectl apply -f -

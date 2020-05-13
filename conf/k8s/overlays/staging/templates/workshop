@@ -1,4 +1,4 @@
-image: gcr.io/substrateplayground-252112/jeluard/theia-substrate@sha256:423bf1b0ee9552627000840489a8a8e9b75a97bfca1412e85d07bb0491ce9eb3
+image: gcr.io/substrateplayground-252112/jeluard/theia-substrate@sha256:8b8f85b6b810ec44f9282162e95ef524149d483d8568a6de226a70ad320f8857
 name: "Workshop"
 description: |
   ## A set of templates used during Workshops
@@ -23,7 +23,7 @@ runtime:
   # tasks: TODO, see https://www.gitpod.io/docs/config-start-tasks/
 
 build:
-  base: gcr.io/substrateplayground-252112/jeluard/theia-substrate@sha256:0b3ec9ad567d0f5b0eed8a0fc2b1fa3fe1cca24cc02416047d71f83770b05e34
+  base: sha256:0b3ec9ad567d0f5b0eed8a0fc2b1fa3fe1cca24cc02416047d71f83770b05e34
 #  extensions: []
 #  repositories:
 #    - name: substrate-node-template
