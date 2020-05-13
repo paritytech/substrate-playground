@@ -1,0 +1,28 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+commonLabels:
+  app.kubernetes.io/environment: dev
+  app.kubernetes.io/version: "1.0"
+
+namespace: default
+
+resources:
+- ../../base
+
+images:
+- name: gcr.io/substrateplayground-252112/jeluard/substrate-playground-backend-api
+  digest: sha256:0f6b56dfedaa864282239e55d7b43c662e588a3627e0cf3770ae795e8ef2ce58
+- name: gcr.io/substrateplayground-252112/jeluard/substrate-playground-backend-ui
+  digest: sha256:6a3b0fa6ca049d968b1c15fdc17162c425e0711975db22478c38aa153081d3f8
+
+patches:
+- patch: |-
+    - op: replace
+      path: /spec/rules/0/host
+      value: playground-dev.substrate.dev
+  target:
+    group: extensions
+    kind: Ingress
+    name: ingress
+    version: v1beta1

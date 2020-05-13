@@ -2,11 +2,11 @@ commonLabels:
     app.kubernetes.io/part-of: playground
     app.kubernetes.io/managed-by: kustomize
 resources:
+    - backend-api-pod.yaml
+    - backend-api-service.yaml
+    - backend-ui-pod.yaml
+    - backend-ui-service.yaml
     - cluster-role-binding.yaml
     - ingress.yaml
     - nginx.yaml
-    - server-deployment.yaml
-    - server-service.yaml
     - service-account.yaml
-    - ui-deployment.yaml
-    - ui-service.yaml

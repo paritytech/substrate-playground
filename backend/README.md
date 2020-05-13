@@ -7,6 +7,5 @@
 ## Development server
 
 ```bash
-ln -s ../frontend/dist static
 cargo run
 ```

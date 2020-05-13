@@ -1,0 +1,38 @@
+image: gcr.io/substrateplayground-252112/jeluard/theia-substrate@sha256:8b8f85b6b810ec44f9282162e95ef524149d483d8568a6de226a70ad320f8857
+name: "Workshop"
+description: |
+  ## A set of templates used during Workshops
+
+  Contains both frontend and backend projects.
+
+runtime:
+  env:
+    - name: PUBLIC_URL
+      value: "."
+    - name: REACT_APP_PROVIDER_SOCKET
+      value: ""
+  ports:
+    - name: front-end
+      protocol: TCP
+      path: /front-end
+      port: 8000
+    - name: wss
+      protocol: TCP
+      path: /wss
+      port: 9944
+  # tasks: TODO, see https://www.gitpod.io/docs/config-start-tasks/
+
+build:
+  base: sha256:0b3ec9ad567d0f5b0eed8a0fc2b1fa3fe1cca24cc02416047d71f83770b05e34
+#  extensions: []
+#  resources:
+#    - url:
+#      dest: file/
+#  includes-defaults: true (include vscode files)
+#  commands:
+#    - name: Build substrate-front-end-template
+#      run: yarn
+#      working-directory: ./substrate-front-end-template
+#    - name: Build substrate-node-template
+#      run: cargo build --release
+#      working-directory: ./substrate-node-template

@@ -49,7 +49,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .attach(cors)
 
         .mount(
-            "/",
+            "/api",
             routes![
                 api::deploy,
                 api::get,
