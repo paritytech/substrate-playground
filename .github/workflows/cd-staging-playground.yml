@@ -61,7 +61,7 @@ jobs:
         uses: ad-m/github-push-action@master
         with:
           branch: develop
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          github_token: ${{ secrets.PAT_TOKEN }}
       - name: Deploy on GKE
         run:  |-
           ./kustomize build . | kubectl apply --record -f -
