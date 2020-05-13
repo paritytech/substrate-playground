@@ -18,7 +18,7 @@ jobs:
       # https://github.com/actions/checkout
       - uses: actions/checkout@v2
         with:
-          fetch-depth: 0
+          persist-credentials: false
       - uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
         with:
           # GCLOUD_KEY is the base64 of the gcloud service account JSON file
@@ -55,7 +55,8 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git commit -m "ci: Updated playground image" -a
+          git add conf/k8s/overlays/staging/kustomization.yaml
+          git commit -m "ci: Updated playground image"
       - name: Push changes
         uses: ad-m/github-push-action@master
         with:
