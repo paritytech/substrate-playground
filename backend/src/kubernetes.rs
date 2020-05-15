@@ -18,6 +18,7 @@ use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::{collections::BTreeMap, error::Error, time::SystemTime};
 use uuid::Uuid;
 
+const BACKEND_API_NAME: &str = "backend-api-pod"; // Must match name from conf/k8s/base/backend-api-pod.yaml
 const APP_LABEL: &str = "app.kubernetes.io/part-of";
 const APP_VALUE: &str = "playground";
 const COMPONENT_LABEL: &str = "app.kubernetes.io/component";
@@ -358,17 +359,6 @@ impl Engine {
             })
             .ok_or("PodStatus unavailable")?;
 
-        pod.metadata
-            .as_ref()
-            .and_then(|md| {
-                Some((
-                    //TODO extract relevant labels
-                    md.labels.clone()?.get(OWNER_LABEL)?.to_string(),
-                    md.labels.clone()?.get(INSTANCE_LABEL)?.to_string(),
-                ))
-            })
-            .ok_or("Metadata unavailable")?;
-
         Ok(PodDetails {
             phase,
             started_at,
@@ -380,7 +370,7 @@ impl Engine {
         let config = config().await?;
         let client = APIClient::new(config);
         let pod_api: Api<Pod> = Api::namespaced(client, &self.namespace);
-        let pod = pod_api.get("TODO").await.map_err(error_to_string)?;
+        let pod = pod_api.get(BACKEND_API_NAME).await.map_err(error_to_string)?;
 
         Ok(self.pod_to_details(&pod)?)
     }
