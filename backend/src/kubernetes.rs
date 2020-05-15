@@ -277,6 +277,8 @@ pub struct PodDetails {
     // PodStatus
     pub started_at: SystemTime,
     pub phase: String,
+    pub reason: Option<String>,
+    pub message: Option<String>,
 }
 
 impl Default for PodDetails {
@@ -289,6 +291,8 @@ impl Default for PodDetails {
             url: None,
             started_at: SystemTime::UNIX_EPOCH,
             phase: "".to_string(),
+            reason: None,
+            message: None,
         }
     }
 }
@@ -348,12 +352,14 @@ impl Engine {
     }
 
     fn pod_to_details(self, pod: &Pod) -> Result<PodDetails, String> {
-        let (phase, started_at): (String, SystemTime) = pod
+        let (phase, reason, message, started_at) = pod
             .status // https://docs.rs/k8s-openapi/0.7.1/k8s_openapi/api/core/v1/struct.PodStatus.html
             .as_ref()
             .and_then(|pod_status| {
                 Some((
                     pod_status.clone().phase?,
+                    pod_status.clone().reason,
+                    pod_status.clone().message,
                     pod_status.clone().start_time?.0.into(),
                 ))
             })
@@ -361,6 +367,8 @@ impl Engine {
 
         Ok(PodDetails {
             phase,
+            reason,
+            message,
             started_at,
             ..Default::default()
         })
