@@ -148,7 +148,7 @@ export function TheiaPanel({ history }) {
                 return;
             }
 
-            const phase = result?.details?.phase;
+            const phase = result?.pod?.details?.status?.phase;
             if (phase == "Running") {
                 // Check URL is fine
                 const url = result.url;
@@ -303,23 +303,23 @@ function formatDate(t: number) {
 }
 
 function Instance({instance}) {
-    const {instance_uuid, details, template} = instance;
+    const {instance_uuid, pod, template} = instance;
     const {name, runtime} = template;
     const {env, ports} = runtime;
-    const date = formatDate(details?.started_at?.secs_since_epoch);
+    const status = pod?.details?.status;
     return (
     <Card style={{ margin: 20, alignSelf: "baseline"}} variant="outlined">
         <CardContent>
             <Typography>
             {name} ({instance_uuid})
             </Typography>
-            {date &&
+            {status?.startTime &&
             <Typography color="textSecondary" gutterBottom>
-            Started at {date}
+            Started at {status?.startTime}
             </Typography>
             }
             <Typography color="textSecondary" gutterBottom>
-            Phase: <em>{details.phase}</em>
+            Phase: <em>{status?.phase}</em>
             </Typography>
             <div style={{display: "flex", paddingTop: 20}}>
                 <div style={{flex: 1, paddingRight: 10}}>
@@ -377,7 +377,7 @@ export function MainPanel({ history, location }) {
     const [hoverRef, isHovered] = useHover();
 
     const {instances, templates} = state.context;
-    const runningInstances = instances?.filter(instance => instance?.details?.phase === "Running");
+    const runningInstances = instances?.filter(instance => instance?.pod?.details?.status?.phase === "Running");
 
     function gstate() {
         if (state.matches(setup) || state.matches(stopping) || state.matches(deploying)) {

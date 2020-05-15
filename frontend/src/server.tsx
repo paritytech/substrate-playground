@@ -1,7 +1,7 @@
 import { Polly, Timing } from '@pollyjs/core';
 import FetchAdapter from '@pollyjs/adapter-fetch';
 
-let description = `#frdsfd
+const description = `#frdsfd
 
 * dsfds
 * dsfdsf
@@ -18,11 +18,13 @@ let description = `#frdsfd
 dsfds dsfdsf dsf dsf dsf dsf dsf dsf dsfdsf dsf ds fds fdsf ds fds fds 
 
 ## erez`;
-let runtime = {env: [{name: "SOME_ENV", value: "1234"}], ports: [{name: "web", protocol: "TCP", path: "/", port: 123, target: 123}]};
-let build = {base: "", extensions: [{name: "", value: ""}], repositories: [{name: "", value: ""}], commands: [{name: "", run: "", working_directory: ""}]};
-let template = {image: "gcr.io/substrateplayground-252112/jeluard/theia-substrate@sha256:0b3ec9ad567d0f5b0eed8a0fc2b1fa3fe1cca24cc02416047d71f83770b05e34", name: "workshop", description: description, runtime: runtime, build: build}
-let instanceDetails = {phase: "Running", url: "http://www.google.fr"};
-let instance = {user_uuid: "", instance_uuid: "1234", template: template, details: instanceDetails, started_at: {secs_since_epoch: 1588254730}};
+const runtime = {env: [{name: "SOME_ENV", value: "1234"}], ports: [{name: "web", protocol: "TCP", path: "/", port: 123, target: 123}]};
+const build = {base: "", extensions: [{name: "", value: ""}], repositories: [{name: "", value: ""}], commands: [{name: "", run: "", working_directory: ""}]};
+const template = {image: "gcr.io/substrateplayground-252112/jeluard/theia-substrate@sha256:0b3ec9ad567d0f5b0eed8a0fc2b1fa3fe1cca24cc02416047d71f83770b05e34", name: "workshop", description: description, runtime: runtime, build: build}
+const url = "http://www.google.fr";
+const pod = {details: {status: {phase: "Running", startTime: "2020-05-15T14:06:18Z"}}};
+const uuid = "1234";
+const instance = {user_uuid: "", instance_uuid: uuid, template: template, pod: pod, url: url};
 
 export function intercept({noInstance = true, delay = 100}: {noInstance?: boolean, delay?: number}) {
   Polly.register(FetchAdapter);
@@ -32,6 +34,12 @@ export function intercept({noInstance = true, delay = 100}: {noInstance?: boolea
     logging: false,
   });
   const { server } = polly;
+  server.get(url).intercept(async (req, res) => {
+    await server.timeout(delay);
+    res.status(200).json({
+      result: {version: "1.23"},
+    });
+  });
   server.get('/api').intercept(async (req, res) => {
     await server.timeout(delay);
     res.status(200).json({
@@ -51,7 +59,7 @@ export function intercept({noInstance = true, delay = 100}: {noInstance?: boolea
   server.get('/api/:uuuid/:iuuid').intercept(async (req, res) => {
     await server.timeout(delay);
     res.status(200).json({
-      result: instanceDetails,
+      result: instance,
     });
   });
   server.get('/api/:uuuid').intercept(async (req, res) => {
@@ -69,7 +77,7 @@ export function intercept({noInstance = true, delay = 100}: {noInstance?: boolea
   server.post('/api/:uuid?template=:template').intercept(async (req, res) => {
     await server.timeout(delay);
     res.status(200).json({
-      result: "uuid",
+      result: uuid,
     });
   });
 }
