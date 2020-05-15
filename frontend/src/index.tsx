@@ -38,7 +38,10 @@ if (devMode()) {
   intercept({noInstance: true});
 }
 
-console.log(`Version ${process.env.GITHUB_SHA}`)
+const version = process.env.GITHUB_SHA;
+if (version) {
+  console.log(`Version ${version}`);
+}
 
 ReactDOM.render(
     <App />,

@@ -52,7 +52,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let error = rocket::ignite()
         .attach(prometheus.clone())
         .attach(cors)
-
         .mount(
             "/api",
             routes![

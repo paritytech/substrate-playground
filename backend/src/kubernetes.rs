@@ -15,7 +15,7 @@ use kube::{
     config,
 };
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
-use std::{collections::BTreeMap, error::Error, time::SystemTime};
+use std::{collections::BTreeMap, error::Error};
 use uuid::Uuid;
 
 const BACKEND_API_NAME: &str = "backend-api-pod"; // Must match name from conf/k8s/base/backend-api-pod.yaml
@@ -241,7 +241,7 @@ pub struct InstanceDetails {
     pub instance_uuid: String,
     pub template: Template,
     pub url: String,
-    pub details: PodDetails,
+    pub pod: PodDetails,
 }
 
 impl InstanceDetails {
@@ -250,14 +250,14 @@ impl InstanceDetails {
         user_uuid: String,
         instance_uuid: String,
         template: &Template,
-        details: PodDetails,
+        pod: PodDetails,
     ) -> Self {
         InstanceDetails {
             user_uuid,
             instance_uuid: instance_uuid.clone(),
             template: template.clone(),
             url: InstanceDetails::url(engine, instance_uuid),
-            details,
+            pod,
         }
     }
 
@@ -273,12 +273,7 @@ pub struct PodDetails {
     pub description: Option<String>,
     pub version: Option<String>,
     pub revision: Option<String>,
-    pub url: Option<String>,
-    // PodStatus
-    pub started_at: SystemTime,
-    pub phase: String,
-    pub reason: Option<String>,
-    pub message: Option<String>,
+    pub details: Pod,
 }
 
 impl Default for PodDetails {
@@ -288,11 +283,7 @@ impl Default for PodDetails {
             description: None,
             version: None,
             revision: None,
-            url: None,
-            started_at: SystemTime::UNIX_EPOCH,
-            phase: "".to_string(),
-            reason: None,
-            message: None,
+            details: Pod { ..Pod::default() },
         }
     }
 }
@@ -352,24 +343,8 @@ impl Engine {
     }
 
     fn pod_to_details(self, pod: &Pod) -> Result<PodDetails, String> {
-        let (phase, reason, message, started_at) = pod
-            .status // https://docs.rs/k8s-openapi/0.7.1/k8s_openapi/api/core/v1/struct.PodStatus.html
-            .as_ref()
-            .and_then(|pod_status| {
-                Some((
-                    pod_status.clone().phase?,
-                    pod_status.clone().reason,
-                    pod_status.clone().message,
-                    pod_status.clone().start_time?.0.into(),
-                ))
-            })
-            .ok_or("PodStatus unavailable")?;
-
         Ok(PodDetails {
-            phase,
-            reason,
-            message,
-            started_at,
+            details: pod.clone(),
             ..Default::default()
         })
     }
@@ -378,7 +353,10 @@ impl Engine {
         let config = config().await?;
         let client = APIClient::new(config);
         let pod_api: Api<Pod> = Api::namespaced(client, &self.namespace);
-        let pod = pod_api.get(BACKEND_API_NAME).await.map_err(error_to_string)?;
+        let pod = pod_api
+            .get(BACKEND_API_NAME)
+            .await
+            .map_err(error_to_string)?;
 
         Ok(self.pod_to_details(&pod)?)
     }
