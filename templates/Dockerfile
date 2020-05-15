@@ -71,7 +71,8 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --de
     && rustup target add wasm32-unknown-unknown --toolchain $RUST_VERSION
 
 RUN cargo install --force --git https://github.com/alexcrichton/wasm-gc \
-    && cargo install --force --git https://github.com/paritytech/substrate subkey
+    && cargo install --force --git https://github.com/paritytech/substrate subkey \
+    && cargo install substrate-deps
 
 ##########################
 #  Substrate workshop    #
