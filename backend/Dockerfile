@@ -36,7 +36,10 @@ LABEL stage=builder
 
 FROM scratch
 
-ENV RUST_BACKTRACE=full\
+ARG GITHUB_SHA
+
+ENV GITHUB_SHA=$GITHUB_SHA\
+    RUST_BACKTRACE=full\
     RUST_LOG="warn"
 
 COPY --from=builder /opt/bin/$BINARY_NAME /

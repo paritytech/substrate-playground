@@ -40,6 +40,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
     .to_cors()?;
 
     log::info!("Running in {:?} mode", Environment::active()?);
+    let key = "GITHUB_SHA";
+    match env::var(key) {
+        Ok(val) => println!("Version {:?}", val),
+        Err(e) => println!("Can't access {}: {}", key, e),
+    }
 
     let manager = Manager::new().await?;
     manager.clone().spawn_background_thread();
