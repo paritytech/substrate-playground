@@ -34,7 +34,6 @@ export const deploy = "@action/DEPLOY";
 export const stop = "@action/STOP";
 export const restart = "@action/RESTART";
 
-// TODO read origin call from github and extract template?
 function lifecycle(history, location) {
   const template = new URLSearchParams(location.search).get("deploy");
   return Machine<Context>({
