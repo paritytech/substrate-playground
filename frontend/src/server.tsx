@@ -22,7 +22,7 @@ const runtime = {env: [{name: "SOME_ENV", value: "1234"}], ports: [{name: "web",
 const build = {base: "", extensions: [{name: "", value: ""}], repositories: [{name: "", value: ""}], commands: [{name: "", run: "", working_directory: ""}]};
 const template = {image: "gcr.io/substrateplayground-252112/jeluard/theia-substrate@sha256:0b3ec9ad567d0f5b0eed8a0fc2b1fa3fe1cca24cc02416047d71f83770b05e34", name: "workshop", description: description, runtime: runtime, build: build}
 const url = "http://www.google.fr";
-const pod = {details: {status: {phase: "Running", startTime: "2020-05-15T14:06:18Z"}}};
+const pod = {version: "1.23", details: {status: {phase: "Running", startTime: "2020-05-15T14:06:18Z"}}};
 const uuid = "1234";
 const instance = {user_uuid: "", instance_uuid: uuid, template: template, pod: pod, url: url};
 
@@ -36,14 +36,12 @@ export function intercept({noInstance = true, delay = 100}: {noInstance?: boolea
   const { server } = polly;
   server.get(url).intercept(async (req, res) => {
     await server.timeout(delay);
-    res.status(200).json({
-      result: {version: "1.23"},
-    });
+    res.status(200);
   });
   server.get('/api').intercept(async (req, res) => {
     await server.timeout(delay);
     res.status(200).json({
-      result: {version: "1.23"},
+      result: pod,
     });
   });
   server.get('/api/templates').intercept(async (req, res) => {

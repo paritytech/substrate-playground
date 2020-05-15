@@ -59,10 +59,10 @@ function lifecycle(history, location) {
               throw response2;
             }
 
-            /*const response3 = (await getDetails());
+            const response3 = (await getDetails());
             if (response3.error) {
               throw response3;
-            }*/
+            }
 
             const instances = response.result;
             const templates = response2.result;
@@ -74,7 +74,7 @@ function lifecycle(history, location) {
               }
             }
 
-            callback({type: check, data: {/*details: response3.result, */instances: response.result, templates: Object.entries(templates).map(([k, v]) => {v["id"] = k; return v;})}});
+            callback({type: check, data: {details: response3.result, instances: response.result, templates: Object.entries(templates).map(([k, v]) => {v["id"] = k; return v;})}});
           },
           onError: {
             target: failed,

@@ -6,6 +6,11 @@ import Button from '@material-ui/core/Button';
 import Box from '@material-ui/core/Box';
 import Card from '@material-ui/core/Card';
 import CardContent from '@material-ui/core/CardContent';
+import Dialog from '@material-ui/core/Dialog';
+import DialogActions from '@material-ui/core/DialogActions';
+import DialogContent from '@material-ui/core/DialogContent';
+import DialogContentText from '@material-ui/core/DialogContentText';
+import DialogTitle from '@material-ui/core/DialogTitle';
 import Divider from '@material-ui/core/Divider';
 import FeedbackIcon from '@material-ui/icons/Feedback';
 import HelpIcon from '@material-ui/icons/Help';
@@ -183,7 +188,7 @@ export function TheiaPanel({ history }) {
     }
 }
 
-function Nav() {
+function Nav({ toggleDetails }) {
     return (
         <AppBar position="fixed">
             <Toolbar style={{justifyContent: "space-between"}}>
@@ -197,7 +202,7 @@ function Nav() {
                         <FeedbackIcon />
                     </IconButton>
                     <IconButton
-                        onClick={() => window.open("https://docs.google.com/forms/d/e/1FAIpQLSdXpq_fHqS_ow4nC7EpGmrC_XGX_JCIRzAqB1vaBtoZrDW-ZQ/viewform?edit_requested=true")}
+                        onClick={ toggleDetails }
                     >
                         <HelpIcon />
                     </IconButton>
@@ -405,7 +410,7 @@ export function MainPanel({ history, location }) {
 
     const conten = content();
     return (
-        <Wrapper state={gstate()}>
+        <Wrapper details={state?.context?.details} state={gstate()}>
             {conten &&
             <Container style={{display: "flex", justifyContent: "center", alignItems: "center", height: "100vh"}}>
                 <Paper ref={hoverRef} style={{display: "flex", flexDirection: "column", height: "60vh", width: "60vw"}} elevation={3}>
@@ -435,13 +440,27 @@ function WrappedContent({ style, state, content }) {
 }
 
 // state: PRELOADING, LOADING, ERROR (message, action) {type: value:}
-export function Wrapper({ state, children }) {
+export function Wrapper({ details, state, children }) {
+    const [showDetails, setDetails] = useState(false);
+    function toggleDetails() {setDetails(!showDetails);}
     const type = state?.type;
     return (
     <React.Fragment>
         <Background state={type} />
 
-        <Nav />
+        <Dialog open={showDetails} onClose={toggleDetails}>
+            <DialogTitle>Playground</DialogTitle>
+            <DialogContent>
+                <DialogContentText id="alert-dialog-description">
+                    Version: {details?.version}
+                </DialogContentText>
+                <DialogContentText id="alert-dialog-description">
+                    Started at: {details?.details?.status?.startTime}
+                </DialogContentText>
+            </DialogContent>
+        </Dialog>
+
+        <Nav toggleDetails={toggleDetails} />
 
         <Fade in appear>
             <WrappedContent state={state} content={children} />
