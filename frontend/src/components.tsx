@@ -134,14 +134,20 @@ export function Loading({phase, retry = 0}: {phase?: string, retry?: number}) {
     );
 }
 
-export function TheiaPanel() {
+export function TheiaPanel({ history }) {
     const { uuid } = useParams();
     const maxRetries = 5*60;
     const [data, setData] = useState({type: "LOADING"});
 
     useEffect(() => {
         async function fetchData() {
-            const { result } = await getInstanceDetails(localStorage.getItem("userUUID"), uuid);
+            const { result, error } = await getInstanceDetails(localStorage.getItem("userUUID"), uuid);
+            if (error) {
+                // This instance doesn't exist
+                setData({type: "ERROR", value: "Couldn't locate the theia instance", action: () => history.push("/")});
+                return;
+            }
+
             const phase = result?.details?.phase;
             if (phase == "Running") {
                 // Check URL is fine
@@ -157,7 +163,7 @@ export function TheiaPanel() {
                 setTimeout(() => setData({type: "LOADING", phase: phase, retry: retry + 1}), 1000);
                 
             } else if (retry == maxRetries) {
-                setData({type: "ERROR", value: "Couldn't access the theia instance", action: () => setData({})});
+                setData({type: "ERROR", value: "Couldn't access the theia instance in time", action: () => setData({})});
             }
         }
 
