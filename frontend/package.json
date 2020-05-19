@@ -24,7 +24,7 @@
     "xstate": "4.9.1"
   },
   "devDependencies": {
-    "@pollyjs/adapter-fetch": "4.2.1",
+    "@pollyjs/adapter-fetch": "4.3.0",
     "@pollyjs/core": "4.2.1",
     "@types/react": "16.9.35",
     "@types/react-dom": "16.9.8",
