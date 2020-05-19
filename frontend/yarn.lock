@@ -946,21 +946,22 @@
     "@parcel/utils" "^1.11.0"
     physical-cpu-count "^2.0.0"
 
-"@pollyjs/adapter-fetch@4.2.1":
-  version "4.2.1"
-  resolved "https://registry.yarnpkg.com/@pollyjs/adapter-fetch/-/adapter-fetch-4.2.1.tgz#6200b9077793011f8587ebb3a5db2f73e9586453"
-  integrity sha512-QAP3p2lAZ+FrlbFhZgAsGKI9ZZ60u16aHkwOhWd2fsBwPVV2FqM0ra9f4bjbLVPJVoQLseGS+Zz4t+YbmmIHow==
+"@pollyjs/adapter-fetch@4.3.0":
+  version "4.3.0"
+  resolved "https://registry.yarnpkg.com/@pollyjs/adapter-fetch/-/adapter-fetch-4.3.0.tgz#7b49b39d8e684e4010622f21ea8631fbe084028f"
+  integrity sha512-imP0KEX4es0KNfwRARa93GX08JdXhG907ke/K4kkfsGhfssyD/O553KOips4VCkgMO8RiGZCwzHS+RNm3tW6hw==
   dependencies:
-    "@pollyjs/adapter" "^4.2.1"
-    "@pollyjs/utils" "^4.1.0"
+    "@pollyjs/adapter" "^4.3.0"
+    "@pollyjs/utils" "^4.3.0"
     detect-node "^2.0.4"
+    to-arraybuffer "^1.0.1"
 
-"@pollyjs/adapter@^4.2.1":
-  version "4.2.1"
-  resolved "https://registry.yarnpkg.com/@pollyjs/adapter/-/adapter-4.2.1.tgz#223dff3124261ea36df65f61454f8dbd821d576d"
-  integrity sha512-MZLqsff1hveWhmNKBBpN25giM43gApW4kRFAhCeX4HinoO2W33Dscy/V3D8FUktvyJWmr84LQQX5DsW0dGsOmQ==
+"@pollyjs/adapter@^4.3.0":
+  version "4.3.0"
+  resolved "https://registry.yarnpkg.com/@pollyjs/adapter/-/adapter-4.3.0.tgz#42a000125064bc82b4248130caf2366a008de128"
+  integrity sha512-8/kELw/esDY+Mi6xiYRSX3EHKoVmPeqjRYk7DHFbHhXoMs6ENrPS0ay8Ajl0KHppAnutTk4YLqaI/3VqFCR5iw==
   dependencies:
-    "@pollyjs/utils" "^4.1.0"
+    "@pollyjs/utils" "^4.3.0"
 
 "@pollyjs/core@4.2.1":
   version "4.2.1"
@@ -976,10 +977,10 @@
     route-recognizer "^0.3.4"
     slugify "^1.3.4"
 
-"@pollyjs/utils@^4.1.0":
-  version "4.1.0"
-  resolved "https://registry.yarnpkg.com/@pollyjs/utils/-/utils-4.1.0.tgz#7be8e9ab74918bfff2c80f279a1c6195d4fb3566"
-  integrity sha512-+ZkVTG2Mm8Oc92vQiOZR72/cyh50G2omSu5jhHmcSO6zSDhwzZyEa+jim4eaUytESNtd/RJQnMukDOEJyGlSDw==
+"@pollyjs/utils@^4.1.0", "@pollyjs/utils@^4.3.0":
+  version "4.3.0"
+  resolved "https://registry.yarnpkg.com/@pollyjs/utils/-/utils-4.3.0.tgz#c7c709bfc40836d9c3f7c3b89b8e54da7e364b0f"
+  integrity sha512-8BYWtP4nK6mAlDgZQ8j2+EZjQH2beoHaHnZDyG7GdspOLeILtXhHLeAxp371YSKN387t7OEBS0nIQSMppHuTQg==
   dependencies:
     qs "^6.7.0"
     url-parse "^1.4.7"
@@ -5968,7 +5969,7 @@ tmp@^0.0.33:
   dependencies:
     os-tmpdir "~1.0.2"
 
-to-arraybuffer@^1.0.0:
+to-arraybuffer@^1.0.0, to-arraybuffer@^1.0.1:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/to-arraybuffer/-/to-arraybuffer-1.0.1.tgz#7d229b1fcc637e466ca081180836a7aabff83f43"
   integrity sha1-fSKbH8xjfkZsoIEYCDanqr/4P0M=
