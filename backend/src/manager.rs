@@ -92,7 +92,7 @@ impl Manager {
                 for (user_uuid, instance_uuid) in instances3 {
                     match self.clone().get_instance(&user_uuid, &instance_uuid) {
                         Ok(details) => {
-                            let phase = phase(&details.pod).unwrap_or("Unknown".to_string());
+                            let phase = phase(&details.pod).unwrap_or_else(|| "Unknown".to_string());
                             if phase != "Pending" && phase != "Unknown" {
                                 instances2.remove(user_uuid);
                                 if let Some(duration) = elapsed(&details.pod) {

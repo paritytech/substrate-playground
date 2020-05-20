@@ -87,6 +87,8 @@ fn pod_env_variables(
     envs
 }
 
+// TODO detect when ingress is restarted, then re-sync theia instances
+
 fn create_pod(
     host: &str,
     user_uuid: &str,
