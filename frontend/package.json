@@ -12,7 +12,7 @@
   "dependencies": {
     "@material-ui/core": "4.10.0",
     "@material-ui/icons": "4.9.1",
-    "@material-ui/lab": "4.0.0-alpha.53",
+    "@material-ui/lab": "4.0.0-alpha.54",
     "@xstate/react": "0.8.1",
     "history": "4.10.1",
     "marked": "1.1.0",
