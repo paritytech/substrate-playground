@@ -160,44 +160,46 @@ export class TheiaSubstrateExtensionCommandContribution implements CommandContri
         // Listen to message from parent frame
         window.addEventListener('message', async (o) => {
             const type = o.data.type;
-            const name = o.data.name;
-            const data = o.data.data;
-            const uuid = o.data.uuid;
-            const status = this.connectionStatusService.currentStatus;
 
-            if (status === ConnectionStatus.OFFLINE) {
-                answer("extension-answer-offline", uuid);
-                return;
-            }
+            if (type) { // Filter extension related message
+                const name = o.data.name;
+                const data = o.data.data;
+                const uuid = o.data.uuid;
+                const status = this.connectionStatusService.currentStatus;
+                if (status === ConnectionStatus.OFFLINE) {
+                    answer("extension-answer-offline", uuid);
+                    return;
+                }
 
-            switch (type) {
-                case "action": {
-                    try {
-                        const result = await registry.executeCommand(name, data);
-                        answer("extension-answer", uuid, result);
-                    } catch (error) {
-                        answer("extension-answer-error", uuid, {name: error.name, message: error.message});
+                switch (type) {
+                    case "action": {
+                        try {
+                            const result = await registry.executeCommand(name, data);
+                            answer("extension-answer", uuid, result);
+                        } catch (error) {
+                            answer("extension-answer-error", uuid, {name: error.name, message: error.message});
+                        }
+                        break;
                     }
-                    break;
-                }
-                case "list-actions": {
-                    answer("extension-answer", uuid, registry.commands);
-                    break;
-                }
-                default:
-                    if (type) {
-                        const message = `Unknown extension type ${type}`;
-                        console.error(message, o);
-                        answer("extension-answer-error", uuid, message);
+                    case "list-actions": {
+                        answer("extension-answer", uuid, registry.commands);
+                        break;
                     }
-                    break;
+                    default:
+                        if (type) {
+                            const message = `Unknown extension type ${type}`;
+                            console.error(message, o);
+                            answer("extension-answer-error", uuid, message);
+                        }
+                        break;
+                }
             }
         }, false);
 
         this.connectionStatusService.onStatusChange(() => updateStatus(this.connectionStatusService.currentStatus));
 
         const online = this.connectionStatusService.currentStatus === ConnectionStatus.ONLINE;
-        answer(online ? "extension-online" : "extension-offline");
+        answer("extension-advertise", "", {online: online});
 
         //this.fileNavigatorContribution.openView({activate: true}); 
     }

@@ -94,13 +94,15 @@ export class Responder {
         this.#instanceChannel.onmessageerror = console.error;
     }
 
+    setStatus(online: boolean;): void {
+        this.online = online;
+    }
+
     announce(): void {
-        this.online = true;
         this.#channel.postMessage({type: TYPE_INSTANCE_ANNOUNCED, uuid: this.#uuid, url: document.location.href});
     }
 
     unannounce(): void {
-        this.online = false;
         this.#channel.postMessage({type: TYPE_INSTANCE_LEFT, uuid: this.#uuid});
     }
 
@@ -138,6 +140,9 @@ export class Instance {
                     switch (type) {
                         case "extension-answer":
                             resolve(o.data.data);
+                            break;
+                        case "extension-answer-offline":
+                            reject({message: "Instance is offline"});
                             break;
                         case "extension-answer-error":
                             reject(o.data.data);

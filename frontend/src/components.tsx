@@ -306,14 +306,23 @@ export function TheiaPanel({ history }) {
         const processMessage = (o) => {
             const type = o.data.type;
             switch (type) {
+                case "extension-advertise":
+                    if (o.data.data.online) {
+                        responder.announce();
+                    } else {
+                        responder.unannounce();
+                    }
+                    break;
                 case "extension-online":
                     responder.announce();
+                    responder.setStatus(true);
                     break;
-                /* TODO ignore offline for now, too trigger happy
                 case "extension-offline":
+                    responder.setStatus(false);
+                    /* TODO ignore offline for now, too trigger happy
                     setData({type: "ERROR", value: "Instance went offline", action: () => history.push("/")});
-                    responder.unannounce();
-                    break;*/
+                    responder.unannounce();*/
+                    break;
                 case "extension-answer-offline":
                 case "extension-answer-error":
                     console.error(`Error while processing message`, o);
