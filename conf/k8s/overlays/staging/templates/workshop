@@ -1,4 +1,4 @@
-image: gcr.io/substrateplayground-252112/jeluard/theia-substrate@sha256:8536aedfd201b95bbb014900f83e0808553020c34de4d6917c51faae7427ac21
+image: gcr.io/substrateplayground-252112/jeluard/theia-substrate@sha256:5da908c3c06f92fdae094a7fa22e9fda7946900384c6d2cb6b621a5500432a0c
 name: "Workshop"
 description: |
   ## A set of templates used during Workshops
