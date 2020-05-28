@@ -10,6 +10,7 @@ on:
 env:
   GKE_CLUSTER: susbtrate-playground-staging
   GKE_ZONE: us-central1-a
+  DOCKER_BUILDKIT: 1
 
 jobs:
   build-and-push:
