@@ -95,7 +95,7 @@ export function Background({state}: {state: string}) {
 
 export function ErrorMessage({reason, onClick}: {reason?: string, onClick: () => void}) {
     return (
-        <Alert severity="error" style={{width: "100%", padding: 20, alignItems: "center"}}
+        <Alert severity="error" style={{flex: 1, padding: 20, alignItems: "center"}}
                 action={<Button onClick={onClick}>TRY AGAIN</Button>}>
             <AlertTitle>Oops! Looks like something went wrong :(</AlertTitle>
             <Box component="span" display="block">{reason}</Box>
@@ -136,7 +136,7 @@ export function Loading({phase, retry = 0}: {phase?: string, retry?: number}) {
     }, 3000);
 
     return (
-        <div style={{display: "flex", justifyContent: "center", alignItems: "center", height: "100vh", flexDirection: "column", textAlign: "center"}}>
+        <div style={{display: "flex", flex: 1, justifyContent: "center", alignItems: "center", flexDirection: "column", textAlign: "center"}}>
             <Typography variant="h3">Please wait, because</Typography>
             <animated.h1 style={props}>{phrase}</animated.h1>
             {(retry > 10) &&
@@ -286,9 +286,7 @@ export function ControllerPanel() {
     );
 }
 
-export function TheiaPanel({ history }) {
-    const query = useQuery();
-    const { uuid } = useParams();
+export function TheiaInstance({ uuid }) {
     const maxRetries = 5*60;
     const ref = useRef();
     const [data, setData] = useState({type: "LOADING"});
@@ -373,26 +371,30 @@ export function TheiaPanel({ history }) {
       }, [data, uuid]);
 
     if(data.type == "SUCCESS") {
-        const controller = query.get("controller");
-        if (controller) {
-            return (
-
-            <div style={{display: "flex", height: "100vh"}}>
-                <InstanceController />
-                <iframe id="theia" ref={ref} src={data.url} frameBorder="0" width="50%"></iframe>
-            </div>
-            );
-        } else {
-            return (
-            <div>
-                <iframe id="theia" ref={ref} src={data.url} frameBorder="0" style={{overflow:"hidden",height:"100vh",width:"100vm"}} height="100%" width="100%"></iframe>
-            </div>
-            );
-        }
-
+        return <iframe ref={ref} src={data.url} frameBorder="0" width="100%" height="100%"></iframe>
     } else {
         return <Wrapper state={data} />
     }
+}
+
+export function TheiaPanel() {
+    const query = useQuery();
+    const controller = query.get("controller");
+    const { uuid } = useParams();
+    return (
+    <div style={{display: "flex", width: "100vw", height: "100vh"}}>
+    {controller != null
+        ?
+        <>
+            <InstanceController />
+            <div style={{display: "flex", flex: 1}}>
+                <TheiaInstance uuid={uuid} />
+            </div>
+        </>
+        : <TheiaInstance uuid={uuid} />
+    }
+    </div>
+    );
 }
 
 function Nav({ toggleDetails }) {
@@ -507,13 +509,6 @@ function PortsTable({ports}) {
     );
 }
 
-function formatDate(t: number) {
-    try {
-        return new Date(1000*t).toISOString();
-    } catch {
-    }
-}
-
 function InstanceDetails({instance}) {
     const {instance_uuid, pod, template} = instance;
     const {name, runtime} = template;
@@ -577,13 +572,6 @@ function ExistingInstances({instances, onStopClick, onConnectClick}) {
     );
 }
 
-const Transition = React.forwardRef(function Transition(
-    props: TransitionProps & { children?: React.ReactElement<any, any> },
-    ref: React.Ref<unknown>,
-  ) {
-    return <Zoom direction="up" ref={ref} {...props} />;
-  });
-
 export function MainPanel({ history, location }) {
     const [state, send] = useLifecycle(history, location);
     const [hoverRef, isHovered] = useHover();
@@ -631,24 +619,26 @@ startTime: "2020-05-18T17:15:20Z"
 
     const conten = content();
     return (
-        <Wrapper details={state?.context?.details} state={gstate()}>
-            {conten &&
-            <Container style={{display: "flex", justifyContent: "center", alignItems: "center", height: "100vh"}}>
-                <Paper ref={hoverRef} style={{display: "flex", flexDirection: "column", height: "60vh", width: "60vw"}} elevation={3}>
-                {conten}
-                </Paper>
-            </Container>
-            }
-        </Wrapper>
+        <div style={{display: "flex", width: "100vw", height: "100vh"}}>
+            <Wrapper details={state?.context?.details} state={gstate()}>
+                {conten &&
+                <Container style={{display: "flex", justifyContent: "center", alignItems: "center", height: "100vh"}}>
+                    <Paper ref={hoverRef} style={{display: "flex", flexDirection: "column", height: "60vh", width: "60vw"}} elevation={3}>
+                    {conten}
+                    </Paper>
+                </Container>
+                }
+            </Wrapper>
+        </div>
     );
 }
 
-function WrappedContent({ style, state, content }) {
+function WrappedContent({ state, content }) {
     switch(state?.type) {
         case "ERROR":
             const { value, action } = state;
             return (
-            <Container style={{display: "flex", alignItems: "center", height: "100vh"}}>
+            <Container style={{display: "flex", alignItems: "center"}}>
                 <ErrorMessage reason={value || "Unknown error"} onClick={action} />
             </Container>
             );
@@ -656,7 +646,7 @@ function WrappedContent({ style, state, content }) {
             const { phase, retry } = state;
             return <Loading phase={phase} retry={retry} />;
         default:
-            return <div style={style}>{content}</div>;
+            return <>{content}</>;
     }
 }
 
@@ -666,7 +656,7 @@ export function Wrapper({ details, state, children }) {
     function toggleDetails() {setDetails(!showDetails);}
     const type = state?.type;
     return (
-    <React.Fragment>
+    <>
         <Background state={type} />
 
         <Dialog open={showDetails} onClose={toggleDetails}>
@@ -687,6 +677,6 @@ export function Wrapper({ details, state, children }) {
             <WrappedContent state={state} content={children} />
         </Fade>
 
-    </React.Fragment>
+    </>
     );
 }

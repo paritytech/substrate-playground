@@ -4,6 +4,7 @@ import { createMuiTheme, ThemeProvider } from '@material-ui/core/styles';
 import { Route, Router, Switch } from "react-router-dom";
 import { createBrowserHistory } from "history";
 import { ControllerPanel, MainPanel, TheiaPanel } from './components';
+import { TutorialPanel } from './tutorial';
 import { intercept } from './server';
 
 const history = createBrowserHistory();
@@ -18,11 +19,14 @@ function App() {
   return (
     <ThemeProvider theme={theme}>
       <Router history={history}>
-        <Switch>
-          <Route exact path={"/"} component={MainPanel} />
-          <Route exact path={"/controller"} component={ControllerPanel} />
-          <Route path={"/:uuid"} component={TheiaPanel} />
-        </Switch>
+        <div>
+          <Switch>
+            <Route exact path={"/"} component={MainPanel} />
+            <Route path={"/tutorial"} component={TutorialPanel} />
+            <Route exact path={"/controller"} component={ControllerPanel} />
+            <Route path={"/:uuid"} component={TheiaPanel} />
+          </Switch>
+        </div>
       </Router>
     </ThemeProvider>
   );
@@ -38,7 +42,7 @@ function devMode() {
 
 if (devMode()) {
   console.log("Installing HTTP interceptor");
-  intercept({noInstance: true});
+  intercept({noInstance: false});
 }
 
 const version = process.env.GITHUB_SHA;
