@@ -84,6 +84,14 @@ RUN git clone https://github.com/substrate-developer-hub/substrate-node-template
     git clone https://github.com/substrate-developer-hub/substrate-front-end-template && \
     git clone https://github.com/substrate-developer-hub/recipes
 
+# Use the instance hostname for webviews.
+# By default theia uses a unique domain per webview byt this is not a security consideration here.
+# See:
+# * https://github.com/eclipse-theia/theia/blob/master/CHANGELOG.md#v0130
+# * https://github.com/eclipse-theia/theia/pull/6465#issuecomment-557494879
+# * https://spectrum.chat/theia/dev/any-breaking-changes-made-recently-to-webview~e5bd31a3-eee7-4288-b092-cf7407468780
+ENV THEIA_WEBVIEW_EXTERNAL_ENDPOINT={{hostname}}
+
 RUN cd $HOME/workspace/substrate-front-end-template && yarn \
     && cd $HOME/workspace/substrate-node-template && cargo build --release
 
