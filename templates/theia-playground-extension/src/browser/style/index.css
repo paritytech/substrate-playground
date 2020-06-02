@@ -12,65 +12,6 @@ html, body {
     display: flex;
 }
 
-.gs-action-container {
-    line-height: 20px;
-    color: var(--theia-ui-font-color0);
-}
-
-.gs-action-details {
-    padding-left: 5px;
-    color: var(--theia-ui-font-color1);
-}
-
-.gs-container {
-    padding: 20px;
-}
-
-.gs-header h1 {
-    color: var(--theia-ui-font-color0);
-    flex: 1;
-    font-weight: 600;
-}
-
-.gs-hr {
-    background-color: var(--theia-border-color1);
-    height: 1px;
-    border: 0;
-    margin: 0px;
-}
-
-.gs-no-recent {
-    color: var(--theia-ui-font-color1);
-}
-
-.gs-section a {
-    border: none;
-    color: var(--theia-accent-color1);
-    font-weight: 500;
-    text-decoration: none;
-}
-
-.gs-section a:hover {
-    text-decoration: underline;
-}
-
-.gs-section-header {
-    color: var(--theia-ui-font-color0);
-    font-size: var(--theia-ui-font-size2);
-    font-weight: 600;
-    margin-bottom: 5px;
-}
-
-.gs-section-header i {
-    padding-right: 5px;
-}
-
-.gs-sub-header {
-    color: var(--theia-ui-font-color2);
-    text-transform: capitalize;
-    font-weight: 400;
-}
-
 .shepherd-button{background:#3288e6;border:0;border-radius:3px;color:hsla(0,0%,100%,.75);cursor:pointer;margin-right:.5rem;padding:.5rem 1.5rem;transition:all .5s ease}.shepherd-button:not(:disabled):hover{background:#196fcc;color:hsla(0,0%,100%,.75)}.shepherd-button.shepherd-button-secondary{background:#f1f2f3;color:rgba(0,0,0,.75)}.shepherd-button.shepherd-button-secondary:not(:disabled):hover{background:#d6d9db;color:rgba(0,0,0,.75)}.shepherd-button:disabled{cursor:not-allowed}
 .shepherd-footer{border-bottom-left-radius:5px;border-bottom-right-radius:5px;display:flex;justify-content:flex-end;padding:0 .75rem .75rem}.shepherd-footer .shepherd-button:last-child{margin-right:0}
 .shepherd-cancel-icon{background:transparent;border:none;color:hsla(0,0%,50.2%,.75);font-size:2em;cursor:pointer;font-weight:400;margin:0;padding:0;transition:color .5s ease}.shepherd-cancel-icon:hover{color:rgba(0,0,0,.75)}.shepherd-has-title .shepherd-content .shepherd-cancel-icon{color:hsla(0,0%,50.2%,.75)}.shepherd-has-title .shepherd-content .shepherd-cancel-icon:hover{color:rgba(0,0,0,.75)}

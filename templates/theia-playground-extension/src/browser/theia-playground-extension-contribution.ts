@@ -8,7 +8,6 @@ import { LocationMapper } from '@theia/mini-browser/lib/browser/location-mapper-
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 import { FileDownloadService } from '@theia/filesystem/lib/browser/download/file-download-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
-import { GettingStartedCommand } from './getting-started/getting-started-contribution';
 import Shepherd from 'shepherd.js';
 
 const hostname = window.location.hostname;
@@ -214,16 +213,12 @@ export class TheiaSubstrateExtensionMenuContribution implements MenuContribution
         const SUBSTRATE_TOUR = [...CommonMenus.HELP, '2_tour'];
         const SUBSTRATE_FEEDBACK = [...CommonMenus.HELP, '3_feedback'];
         menus.registerMenuAction(SUBSTRATE_LINKS, {
-            commandId: GettingStartedCommand.id,
+            commandId: StartFrontEndTerminalCommand.id,
             order: "1"
         });
         menus.registerMenuAction(SUBSTRATE_LINKS, {
-            commandId: StartFrontEndTerminalCommand.id,
-            order: "3"
-        });
-        menus.registerMenuAction(SUBSTRATE_LINKS, {
             commandId: OpenFrontEndCommand.id,
-            order: "4"
+            order: "2"
         });
         menus.registerMenuAction(SUBSTRATE_TOUR, {
             commandId: TourCommand.id
