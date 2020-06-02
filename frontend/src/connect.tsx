@@ -27,7 +27,8 @@ export class Discoverer {
                     if (existingInstance) {
                         onInstanceAppeared(uuid, existingInstance);
                     } else {
-                        const instance = new Instance(uuid, o.data.url);
+                        // TODO use o.data.url to figure out if an instance is not available anymore
+                        const instance = new Instance(uuid);
                         this.#instances.set(uuid, instance);
                         onInstanceAppeared(instance);
                     }
@@ -120,12 +121,10 @@ export class Responder {
 export class Instance {
 
     uuid;
-    url;
     #channel;
 
-    constructor(uuid: string, url: string) {
+    constructor(uuid: string) {
         this.uuid = uuid;
-        this.url = url;
         this.#channel = new BroadcastChannel(instanceChannelId(uuid));
     }
 

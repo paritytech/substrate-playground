@@ -44,7 +44,7 @@ export async function getInstanceDetails(userUUID: string, instanceUUID: string)
     }));
 }
 
-export async function deployImage(userUUID: string, template: string) {
+export async function deployInstance(userUUID: string, template: string) {
     return fromResponse(await fetchWithTimeout(`/api/${userUUID}?template=${template}`, {
         method: 'POST',
         headers: headers

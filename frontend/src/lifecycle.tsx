@@ -1,7 +1,7 @@
 import { useMachine } from '@xstate/react';
 import { v4 as uuidv4 } from 'uuid';
 import { assign, Machine } from 'xstate';
-import { deployImage, getDetails, getInstanceDetails, getTemplates, getUserDetails, stopInstance } from './api';
+import { deployInstance, getDetails, getInstanceDetails, getTemplates, getUserDetails, stopInstance } from './api';
 
 const key = "userUUID";
 const userUUID = localStorage.getItem(key) || uuidv4();
@@ -133,7 +133,7 @@ function lifecycle(history, location) {
       [deploying]: {
         invoke: {
           src: (context, _) => async (callback) => {
-            const {result, error} = await deployImage(context.userUUID, context.template);
+            const {result, error} = await deployInstance(context.userUUID, context.template);
             if (error != undefined) {
               callback({type: failure, error: error});
             } else {
