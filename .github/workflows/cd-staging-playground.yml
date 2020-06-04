@@ -17,9 +17,6 @@ jobs:
     steps:
       # https://github.com/actions/checkout
       - uses: actions/checkout@v2
-        with:
-          repository: paritytech/substrate-playground
-          path: substrate-playground
       - uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
         with:
           # GCLOUD_KEY is the base64 of the gcloud service account JSON file
@@ -56,7 +53,7 @@ jobs:
       - name: Commit and push files
         run: |
           set -x
-          cd "${GITHUB_WORKSPACE}/substrate-playground/"
+          cd "${GITHUB_WORKSPACE}"
           git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
           git config user.name "${GITHUB_ACTOR}"
           git config --local --unset-all "http.https://github.com/.extraheader"
