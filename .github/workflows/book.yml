@@ -1,0 +1,34 @@
+name: Build Book
+
+on:
+  pull_request:
+    branches:
+    - master
+    - develop
+
+jobs:
+  build-and-publish-book:
+    runs-on: ubuntu-18.04
+    steps:
+    - uses: actions/checkout@v2
+
+    - uses: gaurav-nelson/github-action-markdown-link-check@v1
+        with:
+        use-quiet-mode: 'yes'
+        config-file: '.github/workflows/mlc_config.json'
+
+    - name: Setup mdBook
+      uses: peaceiris/actions-mdbook@v1
+      with:
+        mdbook-version: '0.3.7'
+        # mdbook-version: 'latest'
+
+    - name: Build Book
+      run: mdbook build
+
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v2
+        env:
+            PERSONAL_TOKEN: ${{ secrets.PERSONAL_TOKEN }}
+            PUBLISH_BRANCH: gh-pages
+            PUBLISH_DIR: ./book/html

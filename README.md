@@ -2,44 +2,30 @@
 
 # Substrate playground
 
-A hosted website that enables the user to navigate the [Substrate](https://github.com/paritytech/substrate) ecosystem.
+A hosted website that enables the user to navigate [Substrate](https://github.com/paritytech/substrate) runtimes, modify them and run remotely accessible chain. In a couple minutes!
 
-The production environment is available at [playground.substrate.dev](https://playground.substrate.dev) while the staging environment is available at [playground-staging.substrate.dev](https://playground-staging.substrate.dev).
+## Features
 
-## Architecture
+## Trying it out
 
-Users can use a TypeScript base [front end](/frontend) to communicate with a [back end](/backend). This HTTP server is hosted on kubernetes and deploys custom [theia](https://www.theia-ide.org/) (a web based VSCode IDE) containers via kubernetes API.
+Access playground at [playground.substrate.dev](https://playground.substrate.dev).
 
-## Development
+A staging environment is also available at [playground-staging.substrate.dev](https://playground-staging.substrate.dev). Use at your own risk 😎
 
-Local development is both frontend, backend and theia images are facilitated. More details can be found in [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).
+## Support
 
-## Release
+## Roadmap
 
-Push the theia image:
+## Contributing
 
-```
-make push-theia-docker-image
-```
+### Development
 
-Locate the digest (`sha256:...`) in the command output.
+Hack from the confort of your laptop.
 
-Push the playground image:
+### Deployment
 
-```
-make push-playground-docker-image
-```
+Playground is a set of containerized apps deployed on a kubernetes cluster. Fear not, it's quite simple to [deploy](docs/deployment.md) it!
 
-Locate the digest (`sha256:...`) in the command output and update `deployment.yaml` with it.
+## License
 
-Finally [deploy](docs/deployment.md) on kubernetes.
-
-## Local usage
-
-The docker image can be run using:
-
-```
-docker run -p 80:80 paritytech/substrate-playground-template-base:latest
-```
-
-Then browse http://localhost:80
+https://help.github.com/en/github/creating-cloning-and-archiving-repositories/licensing-a-repository

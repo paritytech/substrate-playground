@@ -1,0 +1,1 @@
+Users can use a TypeScript base [front end](/frontend) to communicate with a [back end](/backend). This HTTP server is hosted on kubernetes and deploys custom [theia](https://www.theia-ide.org/) (a web based VSCode IDE) containers via kubernetes API.
