@@ -54,15 +54,21 @@ jobs:
         working-directory: conf/k8s/overlays/staging
       - name: Commit files
         run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
+          git config --local user.email "${GITHUB_ACTOR}@users.noreply.github.com"
+          git config --local user.name "${GITHUB_ACTOR}"
+          git config --local --unset-all "http.https://github.com/.extraheader"
+          git remote add github "https://${GITHUB_ACTOR}:${PERSONAL_ACCESS_TOKEN}@github.com/paritytech/substrate-playground.git"
+          git pull github develop --ff-only
           git add conf/k8s/overlays/staging/kustomization.yaml
           git commit -m "ci: Updated playground image"
-      - name: Push changes
-        uses: ad-m/github-push-action@master
-        with:
-          branch: develop
-          github_token: ${{ secrets.PAT_TOKEN }}
+          git push github HEAD:master --follow-tags
+        env:
+          PERSONAL_ACCESS_TOKEN: ${{ secrets.PAT_TOKEN }}
+#      - name: Push changes
+#        uses: ad-m/github-push-action@master
+#        with:
+#          branch: develop
+#          github_token: ${{ secrets.PAT_TOKEN }}
       - name: Deploy on GKE
         run:  |-
           ./kustomize build . | kubectl apply --record -f -
