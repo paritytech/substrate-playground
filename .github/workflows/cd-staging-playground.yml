@@ -35,7 +35,8 @@ jobs:
         with:
           username: oauth2accesstoken
           password: ${{ env.ACCESS_TOKEN }}
-          dockerfile: backend/Dockerfile
+          path: backend
+          dockerfile: Dockerfile
           repository: substrateplayground-252112/jeluard/substrate-playground
           registry: gcr.io
           tags: latest
