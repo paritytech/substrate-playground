@@ -1,0 +1,20 @@
+[book]
+authors = ["Julien Eluard"]
+language = "en"
+multilingual = false
+src = "."
+title = "Playground"
+
+#[preprocessor.mermaid]
+#command = "mdbook-mermaid"
+
+[output.html]
+additional-js = [
+]
+theme = "src/theme"
+
+[output.linkcheck]
+follow-web-links = true
+warning-policy = "warn"
+exclude = [
+]
