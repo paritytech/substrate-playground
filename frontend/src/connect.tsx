@@ -25,10 +25,11 @@ export class Discoverer {
                 case TYPE_INSTANCE_ANNOUNCED: {
                     const existingInstance = this.#instances.get(uuid);
                     if (existingInstance) {
-                        onInstanceAppeared(uuid, existingInstance);
+                        onInstanceAppeared(existingInstance);
                     } else {
-                        // TODO use o.data.url to figure out if an instance is not available anymore
-                        const instance = new Instance(uuid);
+                        // TODO use `url` to figure out if an instance is not available anymore
+                        const url = o.data.url;
+                        const instance = new Instance(uuid, {url: url});
                         this.#instances.set(uuid, instance);
                         onInstanceAppeared(instance);
                     }
@@ -63,6 +64,9 @@ export class Discoverer {
 
 }
 
+/**
+ * Executed theia instance side.
+ */
 export class Responder {
 
     #channel = new BroadcastChannel(GLOBAL_CHANNEL);
@@ -118,22 +122,27 @@ export class Responder {
 
 }
 
+/**
+ * Used to communicate with a distant theia instance from its UUID
+ */
 export class Instance {
 
     uuid;
+    details;
     #channel;
 
-    constructor(uuid: string) {
+    constructor(uuid: string, details: object) {
         this.uuid = uuid;
+        this.details = details;
         this.#channel = new BroadcastChannel(instanceChannelId(uuid));
     }
 
     async sendMessage(data) {
         return new Promise((resolve, reject) => {
-            const uuid = uuidv4();
+            const messageUuid = uuidv4();
             const callback = (o) => {
                 // TODO introduce a timeout mechanism: automatically unregister and reject after some time
-                if (o.data.uuid == uuid) {
+                if (o.data.uuid == messageUuid) {
                     this.#channel.removeEventListener('message', callback);
                     const type = o.data.type;
                     switch (type) {
@@ -153,7 +162,7 @@ export class Instance {
                 }
             };
             this.#channel.addEventListener('message', callback);
-            this.#channel.postMessage(Object.assign({uuid: uuid}, data));
+            this.#channel.postMessage(Object.assign({uuid: messageUuid}, data));
         });
     }
 

@@ -8,12 +8,10 @@ import { LocationMapper } from '@theia/mini-browser/lib/browser/location-mapper-
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 import { FileDownloadService } from '@theia/filesystem/lib/browser/download/file-download-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
-import Shepherd from 'shepherd.js';
 
 const hostname = window.location.hostname;
 const localhost = hostname == "localhost";
 const nodeWebsocket = localhost ? `ws://${hostname}:9944` : `wss://${hostname}/wss`;
-const polkadotAppsURL = `https://polkadot.js.org/apps/?rpc=${nodeWebsocket}`;
 const port = 8000;
 const frontendURL = localhost ? `//${hostname}:${port}/front-end/` : `//${hostname}/front-end`;
 const HOME = "/home/substrate/workspace";
@@ -21,11 +19,6 @@ const HOME = "/home/substrate/workspace";
 export const SendFeedbackCommand = {
     id: 'TheiaSubstrateExtension.send-feedback-command',
     label: "Send feedback"
-};
-
-export const OpenPolkadotAppsCommand = {
-    id: 'TheiaSubstrateExtension.open-polkadot-apps-command',
-    label: "Polkadot Apps"
 };
 
 export const StartFrontEndTerminalCommand = {
@@ -36,11 +29,6 @@ export const StartFrontEndTerminalCommand = {
 export const OpenFrontEndCommand = {
     id: 'TheiaSubstrateExtension.open-front-end-command',
     label: "Open Front-End"
-};
-
-export const TourCommand = {
-    id: 'TheiaSubstrateExtension.tour-command',
-    label: "Take the tour"
 };
 
 async function newTerminal(terminalService: TerminalService, id: string, cwd: string, command: string) {
@@ -72,76 +60,14 @@ export class TheiaSubstrateExtensionCommandContribution implements CommandContri
     protected readonly connectionStatusService: ConnectionStatusService;
 
     registerCommands(registry: CommandRegistry): void {
-        const tour = new Shepherd.Tour({
-            defaultStepOptions: {
-                classes: 'shadow-md bg-purple-dark',
-                scrollTo: true
-            }
-        });
-        // tour.next
-        tour.addStep({
-            id: 'node-step',
-            text: 'Create a terminal and launch your local substrate node.',
-            buttons: [
-                // TODO
-              /*{
-                text: 'Open a node terminal',
-                action: () => this.commandRegistry.executeCommand(StartNodeTerminalCommand.id)
-              },*/
-              {
-                text: 'Next',
-                action: tour.next
-              }
-            ]
-          });
-        tour.addStep({
-            id: 'polkadotjs-step',
-            text: 'You now have a substrate node running. Now is a good time to inspect your chain using PolkadotJS Apps.',
-            attachTo: { 
-              element: '#shell-tab-node', 
-              on: 'top'
-            },
-            buttons: [
-              {
-                text: 'Open PolkadotJS Apps',
-                action: () => this.commandRegistry.executeCommand(OpenPolkadotAppsCommand.id)
-              },
-              {
-                text: 'Next',
-                action: tour.next
-              }
-            ]
-          });
-          tour.addStep({
-            id: 'more-step',
-            text: 'Find more helpful commands here!',
-            classes: "shepherd-element-attached-bottom shepherd-element-attached-middle",
-            attachTo: { 
-              element: ".p-MenuBar-content li:nth-child(8)", 
-              on: 'bottom left'
-            },
-            buttons: [
-              {
-                text: 'Done',
-                action: tour.hide
-              }
-            ]
-          });
-
         registry.registerCommand(SendFeedbackCommand, {
             execute: () => window.open('https://docs.google.com/forms/d/e/1FAIpQLSdXpq_fHqS_ow4nC7EpGmrC_XGX_JCIRzAqB1vaBtoZrDW-ZQ/viewform?edit_requested=true')
-        });
-        registry.registerCommand(OpenPolkadotAppsCommand, {
-            execute: () => window.open(polkadotAppsURL)
         });
         registry.registerCommand(StartFrontEndTerminalCommand, {
             execute: () => newTerminal(this.terminalService, "front-end", `${HOME}/substrate-front-end-template`, `REACT_APP_PROVIDER_SOCKET=${nodeWebsocket} yarn build && rm -rf front-end/ && mv build front-end && python -m SimpleHTTPServer ${port}\r`)
         });
         registry.registerCommand(OpenFrontEndCommand, {
             execute: () => window.open(frontendURL)
-        });
-        registry.registerCommand(TourCommand, {
-            execute: () => tour.start()
         });
 
         function answer(type: string, uuid?: string, data?: any): void {
@@ -210,8 +136,7 @@ export class TheiaSubstrateExtensionMenuContribution implements MenuContribution
 
     registerMenus(menus: MenuModelRegistry): void {
         const SUBSTRATE_LINKS = [...CommonMenus.HELP, '1_links'];
-        const SUBSTRATE_TOUR = [...CommonMenus.HELP, '2_tour'];
-        const SUBSTRATE_FEEDBACK = [...CommonMenus.HELP, '3_feedback'];
+        const SUBSTRATE_FEEDBACK = [...CommonMenus.HELP, '2_feedback'];
         menus.registerMenuAction(SUBSTRATE_LINKS, {
             commandId: StartFrontEndTerminalCommand.id,
             order: "1"
@@ -219,9 +144,6 @@ export class TheiaSubstrateExtensionMenuContribution implements MenuContribution
         menus.registerMenuAction(SUBSTRATE_LINKS, {
             commandId: OpenFrontEndCommand.id,
             order: "2"
-        });
-        menus.registerMenuAction(SUBSTRATE_TOUR, {
-            commandId: TourCommand.id
         });
         menus.registerMenuAction(SUBSTRATE_FEEDBACK, {
             commandId: SendFeedbackCommand.id
