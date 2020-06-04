@@ -18,7 +18,8 @@ jobs:
       # https://github.com/actions/checkout
       - uses: actions/checkout@v2
         with:
-          persist-credentials: false
+          repository: paritytech/substrate-playground
+          path: substrate-playground
       - uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
         with:
           # GCLOUD_KEY is the base64 of the gcloud service account JSON file
@@ -52,16 +53,19 @@ jobs:
       - name: Update version
         run: ./kustomize edit set image gcr.io/substrateplayground-252112/jeluard/substrate-playground:sha-${GITHUB_SHA::7}
         working-directory: conf/k8s/overlays/staging
-      - name: Commit files
+      - name: Commit and push files
         run: |
-          git config --local user.email "${GITHUB_ACTOR}@users.noreply.github.com"
-          git config --local user.name "${GITHUB_ACTOR}"
+          set -x
+          cd "${GITHUB_WORKSPACE}/substrate-playground/"
+          git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
+          git config user.name "${GITHUB_ACTOR}"
           git config --local --unset-all "http.https://github.com/.extraheader"
           git remote add github "https://${GITHUB_ACTOR}:${PERSONAL_ACCESS_TOKEN}@github.com/paritytech/substrate-playground.git"
           git pull github develop --ff-only
           git add conf/k8s/overlays/staging/kustomization.yaml
+          git config --list
           git commit -m "ci: Updated playground image"
-          git push github HEAD:master --follow-tags
+          git push github HEAD:develop --follow-tags
         env:
           PERSONAL_ACCESS_TOKEN: ${{ secrets.PAT_TOKEN }}
 #      - name: Push changes
