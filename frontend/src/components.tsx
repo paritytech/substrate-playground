@@ -153,7 +153,7 @@ function useDiscovery() {
     useEffect(() => {
         const refresher = (_) => setInstances(Array.from(discoverer.instances.entries()));
         const discoverer = new Discoverer(refresher, refresher);
-        return () => { discoverer.close(); }
+        return () => discoverer.close();
     }, []);
 
     return instances;
@@ -184,7 +184,7 @@ function InstanceController() {
             const result = await selectedInstance.execute(command, data);
             setResult(result);
         } catch (error) {
-            console.log("error", error);
+            console.error(error);
         }
     }
 
@@ -270,8 +270,6 @@ function InstanceController() {
         </div>
         );
     }
-            // TODO change branch
-            // TODO GO TO LINE
 }
 
 function useQuery() {
@@ -580,7 +578,7 @@ export function MainPanel({ history, location }) {
         // Force refresh each time instances set changes
         const refresh = () => send(restart);
         const discoverer = new Discoverer(refresh, refresh);
-        return () => { discoverer.close(); }
+        return () => discoverer.close();
     }, []);
 
     const {instances, templates} = state.context;
