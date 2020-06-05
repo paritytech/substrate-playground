@@ -50,9 +50,10 @@ if (version) {
   console.log(`Version ${version}`);
 }
 
-//document.domain = "substrate.dev";
-
 ReactDOM.render(
     <App />,
     document.querySelector("main")
 );
+
+const members = document.domain.split(".");
+document.domain = members.slice(members.length-2).join(".");

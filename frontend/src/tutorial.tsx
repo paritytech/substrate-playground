@@ -148,7 +148,7 @@ function VerticalLinearStepper({ uuid }) {
     }
   }
 
-const template = "workshop";
+const template = "recipes";
 
 function Cartouche({children}) {
     return (

@@ -1,0 +1,27 @@
+image: gcr.io/substrateplayground-252112/jeluard/substrate-playground-template-recipes-theia@sha256:3db4bac4086f46cffad7b180b9b998cb8af5f080ba30c91d0a6fa991c22289e1
+name: "Recipes"
+description: |
+  ## A Hands-On Cookbook for Aspiring Blockchain Chefs
+
+  Contains some real nodes!
+
+runtime:
+  ports:
+    - name: wss
+      protocol: TCP
+      path: /wss
+      port: 9944
+
+build:
+  base: sha256:0b3ec9ad567d0f5b0eed8a0fc2b1fa3fe1cca24cc02416047d71f83770b05e34
+#  commands:
+# precompile-runtimes: all # or a list of folders
+# run: ...
+
+
+#    - name: Build substrate-front-end-template
+#      run: yarn
+#      working-directory: ./substrate-front-end-template
+#    - name: Build substrate-node-template
+#      run: cargo build --release
+#      working-directory: ./substrate-node-template

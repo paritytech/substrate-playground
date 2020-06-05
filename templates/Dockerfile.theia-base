@@ -1,0 +1,15 @@
+##########################
+#     Theia runtime      #
+##########################
+
+# Theia must build with node 10 (https://github.com/eclipse-theia/theia/issues/7349)
+# Based on https://github.com/theia-ide/theia-apps/blob/master/theia-docker/Dockerfile
+FROM node:10
+WORKDIR /home/theia
+ADD package.json .
+ADD lerna.json .
+ADD theia-playground theia-playground
+ADD theia-playground-extension theia-playground-extension
+RUN yarn && \
+    yarn workspace @parity/theia-playground theia build && \
+    yarn workspace @parity/theia-playground theia download:plugins

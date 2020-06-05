@@ -1,0 +1,24 @@
+{
+    "gitlens.advanced.telemetry.enabled": false,
+    "gitlens.showWhatsNewAfterUpgrades": false,
+    "editor.formatOnSave": true,
+    "editor.insertSpaces": true,
+    "editor.renderLineHighlight": "all",
+    "typescript.updateImportsOnFileMove.enabled": "always",
+    "[typescript]": {
+        "editor.tabSize": 4
+    },
+    "[json]": {
+        "editor.tabSize": 4
+    },
+    "files.exclude": {
+        "node_modules": true,
+        "**/*.js": {
+            "when": "$(basename).ts"
+        },
+        "**/*.js.map": {
+            "when": "$(basename)"
+        }
+    },
+    "lldb.verboseLogging": true
+}

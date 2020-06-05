@@ -39,6 +39,75 @@ async function newTerminal(terminalService: TerminalService, id: string, cwd: st
     await terminalWidget.sendText(command)
 }
 
+function answer(type: string, uuid?: string, data?: any): void {
+    window.parent.postMessage({type: type, uuid: uuid, data: data}, "*");
+}
+
+function updateStatus(status: ConnectionStatus): void {
+    if (status === ConnectionStatus.OFFLINE) {
+        answer("extension-offline");
+    } else {
+        answer("extension-online");
+    }
+}
+
+function unmarshall(payload) {
+    if (payload.type) {
+        switch(payload.type) {
+            case "URI":
+                return URI.parse(payload.data);
+        }
+    } else {
+        return payload;
+    }
+}
+
+function registerBridge(registry, connectionStatusService) {
+    // Listen to message from parent frame
+    window.addEventListener('message', async (o) => {
+        const type = o.data.type;
+
+        if (type) { // Filter extension related message
+            const name = o.data.name;
+            const data = o.data.data;
+            const uuid = o.data.uuid;
+            const status = connectionStatusService.currentStatus;
+            if (status === ConnectionStatus.OFFLINE) {
+                answer("extension-answer-offline", uuid);
+                return;
+            }
+
+            switch (type) {
+                case "action": {
+                    try {
+                        const result = await registry.executeCommand(name, unmarshall(data));
+                        answer("extension-answer", uuid, result);
+                    } catch (error) {
+                        answer("extension-answer-error", uuid, {name: error.name, message: error.message});
+                    }
+                    break;
+                }
+                case "list-actions": {
+                    answer("extension-answer", uuid, registry.commands);
+                    break;
+                }
+                default:
+                    if (type) {
+                        const message = `Unknown extension type ${type}`;
+                        console.error(message, o);
+                        answer("extension-answer-error", uuid, message);
+                    }
+                    break;
+            }
+        }
+    }, false);
+
+    connectionStatusService.onStatusChange(() => updateStatus(connectionStatusService.currentStatus));
+
+    const online = connectionStatusService.currentStatus === ConnectionStatus.ONLINE;
+    answer("extension-advertise", "", {online: online});
+}
+
 @injectable()
 export class TheiaSubstrateExtensionCommandContribution implements CommandContribution {
 
@@ -71,73 +140,12 @@ export class TheiaSubstrateExtensionCommandContribution implements CommandContri
             execute: () => window.open(frontendURL)
         });
 
-        function answer(type: string, uuid?: string, data?: any): void {
-            window.parent.postMessage({type: type, uuid: uuid, data: data}, "*");
+        if (window !== window.parent) {
+            // Running in a iframe
+            registerBridge(registry, this.connectionStatusService);
+            const members = document.domain.split(".");
+            document.domain = members.slice(members.length-2).join(".");
         }
-
-        function updateStatus(status: ConnectionStatus): void {
-            if (status === ConnectionStatus.OFFLINE) {
-                answer("extension-offline");
-            } else {
-                answer("extension-online");
-            }
-        }
-
-        function unmarshall(payload) {
-            if (payload.type) {
-                switch(payload.type) {
-                    case "URI":
-                        return URI.parse(payload.data);
-                }
-            } else {
-                return payload;
-            }
-        }
-
-        // Listen to message from parent frame
-        window.addEventListener('message', async (o) => {
-            const type = o.data.type;
-
-            if (type) { // Filter extension related message
-                const name = o.data.name;
-                const data = o.data.data;
-                const uuid = o.data.uuid;
-                const status = this.connectionStatusService.currentStatus;
-                if (status === ConnectionStatus.OFFLINE) {
-                    answer("extension-answer-offline", uuid);
-                    return;
-                }
-
-                switch (type) {
-                    case "action": {
-                        try {
-                            const result = await registry.executeCommand(name, unmarshall(data));
-                            answer("extension-answer", uuid, result);
-                        } catch (error) {
-                            answer("extension-answer-error", uuid, {name: error.name, message: error.message});
-                        }
-                        break;
-                    }
-                    case "list-actions": {
-                        answer("extension-answer", uuid, registry.commands);
-                        break;
-                    }
-                    default:
-                        if (type) {
-                            const message = `Unknown extension type ${type}`;
-                            console.error(message, o);
-                            answer("extension-answer-error", uuid, message);
-                        }
-                        break;
-                }
-            }
-        }, false);
-
-        this.connectionStatusService.onStatusChange(() => updateStatus(this.connectionStatusService.currentStatus));
-
-        const online = this.connectionStatusService.currentStatus === ConnectionStatus.ONLINE;
-        answer("extension-advertise", "", {online: online});
-
         //this.fileNavigatorContribution.openView({activate: true}); 
     }
 

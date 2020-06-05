@@ -23,5 +23,5 @@ yarn build
 Run the image via:
 
 ```
-docker run -p 80:3000 -p 8000:8000 -p 9944:9944 gcr.io/substrateplayground-252112/jeluard/theia-substrate@sha256:XXX
+docker run -p 80:3000 -p 8000:8000 -p 9944:9944 jeluard/substrate-playground-template-base@sha256:XXX
 ```
