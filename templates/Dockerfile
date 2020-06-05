@@ -81,8 +81,16 @@ RUN cargo install --force --git https://github.com/alexcrichton/wasm-gc \
 WORKDIR $HOME/workspace
 
 RUN git clone https://github.com/substrate-developer-hub/substrate-node-template && \
-    git clone https://github.com/substrate-developer-hub/substrate-front-end-template && \
-    git clone https://github.com/substrate-developer-hub/recipes
+    git clone https://github.com/substrate-developer-hub/substrate-front-end-template
+
+RUN cd $HOME/workspace/substrate-front-end-template && yarn \
+    && cd $HOME/workspace/substrate-node-template && cargo build --release
+
+##########################
+#     Theia runtime      #
+##########################
+
+WORKDIR /home/theia/theia-playground/
 
 # Use the instance hostname for webviews.
 # By default theia uses a unique domain per webview byt this is not a security consideration here.
@@ -92,10 +100,4 @@ RUN git clone https://github.com/substrate-developer-hub/substrate-node-template
 # * https://spectrum.chat/theia/dev/any-breaking-changes-made-recently-to-webview~e5bd31a3-eee7-4288-b092-cf7407468780
 ENV THEIA_WEBVIEW_EXTERNAL_ENDPOINT={{hostname}}
 
-RUN cd $HOME/workspace/substrate-front-end-template && yarn \
-    && cd $HOME/workspace/substrate-node-template && cargo build --release
-
-EXPOSE 3000 8000 9944 30333
-
-WORKDIR /home/theia/theia-playground/
 ENTRYPOINT [ "dumb-init", "node", "--always-compact", "--max-old-space-size=64", "src-gen/backend/main.js", "/home/substrate/workspace", "--hostname=0.0.0.0" ] 
