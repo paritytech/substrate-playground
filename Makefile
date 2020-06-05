@@ -22,7 +22,9 @@ GKE_REGION=us-central1
 DOCKER_USERNAME=jeluard
 PLAYGROUND_BACKEND_API_DOCKER_IMAGE_NAME=${DOCKER_USERNAME}/substrate-playground-backend-api
 PLAYGROUND_BACKEND_UI_DOCKER_IMAGE_NAME=${DOCKER_USERNAME}/substrate-playground-backend-ui
-THEIA_DOCKER_IMAGE_NAME=${DOCKER_USERNAME}/theia-substrate
+TEMPLATE_BASE=${DOCKER_USERNAME}/substrate-playground-template-base
+TEMPLATE_THEIA_BASE=${DOCKER_USERNAME}/substrate-playground-template-theia-base
+TEMPLATE_WORKSHOP=${DOCKER_USERNAME}/substrate-playground-template-workshop
 GOOGLE_PROJECT_ID=substrateplayground-252112
 
 COLOR_BOLD:= $(shell tput bold)
@@ -56,17 +58,39 @@ dev-backend:
 
 ### Images tags follow https://github.com/opencontainers/image-spec/blob/master/annotations.md
 
-# Build theia docker image
-build-theia-docker-image:
+# Build theia docker images
+build-template-base:
 	$(eval THEIA_DOCKER_IMAGE_VERSION=$(shell git rev-parse --short HEAD))
-	@cd templates; docker build --force-rm -f Dockerfile --label org.opencontainers.image.version=${THEIA_DOCKER_IMAGE_VERSION} -t ${THEIA_DOCKER_IMAGE_NAME}:sha-${THEIA_DOCKER_IMAGE_VERSION} .
-	docker tag ${THEIA_DOCKER_IMAGE_NAME}:sha-${THEIA_DOCKER_IMAGE_VERSION} gcr.io/${GOOGLE_PROJECT_ID}/${THEIA_DOCKER_IMAGE_NAME}
+	@cd templates; docker build --force-rm -f Dockerfile.base --label org.opencontainers.image.version=${THEIA_DOCKER_IMAGE_VERSION} -t ${TEMPLATE_BASE}:sha-${THEIA_DOCKER_IMAGE_VERSION} .
+	docker tag ${TEMPLATE_BASE}:sha-${THEIA_DOCKER_IMAGE_VERSION} gcr.io/${GOOGLE_PROJECT_ID}/${TEMPLATE_BASE}
 	docker image prune -f --filter label=stage=builder
 
 # Push a newly built theia image on docker.io and gcr.io
-push-theia-docker-image: build-theia-docker-image
-	docker push ${THEIA_DOCKER_IMAGE_NAME}:sha-${THEIA_DOCKER_IMAGE_VERSION}
-	docker push gcr.io/${GOOGLE_PROJECT_ID}/${THEIA_DOCKER_IMAGE_NAME}
+push-template-base: build-template-base
+	docker push ${TEMPLATE_BASE}:sha-${THEIA_DOCKER_IMAGE_VERSION}
+	docker push gcr.io/${GOOGLE_PROJECT_ID}/${TEMPLATE_BASE}
+
+build-template-theia-base:
+	$(eval THEIA_DOCKER_IMAGE_VERSION=$(shell git rev-parse --short HEAD))
+	@cd templates; docker build --force-rm -f Dockerfile.theia-base --label org.opencontainers.image.version=${THEIA_DOCKER_IMAGE_VERSION} -t ${TEMPLATE_THEIA_BASE}:sha-${THEIA_DOCKER_IMAGE_VERSION} .
+	docker tag ${TEMPLATE_THEIA_BASE}:sha-${THEIA_DOCKER_IMAGE_VERSION} gcr.io/${GOOGLE_PROJECT_ID}/${TEMPLATE_THEIA_BASE}
+	docker image prune -f --filter label=stage=builder
+
+# Push a newly built theia image on docker.io and gcr.io
+push-template-theia-base: build-template-theia-base
+	docker push ${TEMPLATE_THEIA_BASE}:sha-${THEIA_DOCKER_IMAGE_VERSION}
+	docker push gcr.io/${GOOGLE_PROJECT_ID}/${TEMPLATE_THEIA_BASE}
+
+build-template-workshop:
+	$(eval THEIA_DOCKER_IMAGE_VERSION=$(shell git rev-parse --short HEAD))
+	@cd templates; docker build --force-rm -f Dockerfile.workshop --label org.opencontainers.image.version=${THEIA_DOCKER_IMAGE_VERSION} -t ${TEMPLATE_WORKSHOP}:sha-${THEIA_DOCKER_IMAGE_VERSION} .
+	docker tag ${TEMPLATE_WORKSHOP}:sha-${THEIA_DOCKER_IMAGE_VERSION} gcr.io/${GOOGLE_PROJECT_ID}/${TEMPLATE_WORKSHOP}
+	docker image prune -f --filter label=stage=builder
+
+# Push a newly built theia image on docker.io and gcr.io
+push-template-workshop: build-template-workshop
+	docker push ${TEMPLATE_WORKSHOP}:sha-${THEIA_DOCKER_IMAGE_VERSION}
+	docker push gcr.io/${GOOGLE_PROJECT_ID}/${TEMPLATE_WORKSHOP}
 
 # Build backend docker images
 build-backend-docker-images:

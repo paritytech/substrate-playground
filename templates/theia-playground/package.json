@@ -83,7 +83,6 @@
         "vscode-references-view": "https://open-vsx.org/api/ms-vscode/references-view/0.0.47/file/ms-vscode.references-view-0.0.47.vsix",
         "rls-vscode": "https://github.com/rust-lang/rls-vscode/releases/download/v0.7.8/rust.vsix",
         "vscode-yaml": "https://github.com/redhat-developer/vscode-yaml/releases/download/0.7.2/redhat.vscode-yaml-0.7.2.vsix",
-        "vscode-gitlens": "https://github.com/eamodio/vscode-gitlens/releases/download/v10.2.1/gitlens-10.2.1.vsix",
         "vscode-lldb": "https://github.com/vadimcn/vscode-lldb/releases/download/v1.5.2/codelldb-x86_64-linux.vsix"
     },
     "scripts": {

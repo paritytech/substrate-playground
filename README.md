@@ -40,7 +40,7 @@ Finally [deploy](docs/deployment.md) on kubernetes.
 The docker image can be run using:
 
 ```
-docker run -p 80:80 gcr.io/substrateplayground-252112/jeluard/theia-substrate:latest
+docker run -p 80:80 gcr.io/substrateplayground-252112/jeluard/substrate-playground-template-base:latest
 ```
 
 Then browse http://localhost:80

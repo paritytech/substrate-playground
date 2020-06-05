@@ -264,7 +264,7 @@ export function ControllerPanel() {
     );
 }
 
-export function TheiaInstance({ uuid }) {
+export function TheiaInstance({ history, uuid }) {
     const maxRetries = 5*60;
     const ref = useRef();
     const [data, setData] = useState({type: "LOADING"});
@@ -355,7 +355,7 @@ export function TheiaInstance({ uuid }) {
     }
 }
 
-export function TheiaPanel() {
+export function TheiaPanel({ history }) {
     const query = useQuery();
     const controller = query.get("controller");
     const files = query.get("files");

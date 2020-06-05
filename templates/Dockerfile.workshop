@@ -1,0 +1,11 @@
+FROM jeluard/substrate-playground-template-base@sha256:8ee14f73917d4dfd6207b21bbde4cb3db8ceea14b153b0ef12a966cf79e78d8a
+
+WORKDIR /home/substrate/workspace
+
+RUN git clone https://github.com/substrate-developer-hub/substrate-node-template && \
+    git clone https://github.com/substrate-developer-hub/substrate-front-end-template
+
+RUN cd $HOME/workspace/substrate-front-end-template && yarn \
+    && cd $HOME/workspace/substrate-node-template && cargo build --release
+
+WORKDIR /home/theia/theia-playground/
