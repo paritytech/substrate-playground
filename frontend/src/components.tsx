@@ -465,16 +465,18 @@ function EnvTable({envs}) {
               <TableCell align="right">Value</TableCell>
             </TableRow>
           </TableHead>
-          <TableBody>
+          {envs &&
+            <TableBody>
             {envs.map((env) => (
               <TableRow key={env.name}>
                 <TableCell component="th" scope="row">
-                  {env.name}
+                    {env.name}
                 </TableCell>
                 <TableCell align="right">{env.value}</TableCell>
               </TableRow>
             ))}
-          </TableBody>
+            </TableBody>
+          }
         </Table>
       </TableContainer>
     );
@@ -491,17 +493,19 @@ function PortsTable({ports}) {
               <TableCell>Value</TableCell>
             </TableRow>
           </TableHead>
-          <TableBody>
+          {ports &&
+            <TableBody>
             {ports.map((port) => (
-              <TableRow key={port.name}>
+                <TableRow key={port.name}>
                 <TableCell component="th" scope="row">
-                  {port.name}
+                    {port.name}
                 </TableCell>
                 <TableCell>{port.path}</TableCell>
                 <TableCell>{port.port}</TableCell>
-              </TableRow>
+                </TableRow>
             ))}
-          </TableBody>
+            </TableBody>
+          }
         </Table>
       </TableContainer>
     );
