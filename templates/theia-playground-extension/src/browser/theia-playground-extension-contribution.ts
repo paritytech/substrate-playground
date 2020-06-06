@@ -8,6 +8,7 @@ import { LocationMapper } from '@theia/mini-browser/lib/browser/location-mapper-
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 import { FileDownloadService } from '@theia/filesystem/lib/browser/download/file-download-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
+import { URI } from 'vscode-uri';
 
 const hostname = window.location.hostname;
 const localhost = hostname == "localhost";
@@ -82,6 +83,17 @@ export class TheiaSubstrateExtensionCommandContribution implements CommandContri
             }
         }
 
+        function unmarshall(payload) {
+            if (payload.type) {
+                switch(payload.type) {
+                    case "URI":
+                        return URI.parse(payload.data);
+                }
+            } else {
+                return payload;
+            }
+        }
+
         // Listen to message from parent frame
         window.addEventListener('message', async (o) => {
             const type = o.data.type;
@@ -99,7 +111,7 @@ export class TheiaSubstrateExtensionCommandContribution implements CommandContri
                 switch (type) {
                     case "action": {
                         try {
-                            const result = await registry.executeCommand(name, data);
+                            const result = await registry.executeCommand(name, unmarshall(data));
                             answer("extension-answer", uuid, result);
                         } catch (error) {
                             answer("extension-answer-error", uuid, {name: error.name, message: error.message});
