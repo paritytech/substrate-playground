@@ -21,7 +21,6 @@
     "react-router-dom": "5.2.0",
     "react-spring": "8.0.27",
     "uuid": "8.1.0",
-    "vscode-uri": "^2.1.2",
     "xstate": "4.10.0"
   },
   "devDependencies": {

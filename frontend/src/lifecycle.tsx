@@ -137,7 +137,9 @@ function lifecycle(history, location) {
             if (error != undefined) {
               callback({type: failure, error: error});
             } else {
-              history.push(`/${result}`);
+              const params = new URLSearchParams(location.search);
+              params.delete("deploy");
+              history.push(`/${result}?${params.toString()}`);
             }
           },
           onError: {

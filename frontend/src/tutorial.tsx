@@ -9,6 +9,7 @@ import Typography from '@material-ui/core/Typography';
 import marked from 'marked';
 import { Container } from "@material-ui/core";
 import { deployInstance, getUserDetails } from "./api";
+import { executeCommand, startNode, gotoLine, moveCursor } from "./commands";
 import { TheiaInstance } from "./components";
 import { Discoverer } from "./connect";
 
@@ -18,10 +19,6 @@ import Step from '@material-ui/core/Step';
 import StepLabel from '@material-ui/core/StepLabel';
 import StepContent from '@material-ui/core/StepContent';
 
-import InputLabel from '@material-ui/core/InputLabel';
-import MenuItem from '@material-ui/core/MenuItem';
-import FormControl from '@material-ui/core/FormControl';
-import Select from '@material-ui/core/Select';
 import Skeleton from '@material-ui/lab/Skeleton';
 
 const useStyles = makeStyles((theme: Theme) =>
@@ -41,16 +38,6 @@ const useStyles = makeStyles((theme: Theme) =>
     },
   }),
 );
-
-async function executeCommand(instance, command, data = {}) {
-  try {
-      const result = await instance.execute(command, data);
-      console.log("res", result)
-     // setResult(result);
-  } catch (error) {
-      console.error(error);
-  }
-}
 
 function createSteps(instance) {
   const url = `wss://${instance.uuid}.playground-staging.substrate.dev/wss`;

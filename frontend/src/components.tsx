@@ -34,8 +34,8 @@ import Zoom from '@material-ui/core/Zoom';
 import Fade from '@material-ui/core/Fade';
 import { TransitionProps } from '@material-ui/core/transitions';
 import { Container } from "@material-ui/core";
-import { URI } from 'vscode-uri';
 import { getInstanceDetails } from "./api";
+import { executeCommand, startNode, openFile, gotoLine, cursorMove } from "./commands";
 import { Discoverer, Instance, Responder } from "./connect";
 import { useHover, useInterval, useWindowMaxDimension } from './hooks';
 import { useLifecycle, deploy, deploying, failed, initial, restart, setup, stop, stopping } from './lifecycle';
@@ -159,8 +159,7 @@ function useDiscovery() {
     return instances;
 }
 
-function InstanceController() {
-    const instances = useDiscovery();
+function InstanceController({instances}) {
     const [selectedInstance, setInstance] = useState(null);
     const [commands, setCommands] = useState(null);
     const [command, setCommand] = useState(null);
@@ -191,23 +190,6 @@ function InstanceController() {
     const handleChange = (event: React.ChangeEvent<{ value: unknown }>) => {
         setCommand(event.target.value as string);
     };
-
-    async function startNode() {
-        await executeCommand("substrateCommands.runCommand");
-    }
-
-    async function openFile() {
-        const uri = URI.parse("file:///home/substrate/workspace/recipes/README.md", false);
-        await executeCommand("vscode.open", uri);
-    }
-
-    async function gotoLine() {
-        await executeCommand("workbench.action.gotoLine", {lineNumber: "10", at: "top"});
-    }
-
-    async function cursorMove() {
-        await executeCommand("cursorMove", {to: "top", by: "line"});
-    }
 
     if (instances.length > 0) {
     return (
@@ -243,15 +225,12 @@ function InstanceController() {
                 )}
                 </Select>
             </FormControl>
-            <Button style={{marginLeft: 40}} color="primary" variant="contained" disableElevation onClick={() => executeCommand(command)}>EXECUTE</Button>
+            <Button style={{marginLeft: 40}} color="primary" variant="contained" disableElevation onClick={() => executeCommand(selectedInstance, command)}>EXECUTE</Button>
         </div>
         }
         {selectedInstance &&
         <>
             <Button style={{marginTop: 10}} color="primary" variant="contained" disableElevation onClick={startNode}>START NODE</Button>
-            <div style={{marginTop: 10}}>
-                <Button color="primary" variant="contained" disableElevation onClick={openFile}>OPEN FILE</Button>
-            </div>
             <div style={{marginTop: 10}}>
                 <Button color="primary" variant="contained" disableElevation onClick={gotoLine}>GOTO LINE</Button>
             </div>
@@ -277,9 +256,10 @@ function useQuery() {
 }
 
 export function ControllerPanel() {
+    const instances = useDiscovery();
     return (
         <div style={{display: "flex", height: "100vh"}}>
-            <InstanceController />
+            <InstanceController instances={instances} />
         </div>
     );
 }
@@ -378,13 +358,24 @@ export function TheiaInstance({ uuid }) {
 export function TheiaPanel() {
     const query = useQuery();
     const controller = query.get("controller");
+    const files = query.get("files");
+    // files=/../test.rs#L82-85,/ze/test2.rs
     const { uuid } = useParams();
+    const instances = useDiscovery();
+
+    useEffect(() => {
+        const onlyInstance = instances.length == 1 ? instances[0] : null;
+        if (onlyInstance) {
+            files?.split(",").forEach(file => openFile(onlyInstance[1], {type: "URI", data: file}));
+        }
+    }, [instances]);
+
     return (
     <div style={{display: "flex", width: "100vw", height: "100vh"}}>
     {controller != null
         ?
         <>
-            <InstanceController />
+            <InstanceController instances={instances} />
             <div style={{display: "flex", flex: 1}}>
                 <TheiaInstance uuid={uuid} />
             </div>
