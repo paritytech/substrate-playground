@@ -1,3 +1,13 @@
+There are a number of files that will be used by the playground:
+
+* .substrate-playground/build.yaml
+* .vscode/settings.json (see https://code.visualstudio.com/docs/getstarted/settings)
+* .vscode/launch.json
+* .vscode/tasks.json
+* .vscode/snippets.code-snippets
+* .devcontainer/devcontainer.json
+
+
 * custom docker image generation
 * custom kubernetes deployment
 * custom plugin based on conf and playground API

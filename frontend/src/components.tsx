@@ -359,14 +359,13 @@ export function TheiaPanel() {
     const query = useQuery();
     const controller = query.get("controller");
     const files = query.get("files");
-    // files=/../test.rs#L82-85,/ze/test2.rs
     const { uuid } = useParams();
     const instances = useDiscovery();
 
     useEffect(() => {
         const onlyInstance = instances.length == 1 ? instances[0] : null;
-        if (onlyInstance) {
-            files?.split(",").forEach(file => openFile(onlyInstance[1], {type: "URI", data: file}));
+        if (onlyInstance && files) {
+            decodeURIComponent(files).split(",").forEach(file => openFile(onlyInstance[1], {type: "URI", data: file}));
         }
     }, [instances]);
 
