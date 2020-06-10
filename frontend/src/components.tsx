@@ -35,7 +35,7 @@ import Fade from '@material-ui/core/Fade';
 import { TransitionProps } from '@material-ui/core/transitions';
 import { Container } from "@material-ui/core";
 import { getInstanceDetails } from "./api";
-import { executeCommand, startNode, openFile, gotoLine, cursorMove } from "./commands";
+import { startNode, openFile, gotoLine, cursorMove } from "./commands";
 import { Discoverer, Instance, Responder } from "./connect";
 import { useHover, useInterval, useWindowMaxDimension } from './hooks';
 import { useLifecycle, deploy, deploying, failed, initial, restart, setup, stop, stopping } from './lifecycle';

@@ -9,7 +9,7 @@ import Typography from '@material-ui/core/Typography';
 import marked from 'marked';
 import { Container } from "@material-ui/core";
 import { deployInstance, getUserDetails } from "./api";
-import { executeCommand, startNode, gotoLine, moveCursor } from "./commands";
+import { startNode } from "./commands";
 import { TheiaInstance } from "./components";
 import { Discoverer } from "./connect";
 
@@ -44,7 +44,7 @@ function createSteps(instance) {
   return [
       {label: 'Launch your instance',
        content: `First start by launching your instance in a personal instance`,
-       actions: {launch: () => executeCommand(instance, "substrate.startNode", "/home/substrate/workspace/substrate-node-template")}},
+       actions: {launch: () => startNode(instance, "/home/substrate/workspace/substrate-node-template")}},
       {label: 'Access via PolkadotJS',
        content: `Use PolkadotJS Apps to interact with your chain.`,
        actions: {open: () => window.open(`https://polkadot.js.org/apps/?rpc=${url}`)}},
@@ -52,7 +52,7 @@ function createSteps(instance) {
        content: `Using the nice integrated view`},
       {label: 'Relaunch your instance',
        content: `Stop and restart your instance. See how changes are reflected`,
-       actions: {launch: () => executeCommand(instance, "substrate.startNode", "/home/substrate/workspace/substrate-node-template")}}];
+       actions: {launch: () => startNode(instance, "/home/substrate/workspace/substrate-node-template")}}];
 }
 
 function VerticalLinearStepper({ uuid }) {
