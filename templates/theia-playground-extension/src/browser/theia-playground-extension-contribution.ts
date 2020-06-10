@@ -3,6 +3,7 @@ import { CommandContribution, CommandRegistry, MenuContribution, MenuModelRegist
 import { CommonMenus } from "@theia/core/lib/browser";
 import { ConnectionStatusService, ConnectionStatus } from '@theia/core/lib/browser/connection-status-service';
 import { MaybePromise } from '@theia/core/lib/common/types';
+import { MessageService } from '@theia/core/lib/common/message-service';
 import { FileNavigatorContribution } from '@theia/navigator/lib/browser/navigator-contribution';
 import { LocationMapper } from '@theia/mini-browser/lib/browser/location-mapper-service';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
@@ -62,7 +63,7 @@ function unmarshall(payload) {
     }
 }
 
-function registerBridge(registry, connectionStatusService) {
+function registerBridge(registry, connectionStatusService, messageService) {
     // Listen to message from parent frame
     window.addEventListener('message', async (o) => {
         const type = o.data.type;
@@ -83,6 +84,7 @@ function registerBridge(registry, connectionStatusService) {
                         const result = await registry.executeCommand(name, unmarshall(data));
                         answer("extension-answer", uuid, result);
                     } catch (error) {
+                        messageService.error(`Error while executing ${name}.`, error.message);
                         answer("extension-answer-error", uuid, {name: error.name, message: error.message});
                     }
                     break;
@@ -129,6 +131,9 @@ export class TheiaSubstrateExtensionCommandContribution implements CommandContri
     @inject(ConnectionStatusService)
     protected readonly connectionStatusService: ConnectionStatusService;
 
+    @inject(MessageService)
+    protected readonly messageService: MessageService;
+
     registerCommands(registry: CommandRegistry): void {
         registry.registerCommand(SendFeedbackCommand, {
             execute: () => window.open('https://docs.google.com/forms/d/e/1FAIpQLSdXpq_fHqS_ow4nC7EpGmrC_XGX_JCIRzAqB1vaBtoZrDW-ZQ/viewform?edit_requested=true')
@@ -142,7 +147,7 @@ export class TheiaSubstrateExtensionCommandContribution implements CommandContri
 
         if (window !== window.parent) {
             // Running in a iframe
-            registerBridge(registry, this.connectionStatusService);
+            registerBridge(registry, this.connectionStatusService, this.messageService);
             const members = document.domain.split(".");
             document.domain = members.slice(members.length-2).join(".");
         }
