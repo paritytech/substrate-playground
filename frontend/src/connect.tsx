@@ -80,6 +80,9 @@ export class Responder {
         this.#channel.onmessage = (o) => {
             const type = o.data.type;
             switch (type) {
+                case TYPE_INSTANCE_ANNOUNCED:
+                    // Another instance is anouncing itself; ignore
+                    break;
                 case TYPE_DISCOVERY: {
                     if (this.online) {
                         this.announce();
