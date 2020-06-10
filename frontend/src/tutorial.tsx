@@ -44,7 +44,7 @@ function createSteps(instance) {
   return [
       {label: 'Launch your instance',
        content: `First start by launching your instance in a personal instance`,
-       actions: {launch: () => startNode(instance, "/home/substrate/workspace/substrate-node-template")}},
+       actions: {launch: () => startNode(instance, "/home/substrate/workspace/nodes/kitchen-node")}},
       {label: 'Access via PolkadotJS',
        content: `Use PolkadotJS Apps to interact with your chain.`,
        actions: {open: () => window.open(`https://polkadot.js.org/apps/?rpc=${url}`)}},
@@ -52,7 +52,7 @@ function createSteps(instance) {
        content: `Using the nice integrated view`},
       {label: 'Relaunch your instance',
        content: `Stop and restart your instance. See how changes are reflected`,
-       actions: {launch: () => startNode(instance, "/home/substrate/workspace/substrate-node-template")}}];
+       actions: {launch: () => startNode(instance, "/home/substrate/workspace/nodes/kitchen-node")}}];
 }
 
 function VerticalLinearStepper({ uuid }) {
