@@ -421,7 +421,7 @@ function TemplateSelector({templates, onSelect, onRetryClick, state}) {
                 ? <div style={{display: "flex", flex: 1, flexDirection: "row", minHeight: 0, height: "100%"}}>
                     <List style={{paddingTop: 0, paddingBottom: 0, overflowY: "auto"}}>
                         {templates.map((template, index: number) => (
-                        <ListItem button key={index} onClick={() => select(template)}>
+                        <ListItem button key={index} selected={selection.id === template.id} onClick={() => select(template)}>
                             <ListItemText primary={template.name} />
                         </ListItem>
                         ))}
