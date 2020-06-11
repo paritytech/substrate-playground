@@ -44,19 +44,21 @@ jobs:
           tag_with_sha: true
       - name: Set up Kustomize
         run: |-
-          curl -sfLo kustomize https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv3.5.5/kustomize_v3.5.5_linux_amd64.tar.gz
+          curl -sfLo kustomize https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv3.6.1/kustomize_v3.6.1_linux_amd64.tar.gz
           tar zxvf kustomize*
           chmod u+x ./kustomize  
         working-directory: conf/k8s/overlays/staging
       - name: Update version
-        run: ./kustomize edit set image gcr.io/substrateplayground-252112/jeluard/substrate-playground:sha-${GITHUB_SHA::7}
+        run: |-
+          ./kustomize edit set image gcr.io/substrateplayground-252112/jeluard/substrate-playground-backend-api:sha-${GITHUB_SHA::7}
+          ./kustomize edit set image gcr.io/substrateplayground-252112/jeluard/substrate-playground-backend-ui:sha-${GITHUB_SHA::7}
         working-directory: conf/k8s/overlays/staging
       - uses: seanmiddleditch/gha-publish-to-git@master
         with:
           branch: develop
           github_token: '${{ secrets.GITHUB_TOKEN  }}'
-          github_pat: '${{ secrets.GH_PAT }}'
-          dry_run: true
+          source_folder: conf/k8s/overlays/staging
+#          dry_run: true
 #      - name: Commit and push files
 #        run: |
 #          set -x
