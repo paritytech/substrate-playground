@@ -53,11 +53,12 @@ jobs:
           ./kustomize edit set image gcr.io/substrateplayground-252112/jeluard/substrate-playground-backend-api:sha-${GITHUB_SHA::7}
           ./kustomize edit set image gcr.io/substrateplayground-252112/jeluard/substrate-playground-backend-ui:sha-${GITHUB_SHA::7}
         working-directory: conf/k8s/overlays/staging
-      - uses: seanmiddleditch/gha-publish-to-git@master
+      - uses: EndBug/add-and-commit@v4
         with:
-          branch: develop
-          github_token: '${{ secrets.GITHUB_TOKEN  }}'
-          source_folder: conf/k8s/overlays/staging
+          message: "Update images versions"
+          add: "conf/k8s/overlays/staging/kustomization.yaml"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 #          dry_run: true
 #      - name: Commit and push files
 #        run: |
