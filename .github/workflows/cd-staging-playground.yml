@@ -51,21 +51,27 @@ jobs:
       - name: Update version
         run: ./kustomize edit set image gcr.io/substrateplayground-252112/jeluard/substrate-playground:sha-${GITHUB_SHA::7}
         working-directory: conf/k8s/overlays/staging
-      - name: Commit and push files
-        run: |
-          set -x
-          cd "${GITHUB_WORKSPACE}"
-          git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
-          git config user.name "${GITHUB_ACTOR}"
-          git config --local --unset-all "http.https://github.com/.extraheader"
-          git remote add github "https://${GITHUB_ACTOR}:${PERSONAL_ACCESS_TOKEN}@github.com/paritytech/substrate-playground.git"
-          git pull github develop --ff-only
-          git add conf/k8s/overlays/staging/kustomization.yaml
-          git config --list
-          git commit -m "ci: Updated playground image"
-          git push github HEAD:develop --follow-tags
-        env:
-          PERSONAL_ACCESS_TOKEN: ${{ secrets.PAT_TOKEN }}
+      - uses: seanmiddleditch/gha-publish-to-git@master
+        with:
+          branch: develop
+          github_token: '${{ secrets.GITHUB_TOKEN  }}'
+          github_pat: '${{ secrets.GH_PAT }}'
+          dry_run: true
+#      - name: Commit and push files
+#        run: |
+#          set -x
+#          cd "${GITHUB_WORKSPACE}"
+#          git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
+#          git config user.name "${GITHUB_ACTOR}"
+#          git config --local --unset-all "http.https://github.com/.extraheader"
+#          git remote add github "https://${GITHUB_ACTOR}:${PERSONAL_ACCESS_TOKEN}@github.com/paritytech/substrate-playground.git"
+#          git pull github develop --ff-only
+#          git add conf/k8s/overlays/staging/kustomization.yaml
+#          git config --list
+#          git commit -m "ci: Updated playground image"
+#          git push github HEAD:develop --follow-tags
+#        env:
+#          PERSONAL_ACCESS_TOKEN: ${{ secrets.PAT_TOKEN }}
 #      - name: Push changes
 #        uses: ad-m/github-push-action@master
 #        with:
