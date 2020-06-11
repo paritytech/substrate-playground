@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Deploy templates
-        run: make k8s-update-images-config
+        run: make k8s-update-templates-config
         env:
           ENVIRONMENT: staging
           SKIP_ACK: true
