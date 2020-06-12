@@ -36,7 +36,19 @@ jobs:
           password: ${{ env.ACCESS_TOKEN }}
           path: backend
           dockerfile: backend/Dockerfile
-          repository: substrateplayground-252112/jeluard/substrate-playground
+          repository: substrateplayground-252112/jeluard/substrate-playground-backend-api
+          registry: gcr.io
+          tags: latest
+          add_git_labels: true
+          tag_with_ref: true
+          tag_with_sha: true
+      - uses: docker/build-push-action@v1
+        with:
+          username: oauth2accesstoken
+          password: ${{ env.ACCESS_TOKEN }}
+          path: frontend
+          dockerfile: frontend/Dockerfile
+          repository: substrateplayground-252112/jeluard/substrate-playground-backend-ui
           registry: gcr.io
           tags: latest
           add_git_labels: true
