@@ -18,7 +18,7 @@ env:
   DOCKER_BUILDKIT: 1
 
 jobs:
-  build-and-push:
+  update-templates:
     runs-on: ubuntu-latest
     steps:
       # https://github.com/actions/checkout
@@ -76,27 +76,6 @@ jobs:
           add: "conf/k8s/overlays/staging/kustomization.yaml"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#          dry_run: true
-#      - name: Commit and push files
-#        run: |
-#          set -x
-#          cd "${GITHUB_WORKSPACE}"
-#          git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
-#          git config user.name "${GITHUB_ACTOR}"
-#          git config --local --unset-all "http.https://github.com/.extraheader"
-#          git remote add github "https://${GITHUB_ACTOR}:${PERSONAL_ACCESS_TOKEN}@github.com/paritytech/substrate-playground.git"
-#          git pull github develop --ff-only
-#          git add conf/k8s/overlays/staging/kustomization.yaml
-#          git config --list
-#          git commit -m "ci: Updated playground image"
-#          git push github HEAD:develop --follow-tags
-#        env:
-#          PERSONAL_ACCESS_TOKEN: ${{ secrets.PAT_TOKEN }}
-#      - name: Push changes
-#        uses: ad-m/github-push-action@master
-#        with:
-#          branch: develop
-#          github_token: ${{ secrets.PAT_TOKEN }}
       - name: Deploy on GKE
         run:  |-
           ./kustomize build . | kubectl apply --record -f -
