@@ -1,0 +1,67 @@
+name: Continuous Deployment base templates staging
+
+on:
+  push:
+    branches:
+      - develop
+    paths:
+      - 'templates/**'
+
+env:
+  GKE_CLUSTER: susbtrate-playground-staging
+  GKE_ZONE: us-central1-a
+  DOCKER_BUILDKIT: 1
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      # https://github.com/actions/checkout
+      - uses: actions/checkout@v2
+      - uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
+        with:
+          # GCLOUD_KEY is the base64 of the gcloud service account JSON file
+          # Get the JSON file from https://console.cloud.google.com/iam-admin/serviceaccounts?authuser=1&hl=fr&project=substrateplayground-252112&folder=&organizationId=&supportedpurview=project
+          # ... -> Actions -> Create Key
+          # then base64 substrateplayground-XXX.json | tr -d \\n
+          service_account_key: ${{ secrets.GCLOUD_KEY }}
+          export_default_credentials: true
+          project_id: ${{ secrets.GKE_PROJECT }}
+      - run: gcloud --quiet auth configure-docker
+      - run: gcloud container clusters get-credentials "$GKE_CLUSTER" --zone "$GKE_ZONE"
+      - run: echo "::set-env name=ACCESS_TOKEN::$(gcloud auth print-access-token)"
+      - uses: docker/build-push-action@v1 # https://github.com/docker/build-push-action
+        with:
+          username: oauth2accesstoken
+          password: ${{ env.ACCESS_TOKEN }}
+          path: templates
+          dockerfile: templates/Dockerfile.base
+          repository: substrateplayground-252112/jeluard/substrate-playground-template-base
+          registry: gcr.io
+          tags: latest
+          add_git_labels: true
+          tag_with_ref: true
+          tag_with_sha: true
+      - uses: docker/build-push-action@v1
+        with:
+          username: oauth2accesstoken
+          password: ${{ env.ACCESS_TOKEN }}
+          path: frontend
+          dockerfile: frontend/Dockerfile
+          repository: substrateplayground-252112/jeluard/substrate-playground-template-theia-base
+          registry: gcr.io
+          tags: latest
+          add_git_labels: true
+          tag_with_ref: true
+          tag_with_sha: true
+      - name: Create Release
+        uses: actions/create-release@v1
+        with:
+          tag_name: ${{ steps.env.outputs.sha }}
+          release_name: ${{ steps.env.outputs.sha }}
+          body: |
+            Base templates release:
+            - jeluard/substrate-playground-template-base:${{ steps.env.outputs.sha }}
+            - jeluard/substrate-playground-template-theia-base:${{ steps.env.outputs.sha }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
