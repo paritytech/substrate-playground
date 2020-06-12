@@ -18,7 +18,7 @@ env:
   DOCKER_BUILDKIT: 1
 
 jobs:
-  update-templates:
+  build-and-push:
     runs-on: ubuntu-latest
     steps:
       # https://github.com/actions/checkout
@@ -72,7 +72,7 @@ jobs:
         working-directory: conf/k8s/overlays/staging
       - uses: EndBug/add-and-commit@v4
         with:
-          message: "Update images versions"
+          message: ":bookmark: update backend images"
           add: "conf/k8s/overlays/staging/kustomization.yaml"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
