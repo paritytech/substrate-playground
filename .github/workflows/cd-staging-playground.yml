@@ -65,16 +65,18 @@ jobs:
           tar zxvf kustomize*
           chmod u+x ./kustomize  
         working-directory: conf/k8s/overlays/staging
+      - run: echo ::set-output name=sha::sha-${GITHUB_SHA::7}
+        id: env
       - name: Update version
         run: |-
-          ./kustomize edit set image gcr.io/substrateplayground-252112/jeluard/substrate-playground-backend-api:sha-${GITHUB_SHA::7}
-          ./kustomize edit set image gcr.io/substrateplayground-252112/jeluard/substrate-playground-backend-ui:sha-${GITHUB_SHA::7}
+          ./kustomize edit set image gcr.io/substrateplayground-252112/jeluard/substrate-playground-backend-api:${{ steps.env.outputs.sha }}
+          ./kustomize edit set image gcr.io/substrateplayground-252112/jeluard/substrate-playground-backend-ui:${{ steps.env.outputs.sha }}
         working-directory: conf/k8s/overlays/staging
       - uses: EndBug/add-and-commit@v4
         with:
           message: ":bookmark: update backend images"
           add: "conf/k8s/overlays/staging/kustomization.yaml"
-          tag: sha-${GITHUB_SHA::7}
+          tag: ${{ steps.env.outputs.sha }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Deploy on GKE
@@ -85,11 +87,11 @@ jobs:
       - name: Create Release
         uses: actions/create-release@v1
         with:
-          tag_name: sha-${GITHUB_SHA::7}
-          release_name: sha-${GITHUB_SHA::7}
+          tag_name: ${{ steps.env.outputs.sha }}
+          release_name: ${{ steps.env.outputs.sha }}
           body: |
             Backend release:
-            - jeluard/substrate-playground-backend-api:sha-${GITHUB_SHA::7}
-            - jeluard/substrate-playground-backend-ui:sha-${GITHUB_SHA::7}
+            - jeluard/substrate-playground-backend-api:${{ steps.env.outputs.sha }}
+            - jeluard/substrate-playground-backend-ui:${{ steps.env.outputs.sha }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
