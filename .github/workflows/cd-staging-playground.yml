@@ -74,6 +74,7 @@ jobs:
         with:
           message: ":bookmark: update backend images"
           add: "conf/k8s/overlays/staging/kustomization.yaml"
+          tag: sha-${GITHUB_SHA::7}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Deploy on GKE
