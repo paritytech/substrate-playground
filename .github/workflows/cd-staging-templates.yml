@@ -7,12 +7,27 @@ on:
     paths:
       - 'templates/**'
 
+env:
+  GKE_CLUSTER: susbtrate-playground-staging
+  GKE_ZONE: us-central1-a
+
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v2
+      - uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
+        with:
+          # GCLOUD_KEY is the base64 of the gcloud service account JSON file
+          # Get the JSON file from https://console.cloud.google.com/iam-admin/serviceaccounts?authuser=1&hl=fr&project=substrateplayground-252112&folder=&organizationId=&supportedpurview=project
+          # ... -> Actions -> Create Key
+          # then base64 substrateplayground-XXX.json | tr -d \\n
+          service_account_key: ${{ secrets.GCLOUD_KEY }}
+          export_default_credentials: true
+          project_id: ${{ secrets.GKE_PROJECT }}
+      - run: gcloud --quiet auth configure-docker
+      - run: gcloud container clusters get-credentials "$GKE_CLUSTER" --zone "$GKE_ZONE"
       - name: Deploy templates
         run: make k8s-update-templates-config
         env:
           ENVIRONMENT: staging
-          SKIP_ACK: true
