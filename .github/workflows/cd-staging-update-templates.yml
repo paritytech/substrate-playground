@@ -28,6 +28,4 @@ jobs:
       - run: gcloud --quiet auth configure-docker
       - run: gcloud container clusters get-credentials "$GKE_CLUSTER" --zone "$GKE_ZONE"
       - name: Deploy templates
-        run: make k8s-update-templates-config
-        env:
-          ENVIRONMENT: staging
+        run: kubectl create configmap templates --namespace=playground-staging --from-file=conf/k8s/overlays/staging/templates/ --dry-run -o yaml | kubectl apply -f -
