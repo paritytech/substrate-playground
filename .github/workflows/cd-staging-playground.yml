@@ -81,3 +81,14 @@ jobs:
           ./kustomize build . | kubectl apply --record -f -
           kubectl get services -o wide
         working-directory: conf/k8s/overlays/staging
+      - name: Create Release
+        uses: actions/create-release@v1
+        with:
+          tag_name: sha-${GITHUB_SHA::7}
+          release_name: sha-${GITHUB_SHA::7}
+          body: |
+            Backend release:
+            - jeluard/substrate-playground-backend-api:sha-${GITHUB_SHA::7}
+            - jeluard/substrate-playground-backend-ui:sha-${GITHUB_SHA::7}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
