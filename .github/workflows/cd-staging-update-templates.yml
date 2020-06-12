@@ -5,7 +5,7 @@ on:
     branches:
       - develop
     paths:
-      - 'templates/**'
+      - 'conf/k8s/overlays/staging/templates/**'
 
 env:
   GKE_CLUSTER: susbtrate-playground-staging

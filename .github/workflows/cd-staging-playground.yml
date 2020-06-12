@@ -5,6 +5,11 @@ on:
     branches:
       - develop
     paths-ignore:
+      - 'README.md'
+      - 'docs/**'
+      - 'conf/k8s/overlays/**/templates/**'
+      - 'conf/k8s/overlays/production'
+      - 'conf/k8s/overlays/dev'
       - 'templates/**'
 
 env:
