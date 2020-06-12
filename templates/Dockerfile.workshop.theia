@@ -1,0 +1,19 @@
+FROM jeluard/substrate-playground-template-theia-base@sha256:3e5e2423570853f5e2ca85b24a4f3fa222a81938b6bb59e78e47fca416356341 as theia-base
+
+FROM jeluard/substrate-playground-template-workshop@sha256:065a970deb23952de8149508982e68e59d4f62be14a4cfa0055573c35f667a55
+
+# Copy the whole theia folder, including node_modules
+# This is the recommended approach: https://spectrum.chat/theia/dev/theia-packaging~6c10127c-a316-4e87-9a27-e4b70fb647c1
+COPY --from=theia-base --chown=substrate:substrate /home/theia /home/theia
+
+# Use the instance hostname for webviews.
+# By default theia uses a unique domain per webview byt this is not a security consideration here.
+# See:
+# * https://github.com/eclipse-theia/theia/blob/master/CHANGELOG.md#v0130
+# * https://github.com/eclipse-theia/theia/pull/6465#issuecomment-557494879
+# * https://spectrum.chat/theia/dev/any-breaking-changes-made-recently-to-webview~e5bd31a3-eee7-4288-b092-cf7407468780
+ENV THEIA_WEBVIEW_EXTERNAL_ENDPOINT={{hostname}}
+
+WORKDIR /home/theia/theia-playground/
+
+ENTRYPOINT [ "dumb-init", "node", "--always-compact", "--max-old-space-size=64", "src-gen/backend/main.js", "/home/substrate/workspace", "--hostname=0.0.0.0" ] 

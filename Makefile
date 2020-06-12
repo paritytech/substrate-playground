@@ -92,6 +92,17 @@ push-template-workshop: build-template-workshop
 	docker push ${TEMPLATE_WORKSHOP}:sha-${THEIA_DOCKER_IMAGE_VERSION}
 	docker push gcr.io/${GOOGLE_PROJECT_ID}/${TEMPLATE_WORKSHOP}
 
+build-template-workshop-theia:
+	$(eval THEIA_DOCKER_IMAGE_VERSION=$(shell git rev-parse --short HEAD))
+	@cd templates; docker build --force-rm -f Dockerfile.workshop --label org.opencontainers.image.version=${THEIA_DOCKER_IMAGE_VERSION} -t ${TEMPLATE_WORKSHOP}-theia:sha-${THEIA_DOCKER_IMAGE_VERSION} .
+	docker tag ${TEMPLATE_WORKSHOP}-theia:sha-${THEIA_DOCKER_IMAGE_VERSION} gcr.io/${GOOGLE_PROJECT_ID}/${TEMPLATE_WORKSHOP}-theia
+	docker image prune -f --filter label=stage=builder
+
+# Push a newly built theia image on docker.io and gcr.io
+push-template-workshop-theia: build-template-workshop-theia
+	docker push ${TEMPLATE_WORKSHOP}-theia:sha-${THEIA_DOCKER_IMAGE_VERSION}
+	docker push gcr.io/${GOOGLE_PROJECT_ID}/${TEMPLATE_WORKSHOP}-theia
+
 # Build backend docker images
 build-backend-docker-images:
 	$(eval PLAYGROUND_DOCKER_IMAGE_VERSION=$(shell git rev-parse --short HEAD))
