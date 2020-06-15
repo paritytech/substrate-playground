@@ -21,18 +21,3 @@ runtime:
       path: /wss
       port: 9944
   # tasks: TODO, see https://www.gitpod.io/docs/config-start-tasks/
-
-build:
-  base: sha256:0b3ec9ad567d0f5b0eed8a0fc2b1fa3fe1cca24cc02416047d71f83770b05e34
-#  extensions: []
-#  resources:
-#    - url:
-#      dest: file/
-#  includes-defaults: true (include vscode files)
-#  commands:
-#    - name: Build substrate-front-end-template
-#      run: yarn
-#      working-directory: ./substrate-front-end-template
-#    - name: Build substrate-node-template
-#      run: cargo build --release
-#      working-directory: ./substrate-node-template
