@@ -8,7 +8,6 @@ pub struct Template {
     pub name: String,
     pub description: String,
     pub runtime: Option<RuntimeConfiguration>,
-    pub build: BuildConfiguration,
 }
 
 impl Template {
@@ -46,14 +45,6 @@ pub struct Port {
     pub path: String,
     pub port: i32,
     pub target: Option<i32>,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct BuildConfiguration {
-    pub base: String,
-    pub extensions: Option<Vec<NameURLPair>>,
-    pub repositories: Option<Vec<NameURLPair>>,
-    pub commands: Option<Vec<Command>>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
