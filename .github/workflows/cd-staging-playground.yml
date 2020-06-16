@@ -88,10 +88,11 @@ jobs:
         uses: actions/create-release@v1
         with:
           tag_name: ${{ steps.env.outputs.sha }}
-          release_name: ${{ steps.env.outputs.sha }}
+          release_name: Release ${{ steps.env.outputs.sha }}
           body: |
             Backend release:
             - jeluard/substrate-playground-backend-api:${{ steps.env.outputs.sha }}
             - jeluard/substrate-playground-backend-ui:${{ steps.env.outputs.sha }}
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # https://help.github.com/en/actions/reference/events-that-trigger-workflows#triggering-new-workflows-using-a-personal-access-token
+          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
