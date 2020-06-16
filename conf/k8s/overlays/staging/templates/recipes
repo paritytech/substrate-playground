@@ -1,15 +1,13 @@
-{
-  "image": "",
-  "name": "Recipes",
-  "description": "## A Hands-On Cookbook for Aspiring Blockchain Chefs\n\nContains some real nodes!\n",
-  "runtime": {
-    "ports": [
-      {
-        "name": "wss",
-        "protocol": "TCP",
-        "path": "/wss",
-        "port": 9944
-      }
-    ]
-  }
-}
+image: gcr.io/substrateplayground-252112/jeluard/substrate-playground-template-recipes-theia@sha256:8ffb546097bb97a7cacd375e3039a889cede6e1eb57f4729730437420bc53a9f
+name: "Recipes"
+description: |
+  ## A Hands-On Cookbook for Aspiring Blockchain Chefs
+
+  Contains some real nodes!
+
+runtime:
+  ports:
+    - name: wss
+      protocol: TCP
+      path: /wss
+      port: 9944 

@@ -74,7 +74,7 @@ jobs:
       - name: Update template version
         run: |-
           t=$(mktemp)
-          cat conf/k8s/overlays/staging/templates/${{ github.event.client_payload.id }} | yq ".image = \"${{ env.IMAGE }}\"" > ${t} && mv ${t} conf/k8s/overlays/staging/templates/${{ github.event.client_payload.id }}
+          cat conf/k8s/overlays/staging/templates/${{ github.event.client_payload.id }} | yq -y ".image = \"${{ env.IMAGE }}\"" > ${t} && mv ${t} conf/k8s/overlays/staging/templates/${{ github.event.client_payload.id }}
 
       - name: Commit template version update
         uses: EndBug/add-and-commit@v4
