@@ -67,7 +67,9 @@ jobs:
           pip install yq
 
       - name: Update template version
-        run: cat <<< "$(yq -y ".image = gcr.io/substrateplayground-252112/$IMAGE" < conf/k8s/overlays/staging/template/${{ github.event.repository.name }})" > conf/k8s/overlays/staging/template/${{ github.event.repository.name }}
+        run: |-
+          t=$(mktemp)
+          cat conf/k8s/overlays/staging/template/${{ github.event.repository.name }} | jq ".image = \"${{ env.IMAGE }}\"" > ${t} && mv ${t} conf/k8s/overlays/staging/template/${{ github.event.repository.name }}
 
       - name: Commit template version update
         uses: EndBug/add-and-commit@v4
