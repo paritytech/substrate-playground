@@ -80,6 +80,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Deploy templates
+        run: kubectl create configmap templates --namespace=playground-staging --from-file=conf/k8s/overlays/staging/templates/ --dry-run -o yaml | kubectl apply -f -
+
       - run: echo ::set-output name=sha::sha-${GITHUB_SHA::7}
         id: env
 
