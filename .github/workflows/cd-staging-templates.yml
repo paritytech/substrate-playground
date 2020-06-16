@@ -80,6 +80,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - run: echo ::set-output name=sha::sha-${GITHUB_SHA::7}
+        id: env
+
       - name: Create Release
         uses: actions/create-release@v1
         with:
