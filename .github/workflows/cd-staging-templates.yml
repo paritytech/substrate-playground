@@ -37,7 +37,7 @@ jobs:
           username: oauth2accesstoken
           password: ${{ env.ACCESS_TOKEN }}
           dockerfile: Dockerfile.theia
-          repository: substrateplayground-252112/jeluard/substrate-playground-template-${{ github.event.repository.name }}-theia
+          repository: substrateplayground-252112/jeluard/substrate-playground-template-${{ github.event.client_payload.id }}-theia
           registry: gcr.io
           tags: latest
           add_git_labels: true
@@ -50,7 +50,7 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
           dockerfile: Dockerfile.theia
-          repository: jeluard/substrate-playground-template-${{ github.event.repository.name }}-theia
+          repository: jeluard/substrate-playground-template-${{ github.event.client_payload.id }}-theia
           tags: latest
           add_git_labels: true
           tag_with_ref: true
@@ -66,16 +66,18 @@ jobs:
           python -m pip install --upgrade pip
           pip install yq
 
+      - run: 'echo "payload: ${{ toJson(github.event) }}"'
+
       - name: Update template version
         run: |-
           t=$(mktemp)
-          cat conf/k8s/overlays/staging/template/${{ github.event.repository.name }} | jq ".image = \"${{ env.IMAGE }}\"" > ${t} && mv ${t} conf/k8s/overlays/staging/template/${{ github.event.repository.name }}
+          cat conf/k8s/overlays/staging/template/${{ github.event.client_payload.id }} | jq ".image = \"${{ env.IMAGE }}\"" > ${t} && mv ${t} conf/k8s/overlays/staging/template/${{ github.event.client_payload.id }}
 
       - name: Commit template version update
         uses: EndBug/add-and-commit@v4
         with:
-          message: ":bookmark: update template version for ${{ github.event.repository.name }}"
-          add: conf/k8s/overlays/staging/template/${{ github.event.repository.name }}
+          message: ":bookmark: update template version for ${{ github.event.client_payload.id }}"
+          add: conf/k8s/overlays/staging/template/${{ github.event.client_payload.id }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -92,6 +94,6 @@ jobs:
           release_name: ${{ steps.env.outputs.sha }}
           body: |
             Template release:
-            - paritytech/substrate-playground-template-${{ github.event.repository.name }}:${{ steps.env.outputs.sha }}
+            - paritytech/substrate-playground-template-${{ github.event.client_payload.id }}:${{ steps.env.outputs.sha }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
