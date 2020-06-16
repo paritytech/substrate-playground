@@ -11,14 +11,14 @@ edition = "2018"
 log = "0.4.8"
 env_logger = "0.7.1"
 uuid = { version = "0.8.1", features = ["v4"] }
-prometheus = "0.8.0"
-rocket = "0.4.4"
-rocket_contrib = { version = "0.4.4", features = ["json"] }
+prometheus = "0.9.0"
+rocket = "0.4.5"
+rocket_contrib = { version = "0.4.5", features = ["json"] }
 rocket_cors = "0.5.2"
-rocket_prometheus = "0.4.0"
-serde = { version = "1.0.105", features = ["derive"] }
-serde_json = "1.0.48"
-serde_yaml = "0.8"
-kube = "0.30.0"
-k8s-openapi = { version = "0.7.1", default-features = false, features = ["v1_15"] }
-tokio = {version = "0.2.17", features = ["macros"] }
+rocket_prometheus = "0.5.0"
+serde = { version = "1.0.112", features = ["derive"] }
+serde_json = "1.0.55"
+serde_yaml = "0.8.13"
+kube = "0.35.0"
+k8s-openapi = { version = "0.8.0", default-features = false, features = ["v1_15"] }
+tokio = {version = "0.2.21", features = ["macros"] }

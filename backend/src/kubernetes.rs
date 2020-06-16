@@ -11,8 +11,9 @@ use k8s_openapi::api::extensions::v1beta1::{
 use k8s_openapi::apimachinery::pkg::{apis::meta::v1::ObjectMeta, util::intstr::IntOrString};
 use kube::{
     api::{Api, DeleteParams, ListParams, Meta, PostParams},
-    client::APIClient,
-    config,
+    config::KubeConfigOptions,
+    Client,
+    Config,
 };
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::{collections::BTreeMap, error::Error};
@@ -204,15 +205,15 @@ fn subdomain(host: &str, instance_uuid: &str) -> String {
     format!("{}.{}", instance_uuid, host)
 }
 
-async fn config() -> Result<kube::config::Configuration, String> {
-    config::load_kube_config()
+async fn config() -> Result<Config, String> {
+    Config::from_kubeconfig(&KubeConfigOptions::default())
         .await
-        .or_else(|_| config::incluster_config())
+        .or_else(|_| Config::from_cluster_env())
         .map_err(error_to_string)
 }
 
 async fn get_config_map(
-    client: APIClient,
+    client: Client,
     namespace: &str,
     name: &str,
 ) -> Result<BTreeMap<String, String>, String> {
@@ -225,7 +226,7 @@ async fn get_config_map(
 }
 
 pub async fn get_templates(
-    client: APIClient,
+    client: Client,
     namespace: &str,
 ) -> Result<BTreeMap<String, String>, String> {
     get_config_map(client, namespace, "templates").await
@@ -294,7 +295,7 @@ impl Engine {
     pub async fn new() -> Result<Self, Box<dyn Error>> {
         let config = config().await?;
         let namespace = config.clone().default_ns.to_string();
-        let client = APIClient::new(config);
+        let client = Client::new(config);
         let ingress_api: Api<Ingress> = Api::namespaced(client.clone(), &namespace);
         let host = if let Ok(ingress) = ingress_api.get(INGRESS_NAME).await {
             ingress
@@ -353,7 +354,7 @@ impl Engine {
 
     pub async fn get(self) -> Result<PodDetails, String> {
         let config = config().await?;
-        let client = APIClient::new(config);
+        let client = Client::new(config);
         let pod_api: Api<Pod> = Api::namespaced(client, &self.namespace);
         let pod = pod_api
             .get(BACKEND_API_NAME)
@@ -365,7 +366,7 @@ impl Engine {
 
     pub async fn get_instance(self, instance_uuid: &str) -> Result<InstanceDetails, String> {
         let config = config().await?;
-        let client = APIClient::new(config);
+        let client = Client::new(config);
         let pod_api: Api<Pod> = Api::namespaced(client, &self.namespace);
         let pod = pod_api
             .get(&pod_name(instance_uuid))
@@ -377,7 +378,7 @@ impl Engine {
 
     pub async fn get_templates(self) -> Result<BTreeMap<String, Template>, String> {
         let config = config().await?;
-        let client = APIClient::new(config);
+        let client = Client::new(config);
 
         Ok(get_templates(client, &self.namespace)
             .await?
@@ -389,7 +390,7 @@ impl Engine {
     /// Lists all currently running instances for an identified user
     pub async fn list(self, user_uuid: &str) -> Result<Vec<InstanceDetails>, String> {
         let config = config().await?;
-        let client = APIClient::new(config);
+        let client = Client::new(config);
         let pod_api: Api<Pod> = Api::namespaced(client, &self.namespace);
         let pods = list_by_selector(&pod_api, Engine::owner_selector(user_uuid)).await?;
 
@@ -401,7 +402,7 @@ impl Engine {
 
     pub async fn list_all(&self) -> Result<BTreeMap<String, InstanceDetails>, String> {
         let config = config().await?;
-        let client = APIClient::new(config);
+        let client = Client::new(config);
         let pod_api: Api<Pod> = Api::namespaced(client, &self.namespace);
         let pods = list_by_selector(
             &pod_api,
@@ -425,7 +426,7 @@ impl Engine {
         instances: BTreeMap<String, &Template>,
     ) -> Result<(), String> {
         let config = config().await?;
-        let client = APIClient::new(config);
+        let client = Client::new(config);
         let ingress_api: Api<Ingress> = Api::namespaced(client, &self.namespace);
         let mut ingress: Ingress = ingress_api
             .get(INGRESS_NAME)
@@ -460,7 +461,7 @@ impl Engine {
         }
 
         let config = config().await?;
-        let client = APIClient::new(config);
+        let client = Client::new(config);
         // Access the right image id
         let templates = get_templates(client.clone(), &self.namespace).await?;
         let template = templates
@@ -507,7 +508,7 @@ impl Engine {
     pub async fn undeploy(self, instance_uuid: &str) -> Result<(), String> {
         // Undeploy the service by its id
         let config = config().await?;
-        let client = APIClient::new(config);
+        let client = Client::new(config);
         let service_api: Api<Service> = Api::namespaced(client.clone(), &self.namespace);
         service_api
             .delete(&service_name(instance_uuid), &DeleteParams::default())
