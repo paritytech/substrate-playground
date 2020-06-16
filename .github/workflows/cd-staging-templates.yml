@@ -56,6 +56,9 @@ jobs:
           tag_with_ref: true
           tag_with_sha: true
 
+      - run: echo ::set-output name=image::jeluard/substrate-playground-template-${{ github.event.client_payload.id }}-theia:sha-${GITHUB_SHA::7}
+        id: env
+
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
@@ -71,7 +74,7 @@ jobs:
       - name: Update template version
         run: |-
           t=$(mktemp)
-          cat conf/k8s/overlays/staging/templates/${{ github.event.client_payload.id }} | jq ".image = \"${{ env.IMAGE }}\"" > ${t} && mv ${t} conf/k8s/overlays/staging/templates/${{ github.event.client_payload.id }}
+          cat conf/k8s/overlays/staging/templates/${{ github.event.client_payload.id }} | yq ".image = \"${{ env.IMAGE }}\"" > ${t} && mv ${t} conf/k8s/overlays/staging/templates/${{ github.event.client_payload.id }}
 
       - name: Commit template version update
         uses: EndBug/add-and-commit@v4
@@ -84,16 +87,12 @@ jobs:
       - name: Deploy templates
         run: kubectl create configmap templates --namespace=playground-staging --from-file=conf/k8s/overlays/staging/templates/ --dry-run -o yaml | kubectl apply -f -
 
-      - run: echo ::set-output name=sha::sha-${GITHUB_SHA::7}
-        id: env
-
       - name: Create Release
         uses: actions/create-release@v1
         with:
           tag_name: ${{ steps.env.outputs.sha }}
           release_name: ${{ steps.env.outputs.sha }}
           body: |
-            Template release:
-            - paritytech/substrate-playground-template-${{ github.event.client_payload.id }}:${{ steps.env.outputs.sha }}
+            Released ${{ steps.env.outputs.image }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
