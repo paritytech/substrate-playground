@@ -54,6 +54,8 @@ jobs:
           add_git_labels: true
           tag_with_ref: true
           tag_with_sha: true
+      - run: echo ::set-output name=sha::sha-${GITHUB_SHA::7}
+        id: env
       - name: Create Release
         uses: actions/create-release@v1
         with:
