@@ -24,7 +24,6 @@ PLAYGROUND_BACKEND_API_DOCKER_IMAGE_NAME=${DOCKER_USERNAME}/substrate-playground
 PLAYGROUND_BACKEND_UI_DOCKER_IMAGE_NAME=${DOCKER_USERNAME}/substrate-playground-backend-ui
 TEMPLATE_BASE=${DOCKER_USERNAME}/substrate-playground-template-base
 TEMPLATE_THEIA_BASE=${DOCKER_USERNAME}/substrate-playground-template-theia-base
-TEMPLATE_WORKSHOP=${DOCKER_USERNAME}/substrate-playground-template-workshop
 GOOGLE_PROJECT_ID=substrateplayground-252112
 
 COLOR_BOLD:= $(shell tput bold)
@@ -80,28 +79,6 @@ build-template-theia-base:
 push-template-theia-base: build-template-theia-base
 	docker push ${TEMPLATE_THEIA_BASE}:sha-${THEIA_DOCKER_IMAGE_VERSION}
 	docker push gcr.io/${GOOGLE_PROJECT_ID}/${TEMPLATE_THEIA_BASE}
-
-build-template-workshop:
-	$(eval THEIA_DOCKER_IMAGE_VERSION=$(shell git rev-parse --short HEAD))
-	@cd templates; docker build --force-rm -f Dockerfile.workshop --label org.opencontainers.image.version=${THEIA_DOCKER_IMAGE_VERSION} -t ${TEMPLATE_WORKSHOP}:sha-${THEIA_DOCKER_IMAGE_VERSION} .
-	docker tag ${TEMPLATE_WORKSHOP}:sha-${THEIA_DOCKER_IMAGE_VERSION} gcr.io/${GOOGLE_PROJECT_ID}/${TEMPLATE_WORKSHOP}
-	docker image prune -f --filter label=stage=builder
-
-# Push a newly built theia image on docker.io and gcr.io
-push-template-workshop: build-template-workshop
-	docker push ${TEMPLATE_WORKSHOP}:sha-${THEIA_DOCKER_IMAGE_VERSION}
-	docker push gcr.io/${GOOGLE_PROJECT_ID}/${TEMPLATE_WORKSHOP}
-
-build-template-workshop-theia:
-	$(eval THEIA_DOCKER_IMAGE_VERSION=$(shell git rev-parse --short HEAD))
-	@cd templates; docker build --force-rm -f Dockerfile.workshop --label org.opencontainers.image.version=${THEIA_DOCKER_IMAGE_VERSION} -t ${TEMPLATE_WORKSHOP}-theia:sha-${THEIA_DOCKER_IMAGE_VERSION} .
-	docker tag ${TEMPLATE_WORKSHOP}-theia:sha-${THEIA_DOCKER_IMAGE_VERSION} gcr.io/${GOOGLE_PROJECT_ID}/${TEMPLATE_WORKSHOP}-theia
-	docker image prune -f --filter label=stage=builder
-
-# Push a newly built theia image on docker.io and gcr.io
-push-template-workshop-theia: build-template-workshop-theia
-	docker push ${TEMPLATE_WORKSHOP}-theia:sha-${THEIA_DOCKER_IMAGE_VERSION}
-	docker push gcr.io/${GOOGLE_PROJECT_ID}/${TEMPLATE_WORKSHOP}-theia
 
 # Build backend docker images
 build-backend-docker-images:
