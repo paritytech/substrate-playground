@@ -1,0 +1,9 @@
+image: gcr.io/substrateplayground-252112/jeluard/substrate-playground-template-recipes-theia:sha-2a64a7b
+name: Node template
+description: '## The Node template you know and love'
+runtime:
+  ports:
+    - name: wss
+      protocol: TCP
+      path: /wss
+      port: 9944
