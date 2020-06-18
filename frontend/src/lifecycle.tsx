@@ -139,7 +139,8 @@ function lifecycle(history, location) {
             } else {
               const params = new URLSearchParams(location.search);
               params.delete("deploy");
-              history.push(`/${result}?${params.toString()}`);
+              const query = params.toString();
+              history.push(`/${result}${query !== "" ? "?"+query  : ""}`);
             }
           },
           onError: {
