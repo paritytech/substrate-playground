@@ -339,6 +339,7 @@ export function TheiaInstance({ history, uuid }) {
                 const reason = state?.waiting?.reason;
                 if (reason === "ErrImagePull" || reason === "ImagePullBackOff") {
                     setData({type: "ERROR", value: state?.waiting?.message, action: () => setData({})});
+                    return;
                 }
             }
 

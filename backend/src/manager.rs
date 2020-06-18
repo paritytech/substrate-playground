@@ -94,6 +94,10 @@ impl Manager {
                         Ok(details) => {
                             let phase =
                                 phase(&details.pod).unwrap_or_else(|| "Unknown".to_string());
+                            // Deployed instances are removed from the set
+                            // Additionally the deployment time is tracked
+                            // TODO: failed deployment should be removed and tracked
+                            // TODO: after a predefined threshold a deployment is assumed to be failed
                             if phase != "Pending" && phase != "Unknown" {
                                 instances2.remove(user_uuid);
                                 if let Some(duration) = elapsed(&details.pod) {
