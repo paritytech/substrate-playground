@@ -337,7 +337,7 @@ export function TheiaInstance({ history, uuid }) {
             } else if (phase == "Pending") {
                 const state = result?.pod?.details?.status?.containerStatuses[0].state;
                 const reason = state?.waiting?.reason;
-                if (reason === "ErrImagePull") {
+                if (reason === "ErrImagePull" || reason === "ImagePullBackOff") {
                     setData({type: "ERROR", value: state?.waiting?.message, action: () => setData({})});
                 }
             }
