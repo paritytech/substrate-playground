@@ -42,6 +42,7 @@ jobs:
           add_git_labels: true
           tag_with_ref: true
           tag_with_sha: true
+
       - uses: docker/build-push-action@v1
         with:
           username: oauth2accesstoken
@@ -54,8 +55,21 @@ jobs:
           add_git_labels: true
           tag_with_ref: true
           tag_with_sha: true
+
       - run: echo ::set-output name=sha::sha-${GITHUB_SHA::7}
         id: env
+
+      - name: Update Dockerfile.template base image
+        run: sed -i '' "s/:sha-[^. ]* /:${{ steps.env.outputs.sha }} /g" templates/Dockerfile.template
+
+      - uses: EndBug/add-and-commit@v4
+        with:
+          message: ":bookmark: update base template image"
+          add: "templates/Dockerfile.template"
+          tag: ${{ steps.env.outputs.sha }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Create Release
         uses: actions/create-release@v1
         with:

@@ -1,5 +1,5 @@
 # TODO update the sha from other build steps
-FROM jeluard/substrate-playground-template-theia-base@sha256:6c4c0389d1f91a7debcd8bea74f33bd8a8ae3612bea60e1c985c273ccd96a52d as theia-base
+FROM jeluard/substrate-playground-template-theia-base:sha-138dece as theia-base
 
 # Will be replaced by the image remotely built
 FROM %IMAGE%
