@@ -16,6 +16,7 @@ import Divider from '@material-ui/core/Divider';
 import FeedbackIcon from '@material-ui/icons/Feedback';
 import HelpIcon from '@material-ui/icons/Help';
 import IconButton from '@material-ui/core/IconButton';
+import Link from '@material-ui/core/Link';
 import List from '@material-ui/core/List';
 import ListItem from '@material-ui/core/ListItem';
 import ListItemText from '@material-ui/core/ListItemText';
@@ -28,6 +29,7 @@ import TableRow from '@material-ui/core/TableRow';
 import Toolbar from '@material-ui/core/Toolbar';
 import Paper from '@material-ui/core/Paper';
 import Typography from '@material-ui/core/Typography';
+import { makeStyles, createStyles, Theme } from '@material-ui/core/styles';
 import marked from 'marked';
 import { useLocation, useParams } from "react-router-dom";
 import Zoom from '@material-ui/core/Zoom';
@@ -409,9 +411,20 @@ function Nav({ toggleDetails }) {
     );
 }
 
+const useStyles = makeStyles((theme: Theme) =>
+  createStyles({
+    root: {
+      '& > * + *': {
+        marginLeft: theme.spacing(2),
+      },
+    },
+  }),
+);
+
 function TemplateSelector({templates, onSelect, onRetryClick, state}) {
     const [selection, select] = useState(templates[0]);
     const templatesAvailable = templates?.length > 0;
+    const classes = useStyles();
     return (
     <React.Fragment>
         <Typography variant="h5" style={{padding: 20}}>Select a template</Typography>
@@ -428,9 +441,22 @@ function TemplateSelector({templates, onSelect, onRetryClick, state}) {
                     </List>
                     <Divider flexItem={true} orientation={"vertical"} light={true} />
                     {selection &&
-                    <Typography component="div" style={{width: "100%", marginLeft: 20, overflow: "auto", textAlign: "left"}}>
-                        <div dangerouslySetInnerHTML={{__html:marked(selection.description)}}></div>
-                    </Typography>}
+                    <div style={{flex: 1, marginLeft: 20, paddingRight: 20, overflow: "auto", textAlign: "left"}}>
+                        <Typography>
+                            <span dangerouslySetInnerHTML={{__html:marked(selection.description)}}></span>
+                        </Typography>
+                        <Divider orientation={"horizontal"} light={true} />
+                        <Typography className={classes.root} variant="overline">
+                            Built using the following
+                            <Link
+                                href={`https://${selection.image}`}
+                                rel="noreferrer"
+                                variant="inherit"
+                                style={{margin: 5}}>
+                            image
+                            </Link>
+                        </Typography>
+                    </div>}
                 </div>
                 : <ErrorMessage reason={"Can't find any template. Is the templates configuration incorrect."} onClick={onRetryClick} />
             }
