@@ -60,7 +60,7 @@ jobs:
         id: env
 
       - name: Update Dockerfile.template base image
-        run: sed -i '' "s/:sha-[^. ]* /:${{ steps.env.outputs.sha }} /g" templates/Dockerfile.template
+        run: sed -i '' -e "s/:sha-[^. ]* /:${{ steps.env.outputs.sha }} /g" templates/Dockerfile.template
 
       - uses: EndBug/add-and-commit@v4
         with:
