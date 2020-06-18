@@ -376,10 +376,10 @@ export function TheiaPanel({ history }) {
         <>
             <InstanceController instances={instances} />
             <div style={{display: "flex", flex: 1}}>
-                <TheiaInstance uuid={uuid} />
+                <TheiaInstance history={history} uuid={uuid} />
             </div>
         </>
-        : <TheiaInstance uuid={uuid} />
+        : <TheiaInstance history={history} uuid={uuid} />
     }
     </div>
     );
