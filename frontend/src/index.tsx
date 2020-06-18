@@ -22,7 +22,7 @@ function App() {
         <div>
           <Switch>
             <Route exact path={"/"} component={MainPanel} />
-            <Route path={"/tutorial"} component={TutorialPanel} />
+            <Route exact path={"/tutorial"} component={TutorialPanel} />
             <Route exact path={"/controller"} component={ControllerPanel} />
             <Route path={"/:uuid"} component={TheiaPanel} />
           </Switch>
