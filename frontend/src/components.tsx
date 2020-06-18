@@ -334,12 +334,17 @@ export function TheiaInstance({ history, uuid }) {
                     setData({type: "SUCCESS", url: url});
                     return;
                 }
+            } else if (phase == "Pending") {
+                const state = result?.pod?.details?.status?.containerStatuses[0].state;
+                const reason = state?.waiting?.reason;
+                if (reason === "ErrImagePull") {
+                    setData({type: "ERROR", value: state?.waiting?.message, action: () => setData({})});
+                }
             }
 
             const retry = data.retry ?? 0;
             if (retry < maxRetries) {
                 setTimeout(() => setData({type: "LOADING", phase: phase, retry: retry + 1}), 1000);
-                
             } else if (retry == maxRetries) {
                 setData({type: "ERROR", value: "Couldn't access the theia instance in time", action: () => setData({})});
             }
