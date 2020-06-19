@@ -6,6 +6,9 @@ on:
       - develop
     paths-ignore:
       - 'README.md'
+      - '.github/workflows/ci-**'
+      - '.github/workflows/cd-staging-base-templates.yml'
+      - '.github/workflows/cd-staging-templates.yml'
       - 'docs/**'
       - 'conf/k8s/overlays/**/templates/**'
       - 'conf/k8s/overlays/production'
