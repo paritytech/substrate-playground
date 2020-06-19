@@ -83,7 +83,7 @@ jobs:
         with:
           message: ":bookmark: update template version for ${{ github.event.client_payload.id }}"
           add: conf/k8s/overlays/staging/templates/${{ github.event.client_payload.id }}
-          tag: ${{ steps.env.outputs.sha }}
+          tag: templates-${{ steps.env.outputs.sha }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -93,7 +93,7 @@ jobs:
       - name: Create Release
         uses: actions/create-release@v1
         with:
-          tag_name: ${{ steps.env.outputs.sha }}
+          tag_name: templates-${{ steps.env.outputs.sha }}
           release_name: Release ${{ steps.env.outputs.sha }}
           body: |
             Released ${{ steps.env.outputs.image }}

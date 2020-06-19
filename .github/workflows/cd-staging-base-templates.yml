@@ -96,7 +96,7 @@ jobs:
         with:
           message: ":bookmark: update base template image"
           add: "templates/Dockerfile.template"
-          tag: ${{ steps.env.outputs.sha }}
+          tag: base-templates-${{ steps.env.outputs.sha }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -115,7 +115,7 @@ jobs:
       - name: Create Release
         uses: actions/create-release@v1
         with:
-          tag_name: ${{ steps.env.outputs.sha }}
+          tag_name: base-templates-${{ steps.env.outputs.sha }}
           release_name: ${{ steps.env.outputs.sha }}
           body: |
             Base templates release:
