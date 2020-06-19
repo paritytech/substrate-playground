@@ -3,6 +3,7 @@ name: Continuous Integration Templates
 on:
   pull_request:
     paths:
+      - '.github/workflows/ci-templates.yml'
       - 'templates/**'
 
 jobs:
