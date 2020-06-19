@@ -43,6 +43,11 @@ jobs:
           tag_with_ref: true
           tag_with_sha: true
 
+# TODO
+# Inform all dependents repos that the base image is updated via a PR
+# Needs to have local repo access to remote repos
+# See https://github.com/paritytech/substrate-playground/issues/145
+
       - uses: docker/build-push-action@v1
         with:
           username: oauth2accesstoken
@@ -69,6 +74,18 @@ jobs:
           tag: ${{ steps.env.outputs.sha }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+# TODO
+# Rebuild all templates
+# Need to iterate all templates in conf/k8s/overlays/staging/templates
+# And access the right image
+#
+#    - name: Trigger playground inclusion
+#      uses: peter-evans/repository-dispatch@v1
+#      with:
+#        token: ${{ secrets.REPO_ACCESS_TOKEN }}
+#        event-type: template-updated
+#        client-payload: '{"id": "TO_FILL", "image": "TO_FILL"}'
 
       - name: Create Release
         uses: actions/create-release@v1
