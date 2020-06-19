@@ -335,11 +335,14 @@ export function TheiaInstance({ history, uuid }) {
                     return;
                 }
             } else if (phase == "Pending") {
-                const state = result?.pod?.details?.status?.containerStatuses[0].state;
-                const reason = state?.waiting?.reason;
-                if (reason === "ErrImagePull" || reason === "ImagePullBackOff") {
-                    setData({type: "ERROR", value: state?.waiting?.message, action: () => setData({})});
-                    return;
+                const containerStatuses = result?.pod?.details?.status?.containerStatuses;
+                if (containerStatuses?.length > 1) {
+                    const state = containerStatuses[0].state;
+                    const reason = state?.waiting?.reason;
+                    if (reason === "ErrImagePull" || reason === "ImagePullBackOff") {
+                        setData({type: "ERROR", value: state?.waiting?.message, action: () => setData({})});
+                        return;
+                    }
                 }
             }
 
