@@ -1,5 +1,5 @@
 # TODO update the sha from other build steps
-FROM gcr.io/substrateplayground-252112/jeluard/substrate-playground-template-theia-base:sha-2ff0d86 as theia-base
+FROM paritytech/substrate-playground-template-theia-base:sha-307263c as theia-base
 
 # Will be replaced by the image remotely built
 FROM %IMAGE%

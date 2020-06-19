@@ -19,7 +19,7 @@ else
 endif
 
 GKE_REGION=us-central1
-DOCKER_USERNAME=jeluard
+DOCKER_USERNAME=paritytech
 PLAYGROUND_BACKEND_API_DOCKER_IMAGE_NAME=${DOCKER_USERNAME}/substrate-playground-backend-api
 PLAYGROUND_BACKEND_UI_DOCKER_IMAGE_NAME=${DOCKER_USERNAME}/substrate-playground-backend-ui
 TEMPLATE_BASE=${DOCKER_USERNAME}/substrate-playground-template-base
@@ -67,7 +67,6 @@ build-template-base:
 # Push a newly built theia image on docker.io and gcr.io
 push-template-base: build-template-base
 	docker push ${TEMPLATE_BASE}:sha-${THEIA_DOCKER_IMAGE_VERSION}
-	docker push gcr.io/${GOOGLE_PROJECT_ID}/${TEMPLATE_BASE}
 
 build-template-theia-base:
 	$(eval THEIA_DOCKER_IMAGE_VERSION=$(shell git rev-parse --short HEAD))
@@ -78,7 +77,6 @@ build-template-theia-base:
 # Push a newly built theia image on docker.io and gcr.io
 push-template-theia-base: build-template-theia-base
 	docker push ${TEMPLATE_THEIA_BASE}:sha-${THEIA_DOCKER_IMAGE_VERSION}
-	docker push gcr.io/${GOOGLE_PROJECT_ID}/${TEMPLATE_THEIA_BASE}
 
 # Build backend docker images
 build-backend-docker-images:

@@ -50,7 +50,7 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
           dockerfile: Dockerfile.theia
-          repository: jeluard/substrate-playground-template-${{ github.event.client_payload.id }}-theia
+          repository: paritytech/substrate-playground-template-${{ github.event.client_payload.id }}-theia
           tags: latest
           add_git_labels: true
           tag_with_ref: true

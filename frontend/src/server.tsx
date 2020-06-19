@@ -20,7 +20,7 @@ dsfds dsfdsf dsf dsf dsf dsf dsf dsf dsfdsf dsf ds fds fdsf ds fds fds
 ## erez`;
 const runtime = {env: [{name: "SOME_ENV", value: "1234"}], ports: [{name: "web", protocol: "TCP", path: "/", port: 123, target: 123}]};
 const build = {base: "", extensions: [{name: "", value: ""}], repositories: [{name: "", value: ""}], commands: [{name: "", run: "", working_directory: ""}]};
-const template = {image: "gcr.io/substrateplayground-252112/jeluard/substrate-playground-template-base@sha256:0b3ec9ad567d0f5b0eed8a0fc2b1fa3fe1cca24cc02416047d71f83770b05e34", name: "Node Template", description: description, runtime: runtime, build: build}
+const template = {image: "paritytech/substrate-playground-template-base@sha256:0b3ec9ad567d0f5b0eed8a0fc2b1fa3fe1cca24cc02416047d71f83770b05e34", name: "Node Template", description: description, runtime: runtime, build: build}
 const url = "http://www.google.fr";
 const pod = {version: "1.23", details: {status: {phase: "Running", startTime: "2020-05-15T14:06:18Z"}}};
 const uuid = "1234";
