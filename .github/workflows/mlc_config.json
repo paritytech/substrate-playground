@@ -1,4 +1,7 @@
 {
     "ignorePatterns": [
+        {
+            "pattern": "^http://localhost:1234"
+        }
     ]
 }
