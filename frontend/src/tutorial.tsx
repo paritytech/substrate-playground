@@ -137,7 +137,7 @@ function VerticalLinearStepper({ uuid }) {
           </Stepper>
           {steps && (activeStep === steps.length) && (
             <Paper square elevation={0} className={classes.resetContainer}>
-              <Typography>Congrats, you're done!</Typography>
+              <Typography>Congrats, you&apos;re done!</Typography>
               <Button onClick={handleReset} className={classes.button}>
                 Restart
               </Button>

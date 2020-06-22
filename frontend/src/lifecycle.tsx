@@ -158,7 +158,7 @@ function lifecycle(history, location) {
         on: { [restart]: setup }
       }
   }
-})};
+})}
 
 export function useLifecycle(history, location) {
     return useMachine(lifecycle(history, location), { devTools: true });
