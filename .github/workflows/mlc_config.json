@@ -5,12 +5,6 @@
         },
         {
             "pattern": "^http://localhost:8001"
-        },
-        {
-            "pattern": "^/frontend"
-        },
-        {
-            "pattern": "^/backend"
         }
     ]
 }
