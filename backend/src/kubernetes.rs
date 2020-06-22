@@ -12,8 +12,7 @@ use k8s_openapi::apimachinery::pkg::{apis::meta::v1::ObjectMeta, util::intstr::I
 use kube::{
     api::{Api, DeleteParams, ListParams, Meta, PostParams},
     config::KubeConfigOptions,
-    Client,
-    Config,
+    Client, Config,
 };
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::{collections::BTreeMap, error::Error};
