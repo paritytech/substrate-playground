@@ -14,6 +14,8 @@ A staging environment is also available at [playground-staging.substrate.dev](ht
 
 ## Support
 
+Documentation can be found at [paritytech.github.io/substrate-playground/](https://paritytech.github.io/substrate-playground/) (and its source [here](./docs/))
+
 ## Roadmap
 
 ## Contributing
