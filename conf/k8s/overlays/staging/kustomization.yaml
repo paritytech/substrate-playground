@@ -12,9 +12,9 @@ resources:
 
 images:
 - name: gcr.io/substrateplayground-252112/jeluard/substrate-playground-backend-api
-  newTag: sha-f84aff5
+  newTag: sha-a6f62be
 - name: gcr.io/substrateplayground-252112/jeluard/substrate-playground-backend-ui
-  newTag: sha-f84aff5
+  newTag: sha-a6f62be
 
 patches:
 - patch: |-
