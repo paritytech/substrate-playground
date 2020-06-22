@@ -1,10 +1,13 @@
 name: Build Book
 
 on:
-  pull_request:
+  push:
     branches:
     - master
     - develop
+    paths:
+    - '.github/workflows/book.yml'
+    - 'docs/**'
 
 jobs:
   build-and-publish-book:
