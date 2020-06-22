@@ -113,20 +113,6 @@ gcloud compute addresses delete playground --global
 ```
 
 
------------------------------------
-
-
-Setup Ingress NGinx on GKE
-
-See https://kubernetes.github.io/ingress-nginx/deploy/#gce-gke
-
-kubectl create clusterrolebinding cluster-admin-binding \
-  --clusterrole cluster-admin \
-  --user $(gcloud config get-value account)
-
-kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/static/mandatory.yaml
-
-kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/static/provider/cloud-generic.yaml
 
 # Make sure k8s 1,14 is used
 
@@ -138,26 +124,3 @@ Should have an address
 kubectl port-forward playground-8586574b76-j7qbx 8080:80
 kubectl config set-context --current --namespace=playground-staging
 kubectl get pods
-
-https://devopscube.com/setup-prometheus-monitoring-on-kubernetes/
-https://github.com/bibinwilson/kubernetes-prometheus/blob/master/prometheus-deployment.yaml
-https://cloud.google.com/solutions/monitoring-apps-running-on-multiple-gke-clusters-using-prometheus-and-stackdriver
-https://kubernetes.io/docs/tasks/configure-pod-container/configure-pod-configmap/
-
-https://stackoverflow.com/questions/47066021/how-to-get-a-list-of-immutable-identifier-digest-from-a-docker-image
-https://success.docker.com/article/images-tagging-vs-digests
-https://maori.geek.nz/how-to-digest-a-docker-image-ca9fc7630b71
-https://artsy.github.io/blog/2018/09/10/Dockerhub-Stamping-Commits/
-https://blog.scottlowe.org/2017/11/08/how-tag-docker-images-git-commit-information/
-
-https://github.com/Stackdriver/stackdriver-prometheus-sidecar
-https://github.com/kubernetes/kube-state-metrics
-https://github.com/tomaka/redshirt/blob/master/.github/workflows/node-deploy.yml
-https://github.com/paritytech/substrate/blob/master/frame/recovery/src/lib.rs
-https://prometheus.io/docs/prometheus/latest/configuration/configuration/
-https://cloud.google.com/monitoring/kubernetes-engine/prometheus
-https://cloud.google.com/monitoring/kubernetes-engine/installing
-https://kubernetes.github.io/ingress-nginx/user-guide/monitoring/
-https://cloud.google.com/monitoring/kubernetes-engine/observing
-https://docs.gitlab.com/ee/user/project/integrations/prometheus_library/nginx_ingress.html
-https://grafana.com/grafana/dashboards/9909

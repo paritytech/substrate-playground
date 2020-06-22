@@ -2,6 +2,15 @@
     "ignorePatterns": [
         {
             "pattern": "^http://localhost:1234"
+        },
+        {
+            "pattern": "^http://localhost:8001"
+        },
+        {
+            "pattern": "^/frontend"
+        },
+        {
+            "pattern": "^/backend"
         }
     ]
 }

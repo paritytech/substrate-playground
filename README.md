@@ -24,7 +24,7 @@ Hack from the confort of your laptop.
 
 ### Deployment
 
-Playground is a set of containerized apps deployed on a kubernetes cluster. Fear not, it's quite simple to [deploy](docs/deployment.md) it!
+Playground is a set of containerized apps deployed on a kubernetes cluster. Fear not, it's quite simple to [deploy](docs/DEPLOYMENT.md) it!
 
 ## License
 
