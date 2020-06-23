@@ -56,3 +56,5 @@ RUN cargo install --force --git https://github.com/alexcrichton/wasm-gc \
     && cargo install substrate-deps
 
 WORKDIR /home/substrate/workspace
+
+ONBUILD ADD --chown=substrate . .
