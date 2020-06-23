@@ -28,7 +28,7 @@ RUN chmod g+rw /home && \
     chown -R substrate:substrate /home/substrate;
 
 # Pick up the version from https://rust-lang.github.io/rustup-components-history/index.html
-ARG RUST_VERSION=nightly-2020-03-11
+ARG RUST_VERSION=nightly-2020-06-21
 
 ENV HOME=/home/substrate \
     WORKSPACE=/home/substrate/workspace \
@@ -38,8 +38,7 @@ ENV HOME=/home/substrate \
     SHELL=/bin/bash \
     THEIA_DEFAULT_PLUGINS=local-dir:/home/theia/theia-playground/plugins \
     USE_LOCAL_GIT=true \
-    HOST=0.0.0.0 \
-    VSCODE_API_VERSION=1.44.0
+    HOST=0.0.0.0
 
 USER substrate
 
