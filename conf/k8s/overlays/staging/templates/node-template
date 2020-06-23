@@ -1,4 +1,4 @@
-image: gcr.io/substrateplayground-252112/jeluard/substrate-playground-template-node-template-theia:sha-a70d68e
+image: gcr.io/substrateplayground-252112/jeluard/substrate-playground-template-node-template-theia:sha-7d92741
 name: Node template
 description: '## The Node template you know and love'
 runtime:
