@@ -1,5 +1,5 @@
 # TODO update the sha from other build steps
-FROM paritytech/substrate-playground-template-theia-base:sha-dc51eff as theia-base
+FROM paritytech/substrate-playground-template-theia-base:sha-ac4bc53 as theia-base
 
 # Will be replaced by the image remotely built
 FROM %IMAGE%
