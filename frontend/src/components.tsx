@@ -223,7 +223,7 @@ function InstanceController({instances}) {
                 onChange={handleChange}
                 >
                 {commands.filter(({id, label}) => id && label && label != "").map(({id, label}, index) =>
-                     return <MenuItem key={id} value={id}>{label}</MenuItem>;
+                     <MenuItem key={id} value={id}>{label}</MenuItem>
                 )}
                 </Select>
             </FormControl>
