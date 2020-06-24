@@ -207,7 +207,7 @@ function InstanceController({instances}) {
             return (
                 <li key={index}>
                     <div>{value[0]}</div>
-                    <Checkbox checked={selectedInstance?.uuid == value[0]} onChange={async () => await selectInstance(value[1])}></button>
+                    <Checkbox checked={selectedInstance?.uuid == value[0]} onChange={async () => await selectInstance(value[1])}></Checkbox>
                 </li>
             );
         })}
