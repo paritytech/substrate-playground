@@ -26,6 +26,8 @@ module.exports = {
     ],
     "rules": {
         "no-unused-vars": "warn",
+        "no-irregular-whitespace": "warn",
+        "no-fallthrough": "warn",
         "react/prop-types": "warn",
     },
     "settings": {

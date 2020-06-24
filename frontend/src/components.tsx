@@ -662,16 +662,18 @@ startTime: "2020-05-18T17:15:20Z"
 
 function WrappedContent({ state, content }) {
     switch(state?.type) {
-        case "ERROR":
+        case "ERROR": {
             const { value, action } = state;
             return (
             <Container style={{display: "flex", alignItems: "center"}}>
                 <ErrorMessage reason={value || "Unknown error"} onClick={action} />
             </Container>
             );
-        case "LOADING":
+        }
+        case "LOADING": {
             const { phase, retry } = state;
             return <Loading phase={phase} retry={retry} />;
+        }
         default:
             return <>{content}</>;
     }
