@@ -102,7 +102,7 @@ export class Responder {
         this.#instanceChannel.onmessageerror = console.error;
     }
 
-    setStatus(online: boolean;): void {
+    setStatus(online: boolean): void {
         this.online = online;
     }
 
