@@ -12,8 +12,8 @@ title = "Playground"
 additional-js = [
 ]
 
-[output.linkcheck]
-follow-web-links = true
-warning-policy = "warn"
-exclude = [
-]
+#[output.linkcheck]
+#follow-web-links = true
+#warning-policy = "warn"
+#exclude = [
+#]
