@@ -23,6 +23,9 @@ jobs:
     - name: Setup mdBook
       uses: peaceiris/actions-mdbook@v1
 
+    - name: Install linkcheck
+      run: cargo install mdbook-linkcheck
+
     - name: Build Book
       run: mdbook build
       working-directory: ./docs
