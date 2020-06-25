@@ -14,7 +14,7 @@
     "@material-ui/icons": "4.9.1",
     "@material-ui/lab": "4.0.0-alpha.56",
     "@xstate/react": "0.8.1",
-    "history": "4.10.1",
+    "history": "5.0.0",
     "marked": "1.1.0",
     "react": "16.13.1",
     "react-dom": "16.13.1",
