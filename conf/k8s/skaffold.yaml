@@ -1,0 +1,14 @@
+apiVersion: skaffold/v2beta5
+kind: Config
+metadata:
+  name: playground-skaffold
+build:
+  artifacts:
+  - image: paritytech/substrate-playground-backend-api
+    context: ../../backend
+  - image: paritytech/substrate-playground-backend-ui
+    context: ../../frontend
+deploy:
+  kustomize:
+    paths:
+    - overlays/dev
