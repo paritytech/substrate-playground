@@ -1,10 +1,11 @@
+
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: templates
 data:
   recipes: |
-    image: gcr.io/substrateplayground-252112/jeluard/substrate-playground-template-recipes-theia:sha-3fbbcfe
+    image: paritytech/substrate-playground-template-recipes-theia:sha-3fbbcfe
     name: Recipes
     description: '## A Hands-On Cookbook for Aspiring Blockchain Chefs
 

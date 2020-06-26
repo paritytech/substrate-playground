@@ -7,8 +7,10 @@ import CircularProgress from '@material-ui/core/CircularProgress';
 import Paper from '@material-ui/core/Paper';
 import Typography from '@material-ui/core/Typography';
 import marked from 'marked';
+import { useHistory, useLocation } from "react-router-dom";
+import { useLifecycle } from './lifecycle';
 import { Container } from "@material-ui/core";
-import { deployInstance, getUserDetails } from "./api";
+import { deployInstance } from "./api";
 import { startNode } from "./commands";
 import { TheiaInstance } from "./components";
 import { Discoverer } from "./connect";
@@ -192,28 +194,34 @@ function Media() {
   );
 }
 
+function login(): void {
+  window.location.href = '/api/login/github';
+}
+
 export function TutorialPanel() {
+    const location = useLocation();
+    const history = useHistory();
+    const [state, send] = useLifecycle(history, location);
     const [instanceUUID, setInstanceUUID] = useState(null);
+    const user = state.context.details?.user;
+
     useEffect(() => {
         async function fetchData() {
-            const { result, error } = await getUserDetails(localStorage.getItem("userUUID"));
-            if (error) {
-                // This instance doesn't exist
-                return;
-            }
-
+            /*
             const instance = result[0];
             if (instance?.template?.name == template) {
               // TODO handle errors
               setInstanceUUID(instance.instance_uuid);
             }
+            TODO
+            */
         }
 
         fetchData();
       }, []);
 
     async function createInstance() {
-        const {result, error} = await deployInstance(localStorage.getItem("userUUID"), template);
+        const {result, error} = await deployInstance(template);
         if (result) {
           setInstanceUUID(result);
         }
@@ -229,7 +237,9 @@ export function TutorialPanel() {
           <Cartouche>
               <Container style={{display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center"}}>
                   <Typography>Want to give it a try?</Typography>
-                  <Button onClick={createInstance}>GO</Button>
+                  {user
+                  ? <Button onClick={createInstance}>GO</Button>
+                  : <Button onClick={login}>LOGIN</Button>}
               </Container> 
           </Cartouche>
           }

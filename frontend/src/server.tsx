@@ -79,4 +79,5 @@ export function intercept({noInstance = true, delay = 100}: {noInstance?: boolea
       result: uuid,
     });
   });
+  server.get('https://github.com/login').passthrough();
 }

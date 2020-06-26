@@ -32,6 +32,16 @@ spec:
             value: "normal"
           - name: ROCKET_ADDRESS
             value: "0.0.0.0"
+          - name: GITHUB_CLIENT_ID
+            valueFrom:
+              configMapKeyRef:
+                name: config
+                key: github.clientId
+          - name: GITHUB_CLIENT_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: secrets
+                key: github.clientSecret
         resources:
           requests:
             memory: "256Mi"

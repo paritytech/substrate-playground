@@ -105,12 +105,12 @@ fn create_pod(
     annotations.insert(TEMPLATE_ANNOTATION.to_string(), template.to_string());
 
     Ok(Pod {
-        metadata: Some(ObjectMeta {
+        metadata: ObjectMeta {
             name: Some(pod_name(instance_uuid)),
             labels: Some(labels),
             annotations: Some(annotations),
             ..Default::default()
-        }),
+        },
         spec: Some(PodSpec {
             containers: vec![Container {
                 name: format!("{}-container", COMPONENT_VALUE),
@@ -157,11 +157,11 @@ fn create_service(instance_uuid: &str, template: &Template) -> Service {
     };
 
     Service {
-        metadata: Some(ObjectMeta {
+        metadata: ObjectMeta {
             name: Some(service_name(instance_uuid)),
             labels: Some(labels),
             ..Default::default()
-        }),
+        },
         spec: Some(ServiceSpec {
             type_: Some("NodePort".to_string()),
             selector: Some(selectors),
@@ -210,7 +210,7 @@ async fn config() -> Result<Config, String> {
         .map_err(error_to_string)
 }
 
-async fn get_config_map(
+pub async fn get_config_map(
     client: Client,
     namespace: &str,
     name: &str,
@@ -263,7 +263,7 @@ impl InstanceDetails {
     }
 
     fn url(engine: Engine, instance_uuid: String) -> String {
-        format!("https://{}.{}", instance_uuid, engine.host)
+        format!("//{}.{}", instance_uuid, engine.host)
     }
 }
 
@@ -275,6 +275,12 @@ pub struct PodDetails {
     pub version: Option<String>,
     pub revision: Option<String>,
     pub details: Pod,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct PlaygroundDetails {
+    pub github_client_id: Option<String>,
+    pub pod: PodDetails,
 }
 
 impl Default for PodDetails {
@@ -319,26 +325,23 @@ impl Engine {
     }
 
     fn pod_to_instance(self, pod: &Pod) -> Result<InstanceDetails, String> {
-        let (user_uuid, instance_uuid, template) = pod
-            .metadata
-            .as_ref()
-            .and_then(|md| {
-                Some((
-                    md.labels.clone()?.get(OWNER_LABEL)?.to_string(),
-                    md.labels.clone()?.get(INSTANCE_LABEL)?.to_string(),
-                    md.annotations
-                        .clone()?
-                        .get(TEMPLATE_ANNOTATION)?
-                        .to_string(),
-                ))
-            })
-            .ok_or("Metadata unavailable")?;
-
+        let labels = pod.metadata.labels.clone().ok_or("no labels")?;
         Ok(InstanceDetails::new(
             self.clone(),
-            user_uuid,
-            instance_uuid,
-            &Template::parse(&template)?,
+            labels.get(OWNER_LABEL).ok_or("no owner label")?.to_string(),
+            labels
+                .get(INSTANCE_LABEL)
+                .ok_or("no instance label")?
+                .to_string(),
+            &Template::parse(
+                &pod.metadata
+                    .annotations
+                    .clone()
+                    .ok_or("no annotations")?
+                    .get(TEMPLATE_ANNOTATION)
+                    .ok_or("no template annotation")?
+                    .to_string(),
+            )?,
             Self::pod_to_details(self, pod)?,
         ))
     }
@@ -392,6 +395,7 @@ impl Engine {
         let config = config().await?;
         let client = Client::new(config);
         let pod_api: Api<Pod> = Api::namespaced(client, &self.namespace);
+        // TODO should err if non existing user?
         let pods = list_by_selector(&pod_api, Engine::owner_selector(user_uuid)).await?;
 
         Ok(pods

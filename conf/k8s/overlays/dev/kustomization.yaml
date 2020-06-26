@@ -27,3 +27,14 @@ patches:
     kind: Ingress
     name: ingress
     version: v1beta1
+
+configMapGenerator:
+  - name: config
+    literals:
+    - github.clientId=dd81163290c118582a1a
+
+secretGenerator:
+  - name: secrets
+    literals:
+    # Safe as it is used for a .test TLD (can't be registered)
+    - github.clientSecret=abdcf38dd290429b98f43074d010b989cf970461
