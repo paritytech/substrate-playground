@@ -45,14 +45,6 @@ clean-backend:
 clean: clean-frontend clean-backend
 	@:
 
-## Local development
-
-dev-frontend:
-	cd frontend; yarn && yarn watch
-
-dev-backend:
-	cd backend; ln -sf ../frontend/dist static; RUST_BACKTRACE=1 cargo run
-
 ## Docker images
 
 ### Images tags follow https://github.com/opencontainers/image-spec/blob/master/annotations.md
@@ -128,6 +120,9 @@ k8s-update-playground-version:
 	$(eval PLAYGROUND_DOCKER_IMAGE_VERSION=$(shell git rev-parse --short HEAD))
 	kustomize edit set image gcr.io/${GOOGLE_PROJECT_ID}/${PLAYGROUND_BACKEND_API_DOCKER_IMAGE_NAME}:sha-${PLAYGROUND_DOCKER_IMAGE_VERSION};
 	kustomize edit set image gcr.io/${GOOGLE_PROJECT_ID}/${PLAYGROUND_BACKEND_UI_DOCKER_IMAGE_NAME}:sha-${PLAYGROUND_DOCKER_IMAGE_VERSION};
+
+k8s-dev: k8s-assert
+	@cd conf/k8s; skaffold dev
 
 # Deploy playground on kubernetes
 k8s-deploy-playground: k8s-assert
