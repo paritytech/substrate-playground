@@ -14,8 +14,10 @@ resources:
 namespace: playground
 
 images:
-- name: gcr.io/substrateplayground-252112/jeluard/substrate-playground
-  digest: sha256:b33808b4ecbb92fdad85aec909a1702600bebdd7aeb1f744c35f522d62be7a0b
+- name: paritytech/substrate-playground-backend-api
+  newTag: sha-ae6a78e
+- name: paritytech/substrate-playground-backend-ui
+  newTag: sha-ae6a78e
 
 patches:
 - custom-load-balancer-ip.yaml
