@@ -117,6 +117,9 @@ k8s-update-playground-version:
 	kustomize edit set image ${PLAYGROUND_BACKEND_API_DOCKER_IMAGE_NAME}:sha-${PLAYGROUND_DOCKER_IMAGE_VERSION};
 	kustomize edit set image ${PLAYGROUND_BACKEND_UI_DOCKER_IMAGE_NAME}:sha-${PLAYGROUND_DOCKER_IMAGE_VERSION};
 
+k8s-dev: k8s-assert
+	@cd conf/k8s; skaffold dev
+
 # Deploy playground on kubernetes
 k8s-deploy-playground: k8s-assert
 	kustomize build conf/k8s/overlays/${ENVIRONMENT}/ | kubectl apply --record -f -
