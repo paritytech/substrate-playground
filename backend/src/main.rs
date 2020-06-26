@@ -7,9 +7,12 @@ mod manager;
 mod metrics;
 mod template;
 
+use crate::api::GitHubUserInfo;
 use crate::manager::Manager;
+use rocket::fairing::AdHoc;
 use rocket::{config::Environment, http::Method, routes};
 use rocket_cors::{AllowedOrigins, CorsOptions};
+use rocket_oauth2::{HyperSyncRustlsAdapter, OAuth2, OAuthConfig, StaticProvider};
 use rocket_prometheus::PrometheusMetrics;
 use std::{env, error::Error};
 
@@ -40,26 +43,44 @@ async fn main() -> Result<(), Box<dyn Error>> {
     .to_cors()?;
 
     log::info!("Running in {:?} mode", Environment::active()?);
-    let key = "GITHUB_SHA";
-    match env::var(key) {
-        Ok(val) => println!("Version {:?}", val),
-        Err(e) => println!("Can't access {}: {}", key, e),
-    }
+    let version = env::var("GITHUB_SHA")?;
+    println!("Version {:?}", version);
 
     let manager = Manager::new().await?;
+
+    let client_id = env::var("GITHUB_CLIENT_ID")?;
+    let client_secret = env::var("GITHUB_CLIENT_SECRET")?;
+
     manager.clone().spawn_background_thread();
     let prometheus = PrometheusMetrics::with_registry(manager.clone().metrics.create_registry()?);
     let error = rocket::ignite()
         .attach(prometheus.clone())
         .attach(cors)
+        .attach(AdHoc::on_attach("github", |rocket| {
+            let config = OAuthConfig::new(
+                StaticProvider {
+                    auth_uri: "https://github.com/login/oauth/authorize".into(),
+                    token_uri: "https://github.com/login/oauth/access_token".into(),
+                },
+                client_id,
+                client_secret,
+                None,
+            );
+            Ok(rocket.attach(OAuth2::<GitHubUserInfo>::custom(
+                HyperSyncRustlsAdapter,
+                config,
+            )))
+        }))
         .mount(
             "/api",
             routes![
                 api::deploy,
                 api::get,
-                api::get_instance,
-                api::get_templates,
-                api::list,
+                api::get_logged,
+                api::get_user_instance,
+                api::github_login,
+                api::logout,
+                api::post_install_callback,
                 api::undeploy
             ],
         )

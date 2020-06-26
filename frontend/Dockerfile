@@ -1,4 +1,4 @@
-# The main playground Dockerfile. Runs the `backend`, serving on port 80 the `frontend` (under /) and the associated API (undre /api)
+# Dockerfile for `frontend`. Compiles the frontend then serve it via nginx on port 80.
 #
 # A multi-stage docker image (https://docs.docker.com/develop/develop-images/multistage-build/)
 # Based on https://github.com/bjornmolin/rust-minimal-docker
@@ -7,20 +7,24 @@
 #         Frontend       #
 ##########################
 
-FROM node:alpine AS builder
+FROM node:14.4.0-alpine3.10 AS builder
 
 WORKDIR /opt
 
-COPY . .
+COPY package.json yarn.lock tsconfig.json .eslintrc.js /opt/
 
 ARG GITHUB_SHA
 ENV GITHUB_SHA=$GITHUB_SHA
 
-ENV PARCEL_WORKERS=1
+ENV CI=true \
+    PARCEL_WORKERS=1
 
-RUN apk add --no-cache --virtual .gyp \
-    && yarn clean && yarn install && yarn build \
-    && apk del .gyp
+RUN yarn install --frozen-lockfile
+
+COPY src /opt/src
+COPY public /opt/public
+
+RUN yarn build
 
 LABEL stage=builder
 
@@ -28,7 +32,7 @@ LABEL stage=builder
 #          Nginx         #
 ##########################
 
-FROM nginx
+FROM nginx:1.19.0-alpine
 
 COPY ./conf/nginx.conf /etc/nginx/conf.d/default.conf
 

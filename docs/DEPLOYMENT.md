@@ -26,7 +26,7 @@ Deploy on GKE:
 ```
 kubectl config use-context gke_substrateplayground-252112_us-central1-a_substrate-playground
 kubectl config set-context --current --namespace=playground-staging
-PLAYGROUND_DOCKER_IMAGE_VERSION="jeluard/substrate-playground@_VERSION_" make k8s-deploy-playground
+PLAYGROUND_DOCKER_IMAGE_VERSION="paritytech/substrate-playground@_VERSION_" make k8s-deploy-playground
 ```
 
 ## Clusters

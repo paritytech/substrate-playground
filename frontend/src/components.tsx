@@ -2,13 +2,14 @@ import React, { useEffect, useRef, useState } from "react";
 import { useSpring, animated } from 'react-spring'
 import { Alert, AlertTitle } from '@material-ui/lab';
 import AppBar from '@material-ui/core/AppBar';
+import Avatar from '@material-ui/core/Avatar';
+import Badge from '@material-ui/core/Badge';
 import Button from '@material-ui/core/Button';
 import Box from '@material-ui/core/Box';
 import Card from '@material-ui/core/Card';
 import CardContent from '@material-ui/core/CardContent';
 import Checkbox from '@material-ui/core/Checkbox';
 import Dialog from '@material-ui/core/Dialog';
-import DialogActions from '@material-ui/core/DialogActions';
 import DialogContent from '@material-ui/core/DialogContent';
 import DialogContentText from '@material-ui/core/DialogContentText';
 import DialogTitle from '@material-ui/core/DialogTitle';
@@ -34,21 +35,26 @@ import marked from 'marked';
 import { useHistory, useLocation, useParams } from "react-router-dom";
 import Zoom from '@material-ui/core/Zoom';
 import Fade from '@material-ui/core/Fade';
-import { TransitionProps } from '@material-ui/core/transitions';
 import { Container } from "@material-ui/core";
-import { getInstanceDetails } from "./api";
+import { getInstanceDetails, logout } from "./api";
 import { startNode, openFile, gotoLine, cursorMove } from "./commands";
 import { Discoverer, Responder } from "./connect";
 import { useHover, useInterval, useWindowMaxDimension } from './hooks';
-import { useLifecycle, deploy, deploying, failed, initial, restart, setup, stop, stopping } from './lifecycle';
+import { useLifecycle, deploy, deploying, failed, logged, restart, setup, stop, stopping } from './lifecycle';
 import { fetchWithTimeout, navigateToInstance, navigateToHomepage } from "./utils";
 
 import InputLabel from '@material-ui/core/InputLabel';
+import Menu from '@material-ui/core/Menu';
 import MenuItem from '@material-ui/core/MenuItem';
 import FormControl from '@material-ui/core/FormControl';
 import Select from '@material-ui/core/Select';
 
-export function Background({state}: {state: string}) {
+//https://playground-staging.substrate.dev/login-callback?error=redirect_uri_mismatch&error_description=The+redirect_uri+MUST+match+the+registered+callback+URL+for+this+application.&error_uri=https%3A%2F%2Fdeveloper.github.com%2Fapps%2Fmanaging-oauth-apps%2Ftroubleshooting-authorization-request-errors%2F%23redirect-uri-mismatch&state=secret123
+function githubAuthorizationURL(): string {
+    return '/api/login/github';
+}
+
+export function Background({ state }: { state: string }) {
     const preloading = state == "PRELOADING";
     const loading = state == "LOADING";
     const blurFactor = preloading ? 0 : 10;
@@ -64,41 +70,41 @@ export function Background({state}: {state: string}) {
 
     return (
         <React.Fragment>
-            <div className="box-bg box-fullscreen bg-screen" style={{filter: `blur(${blurFactor}px)`}}></div>
+            <div className="box-bg box-fullscreen bg-screen" style={{ filter: `blur(${blurFactor}px)` }}></div>
             <div className="box-bg box-fullscreen">
-                <div id="svgBox" className="box-svg" data-state={preloading ? 2 : 1} style={{width: dimension, height: dimension}}>
+                <div id="svgBox" className="box-svg" data-state={preloading ? 2 : 1} style={{ width: dimension, height: dimension }}>
                     <svg id="svg" width={dimension} height={dimension} viewBox="0 0 1535 1535" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M0 483.5H1535" stroke="#C4C4C4" strokeWidth="120"/>
-                        <path d="M0 820H1535" stroke="#DBDCDC" strokeWidth="120"/>
-                        <path d="M0 1363.5H1535" stroke="#DBDCDC" strokeWidth="120"/>
-                        <path d="M0 130.5H1535" stroke="#FF1864"/>
-                        <path d="M0 249.5H1535" stroke="#C4C4C4"/>
-                        <path d="M0 397.5H1535" stroke="#FF1864"/>
-                        <path d="M0 513.5H1535" stroke="#000000"/>
-                        <path d="M0 620.5H1535" stroke="#C4C4C4"/>
-                        <path d="M0 688.5H1535" stroke="#6E6E6E"/>
-                        <path d="M0 756.5H1535" stroke="#FF1864"/>
-                        <path d="M0 921.5H1535" stroke="#C4C4C4"/>
-                        <path d="M0 850H1535" stroke="#FF1864"/>
-                        <path d="M0 1097.5H1535" stroke="#000000"/>
-                        <path d="M0 1196.5H1535" stroke="#C4C4C4"/>
-                        <path d="M0 1253.5H1535" stroke="#FF1864"/>
-                        <path d="M0 1273.5H1535" stroke="#FF1864"/>
-                        <path d="M0 1293.5H1535" stroke="#C4C4C4"/>
+                        <path d="M0 483.5H1535" stroke="#C4C4C4" strokeWidth="120" />
+                        <path d="M0 820H1535" stroke="#DBDCDC" strokeWidth="120" />
+                        <path d="M0 1363.5H1535" stroke="#DBDCDC" strokeWidth="120" />
+                        <path d="M0 130.5H1535" stroke="#FF1864" />
+                        <path d="M0 249.5H1535" stroke="#C4C4C4" />
+                        <path d="M0 397.5H1535" stroke="#FF1864" />
+                        <path d="M0 513.5H1535" stroke="#000000" />
+                        <path d="M0 620.5H1535" stroke="#C4C4C4" />
+                        <path d="M0 688.5H1535" stroke="#6E6E6E" />
+                        <path d="M0 756.5H1535" stroke="#FF1864" />
+                        <path d="M0 921.5H1535" stroke="#C4C4C4" />
+                        <path d="M0 850H1535" stroke="#FF1864" />
+                        <path d="M0 1097.5H1535" stroke="#000000" />
+                        <path d="M0 1196.5H1535" stroke="#C4C4C4" />
+                        <path d="M0 1253.5H1535" stroke="#FF1864" />
+                        <path d="M0 1273.5H1535" stroke="#FF1864" />
+                        <path d="M0 1293.5H1535" stroke="#C4C4C4" />
 
-                        <path d="M0 938.5H1535" stroke="#000000"/>
-                        <path d="M0 738.5H1535" stroke="#FFFFFF"/>
-                        <path d="M0 338.5H1535" stroke="#FF1864"/>
+                        <path d="M0 938.5H1535" stroke="#000000" />
+                        <path d="M0 738.5H1535" stroke="#FFFFFF" />
+                        <path d="M0 338.5H1535" stroke="#FF1864" />
                     </svg>
                 </div>
             </div>
         </React.Fragment>);
 }
 
-export function ErrorMessage({reason, onClick}: {reason?: string, onClick: () => void}) {
+export function ErrorMessage({ reason, onClick }: { reason?: string, onClick: () => void }) {
     return (
-        <Alert severity="error" style={{flex: 1, padding: 20, alignItems: "center"}}
-                action={<Button onClick={onClick}>TRY AGAIN</Button>}>
+        <Alert severity="error" style={{ flex: 1, padding: 20, alignItems: "center" }}
+            action={<Button onClick={onClick}>TRY AGAIN</Button>}>
             <AlertTitle>Oops! Looks like something went wrong :(</AlertTitle>
             <Box component="span" display="block">{reason}</Box>
         </Alert>
@@ -116,7 +122,7 @@ const loadingPhrases = [
     'The blaffs rub against the chumbles',
     'That leaves you with a regular old plumbus!']
 
-function Phase( {value}: {value: string}) {
+function Phase({ value }: { value: string }) {
     switch (value) {
         case "Pending":
             return <div>Deploying image</div>;
@@ -126,19 +132,19 @@ function Phase( {value}: {value: string}) {
     return null;
 }
 
-export function Loading({phase, retry = 0}: {phase?: string, retry?: number}) {
+export function Loading({ phase, retry = 0 }: { phase?: string, retry?: number }) {
     const [phrase, setPhrase] = useState(loadingPhrases[0]);
-    const [props, set] = useSpring(() => ({opacity: 1}));
+    const [props, set] = useSpring(() => ({ opacity: 1 }));
 
     useInterval(() => {
         set({ opacity: 0 });
 
-        setTimeout(function(){ setPhrase(loadingPhrases[Math.floor(Math.random()*loadingPhrases.length)]); }, 500);
-        setTimeout(function(){ set({ opacity: 1 }); }, 1000);
+        setTimeout(function () { setPhrase(loadingPhrases[Math.floor(Math.random() * loadingPhrases.length)]); }, 500);
+        setTimeout(function () { set({ opacity: 1 }); }, 1000);
     }, 3000);
 
     return (
-        <div style={{display: "flex", flex: 1, justifyContent: "center", alignItems: "center", flexDirection: "column", textAlign: "center"}}>
+        <div style={{ display: "flex", flex: 1, justifyContent: "center", alignItems: "center", flexDirection: "column", textAlign: "center" }}>
             <Typography variant="h3">Please wait, because</Typography>
             <animated.h1 style={props}>{phrase}</animated.h1>
             {(retry > 10) &&
@@ -161,7 +167,7 @@ function useDiscovery() {
     return instances;
 }
 
-function InstanceController({instances}) {
+function InstanceController({ instances }) {
     const [selectedInstance, setInstance] = useState(null);
     const [commands, setCommands] = useState(null);
     const [command, setCommand] = useState(null);
@@ -225,42 +231,42 @@ function InstanceController({instances}) {
                 {commands.filter(({id, label}) => id && label && label != "").map(({id, label}, index) =>
                      <MenuItem key={id} value={id}>{label}</MenuItem>
                 )}
-                </Select>
-            </FormControl>
-            <Button style={{marginLeft: 40}} color="primary" variant="contained" disableElevation onClick={() => executeCommand(selectedInstance, command)}>EXECUTE</Button>
-        </div>
-        }
-        {selectedInstance &&
-        <>
-            <Button style={{marginTop: 10}} color="primary" variant="contained" disableElevation onClick={startNode}>START NODE</Button>
-            <div style={{marginTop: 10}}>
-                <Button color="primary" variant="contained" disableElevation onClick={gotoLine}>GOTO LINE</Button>
+                            </Select>
+                        </FormControl>
+                        <Button style={{ marginLeft: 40 }} color="primary" variant="contained" disableElevation onClick={() => executeCommand(selectedInstance, command)}>EXECUTE</Button>
+                    </div>
+                }
+                {selectedInstance &&
+                    <>
+                        <Button style={{ marginTop: 10 }} color="primary" variant="contained" disableElevation onClick={startNode}>START NODE</Button>
+                        <div style={{ marginTop: 10 }}>
+                            <Button color="primary" variant="contained" disableElevation onClick={gotoLine}>GOTO LINE</Button>
+                        </div>
+                        <div style={{ marginTop: 10 }}>
+                            <Button color="primary" variant="contained" disableElevation onClick={cursorMove}>CURSOR MOVE</Button>
+                        </div>
+                    </>}
             </div>
-            <div style={{marginTop: 10}}>
-                <Button color="primary" variant="contained" disableElevation onClick={cursorMove}>CURSOR MOVE</Button>
-            </div>
-        </>}
-    </div>
-    );
+        );
     } else {
         return (
-        <div style={{flex: 1, display: "flex", alignItems: "center", justifyContent: "center"}}>
-            <Typography variant="h6">
-                No instance detected
+            <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <Typography variant="h6">
+                    No instance detected
             </Typography>
-        </div>
+            </div>
         );
     }
 }
 
 function useQuery() {
-  return new URLSearchParams(useLocation().search);
+    return new URLSearchParams(useLocation().search);
 }
 
 export function ControllerPanel() {
     const instances = useDiscovery();
     return (
-        <div style={{display: "flex", height: "100vh"}}>
+        <div style={{ display: "flex", height: "100vh" }}>
             <InstanceController instances={instances} />
         </div>
     );
@@ -268,9 +274,12 @@ export function ControllerPanel() {
 
 export function TheiaInstance({ uuid }) {
     const maxRetries = 5*60;
+    const location = useLocation();
     const history = useHistory();
+    const [state, send] = useLifecycle(history, location);
+    const details = state.context.details;
     const ref = useRef();
-    const [data, setData] = useState({type: "LOADING"});
+    const [data, setData] = useState({ type: "LOADING" });
 
     useEffect(() => {
         const responder = new Responder(uuid, (o) => {
@@ -320,10 +329,10 @@ export function TheiaInstance({ uuid }) {
 
     useEffect(() => {
         async function fetchData() {
-            const { result, error } = await getInstanceDetails(localStorage.getItem("userUUID"), uuid);
+            const { result, error } = await getInstanceDetails(uuid);
             if (error) {
                 // This instance doesn't exist
-                setData({type: "ERROR", value: "Couldn't locate the theia instance", action: () => navigateToHomepage(history)});
+                setData({ type: "ERROR", value: "Couldn't locate the theia instance", action: () => navigateToHomepage(history) });
                 return;
             }
 
@@ -331,8 +340,8 @@ export function TheiaInstance({ uuid }) {
             if (phase == "Running") {
                 // Check URL is fine
                 const url = result.url;
-                if((await fetchWithTimeout(url)).ok) {
-                    setData({type: "SUCCESS", url: url});
+                if ((await fetchWithTimeout(url)).ok) {
+                    setData({ type: "SUCCESS", url: url });
                     return;
                 }
             } else if (phase == "Pending") {
@@ -341,7 +350,7 @@ export function TheiaInstance({ uuid }) {
                     const state = containerStatuses[0].state;
                     const reason = state?.waiting?.reason;
                     if (reason === "ErrImagePull" || reason === "ImagePullBackOff" || reason === "InvalidImageName") {
-                        setData({type: "ERROR", value: state?.waiting?.message, action: () => navigateToHomepage(history)});
+                        setData({ type: "ERROR", value: state?.waiting?.message, action: () => navigateToHomepage(history) });
                         return;
                     }
                 }
@@ -349,21 +358,21 @@ export function TheiaInstance({ uuid }) {
 
             const retry = data.retry ?? 0;
             if (retry < maxRetries) {
-                setTimeout(() => setData({type: "LOADING", phase: phase, retry: retry + 1}), 1000);
+                setTimeout(() => setData({ type: "LOADING", phase: phase, retry: retry + 1 }), 1000);
             } else if (retry == maxRetries) {
-                setData({type: "ERROR", value: "Couldn't access the theia instance in time", action: () => navigateToHomepage(history)});
+                setData({ type: "ERROR", value: "Couldn't access the theia instance in time", action: () => navigateToHomepage(history) });
             }
         }
 
         if (data.type != "ERROR" && data.type != "SUCCESS") {
             fetchData();
         }
-      }, [data, uuid]);
+    }, [data, uuid]);
 
-    if(data.type == "SUCCESS") {
+    if (data.type == "SUCCESS") {
         return <iframe ref={ref} src={data.url} frameBorder="0" width="100%" height="100%"></iframe>
     } else {
-        return <Wrapper state={data} />
+        return <Wrapper send={send} details={details} state={data} />
     }
 }
 
@@ -377,7 +386,7 @@ export function TheiaPanel() {
     useEffect(() => {
         const onlyInstance = instances.length == 1 ? instances[0] : null;
         if (onlyInstance && files) {
-            decodeURIComponent(files).split(",").forEach(file => openFile(onlyInstance[1], {type: "URI", data: file}));
+            decodeURIComponent(files).split(",").forEach(file => openFile(onlyInstance[1], { type: "URI", data: file }));
         }
     }, [instances]);
 
@@ -397,24 +406,70 @@ export function TheiaPanel() {
     );
 }
 
-function Nav({ toggleDetails }) {
+function login(): void {
+    window.location.href = githubAuthorizationURL();
+}
+
+function Nav({ send, details, toggleDetails }) {
+    const user = details?.user;
+    const [anchorEl, setAnchorEl] = React.useState(null);
+    const open = Boolean(anchorEl);
+    const handleMenu = (event) => {
+        setAnchorEl(event.currentTarget);
+      };
+    
+      const handleClose = () => {
+        setAnchorEl(null);
+      };
     return (
         <AppBar position="fixed">
-            <Toolbar style={{justifyContent: "space-between"}}>
+            <Toolbar style={{ justifyContent: "space-between" }}>
                 <Typography variant="h6">
                     Playground
                 </Typography>
-                <div>
+                <div style={{display: "flex", alignItems: "center"}}>
                     <IconButton
                         onClick={() => window.open("https://docs.google.com/forms/d/e/1FAIpQLSdXpq_fHqS_ow4nC7EpGmrC_XGX_JCIRzAqB1vaBtoZrDW-ZQ/viewform?edit_requested=true")}
                     >
                         <FeedbackIcon />
                     </IconButton>
                     <IconButton
-                        onClick={ toggleDetails }
+                        onClick={toggleDetails}
                     >
                         <HelpIcon />
                     </IconButton>
+                    {user != null
+                        ? <div style={{paddingLeft: 12}}>
+                            <IconButton
+                                aria-label="account of current user"
+                                aria-controls="menu-appbar"
+                                aria-haspopup="true"
+                                onClick={handleMenu}
+                                color="inherit"
+                            >
+                                <Badge color="secondary" variant="dot" invisible={!user.parity}>
+                                    <Avatar alt={user.username} src={user.avatar} />
+                                </Badge>
+                            </IconButton>
+                            <Menu
+                                id="menu-appbar"
+                                anchorEl={anchorEl}
+                                anchorOrigin={{
+                                vertical: 'top',
+                                horizontal: 'right',
+                                }}
+                                keepMounted
+                                transformOrigin={{
+                                vertical: 'top',
+                                horizontal: 'right',
+                                }}
+                                open={open}
+                                onClose={handleClose}
+                            >
+                                <MenuItem onClick={async () => {handleClose(); await logout(); send(restart)}}>LOGOUT</MenuItem>
+                            </Menu>
+                        </div>
+                        : <Button onClick={login}>LOGIN</Button>}
                 </div>
             </Toolbar>
         </AppBar>
@@ -422,16 +477,16 @@ function Nav({ toggleDetails }) {
 }
 
 const useStyles = makeStyles((theme: Theme) =>
-  createStyles({
-    root: {
-      '& > * + *': {
-        marginLeft: theme.spacing(2),
-      },
-    },
-  }),
+    createStyles({
+        root: {
+            '& > * + *': {
+                marginLeft: theme.spacing(2),
+            },
+        },
+    }),
 );
 
-function TemplateSelector({templates, onSelect, onRetryClick, state}) {
+function TemplateSelector({templates, onSelect, onRetryClick, state, user}) {
     const publicTemplates = templates.filter(t => t.public);
     const [selection, select] = useState(publicTemplates[0]);
     const templatesAvailable = templates?.length > 0;
@@ -460,88 +515,88 @@ function TemplateSelector({templates, onSelect, onRetryClick, state}) {
                         <Typography className={classes.root} variant="overline">
                             Built using the following
                             <Link
-                                href={`https://${selection.image}`}
-                                rel="noreferrer"
-                                variant="inherit"
-                                style={{margin: 5}}>
-                            image
+                                        href={`https://${selection.image}`}
+                                        rel="noreferrer"
+                                        variant="inherit"
+                                        style={{ margin: 5 }}>
+                                        image
                             </Link>
-                        </Typography>
-                    </div>}
-                </div>
-                : <ErrorMessage reason={"Can't find any template. Is the templates configuration incorrect."} onClick={onRetryClick} />
-            }
-        </Container>
-        <Divider orientation="horizontal" />
-        <Container style={{display: "flex", flexDirection: "column", alignItems: "flex-end", paddingTop: 10, paddingBottom: 10}}>
-            <Button onClick={() => onSelect(selection.id)} color="primary" variant="contained" disableElevation disabled={!templatesAvailable || state.matches(failed)}>
-                Create
-            </Button>
-        </Container>
-    </React.Fragment>
+                                </Typography>
+                            </div>}
+                    </div>
+                    : <ErrorMessage reason={"Can't find any template. Is the templates configuration incorrect."} onClick={onRetryClick} />
+                }
+            </Container>
+            <Divider orientation="horizontal" />
+            <Container style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", paddingTop: 10, paddingBottom: 10 }}>
+                <Button onClick={() => onSelect(selection.id)} color="primary" variant="contained" disableElevation disabled={user == null || (!templatesAvailable || state.matches(failed))}>
+                    Create
+                </Button>
+            </Container>
+        </React.Fragment>
     );
 }
 
-function EnvTable({envs}) {
+function EnvTable({ envs }) {
     return (
-    <TableContainer component={Paper}>
-        <Table size="small" aria-label="a dense table">
-          <TableHead>
-            <TableRow>
-              <TableCell>Name</TableCell>
-              <TableCell align="right">Value</TableCell>
-            </TableRow>
-          </TableHead>
-          {envs &&
-            <TableBody>
-            {envs.map((env) => (
-              <TableRow key={env.name}>
-                <TableCell component="th" scope="row">
-                    {env.name}
-                </TableCell>
-                <TableCell align="right">{env.value}</TableCell>
-              </TableRow>
-            ))}
-            </TableBody>
-          }
-        </Table>
-      </TableContainer>
+        <TableContainer component={Paper}>
+            <Table size="small" aria-label="a dense table">
+                <TableHead>
+                    <TableRow>
+                        <TableCell>Name</TableCell>
+                        <TableCell align="right">Value</TableCell>
+                    </TableRow>
+                </TableHead>
+                {envs &&
+                    <TableBody>
+                        {envs.map((env) => (
+                            <TableRow key={env.name}>
+                                <TableCell component="th" scope="row">
+                                    {env.name}
+                                </TableCell>
+                                <TableCell align="right">{env.value}</TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                }
+            </Table>
+        </TableContainer>
     );
 }
 
-function PortsTable({ports}) {
+function PortsTable({ ports }) {
     return (
-    <TableContainer component={Paper}>
-        <Table size="small" aria-label="a dense table">
-          <TableHead>
-            <TableRow>
-              <TableCell>Name</TableCell>
-              <TableCell>Path</TableCell>
-              <TableCell>Value</TableCell>
-            </TableRow>
-          </TableHead>
-          {ports &&
-            <TableBody>
-            {ports.map((port) => (
-                <TableRow key={port.name}>
-                <TableCell component="th" scope="row">
-                    {port.name}
-                </TableCell>
-                <TableCell>{port.path}</TableCell>
-                <TableCell>{port.port}</TableCell>
-                </TableRow>
-            ))}
-            </TableBody>
-          }
-        </Table>
-      </TableContainer>
+        <TableContainer component={Paper}>
+            <Table size="small" aria-label="a dense table">
+                <TableHead>
+                    <TableRow>
+                        <TableCell>Name</TableCell>
+                        <TableCell>Path</TableCell>
+                        <TableCell>Value</TableCell>
+                    </TableRow>
+                </TableHead>
+                {ports &&
+                    <TableBody>
+                        {ports.map((port) => (
+                            <TableRow key={port.name}>
+                                <TableCell component="th" scope="row">
+                                    {port.name}
+                                </TableCell>
+                                <TableCell>{port.path}</TableCell>
+                                <TableCell>{port.port}</TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                }
+            </Table>
+        </TableContainer>
     );
 }
 
-function InstanceDetails({instance}) {
-    const {instance_uuid, pod, template} = instance;
-    const {name, runtime} = template;
-    const {env, ports} = runtime;
+function InstanceDetails({ instance }) {
+    const { instance_uuid, pod, template } = instance;
+    const { name, runtime } = template;
+    const { env, ports } = runtime;
     const status = pod?.details?.status;
     const containerStatuses = status?.containerStatuses;
     let reason;
@@ -551,35 +606,35 @@ function InstanceDetails({instance}) {
     }
 
     return (
-    <Card style={{ margin: 20, alignSelf: "baseline"}} variant="outlined">
-        <CardContent>
-            <Typography>
-            {name} ({instance_uuid})
-            </Typography>
-            {status?.startTime &&
-            <Typography color="textSecondary" gutterBottom>
-            Started at {status?.startTime}
-            </Typography>
-            }
-            <Typography color="textSecondary" gutterBottom>
-            Phase: <em>{status?.phase}</em> {reason && `(${reason})`}
-            </Typography>
-            <div style={{display: "flex", paddingTop: 20}}>
-                <div style={{flex: 1, paddingRight: 10}}>
-                    <Typography variant="h6" id="tableTitle" component="div">
-                    Environment
-                    </Typography>
-                    <EnvTable envs={env} />
+        <Card style={{ margin: 20, alignSelf: "baseline" }} variant="outlined">
+            <CardContent>
+                <Typography>
+                    {name} ({instance_uuid})
+                </Typography>
+                {status?.startTime &&
+                <Typography color="textSecondary" gutterBottom>
+                Started at {status?.startTime}
+                </Typography>
+                }
+                <Typography color="textSecondary" gutterBottom>
+                Phase: <em>{status?.phase}</em> {reason && `(${reason})`}
+                </Typography>
+                <div style={{display: "flex", paddingTop: 20}}>
+                    <div style={{flex: 1, paddingRight: 10}}>
+                        <Typography variant="h6" id="tableTitle" component="div">
+                        Environment
+                        </Typography>
+                        <EnvTable envs={env} />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                        <Typography variant="h6" id="tableTitle" component="div">
+                            Ports
+                        </Typography>
+                        <PortsTable ports={ports} />
+                    </div>
                 </div>
-                <div style={{flex: 1}}>
-                    <Typography variant="h6" id="tableTitle" component="div">
-                    Ports
-                    </Typography>
-                    <PortsTable ports={ports} />
-                </div>
-            </div>
-        </CardContent>
-    </Card>
+            </CardContent>
+        </Card>
     );
 }
 
@@ -604,9 +659,9 @@ function ExistingInstances({instances, onStopClick, onConnectClick}) {
                 <Button onClick={() => onConnectClick(instance)} disabled={status?.phase != "Running"} color="primary" variant="contained" disableElevation>
                     Connect
                 </Button>
-            </div>
-        </Container>
-    </React.Fragment>
+                </div>
+            </Container>
+        </React.Fragment>
     );
 }
 
@@ -621,49 +676,55 @@ export function MainPanel({ history, location }) {
         return () => discoverer.close();
     }, []);
 
-    const {instances, templates} = state.context;
-
-    /* TODO show all instances, with specific UI
-message: "The node was low on resource: memory. Container theia-container was using 2367104Ki, which exceeds its request of 90Mi. "
-phase: "Failed"
-reason: "Evicted"
-startTime: "2020-05-18T17:15:20Z"
-    */
+    const details = state.context.details;
 
     function gstate() {
-        if (state.matches(setup) || state.matches(stopping) || state.matches(deploying)) {
-            return {type: "LOADING"};
+        if (state.matches(setup) || state.matches(stopping) || state.matches(deploying)) {
+            return { type: "LOADING" };
         } else if (state.matches(failed)) {
-            return {type: "ERROR", value: state.context.error,  action: () => send(restart)};
+            
+            return { type: "ERROR", value: state.context.error, action: () => send(restart) };
         } else if (isHovered) {
-            return {type: "PRELOADING"};
+            return { type: "PRELOADING" };
         } else {
-            if (!(instances?.length + templates?.length > 0)) {
-                return {type: "ERROR", value: "No templates", action: () => send(restart)};
+            if (details?.instances?.length + details?.templates?.length == 0) {
+                return { type: "ERROR", value: "No templates", action: () => send(restart) };
             }
         }
     }
 
     function content() {
-        if (state.matches(initial)) {
-            if (instances?.length > 0) {
-                return <ExistingInstances onConnectClick={(instance) => navigateToInstance(history, instance.instance_uuid)} onStopClick={(instance) => send(stop, {instance: instance})} instances={instances} />;
+        if (state.matches(logged)) {
+            if (details?.instances?.length > 0) {
+                return <ExistingInstances onConnectClick={(instance) => navigateToInstance(history, instance.instance_uuid)} onStopClick={(instance) => send(stop, {instance: instance})} instances={details.instances} />;
+            } else if (details) {
+                return <TemplateSelector state={state} user={details.user} templates={details.templates} onRetryClick={() => send(restart)} onSelect={(template) => send(deploy, { template: template })} onErrorClick={() => send(restart)} />;
             } else {
-                return <TemplateSelector state={state} templates={templates} onRetryClick={() => send(restart)} onSelect={(template) => send(deploy, {template: template})} onErrorClick={() => send(restart)} />;
+                return (
+                <Container style={{display: "flex", flex: 1, padding: 0, alignItems: "center", justifyContent: "center", flexDirection: "column"}}>
+                    <Typography variant="h3">
+                        You must be logged to use Playground
+                    </Typography>
+                    <div>
+                    Please <Button onClick={login} color="primary" variant="contained" disableElevation>LOGIN</Button>
+                    </div>
+                </Container>);
             }
+        } else {
+            return <div>Unknown state: ${state.value}</div>;
         }
     }
 
     const conten = content();
     return (
-        <div style={{display: "flex", width: "100vw", height: "100vh"}}>
-            <Wrapper details={state?.context?.details} state={gstate()}>
+        <div style={{ display: "flex", width: "100vw", height: "100vh" }}>
+            <Wrapper send={send} details={details} state={gstate()}>
                 {conten &&
-                <Container style={{display: "flex", justifyContent: "center", alignItems: "center", height: "100vh"}}>
-                    <Paper ref={hoverRef} style={{display: "flex", flexDirection: "column", height: "60vh", width: "60vw"}} elevation={3}>
-                    {conten}
-                    </Paper>
-                </Container>
+                    <Container style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>
+                        <Paper ref={hoverRef} style={{ display: "flex", flexDirection: "column", height: "60vh", width: "60vw" }} elevation={3}>
+                            {conten}
+                        </Paper>
+                    </Container>
                 }
             </Wrapper>
         </div>
@@ -675,9 +736,9 @@ function WrappedContent({ state, content }) {
         case "ERROR": {
             const { value, action } = state;
             return (
-            <Container style={{display: "flex", alignItems: "center"}}>
-                <ErrorMessage reason={value || "Unknown error"} onClick={action} />
-            </Container>
+                <Container style={{ display: "flex", alignItems: "center" }}>
+                    <ErrorMessage reason={value || "Unknown error"} onClick={action} />
+                </Container>
             );
         }
         case "LOADING": {
@@ -690,32 +751,32 @@ function WrappedContent({ state, content }) {
 }
 
 // state: PRELOADING, LOADING, ERROR (message, action) {type: value:}
-export function Wrapper({ details, state, children }) {
+export function Wrapper({ send, details, state, children }) {
     const [showDetails, setDetails] = useState(false);
-    function toggleDetails() {setDetails(!showDetails);}
+    function toggleDetails() { setDetails(!showDetails); }
     const type = state?.type;
     return (
-    <>
-        <Background state={type} />
+        <>
+            <Background state={type} />
 
-        <Dialog open={showDetails} onClose={toggleDetails}>
-            <DialogTitle>Playground</DialogTitle>
-            <DialogContent>
-                <DialogContentText id="alert-dialog-description">
-                    Version: {details?.version}
-                </DialogContentText>
-                <DialogContentText id="alert-dialog-description">
-                    Started at: {details?.details?.status?.startTime}
-                </DialogContentText>
-            </DialogContent>
-        </Dialog>
+            <Dialog open={showDetails} onClose={toggleDetails}>
+                <DialogTitle>Playground</DialogTitle>
+                <DialogContent>
+                    <DialogContentText id="alert-dialog-description">
+                        Version: {details?.version}
+                    </DialogContentText>
+                    <DialogContentText id="alert-dialog-description">
+                        Started at: {details?.details?.status?.startTime}
+                    </DialogContentText>
+                </DialogContent>
+            </Dialog>
 
-        <Nav toggleDetails={toggleDetails} />
+            <Nav send={send} details={details} toggleDetails={toggleDetails} />
 
-        <Fade in appear>
-            <WrappedContent state={state} content={children} />
-        </Fade>
+            <Fade in appear>
+                <WrappedContent state={state} content={children} />
+            </Fade>
 
-    </>
+        </>
     );
 }

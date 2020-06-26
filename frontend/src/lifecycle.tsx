@@ -1,16 +1,11 @@
 import { useMachine } from '@xstate/react';
-import { v4 as uuidv4 } from 'uuid';
 import { assign, Machine } from 'xstate';
-import { deployInstance, getDetails, getInstanceDetails, getTemplates, getUserDetails, stopInstance } from './api';
+import { deployInstance, getDetails, getInstanceDetails, stopInstance } from './api';
 import { navigateToInstance } from './utils';
-
-const key = "userUUID";
-const userUUID = localStorage.getItem(key) || uuidv4();
-localStorage.setItem(key, userUUID);
 
 export interface Context {
   details?: object,
-  userUUID: string;
+  authToken?: string,
   instanceUUID?: string;
   instanceURL?: string;
   instances?: Array<string>;
@@ -22,7 +17,7 @@ export interface Context {
 }
 
 export const setup = "@state/SETUP";
-export const initial = "@state/INITIAL";
+export const logged = "@state/LOGGED";
 export const deploying = "@state/DEPLOYING";
 export const stopping = "@state/STOPPING";
 export const failed = "@state/FAILED";
@@ -41,7 +36,6 @@ function lifecycle(history, location) {
   id: 'lifecycle',
   initial: setup,
   context: {
-    userUUID: userUUID,
     checkOccurences: 0,
     template: template,
   },
@@ -49,32 +43,30 @@ function lifecycle(history, location) {
       [setup]: {
         invoke: {
           src: (context, _event) => async (callback) =>  {
-            const response = (await getUserDetails(context.userUUID));
+            const response = (await getDetails());
             if (response.error) {
               throw response;
             }
 
-            const response2 = (await getTemplates());
-            if (response2.error) {
-              throw response2;
-            }
-
-            const response3 = (await getDetails());
-            if (response3.error) {
-              throw response3;
-            }
-
-            const instances = response.result;
-            const templates = response2.result;
-            if (context.template && instances?.length === 0) {
-              if (templates[context.template]) {
-                callback({type: deploy, template: context.template});
-              } else {
-                throw {error: `Unknown template ${context.template}`}
+            const res = response.result;
+            if (res) {
+              const templates = res.templates;
+              const template = context.template;
+              
+              if (template) {
+                if (templates[template]) {
+                  callback({type: deploy, template: template});
+                } else {
+                  throw {error: `Unknown template ${template}`}
+                }
               }
+              const indexedTemplates = Object.entries(templates).map(([k, v]) => {v["id"] = k; return v;});
+              const data = {details: { ...res, ...{templates: indexedTemplates } }};
+  
+              callback({type: check, data: data});
+            } else {
+              callback({type: check});
             }
-
-            callback({type: check, data: {details: response3.result, instances: instances, templates: Object.entries(templates).map(([k, v]) => {v["id"] = k; return v;})}});
           },
           onError: {
             target: failed,
@@ -84,13 +76,11 @@ function lifecycle(history, location) {
         on: {
           [deploy]: { target: deploying,
                       actions: assign({template: (_context, event) => event.template}) },
-          [check]: { target: initial,
-                     actions: assign({instances: (_context, event) => event.data.instances,
-                                      templates: (_context, event) => event.data.templates,
-                                      details: (_context, event) => event.data.details}) }
+          [check]: { target: logged,
+                     actions: assign({details: (_context, event) => event.data?.details}) }
         }
       },
-      [initial]: {
+      [logged]: {
         on: {[restart]: setup,
              [stop]: {target: stopping,
                       actions: assign({ instanceUUID: (_, event) => event.instance.instance_uuid})},
@@ -100,7 +90,7 @@ function lifecycle(history, location) {
       [stopping]: {
         invoke: {
           src: (context, event) => async (callback) => {
-            await stopInstance(context.userUUID, context.instanceUUID);
+            await stopInstance(context.instanceUUID);
             // Ignore failures, consider that this call is idempotent
 
             async function waitForRemoval(count: number) {
@@ -108,7 +98,7 @@ function lifecycle(history, location) {
                 callback({type: failure, error: "Failed to stop instance in time"});
               }
 
-              const { error } = await getInstanceDetails(context.userUUID, context.instanceUUID);
+              const { error } = await getInstanceDetails(context.instanceUUID);
               if (error) {
                 // The instance doesn't exist anymore, stopping is done
                 callback({type: success});
@@ -134,7 +124,7 @@ function lifecycle(history, location) {
       [deploying]: {
         invoke: {
           src: (context, _) => async (callback) => {
-            const {result, error} = await deployInstance(context.userUUID, context.template);
+            const {result, error} = await deployInstance(context.template);
             if (error != undefined) {
               callback({type: failure, error: error});
             } else {
