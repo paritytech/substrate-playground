@@ -21,7 +21,7 @@
     "react-router-dom": "5.2.0",
     "react-spring": "8.0.27",
     "uuid": "8.2.0",
-    "xstate": "4.10.0"
+    "xstate": "4.11.0"
   },
   "devDependencies": {
     "@pollyjs/adapter-fetch": "5.0.0",
