@@ -1,7 +1,6 @@
 # Update playground image
 
 * build and push new image (`make push-playground-docker-image`)
-* 
 * select right context (`ENVIRONMENT=staging make k8s-setup-gke`)
 * deploy on GKE (`ENVIRONMENT=staging make k8s-deploy-playground`)
 
@@ -9,6 +8,7 @@
 # Kubernetes
 
 Kubernetes is used as a deployment platform for the playground. It can be deployed on GCE or locally via minikube.
+(Make sure that k8s 1.14 is used)
 
 ## Setup
 
@@ -29,7 +29,7 @@ kubectl config set-context --current --namespace=playground-staging
 PLAYGROUND_DOCKER_IMAGE_VERSION="gcr.io/substrateplayground-252112/jeluard/substrate-playground@_VERSION_" make k8s-deploy-playground
 ```
 
-### Clusters
+## Clusters
 
 When switching / recreating clusters it might be necessary to refresh credentials:
 
@@ -67,17 +67,17 @@ kubectl get services playground-http
 
 Ensure that `playground-http` is correctly deployed by browsing its [events](https://console.cloud.google.com/kubernetes/service/us-central1-a/substrate-playground/default/playground-http?project=substrateplayground-252112&organizationId=939403632241&tab=events&duration=PT1H&pod_summary_list_tablesize=20&playground-http_events_tablesize=50)
 
-### TLS certificate
+## TLS certificate
 
 To get a wildcard certificate from let's encrypt (this applies to staging, replace `playground-staging` with `playground` for production env):
 
 https://certbot.eff.org/docs/using.html#manual
 
-First make sure that certbot is instalkled: `brew install certbot`
+First make sure that certbot is installed: `brew install certbot`
 
 Then request new challenges. Two DNS entries will have to be updated.
 
-For staging:
+### Staging
 
 ```
 sudo certbot certonly --manual --preferred-challenges dns --server https://acme-v02.api.letsencrypt.org/directory --manual-public-ip-logging-ok --agree-tos -m admin@parity.io -d *.playground-staging.substrate.dev -d playground-staging.substrate.dev
@@ -94,7 +94,24 @@ sudo kubectl create secret tls playground-tls --save-config --key /etc/letsencry
 
 The new secret will be auomatically picked up.
 
-### Update fixed IP
+### Production
+
+```
+sudo certbot certonly --manual --preferred-challenges dns --server https://acme-v02.api.letsencrypt.org/directory --manual-public-ip-logging-ok --agree-tos -m admin@parity.io -d *.playground.substrate.dev -d playground.substrate.dev
+
+# Make sure to check it's been propagated 
+dig -t txt +short _acme-challenge.playground.substrate.dev
+```
+
+Then update the tls secret:
+
+```
+sudo kubectl create secret tls playground-tls --save-config --key /etc/letsencrypt/live/playground.substrate.dev/privkey.pem --cert /etc/letsencrypt/live/playground.substrate.dev/cert.pem  --namespace=playground --dry-run -o yaml | sudo kubectl apply -f -
+```
+
+The new secret will be auomatically picked up.
+
+## Update fixed IP
 
 Make sure to use regional addresses, matching your cluster region. Global addresses won't work.
 
@@ -117,16 +134,3 @@ playground-staging        34.69.4.59      EXTERNAL                    us-central
 ```
 gcloud compute addresses delete playground --global
 ```
-
-
-
-# Make sure k8s 1,14 is used
-
-
-kubectl get ing ingress --namespace=playground-staging
-
-Should have an address
-
-kubectl port-forward playground-8586574b76-j7qbx 8080:80
-kubectl config set-context --current --namespace=playground-staging
-kubectl get pods
