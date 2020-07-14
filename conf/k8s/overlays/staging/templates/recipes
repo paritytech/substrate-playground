@@ -6,7 +6,7 @@ description: '## A Hands-On Cookbook for Aspiring Blockchain Chefs
   Contains some real nodes!
 
   '
-public: true
+public: false
 runtime:
   ports:
     - name: wss
