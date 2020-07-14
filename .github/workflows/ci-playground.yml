@@ -34,10 +34,12 @@ jobs:
     runs-on: ubuntu-latest
     if: "! contains(github.event.head_commit.message, '[CI Skip]')"
     steps:
-      # https://github.com/hecrj/setup-rust-action
-      - uses: hecrj/setup-rust-action@v1
+      # https://github.com/actions-rs/meta/
+      - uses: actions-rs/toolchain@v1
         with:
-          rust-version: nightly
+          profile: minimal
+          toolchain: nightly-2020-06-23
+          override: true
           components: rustfmt, clippy
       - uses: actions/checkout@v2
       - name: Check Formatting
