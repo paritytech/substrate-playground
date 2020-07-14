@@ -1,12 +1,9 @@
-name: Continuous Testing staging
+name: Continuous Testing Playground
 
 on:
   schedule:
     # * is a special character in YAML so you have to quote this string
     - cron:  '*/30 * * * *' # Every 30 minutes
-
-env:
-  ENVIRONMENT: staging
 
 # todo: tests website
 # tests all images
@@ -14,6 +11,9 @@ env:
 jobs:
   test:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        env: [staging, production]
     steps:
       # https://github.com/actions/checkout
       - uses: actions/checkout@v2
@@ -25,6 +25,8 @@ jobs:
       - name: Run tests
         run: yarn && yarn test
         working-directory: ./frontend
+        env:
+          ENVIRONMENT: ${{ matrix.env }}
 
       - if: ${{ failure() }}
         uses: s3krit/matrix-message-action@v0.0.2
