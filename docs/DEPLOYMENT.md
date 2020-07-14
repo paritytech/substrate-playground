@@ -83,12 +83,14 @@ Then request new challenges. Two DNS entries will have to be updated.
 sudo certbot certonly --manual --preferred-challenges dns --server https://acme-v02.api.letsencrypt.org/directory --manual-public-ip-logging-ok --agree-tos -m admin@parity.io -d *.playground-staging.substrate.dev -d playground-staging.substrate.dev
 
 # Make sure to check it's been propagated 
-dig -t txt +short _acme-challenge.playground-staging.substrate.dev
+dig +short TXT _acme-challenge.playground-staging.substrate.dev @ 8.8.8.8
 ```
 
 Then update the tls secret:
 
 ```
+gcloud container clusters get-credentials substrate-playground-staging --region us-central1-a
+ENVIRONMENT=staging make k8s-setup-gke
 sudo kubectl create secret tls playground-tls --save-config --key /etc/letsencrypt/live/playground-staging.substrate.dev/privkey.pem --cert /etc/letsencrypt/live/playground-staging.substrate.dev/cert.pem  --namespace=playground-staging --dry-run -o yaml | sudo kubectl apply -f -
 ```
 
@@ -100,12 +102,14 @@ The new secret will be auomatically picked up.
 sudo certbot certonly --manual --preferred-challenges dns --server https://acme-v02.api.letsencrypt.org/directory --manual-public-ip-logging-ok --agree-tos -m admin@parity.io -d *.playground.substrate.dev -d playground.substrate.dev
 
 # Make sure to check it's been propagated 
-dig -t txt +short _acme-challenge.playground.substrate.dev
+dig +short TXT _acme-challenge.playground.substrate.dev @ 8.8.8.8
 ```
 
 Then update the tls secret:
 
 ```
+gcloud container clusters get-credentials substrate-playground --region us-central1-a
+ENVIRONMENT=production make k8s-setup-gke
 sudo kubectl create secret tls playground-tls --save-config --key /etc/letsencrypt/live/playground.substrate.dev/privkey.pem --cert /etc/letsencrypt/live/playground.substrate.dev/cert.pem  --namespace=playground --dry-run -o yaml | sudo kubectl apply -f -
 ```
 
