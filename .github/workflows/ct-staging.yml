@@ -1,4 +1,4 @@
-name: Continuous Monitoring staging
+name: Continuous Testing staging
 
 on:
   schedule:
@@ -12,7 +12,7 @@ env:
 # tests all images
 # if fails, send riot message
 jobs:
-  monitor:
+  test:
     runs-on: ubuntu-latest
     steps:
       # https://github.com/actions/checkout
