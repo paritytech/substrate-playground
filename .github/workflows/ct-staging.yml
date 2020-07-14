@@ -1,0 +1,35 @@
+name: Continuous Monitoring staging
+
+on:
+  schedule:
+    # * is a special character in YAML so you have to quote this string
+    - cron:  '*/30 * * * *' # Every 30 minutes
+
+env:
+  ENVIRONMENT: staging
+
+# todo: tests website
+# tests all images
+# if fails, send riot message
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    steps:
+      # https://github.com/actions/checkout
+      - uses: actions/checkout@v2
+
+      - uses: actions/setup-node@v1
+
+      - uses: microsoft/playwright-github-action@v1
+
+      - name: Run tests
+        run: yarn && yarn test
+        working-directory: ./frontend
+
+      - if: ${{ failure() }}
+        uses: s3krit/matrix-message-action@v0.0.2
+        with:
+          room_id: ${{ secrets.MATRIX_ROOM_ID }}
+          access_token: ${{ secrets.MATRIX_ACCESS_TOKEN }}
+          message: "Integration tests failed"
+          server: "matrix.parity.io"

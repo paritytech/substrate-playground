@@ -7,6 +7,7 @@
     "dev": "parcel dev public/index.html",
     "watch": "parcel watch public/index.html",
     "build": "parcel build public/index.html && mkdir -p dist/assets/ && cp -R public/assets/* dist/assets/ && cp public/robots.txt dist/",
+    "test": "node test/index.js",
     "clean": "rm -rf node_modules/ dist/ .cache/ yarn.lock"
   },
   "dependencies": {
@@ -35,6 +36,7 @@
     "eslint": "6.8.0",
     "eslint-plugin-react": "7.20.3",
     "parcel-bundler": "1.12.4",
-    "typescript": "^3.9.6"
+    "playwright": "1.2.0",
+    "typescript": "3.9.6"
   }
 }

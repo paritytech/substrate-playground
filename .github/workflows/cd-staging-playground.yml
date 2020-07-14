@@ -110,6 +110,12 @@ jobs:
           ./kustomize build . | kubectl apply --record -f -
           kubectl get services -o wide
         working-directory: conf/k8s/overlays/staging
+      # TODO
+      # run e2e tests
+      # if ok, perform screenshots and attach
+      # if not, fails and rollback
+      # https://learnk8s.io/kubernetes-rollbacks
+      # https://medium.com/@copyconstruct/testing-in-production-the-safe-way-18ca102d0ef1
       - name: Create Release
         uses: actions/create-release@v1
         with:

@@ -113,6 +113,10 @@ jobs:
 #        event-type: template-updated
 #        client-payload: '{"id": "TO_FILL", "image": "TO_FILL"}'
 
+# TODO: tests new image
+# if fail, rollback
+#if succeed, take screenshots
+
       - name: Create Release
         uses: actions/create-release@v1
         with:
