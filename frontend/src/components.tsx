@@ -431,7 +431,8 @@ const useStyles = makeStyles((theme: Theme) =>
 );
 
 function TemplateSelector({templates, onSelect, onRetryClick, state}) {
-    const [selection, select] = useState(templates[0]);
+    const publicTemplates = templates.filter(t => t.public);
+    const [selection, select] = useState(publicTemplates[0]);
     const templatesAvailable = templates?.length > 0;
     const classes = useStyles();
     return (
@@ -442,7 +443,7 @@ function TemplateSelector({templates, onSelect, onRetryClick, state}) {
             {(!state.matches(failed) && templatesAvailable)
                 ? <div style={{display: "flex", flex: 1, flexDirection: "row", minHeight: 0, height: "100%"}}>
                     <List style={{paddingTop: 0, paddingBottom: 0, overflowY: "auto"}}>
-                        {templates.map((template, index: number) => (
+                        {publicTemplates.map((template, index: number) => (
                         <ListItem button key={index} selected={selection.id === template.id} onClick={() => select(template)}>
                             <ListItemText primary={template.name} />
                         </ListItem>

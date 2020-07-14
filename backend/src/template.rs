@@ -7,6 +7,7 @@ pub struct Template {
     pub image: String,
     pub name: String,
     pub description: String,
+    pub public: bool,
     pub runtime: Option<RuntimeConfiguration>,
 }
 
