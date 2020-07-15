@@ -6,7 +6,7 @@
     "build": "yarn workspace @parity/theia-playground theia download:plugins && yarn workspace @parity/theia-playground theia build"
   },
   "devDependencies": {
-    "lerna": "3.20.2"
+    "lerna": "3.22.1"
   },
   "workspaces": ["theia-playground-extension", "theia-playground"]
 }
