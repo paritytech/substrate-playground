@@ -17,7 +17,7 @@ rocket_contrib = { version = "0.4.5", features = ["json"] }
 rocket_cors = "0.5.2"
 rocket_prometheus = "0.5.0"
 serde = { version = "1.0.112", features = ["derive"] }
-serde_json = "1.0.55"
+serde_json = "1.0.56"
 serde_yaml = "0.8.13"
 kube = "0.35.0"
 k8s-openapi = { version = "0.8.0", default-features = false, features = ["v1_15"] }
