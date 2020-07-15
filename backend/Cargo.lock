@@ -879,9 +879,9 @@ dependencies = [
 
 [[package]]
 name = "kube"
-version = "0.35.0"
+version = "0.35.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a1f507e3f64dfd71b4b58cc4a32db1802cd39accf88070312600a838763a1f0c"
+checksum = "2c0578635e15e33e500d784ce9bdb82b2a0cd18eda82fdc88108eba405b02709"
 dependencies = [
  "Inflector",
  "base64 0.12.2",
@@ -895,6 +895,7 @@ dependencies = [
  "k8s-openapi",
  "log 0.4.8",
  "openssl",
+ "pem",
  "reqwest",
  "serde",
  "serde_json",
@@ -1203,6 +1204,17 @@ dependencies = [
  "syn 0.15.44",
  "version_check 0.1.5",
  "yansi 0.4.0",
+]
+
+[[package]]
+name = "pem"
+version = "0.8.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "59698ea79df9bf77104aefd39cc3ec990cb9693fb59c3b0a70ddf2646fdffb4b"
+dependencies = [
+ "base64 0.12.2",
+ "once_cell",
+ "regex",
 ]
 
 [[package]]
