@@ -1,4 +1,4 @@
-const { webkit } = require('playwright');
+const { chromium } = require('playwright');
 
 function playgroundDomain() {
     const env = process.env.ENVIRONMENT || "DEVELOPMENT";
@@ -15,14 +15,13 @@ function playgroundDomain() {
 }
 
 (async () => {
-  const browser = await webkit.launch();
+  const browser = await chromium.launch();
   const context = await browser.newContext({
     ignoreHTTPSError: true,
     userAgent: 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/535.1 (KHTML, like Gecko) Chrome/13.0.782.112 Safari/535.1'
   });
   const page = await context.newPage();
   page.route('**', route => {
-    console.log(route.request().url());
     route.continue();
   });
   try {
