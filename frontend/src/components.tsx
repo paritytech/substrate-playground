@@ -336,7 +336,7 @@ export function TheiaInstance({ history, uuid }) {
                 }
             } else if (phase == "Pending") {
                 const containerStatuses = result?.pod?.details?.status?.containerStatuses;
-                if (containerStatuses?.length > 1) {
+                if (containerStatuses?.length > 0) {
                     const state = containerStatuses[0].state;
                     const reason = state?.waiting?.reason;
                     if (reason === "ErrImagePull" || reason === "ImagePullBackOff") {
@@ -542,6 +542,13 @@ function InstanceDetails({instance}) {
     const {name, runtime} = template;
     const {env, ports} = runtime;
     const status = pod?.details?.status;
+    const containerStatuses = status?.containerStatuses;
+    let reason;
+    if (containerStatuses?.length > 0) {
+        const state = containerStatuses[0].state;
+        reason = state?.waiting?.reason;
+    }
+
     return (
     <Card style={{ margin: 20, alignSelf: "baseline"}} variant="outlined">
         <CardContent>
@@ -554,7 +561,7 @@ function InstanceDetails({instance}) {
             </Typography>
             }
             <Typography color="textSecondary" gutterBottom>
-            Phase: <em>{status?.phase}</em>
+            Phase: <em>{status?.phase}</em> {reason && `(${reason})`}
             </Typography>
             <div style={{display: "flex", paddingTop: 20}}>
                 <div style={{flex: 1, paddingRight: 10}}>
@@ -577,10 +584,11 @@ function InstanceDetails({instance}) {
 
 function ExistingInstances({instances, onStopClick, onConnectClick}) {
      // A single instance per user is supported for now
+     //    const runningInstances = instances?.filter(instance => instance?.pod?.details?.status?.phase === "Running");
     const instance = instances[0];
     return (
     <React.Fragment>
-        <Typography variant="h5" style={{padding: 20}}>Running instance</Typography>
+        <Typography variant="h5" style={{padding: 20}}>Existing instance</Typography>
         <Divider orientation="horizontal" />
         <Container style={{display: "flex", flex: 1, padding: 0, justifyContent: "center", overflowY: "auto"}}>
             <InstanceDetails instance={instance} />
@@ -619,7 +627,6 @@ phase: "Failed"
 reason: "Evicted"
 startTime: "2020-05-18T17:15:20Z"
     */
-    const runningInstances = instances?.filter(instance => instance?.pod?.details?.status?.phase === "Running");
 
     function gstate() {
         if (state.matches(setup) || state.matches(stopping) || state.matches(deploying)) {
@@ -629,7 +636,7 @@ startTime: "2020-05-18T17:15:20Z"
         } else if (isHovered) {
             return {type: "PRELOADING"};
         } else {
-            if (!(runningInstances?.length + templates?.length > 0)) {
+            if (!(instances?.length + templates?.length > 0)) {
                 return {type: "ERROR", value: "No templates", action: () => send(restart)};
             }
         }
@@ -637,8 +644,8 @@ startTime: "2020-05-18T17:15:20Z"
 
     function content() {
         if (state.matches(initial)) {
-            if (runningInstances?.length > 0) {
-                return <ExistingInstances onConnectClick={(instance) => history.push(`/${instance.instance_uuid}`)} onStopClick={(instance) => send(stop, {instance: instance})} instances={runningInstances} />;
+            if (instances?.length > 0) {
+                return <ExistingInstances onConnectClick={(instance) => history.push(`/${instance.instance_uuid}`)} onStopClick={(instance) => send(stop, {instance: instance})} instances={instances} />;
             } else {
                 return <TemplateSelector state={state} templates={templates} onRetryClick={() => send(restart)} onSelect={(template) => send(deploy, {template: template})} onErrorClick={() => send(restart)} />;
             }
