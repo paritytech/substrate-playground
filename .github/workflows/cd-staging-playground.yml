@@ -95,8 +95,8 @@ jobs:
         id: env
       - name: Update version
         run: |-
-          ./kustomize edit set image gcr.io/substrateplayground-252112/jeluard/substrate-playground-backend-api:${{ steps.env.outputs.sha }}
-          ./kustomize edit set image gcr.io/substrateplayground-252112/jeluard/substrate-playground-backend-ui:${{ steps.env.outputs.sha }}
+          ./kustomize edit set image paritytech/substrate-playground-backend-api:${{ steps.env.outputs.sha }}
+          ./kustomize edit set image paritytech/substrate-playground-backend-ui:${{ steps.env.outputs.sha }}
         working-directory: conf/k8s/overlays/staging
       - uses: EndBug/add-and-commit@v4
         with:

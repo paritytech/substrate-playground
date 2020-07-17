@@ -6,8 +6,16 @@ build:
   artifacts:
   - image: paritytech/substrate-playground-backend-api
     context: ../../backend
+    docker:
+      buildArgs:
+        GITHUB_SHA: SKAFFOLD
   - image: paritytech/substrate-playground-backend-ui
     context: ../../frontend
+    docker:
+      buildArgs:
+        GITHUB_SHA: SKAFFOLD
+  local:
+    useBuildkit: true
 deploy:
   kustomize:
     paths:

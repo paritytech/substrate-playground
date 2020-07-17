@@ -9,18 +9,19 @@ namespace: default
 
 resources:
 - ../../base
+- templates.yaml
 
 images:
-- name: gcr.io/substrateplayground-252112/jeluard/substrate-playground-backend-api
-  digest: sha256:0f6b56dfedaa864282239e55d7b43c662e588a3627e0cf3770ae795e8ef2ce58
-- name: gcr.io/substrateplayground-252112/jeluard/substrate-playground-backend-ui
-  digest: sha256:6a3b0fa6ca049d968b1c15fdc17162c425e0711975db22478c38aa153081d3f8
+- name: paritytech/substrate-playground-backend-api
+  newTag: latest
+- name: paritytech/substrate-playground-backend-ui
+  newTag: latest
 
 patches:
 - patch: |-
     - op: replace
       path: /spec/rules/0/host
-      value: playground-dev.substrate.dev
+      value: playground-dev.substrate.test
   target:
     group: extensions
     kind: Ingress

@@ -18,7 +18,6 @@ use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::{collections::BTreeMap, error::Error};
 use uuid::Uuid;
 
-const BACKEND_API_NAME: &str = "backend-api-pod"; // Must match name from conf/k8s/base/backend-api-pod.yaml
 const APP_LABEL: &str = "app.kubernetes.io/part-of";
 const APP_VALUE: &str = "playground";
 const COMPONENT_LABEL: &str = "app.kubernetes.io/component";
@@ -355,10 +354,14 @@ impl Engine {
         let config = config().await?;
         let client = Client::new(config);
         let pod_api: Api<Pod> = Api::namespaced(client, &self.namespace);
-        let pod = pod_api
-            .get(BACKEND_API_NAME)
-            .await
-            .map_err(error_to_string)?;
+        let pods = list_by_selector(
+            &pod_api,
+            format!("{}={}", COMPONENT_LABEL, "backend-api").to_string(),
+        )
+        .await?;
+        let pod = pods
+            .first()
+            .ok_or_else(|| format!("No API pod"))?;
 
         Ok(self.pod_to_details(&pod)?)
     }

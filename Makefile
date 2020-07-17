@@ -79,12 +79,10 @@ build-backend-docker-images:
 	docker tag ${PLAYGROUND_BACKEND_UI_DOCKER_IMAGE_NAME}:sha-${PLAYGROUND_DOCKER_IMAGE_VERSION} gcr.io/${GOOGLE_PROJECT_ID}/${PLAYGROUND_BACKEND_UI_DOCKER_IMAGE_NAME}
 	docker image prune -f --filter label=stage=builder
 
-# Push newly built backend images on docker.io and gcr.io
+# Push newly built backend images on docker.io
 push-backend-docker-images: build-backend-docker-images
 	docker push ${PLAYGROUND_BACKEND_API_DOCKER_IMAGE_NAME}:sha-${PLAYGROUND_DOCKER_IMAGE_VERSION}
-	docker push gcr.io/${GOOGLE_PROJECT_ID}/${PLAYGROUND_BACKEND_API_DOCKER_IMAGE_NAME}
 	docker push ${PLAYGROUND_BACKEND_UI_DOCKER_IMAGE_NAME}:sha-${PLAYGROUND_DOCKER_IMAGE_VERSION}
-	docker push gcr.io/${GOOGLE_PROJECT_ID}/${PLAYGROUND_BACKEND_UI_DOCKER_IMAGE_NAME}
 
 ## Kubernetes deployment
 
@@ -118,8 +116,8 @@ k8s-gke-static-ip: k8s-assert
 
 k8s-update-playground-version:
 	$(eval PLAYGROUND_DOCKER_IMAGE_VERSION=$(shell git rev-parse --short HEAD))
-	kustomize edit set image gcr.io/${GOOGLE_PROJECT_ID}/${PLAYGROUND_BACKEND_API_DOCKER_IMAGE_NAME}:sha-${PLAYGROUND_DOCKER_IMAGE_VERSION};
-	kustomize edit set image gcr.io/${GOOGLE_PROJECT_ID}/${PLAYGROUND_BACKEND_UI_DOCKER_IMAGE_NAME}:sha-${PLAYGROUND_DOCKER_IMAGE_VERSION};
+	kustomize edit set image ${PLAYGROUND_BACKEND_API_DOCKER_IMAGE_NAME}:sha-${PLAYGROUND_DOCKER_IMAGE_VERSION};
+	kustomize edit set image ${PLAYGROUND_BACKEND_UI_DOCKER_IMAGE_NAME}:sha-${PLAYGROUND_DOCKER_IMAGE_VERSION};
 
 k8s-dev: k8s-assert
 	@cd conf/k8s; skaffold dev
