@@ -37,6 +37,6 @@
     "eslint-plugin-react": "7.20.3",
     "parcel-bundler": "1.12.4",
     "playwright": "1.2.1",
-    "typescript": "3.9.6"
+    "typescript": "3.9.7"
   }
 }
