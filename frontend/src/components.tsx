@@ -339,8 +339,8 @@ export function TheiaInstance({ history, uuid }) {
                 if (containerStatuses?.length > 0) {
                     const state = containerStatuses[0].state;
                     const reason = state?.waiting?.reason;
-                    if (reason === "ErrImagePull" || reason === "ImagePullBackOff") {
-                        setData({type: "ERROR", value: state?.waiting?.message, action: () => setData({})});
+                    if (reason === "ErrImagePull" || reason === "ImagePullBackOff" || reason === "InvalidImageName") {
+                        setData({type: "ERROR", value: state?.waiting?.message, action: () => history.push("/")});
                         return;
                     }
                 }
@@ -350,7 +350,7 @@ export function TheiaInstance({ history, uuid }) {
             if (retry < maxRetries) {
                 setTimeout(() => setData({type: "LOADING", phase: phase, retry: retry + 1}), 1000);
             } else if (retry == maxRetries) {
-                setData({type: "ERROR", value: "Couldn't access the theia instance in time", action: () => setData({})});
+                setData({type: "ERROR", value: "Couldn't access the theia instance in time", action: () => history.push("/")});
             }
         }
 
@@ -586,6 +586,7 @@ function ExistingInstances({instances, onStopClick, onConnectClick}) {
      // A single instance per user is supported for now
      //    const runningInstances = instances?.filter(instance => instance?.pod?.details?.status?.phase === "Running");
     const instance = instances[0];
+    const status = instance?.pod?.details?.status;
     return (
     <React.Fragment>
         <Typography variant="h5" style={{padding: 20}}>Existing instance</Typography>
@@ -599,7 +600,7 @@ function ExistingInstances({instances, onStopClick, onConnectClick}) {
                 <Button style={{marginRight: 10}} onClick={() => onStopClick(instance)} color="secondary" variant="outlined" disableElevation>
                     Stop
                 </Button>
-                <Button onClick={() => onConnectClick(instance)} color="primary" variant="contained" disableElevation>
+                <Button onClick={() => onConnectClick(instance)} disabled={status != "Running"} color="primary" variant="contained" disableElevation>
                     Connect
                 </Button>
             </div>
