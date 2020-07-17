@@ -109,7 +109,7 @@ impl Manager {
                                     } else {
                                         error!("Failed to compute this instance lifetime");
                                     }
-                                },
+                                }
                                 _ => {}
                             }
                             // Ignore "Unknown"
