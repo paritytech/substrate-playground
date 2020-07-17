@@ -86,6 +86,7 @@ impl Manager {
             thread::sleep(Manager::FIVE_SECONDS);
 
             // Track some deployments metrics
+            // TODO can't this be merged with the reaping logic bellow?
             let instances_thread = self.clone().instances.clone();
             if let Ok(mut instances2) = instances_thread.lock() {
                 let instances3 = &mut instances2.clone();
@@ -96,19 +97,23 @@ impl Manager {
                                 phase(&details.pod).unwrap_or_else(|| "Unknown".to_string());
                             // Deployed instances are removed from the set
                             // Additionally the deployment time is tracked
-                            // TODO: failed deployment should be removed and tracked
-                            // TODO: after a predefined threshold a deployment is assumed to be failed
-                            if phase != "Pending" && phase != "Unknown" {
-                                instances2.remove(user_uuid);
-                                if let Some(duration) = elapsed(&details.pod) {
-                                    self.clone().metrics.observe_deploy_duration(
-                                        &instance_uuid,
-                                        duration.as_secs_f64(),
-                                    );
-                                } else {
-                                    error!("Failed to compute this instance lifetime");
-                                }
+                            match phase.as_str() {
+                                "Running" | "Failed" => {
+                                    instances2.remove(user_uuid);
+                                    // TODO track success / failure
+                                    if let Some(duration) = elapsed(&details.pod) {
+                                        self.clone().metrics.observe_deploy_duration(
+                                            &instance_uuid,
+                                            duration.as_secs_f64(),
+                                        );
+                                    } else {
+                                        error!("Failed to compute this instance lifetime");
+                                    }
+                                },
+                                _ => {}
                             }
+                            // Ignore "Unknown"
+                            // "Succeeded" can't happen
                         }
                         Err(err) => warn!("Failed to call get: {}", err),
                     }
