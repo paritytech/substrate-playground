@@ -115,6 +115,14 @@ sudo kubectl create secret tls playground-tls --save-config --key /etc/letsencry
 
 The new secret will be auomatically picked up.
 
+Certificates can be checked using openssl:
+
+```shell
+openssl s_client -connect  playground.substrate.dev:443 -servername playground.substrate.dev -showcerts
+# Or for client with no SNI support
+openssl s_client -connect  playground.substrate.dev:443 -showcerts
+```
+
 ## Update fixed IP
 
 Make sure to use regional addresses, matching your cluster region. Global addresses won't work.
