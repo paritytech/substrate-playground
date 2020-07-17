@@ -56,7 +56,7 @@ Note that with this setup docker images must be re-compiled and `kustomization.y
 An alternative is to use [skaffold](https://skaffold.dev/). This tool will re-compile Docker images and re-deploy the whole cluster after each code change.
 
 ```shell
-# Instaed of `make k8s-deploy-playground`
+# Instead of `make k8s-deploy-playground`
 make k8s-dev
 ```
 

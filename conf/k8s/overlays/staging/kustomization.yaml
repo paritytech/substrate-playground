@@ -11,9 +11,9 @@ resources:
 - ../../base
 
 images:
-- name: gcr.io/substrateplayground-252112/jeluard/substrate-playground-backend-api
+- name: paritytech/substrate-playground-backend-api
   newTag: sha-273a849
-- name: gcr.io/substrateplayground-252112/jeluard/substrate-playground-backend-ui
+- name: paritytech/substrate-playground-backend-ui
   newTag: sha-273a849
 
 patches:

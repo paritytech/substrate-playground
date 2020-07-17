@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-ui-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: backend-ui
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: backend-ui
+    spec:
+      containers:
+      - name: playground
+        image: paritytech/substrate-playground-backend-ui
+        ports:
+        - containerPort: 80
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "125m"
+          limits:
+            memory: "512Mi"
+            cpu: "250m"
