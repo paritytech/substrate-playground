@@ -9,3 +9,4 @@ templates/webpack.config.js
 templates/**/src-gen/
 templates/**/lerna-debug.log
 templates/theia-playground/plugins
+templates/theia-playground/gen-webpack.config.js

@@ -10,18 +10,4 @@ yarn
 yarn dev
 ```
 
-## Build
-
-```
-nvm use 10
-yarn
-yarn build
-```
-
-## Docker image
-
-Run the image via:
-
-```
-docker run -p 80:3000 -p 8000:8000 -p 9944:9944 paritytech/substrate-playground-template-base@sha256:XXX
-```
+Then browse http://localhost:3000/
