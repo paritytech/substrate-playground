@@ -2,6 +2,7 @@ import { useMachine } from '@xstate/react';
 import { v4 as uuidv4 } from 'uuid';
 import { assign, Machine } from 'xstate';
 import { deployInstance, getDetails, getInstanceDetails, getTemplates, getUserDetails, stopInstance } from './api';
+import { navigateToInstance } from './utils';
 
 const key = "userUUID";
 const userUUID = localStorage.getItem(key) || uuidv4();
@@ -137,10 +138,7 @@ function lifecycle(history, location) {
             if (error != undefined) {
               callback({type: failure, error: error});
             } else {
-              const params = new URLSearchParams(location.search);
-              params.delete("deploy");
-              const query = params.toString();
-              history.push(`/${result}${query !== "" ? "?"+query  : ""}`);
+              navigateToInstance(history, result);
             }
           },
           onError: {

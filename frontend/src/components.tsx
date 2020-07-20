@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useSpring, animated } from 'react-spring'
 import { Alert, AlertTitle } from '@material-ui/lab';
 import AppBar from '@material-ui/core/AppBar';
@@ -31,17 +31,17 @@ import Paper from '@material-ui/core/Paper';
 import Typography from '@material-ui/core/Typography';
 import { makeStyles, createStyles, Theme } from '@material-ui/core/styles';
 import marked from 'marked';
-import { useLocation, useParams } from "react-router-dom";
+import { useHistory, useLocation, useParams } from "react-router-dom";
 import Zoom from '@material-ui/core/Zoom';
 import Fade from '@material-ui/core/Fade';
 import { TransitionProps } from '@material-ui/core/transitions';
 import { Container } from "@material-ui/core";
 import { getInstanceDetails } from "./api";
 import { startNode, openFile, gotoLine, cursorMove } from "./commands";
-import { Discoverer, Instance, Responder } from "./connect";
+import { Discoverer, Responder } from "./connect";
 import { useHover, useInterval, useWindowMaxDimension } from './hooks';
 import { useLifecycle, deploy, deploying, failed, initial, restart, setup, stop, stopping } from './lifecycle';
-import { fetchWithTimeout } from "./utils";
+import { fetchWithTimeout, navigateToInstance, navigateToHomepage } from "./utils";
 
 import InputLabel from '@material-ui/core/InputLabel';
 import MenuItem from '@material-ui/core/MenuItem';
@@ -266,8 +266,9 @@ export function ControllerPanel() {
     );
 }
 
-export function TheiaInstance({ history, uuid }) {
+export function TheiaInstance({ uuid }) {
     const maxRetries = 5*60;
+    const history = useHistory();
     const ref = useRef();
     const [data, setData] = useState({type: "LOADING"});
 
@@ -298,7 +299,7 @@ export function TheiaInstance({ history, uuid }) {
                 case "extension-offline":
                     responder.setStatus(false);
                     /* TODO ignore offline for now, too trigger happy
-                    setData({type: "ERROR", value: "Instance went offline", action: () => history.push("/")});
+                    setData({type: "ERROR", value: "Instance went offline", action: () => navigateToHomepage(history)});
                     responder.unannounce();*/
                     break;
                 case "extension-answer-offline":
@@ -322,7 +323,7 @@ export function TheiaInstance({ history, uuid }) {
             const { result, error } = await getInstanceDetails(localStorage.getItem("userUUID"), uuid);
             if (error) {
                 // This instance doesn't exist
-                setData({type: "ERROR", value: "Couldn't locate the theia instance", action: () => history.push("/")});
+                setData({type: "ERROR", value: "Couldn't locate the theia instance", action: () => navigateToHomepage(history)});
                 return;
             }
 
@@ -340,7 +341,7 @@ export function TheiaInstance({ history, uuid }) {
                     const state = containerStatuses[0].state;
                     const reason = state?.waiting?.reason;
                     if (reason === "ErrImagePull" || reason === "ImagePullBackOff" || reason === "InvalidImageName") {
-                        setData({type: "ERROR", value: state?.waiting?.message, action: () => history.push("/")});
+                        setData({type: "ERROR", value: state?.waiting?.message, action: () => navigateToHomepage(history)});
                         return;
                     }
                 }
@@ -350,7 +351,7 @@ export function TheiaInstance({ history, uuid }) {
             if (retry < maxRetries) {
                 setTimeout(() => setData({type: "LOADING", phase: phase, retry: retry + 1}), 1000);
             } else if (retry == maxRetries) {
-                setData({type: "ERROR", value: "Couldn't access the theia instance in time", action: () => history.push("/")});
+                setData({type: "ERROR", value: "Couldn't access the theia instance in time", action: () => navigateToHomepage(history)});
             }
         }
 
@@ -366,7 +367,7 @@ export function TheiaInstance({ history, uuid }) {
     }
 }
 
-export function TheiaPanel({ history }) {
+export function TheiaPanel() {
     const query = useQuery();
     const controller = query.get("controller");
     const files = query.get("files");
@@ -387,10 +388,10 @@ export function TheiaPanel({ history }) {
         <>
             <InstanceController instances={instances} />
             <div style={{display: "flex", flex: 1}}>
-                <TheiaInstance history={history} uuid={uuid} />
+                <TheiaInstance uuid={uuid} />
             </div>
         </>
-        : <TheiaInstance history={history} uuid={uuid} />
+        : <TheiaInstance uuid={uuid} />
     }
     </div>
     );
@@ -600,7 +601,7 @@ function ExistingInstances({instances, onStopClick, onConnectClick}) {
                 <Button style={{marginRight: 10}} onClick={() => onStopClick(instance)} color="secondary" variant="outlined" disableElevation>
                     Stop
                 </Button>
-                <Button onClick={() => onConnectClick(instance)} disabled={status != "Running"} color="primary" variant="contained" disableElevation>
+                <Button onClick={() => onConnectClick(instance)} disabled={status?.phase != "Running"} color="primary" variant="contained" disableElevation>
                     Connect
                 </Button>
             </div>
@@ -646,7 +647,7 @@ startTime: "2020-05-18T17:15:20Z"
     function content() {
         if (state.matches(initial)) {
             if (instances?.length > 0) {
-                return <ExistingInstances onConnectClick={(instance) => history.push(`/${instance.instance_uuid}`)} onStopClick={(instance) => send(stop, {instance: instance})} instances={instances} />;
+                return <ExistingInstances onConnectClick={(instance) => navigateToInstance(history, instance.instance_uuid)} onStopClick={(instance) => send(stop, {instance: instance})} instances={instances} />;
             } else {
                 return <TemplateSelector state={state} templates={templates} onRetryClick={() => send(restart)} onSelect={(template) => send(deploy, {template: template})} onErrorClick={() => send(restart)} />;
             }
