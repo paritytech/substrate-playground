@@ -4,6 +4,7 @@ import { CommonMenus } from "@theia/core/lib/browser";
 import { ConnectionStatusService, ConnectionStatus } from '@theia/core/lib/browser/connection-status-service';
 import { MaybePromise } from '@theia/core/lib/common/types';
 import { MessageService } from '@theia/core/lib/common/message-service';
+import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
 import { FileNavigatorContribution } from '@theia/navigator/lib/browser/navigator-contribution';
 import { LocationMapper } from '@theia/mini-browser/lib/browser/location-mapper-service';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
@@ -134,6 +135,9 @@ export class TheiaSubstrateExtensionCommandContribution implements CommandContri
     @inject(MessageService)
     protected readonly messageService: MessageService;
 
+    @inject(FrontendApplicationStateService)
+    protected readonly stateService: FrontendApplicationStateService;
+
     registerCommands(registry: CommandRegistry): void {
         registry.registerCommand(SendFeedbackCommand, {
             execute: () => window.open('https://docs.google.com/forms/d/e/1FAIpQLSdXpq_fHqS_ow4nC7EpGmrC_XGX_JCIRzAqB1vaBtoZrDW-ZQ/viewform?edit_requested=true')
@@ -151,7 +155,10 @@ export class TheiaSubstrateExtensionCommandContribution implements CommandContri
             const members = document.domain.split(".");
             document.domain = members.slice(members.length-2).join(".");
         }
-        //this.fileNavigatorContribution.openView({activate: true}); 
+
+        this.stateService.reachedState('ready').then(
+            () => this.fileNavigatorContribution.openView({reveal: true})
+        );
     }
 
 }
