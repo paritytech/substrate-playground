@@ -359,7 +359,7 @@ impl Engine {
             format!("{}={}", COMPONENT_LABEL, "backend-api").to_string(),
         )
         .await?;
-        let pod = pods.first().ok_or_else(|| format!("No API pod"))?;
+        let pod = pods.first().ok_or_else(|| "No API pod".to_string())?;
 
         Ok(self.pod_to_details(&pod)?)
     }
