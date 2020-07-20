@@ -879,9 +879,9 @@ dependencies = [
 
 [[package]]
 name = "kube"
-version = "0.35.0"
+version = "0.36.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a1f507e3f64dfd71b4b58cc4a32db1802cd39accf88070312600a838763a1f0c"
+checksum = "d4620d9184c09a24a9ab0c490125ee337f782931f35ed0f7a3a359138d40e0ff"
 dependencies = [
  "Inflector",
  "base64 0.12.2",
@@ -895,10 +895,12 @@ dependencies = [
  "k8s-openapi",
  "log 0.4.8",
  "openssl",
+ "pem",
  "reqwest",
  "serde",
  "serde_json",
  "serde_yaml",
+ "static_assertions",
  "thiserror",
  "time 0.2.16",
  "tokio",
@@ -1203,6 +1205,17 @@ dependencies = [
  "syn 0.15.44",
  "version_check 0.1.5",
  "yansi 0.4.0",
+]
+
+[[package]]
+name = "pem"
+version = "0.8.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "59698ea79df9bf77104aefd39cc3ec990cb9693fb59c3b0a70ddf2646fdffb4b"
+dependencies = [
+ "base64 0.12.2",
+ "once_cell",
+ "regex",
 ]
 
 [[package]]
@@ -1790,6 +1803,12 @@ name = "state"
 version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7345c971d1ef21ffdbd103a75990a15eb03604fc8b8852ca8cb418ee1a099028"
+
+[[package]]
+name = "static_assertions"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
 
 [[package]]
 name = "stdweb"
