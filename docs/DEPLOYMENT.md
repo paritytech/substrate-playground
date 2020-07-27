@@ -21,6 +21,13 @@ gcloud container clusters get-credentials  susbtrate-playground-staging --zone u
 ENVIRONMENT=staging make k8s-setup-gke
 ```
 
+Set required ConfigMap and Secret:
+
+```shell
+kubectl create configmap config --namespace=playground-staging --from-literal=github.clientId=''
+kubectl create secret generic secrets --namespace=playground-staging --from-literal=github.clientSecret=''
+```
+
 Deploy on GKE:
 
 ```
