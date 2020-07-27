@@ -447,7 +447,7 @@ function Nav({ send, details, toggleDetails }) {
                                 onClick={handleMenu}
                                 color="inherit"
                             >
-                                <Badge color="secondary" variant="dot" invisible={!user.parity}>
+                                <Badge color="secondary" variant={user.admin ? "standard" : "dot"} invisible={!user.parity}>
                                     <Avatar alt={user.username} src={user.avatar} />
                                 </Badge>
                             </IconButton>

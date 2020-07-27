@@ -25,12 +25,14 @@ pub struct User {
     pub avatar: String,
     pub token: String,
     pub parity: bool,
+    pub admin: bool,
 }
 
 const COOKIE_USERNAME: &str = "username";
 const COOKIE_AVATAR: &str = "avatar";
 const COOKIE_TOKEN: &str = "token";
 const COOKIE_PARITY: &str = "parity";
+const COOKIE_ADMIN: &str = "admin";
 
 /*
 fn token_valid(token: &str, client_id: &str, client_secret: &str) -> Result<bool, String> {
@@ -58,11 +60,12 @@ impl<'a, 'r> FromRequest<'a, 'r> for User {
 
     fn from_request(request: &'a Request<'r>) -> request::Outcome<User, ()> {
         let mut cookies = request.guard::<Cookies<'_>>().expect("request cookies");
-        if let (Some(username), Some(avatar), Some(token), Some(parity)) = (
+        if let (Some(username), Some(avatar), Some(token), Some(parity), Some(admin)) = (
             cookies.get_private(COOKIE_USERNAME),
             cookies.get_private(COOKIE_AVATAR),
             cookies.get_private(COOKIE_TOKEN),
             cookies.get_private(COOKIE_PARITY),
+            cookies.get_private(COOKIE_ADMIN),
         ) {
             let token_value = token.value();
             return Outcome::Success(User {
@@ -70,6 +73,7 @@ impl<'a, 'r> FromRequest<'a, 'r> for User {
                 avatar: avatar.value().to_string(),
                 token: token_value.to_string(),
                 parity: parity.value().to_string().parse().unwrap_or(false),
+                admin: admin.value().to_string().parse().unwrap_or(false),
             });
         }
 
@@ -204,6 +208,14 @@ pub fn post_install_callback(
             orgs.into_iter()
                 .any(|org| org.login == "paritytech")
                 .to_string(),
+        )
+        .same_site(SameSite::Lax)
+        .finish(),
+    );
+    cookies.add_private(
+        Cookie::build(
+            COOKIE_ADMIN,
+            (user_info.login == "jeluard").to_string(),
         )
         .same_site(SameSite::Lax)
         .finish(),
