@@ -3,11 +3,11 @@ name: Continuous Deployment templates staging
 on:
   repository_dispatch:
     types: [template-updated]
-  push:
-    branches:
-      - develop
-    paths:
-      - 'conf/k8s/overlays/**/templates/**'
+#  push:
+#    branches:
+#      - develop
+#    paths:
+#      - 'conf/k8s/overlays/**/templates/**'
 
 env:
   GKE_CLUSTER: susbtrate-playground-staging
