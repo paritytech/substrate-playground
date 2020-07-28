@@ -213,12 +213,9 @@ pub fn post_install_callback(
         .finish(),
     );
     cookies.add_private(
-        Cookie::build(
-            COOKIE_ADMIN,
-            (user_info.login == "jeluard").to_string(),
-        )
-        .same_site(SameSite::Lax)
-        .finish(),
+        Cookie::build(COOKIE_ADMIN, (user_info.login == "jeluard").to_string())
+            .same_site(SameSite::Lax)
+            .finish(),
     );
     Ok(Redirect::to("/"))
 }
