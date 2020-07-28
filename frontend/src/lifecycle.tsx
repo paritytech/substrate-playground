@@ -44,6 +44,7 @@ function lifecycle(history, location) {
         invoke: {
           src: (context, _event) => async (callback) =>  {
             const response = (await getDetails());
+            console.log(response)
             if (response.error) {
               throw response;
             }

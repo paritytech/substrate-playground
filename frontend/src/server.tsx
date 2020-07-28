@@ -45,35 +45,34 @@ export function intercept({noInstance = true, delay = 100}: {noInstance?: boolea
       result: pod,
     });
   });
-  server.get('/api/templates').intercept(async (req, res) => {
-    await server.timeout(delay);
-    res.status(200).json({
-      result: {workshop: template_private, workshop2: template, workshop3: template, workshop4: template, workshop5: template, workshop6: template, workshop7: template},
-    });
-  });
   server.get('/theia').intercept(async (req, res) => {
     await server.timeout(delay);
     res.status(200);
   });
-  server.get('/api/:uuuid/:iuuid').intercept(async (req, res) => {
+  server.get('/api/:iuuid').intercept(async (req, res) => {
     await server.timeout(delay);
     res.status(200).json({
       result: instance,
     });
   });
-  server.get('/api/:uuuid').intercept(async (req, res) => {
+  server.get('/api/').intercept(async (req, res) => {
     await server.timeout(delay);
+    let templates = {workshop: template_private, workshop2: template, workshop3: template, workshop4: template, workshop5: template, workshop6: template, workshop7: template};
+    let instances = noInstance ? [] : [instance];
     res.status(200).json({
-      result: noInstance ? [] : [instance],
+      result: {
+        templates: templates,
+        instances: instances
+      },
     });
   });
-  server.delete('/api/:uuuid/:iuuid').intercept(async (req, res) => {
+  server.delete('/api/:iuuid').intercept(async (req, res) => {
     await server.timeout(delay);
     res.status(200).json({
       result: null,
     });
   });
-  server.post('/api/:uuid?template=:template').intercept(async (req, res) => {
+  server.post('/api/?template=:template').intercept(async (req, res) => {
     await server.timeout(delay);
     res.status(200).json({
       result: uuid,
