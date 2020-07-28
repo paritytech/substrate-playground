@@ -39,12 +39,6 @@ export function intercept({noInstance = true, delay = 100}: {noInstance?: boolea
     await server.timeout(delay);
     res.status(200);
   });
-  server.get('/api').intercept(async (req, res) => {
-    await server.timeout(delay);
-    res.status(200).json({
-      result: pod,
-    });
-  });
   server.get('/theia').intercept(async (req, res) => {
     await server.timeout(delay);
     res.status(200);
@@ -62,7 +56,12 @@ export function intercept({noInstance = true, delay = 100}: {noInstance?: boolea
     res.status(200).json({
       result: {
         templates: templates,
-        instances: instances
+        instances: instances,
+        user: {
+          username: 'john',
+          parity: true,
+          admin: true
+        }
       },
     });
   });
@@ -78,5 +77,4 @@ export function intercept({noInstance = true, delay = 100}: {noInstance?: boolea
       result: uuid,
     });
   });
-  server.get('https://github.com/login').passthrough();
 }
