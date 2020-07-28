@@ -1,0 +1,34 @@
+# Deploy templates on playground as soon as changes are commited in conf/../templates/* files
+name: Continuous Deployment templates
+
+on:
+  push:
+    branches:
+      - develop
+      - master
+    paths:
+      - 'conf/k8s/overlays/**/templates/**'
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set env to staging
+        if: endsWith(github.ref, '/develop')
+        run: |
+          echo "::set-env name=ENVIRONMENT::staging"
+          echo "::set-env name=NAMESPACE::playground-staging"
+
+      - name: Set env to prdouction
+        if: endsWith(github.ref, '/master')
+        run: |
+          echo "::set-env name=ENVIRONMENT::production"
+          echo "::set-env name=NAMESPACE::playground"
+
+      - uses: actions/checkout@v2
+
+      - name: Deploy templates
+        run: kubectl create configmap templates --namespace=${NAMESPACE} --from-file=conf/k8s/overlays/${ENVIRONMENT}/templates/ --dry-run -o yaml | kubectl apply -f -
+
+# TODO test image, rollback if fails
+# https://engineering.bitnami.com/articles/rolling-updates-for-configmap-objects.html

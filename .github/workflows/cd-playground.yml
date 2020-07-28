@@ -1,15 +1,16 @@
-name: Continuous Deployment Playground staging
+name: Continuous Deployment Playground
 
 on:
   push:
     branches:
       - develop
+      - master
     paths-ignore:
       - 'README.md'
       - '.github/workflows/book.yml'
       - '.github/workflows/ci-**'
-      - '.github/workflows/cd-staging-base-templates.yml'
-      - '.github/workflows/cd-staging-templates.yml'
+      - '.github/workflows/cd-base-templates.yml'
+      - '.github/workflows/cd-templates.yml'
       - 'docs/**'
       - 'conf/k8s/overlays/**/templates/**'
       - 'conf/k8s/overlays/production'
@@ -17,7 +18,6 @@ on:
       - 'templates/**'
 
 env:
-  GKE_CLUSTER: susbtrate-playground-staging
   GKE_ZONE: us-central1-a
   DOCKER_BUILDKIT: 1
 
@@ -25,21 +25,29 @@ jobs:
   build-and-push:
     runs-on: ubuntu-latest
     steps:
-      # https://github.com/actions/checkout
+      - name: Set env to staging
+        if: endsWith(github.ref, '/develop')
+        run: |
+          echo "::set-env name=ENVIRONMENT::staging"
+          echo "::set-env name=GKE_CLUSTER::susbtrate-playground-staging"
+
+      - name: Set env to prdouction
+        if: endsWith(github.ref, '/master')
+        run: |
+          echo "::set-env name=ENVIRONMENT::production"
+          echo "::set-env name=GKE_CLUSTER::susbtrate-playground"
+
       - uses: actions/checkout@v2
       - uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
         with:
-          # GCLOUD_KEY is the base64 of the gcloud service account JSON file
-          # Get the JSON file from https://console.cloud.google.com/iam-admin/serviceaccounts?authuser=1&hl=fr&project=substrateplayground-252112&folder=&organizationId=&supportedpurview=project
-          # ... -> Actions -> Create Key
-          # then base64 substrateplayground-XXX.json | tr -d \\n
           service_account_key: ${{ secrets.GCLOUD_KEY }}
           export_default_credentials: true
           project_id: ${{ secrets.GKE_PROJECT }}
       - run: gcloud --quiet auth configure-docker
       - run: gcloud container clusters get-credentials "$GKE_CLUSTER" --zone "$GKE_ZONE"
       - run: echo "::set-env name=ACCESS_TOKEN::$(gcloud auth print-access-token)"
-      - uses: docker/build-push-action@v1 # https://github.com/docker/build-push-action
+
+      - uses: docker/build-push-action@v1
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
@@ -50,7 +58,8 @@ jobs:
           add_git_labels: true
           tag_with_ref: true
           tag_with_sha: true
-      - uses: docker/build-push-action@v1 # https://github.com/docker/build-push-action
+
+      - uses: docker/build-push-action@v1
         with:
           username: oauth2accesstoken
           password: ${{ env.ACCESS_TOKEN }}
@@ -62,6 +71,7 @@ jobs:
           add_git_labels: true
           tag_with_ref: true
           tag_with_sha: true
+
       - uses: docker/build-push-action@v1
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
@@ -73,6 +83,7 @@ jobs:
           add_git_labels: true
           tag_with_ref: true
           tag_with_sha: true
+          
       - uses: docker/build-push-action@v1
         with:
           username: oauth2accesstoken
@@ -85,31 +96,37 @@ jobs:
           add_git_labels: true
           tag_with_ref: true
           tag_with_sha: true
+
       - name: Set up Kustomize
         run: |-
           curl -sfLo kustomize https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv3.6.1/kustomize_v3.6.1_linux_amd64.tar.gz
           tar zxvf kustomize*
           chmod u+x ./kustomize  
-        working-directory: conf/k8s/overlays/staging
+        working-directory: conf/k8s/overlays/${{ env.ENVIRONMENT }}
+
       - run: echo ::set-output name=sha::sha-${GITHUB_SHA::7}
         id: env
+
       - name: Update version
         run: |-
           ./kustomize edit set image paritytech/substrate-playground-backend-api:${{ steps.env.outputs.sha }}
           ./kustomize edit set image paritytech/substrate-playground-backend-ui:${{ steps.env.outputs.sha }}
-        working-directory: conf/k8s/overlays/staging
+        working-directory: conf/k8s/overlays/${{ env.ENVIRONMENT }}
+
       - uses: EndBug/add-and-commit@v4
         with:
           message: ":bookmark: update backend images"
-          add: "conf/k8s/overlays/staging/kustomization.yaml"
+          add: "conf/k8s/overlays/${{ env.ENVIRONMENT }}/kustomization.yaml"
           tag: ${{ steps.env.outputs.sha }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Deploy on GKE
         run:  |-
           ./kustomize build . | kubectl apply --record -f -
           kubectl get services -o wide
-        working-directory: conf/k8s/overlays/staging
+        working-directory: conf/k8s/overlays/${{ env.ENVIRONMENT }}
+        
       # TODO
       # run e2e tests
       # if ok, perform screenshots and attach
@@ -126,5 +143,4 @@ jobs:
             - paritytech/substrate-playground-backend-api:${{ steps.env.outputs.sha }}
             - paritytech/substrate-playground-backend-ui:${{ steps.env.outputs.sha }}
         env:
-          # https://help.github.com/en/actions/reference/events-that-trigger-workflows#triggering-new-workflows-using-a-personal-access-token
           GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}

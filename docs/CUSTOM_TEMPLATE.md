@@ -15,4 +15,15 @@ Additionally there are a number of standard VSCode configuration files that will
 
 An example of adding support to an external repository can be found [here](https://github.com/substrate-developer-hub/substrate-node-template/).
 
-After the associated Github workflow in `substrate-playground` is triggered, playground will use the newly built image. 
+After the associated Github workflow in [substrate-playground](https://github.com/paritytech/substrate-playground) is triggered, playground will use the newly built image. 
+
+# Github workflow
+
+See a working example [here](https://github.com/substrate-developer-hub/substrate-node-template/blob/master/.github/workflows/build-push-template.yml).
+
+## Github secrets
+
+The following secrets must be defined:
+
+`DOCKER_USERNAME` and `DOCKER_PASSWORD` to push the image to dockerhub (values will depend on the chosen docker image org)
+`REPO_ACCESS_TOKEN` a token with `public_repo` or repo scope
