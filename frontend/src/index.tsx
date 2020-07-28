@@ -3,7 +3,7 @@ import ReactDOM from "react-dom";
 import { createMuiTheme, ThemeProvider } from '@material-ui/core/styles';
 import { Route, Router, Switch } from "react-router-dom";
 import { createBrowserHistory } from "history";
-import { ControllerPanel, MainPanel, TheiaPanel } from './components';
+import { AdminPanel, ControllerPanel, MainPanel, TheiaPanel } from './components';
 import { TutorialPanel } from './tutorial';
 import { intercept } from './server';
 
@@ -19,14 +19,13 @@ function App() {
   return (
     <ThemeProvider theme={theme}>
       <Router history={history}>
-        <div>
-          <Switch>
-            <Route exact path={"/"} component={MainPanel} />
-            <Route exact path={"/tutorial"} component={TutorialPanel} />
-            <Route exact path={"/controller"} component={ControllerPanel} />
-            <Route path={"/:uuid"} component={TheiaPanel} />
-          </Switch>
-        </div>
+        <Switch>
+          <Route exact path={"/"} component={MainPanel} />
+          <Route exact path={"/tutorial"} component={TutorialPanel} />
+          <Route exact path={"/controller"} component={ControllerPanel} />
+          <Route exact path={"/admin"} component={AdminPanel} />
+          <Route path={"/:uuid"} component={TheiaPanel} />
+        </Switch>
       </Router>
     </ThemeProvider>
   );

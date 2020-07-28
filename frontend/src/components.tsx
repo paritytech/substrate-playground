@@ -41,7 +41,7 @@ import { startNode, openFile, gotoLine, cursorMove } from "./commands";
 import { Discoverer, Responder } from "./connect";
 import { useHover, useInterval, useWindowMaxDimension } from './hooks';
 import { useLifecycle, deploy, deploying, failed, logged, restart, setup, stop, stopping } from './lifecycle';
-import { fetchWithTimeout, navigateToInstance, navigateToHomepage } from "./utils";
+import { fetchWithTimeout, navigateToAdmin, navigateToInstance, navigateToHomepage } from "./utils";
 
 import InputLabel from '@material-ui/core/InputLabel';
 import Menu from '@material-ui/core/Menu';
@@ -263,6 +263,18 @@ function useQuery() {
     return new URLSearchParams(useLocation().search);
 }
 
+export function AdminPanel() {
+    return (
+        <div style={{ display: "flex", height: "100vh", alignItems: "center", justifyContent: "center"}}>
+            <Wrapper>
+                <div>
+                ADMIN PANEL
+                </div>
+            </Wrapper>
+        </div>
+    );
+}
+
 export function ControllerPanel() {
     const instances = useDiscovery();
     return (
@@ -412,6 +424,7 @@ function login(): void {
 
 function Nav({ send, details, toggleDetails }) {
     const user = details?.user;
+    const history = useHistory();
     const [anchorEl, setAnchorEl] = React.useState(null);
     const open = Boolean(anchorEl);
     const handleMenu = (event) => {
@@ -466,6 +479,7 @@ function Nav({ send, details, toggleDetails }) {
                                 open={open}
                                 onClose={handleClose}
                             >
+                                <MenuItem onClick={async () => {handleClose(); await navigateToAdmin(history)}}>ADMIN</MenuItem>
                                 <MenuItem onClick={async () => {handleClose(); await logout(); send(restart)}}>LOGOUT</MenuItem>
                             </Menu>
                         </div>

@@ -17,6 +17,10 @@ export function navigateToHomepage(history: History): void {
   history.push("/");
 }
 
+export function navigateToAdmin(history: History): void {
+  history.push("/admin");
+}
+
 export function navigateToInstance(history: History, instanceUUID: string): void {
   const params = new URLSearchParams(location.search);
   params.delete("deploy");
