@@ -15,7 +15,6 @@ jobs:
       matrix:
         env: [staging]
     steps:
-      # https://github.com/actions/checkout
       - uses: actions/checkout@v2
 
       - uses: actions/setup-node@v1
@@ -35,3 +34,12 @@ jobs:
           access_token: ${{ secrets.MATRIX_ACCESS_TOKEN }}
           message: "Integration tests failed"
           server: "matrix.parity.io"
+
+      - if: ${{ failure() }}
+        name: Create Issue
+        uses: peter-evans/create-issue-from-file@v2
+        with:
+          title: Integration tests failed
+          content-filepath: ./templates/ct-issue.md
+          labels: report, automated issue
+          assignees: jeluard
