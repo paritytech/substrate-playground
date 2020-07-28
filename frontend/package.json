@@ -35,7 +35,7 @@
     "@typescript-eslint/eslint-plugin": "2.34.0",
     "@typescript-eslint/parser": "2.34.0",
     "eslint": "6.8.0",
-    "eslint-plugin-react": "7.20.3",
+    "eslint-plugin-react": "7.20.4",
     "parcel-bundler": "1.12.4",
     "playwright": "1.2.1",
     "typescript": "3.9.7"
