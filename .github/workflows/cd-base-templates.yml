@@ -20,11 +20,13 @@ jobs:
       - name: Set env to staging
         if: endsWith(github.ref, '/develop')
         run: |
+          echo "::set-env name=ENVIRONMENT::staging"
           echo "::set-env name=GKE_CLUSTER::susbtrate-playground-staging"
 
-      - name: Set env to prdouction
+      - name: Set env to production
         if: endsWith(github.ref, '/master')
         run: |
+          echo "::set-env name=ENVIRONMENT::production"
           echo "::set-env name=GKE_CLUSTER::susbtrate-playground"
 
       - uses: actions/checkout@v2
@@ -113,23 +115,45 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-#  list-existing-templates:
-#    runs-on: ubuntu-latest
-#    outputs:
-#      matrix: ${{ steps.set-templates.outputs.matrix }}
-#    steps:
-#    - id: set-templates
-#      run: echo "::set-output name=matrix::{\"include\":[{\"project\":\"foo\",\"config\":\"Debug\"},{\"project\":\"bar\",\"config\":\"Release\"}]}"
+# Go through existing templates and trigger template rebuilds using newly created base templates
 
-#  rebuild-existing-templates:
-#    needs: list-existing-templates
-#    runs-on: ubuntu-latest
-#    strategy:
-#      matrix: ${{fromJson(needs.list-existing-templates.outputs.matrix)}}
-#    steps:
-#    - name: Rebuild template ${{ matrix.id }}
-#      uses: peter-evans/repository-dispatch@v1
-#      with:
-#        token: ${{ secrets.REPO_ACCESS_TOKEN }}
-#        event-type: template-updated
-#        client-payload: '{"id": ${{ matrix.id }}, "image": ${{ matrix.image }}}'
+  list-existing-templates:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-templates.outputs.matrix }}
+    steps:
+    - name: Install yq
+      run: |
+        python -m pip install --upgrade pip
+        pip install yq
+
+    - id: set-templates
+      run: |
+        JSON="{\"include\":["
+        for FILE in "conf/k8s/overlays/$ENVIRONMENT/templates"/*
+        do
+          if [ -f "$FILE" ];then
+            IMAGE="$( yq r $FILE base-image )"
+            JSONline="{\"id\": \"$FILE\", \"image\": \"$IMAGE\"},"
+            JSON="$JSON$JSONline"
+          fi
+        done
+        JSON="$JSON]}"
+        echo $JSON
+
+        echo "::set-output name=matrix::$( echo "$JSON" )"
+
+  rebuild-existing-templates:
+    needs: list-existing-templates
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: ${{fromJson(needs.list-existing-templates.outputs.matrix)}}
+    steps:
+    - name: Rebuild template ${{ matrix.id }}
+      uses: peter-evans/repository-dispatch@v1
+      with:
+        token: ${{ secrets.REPO_ACCESS_TOKEN }}
+        event-type: template-updated
+        client-payload: '{"id": ${{ matrix.id }}, "image": ${{ matrix.image }}}'
+
+# TODO checkout template repo, check if based on a base template, if so create a PR to update to new version

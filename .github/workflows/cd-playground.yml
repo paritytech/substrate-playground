@@ -31,7 +31,7 @@ jobs:
           echo "::set-env name=ENVIRONMENT::staging"
           echo "::set-env name=GKE_CLUSTER::susbtrate-playground-staging"
 
-      - name: Set env to prdouction
+      - name: Set env to production
         if: endsWith(github.ref, '/master')
         run: |
           echo "::set-env name=ENVIRONMENT::production"

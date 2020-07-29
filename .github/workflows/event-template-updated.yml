@@ -1,3 +1,8 @@
+# Build template images from an image and current base templates
+# Then sets the new template image id in the right conf file.
+# This is turns triggers playground ConfigMap update (see `cd-templates.yml`)
+#
+# Must be called with the following payload: `{id: "TEMPLATE_ID", image: "IMAGE_ID"}`
 name: Event template-updated
 
 on:
@@ -10,6 +15,8 @@ env:
   TEMPLATE_ID: ${{ github.event.client_payload.id }}
   TEMPLATE_IMAGE: ${{ github.event.client_payload.image }}
 
+# TODO check that only the right repo can trigger build
+
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
@@ -20,7 +27,7 @@ jobs:
           echo "::set-env name=ENVIRONMENT::staging"
           echo "::set-env name=GKE_CLUSTER::susbtrate-playground-staging"
 
-      - name: Set env to prdouction
+      - name: Set env to production
         if: endsWith(github.ref, '/master')
         run: |
           echo "::set-env name=ENVIRONMENT::production"
@@ -82,7 +89,7 @@ jobs:
       - name: Update template version
         run: |-
           t=$(mktemp)
-          cat conf/k8s/overlays/${ENVIRONMENT}/templates/${TEMPLATE_ID} | yq -y ".image = \"${{ steps.env.outputs.image }}\"" > ${t} && mv ${t} conf/k8s/overlays/${ENVIRONMENT}/templates/${TEMPLATE_ID}
+          cat conf/k8s/overlays/${ENVIRONMENT}/templates/${TEMPLATE_ID} | yq -y ".image = \"${{ steps.env.outputs.image }}\"" > ${t} && yq -y ".base-image = \"${TEMPLATE_IMAGE}\"" > ${t} && mv ${t} conf/k8s/overlays/${ENVIRONMENT}/templates/${TEMPLATE_ID}
 
       - name: Commit template version update
         uses: EndBug/add-and-commit@v4

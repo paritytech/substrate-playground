@@ -19,7 +19,7 @@ jobs:
           echo "::set-env name=ENVIRONMENT::staging"
           echo "::set-env name=NAMESPACE::playground-staging"
 
-      - name: Set env to prdouction
+      - name: Set env to production
         if: endsWith(github.ref, '/master')
         run: |
           echo "::set-env name=ENVIRONMENT::production"
@@ -30,5 +30,7 @@ jobs:
       - name: Deploy templates
         run: kubectl create configmap templates --namespace=${NAMESPACE} --from-file=conf/k8s/overlays/${ENVIRONMENT}/templates/ --dry-run -o yaml | kubectl apply -f -
 
-# TODO test image, rollback if fails
+# TODO test image, rollback commit if fails
+# Do not rollback the rollback itself
+# GITHUB_REF
 # https://engineering.bitnami.com/articles/rolling-updates-for-configmap-objects.html
