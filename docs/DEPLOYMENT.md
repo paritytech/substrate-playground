@@ -100,7 +100,7 @@ Then update the tls secret:
 ```
 gcloud container clusters get-credentials substrate-playground-staging --region us-central1-a
 ENVIRONMENT=staging make k8s-setup-gke
-sudo kubectl create secret tls playground-tls --save-config --key /etc/letsencrypt/live/playground-staging.substrate.dev/privkey.pem --cert /etc/letsencrypt/live/playground-staging.substrate.dev/cert.pem  --namespace=playground-staging --dry-run -o yaml | sudo kubectl apply -f -
+sudo kubectl create secret tls playground-tls --save-config --key /etc/letsencrypt/live/playground-staging.substrate.dev/privkey.pem --cert /etc/letsencrypt/live/playground-staging.substrate.dev/cert.pem  --namespace=playground-staging --dry-run=client -o yaml | sudo kubectl apply -f -
 ```
 
 The new secret will be auomatically picked up.
@@ -119,7 +119,7 @@ Then update the tls secret:
 ```
 gcloud container clusters get-credentials substrate-playground --region us-central1-a
 ENVIRONMENT=production make k8s-setup-gke
-sudo kubectl create secret tls playground-tls --save-config --key /etc/letsencrypt/live/playground.substrate.dev/privkey.pem --cert /etc/letsencrypt/live/playground.substrate.dev/cert.pem  --namespace=playground --dry-run -o yaml | sudo kubectl apply -f -
+sudo kubectl create secret tls playground-tls --save-config --key /etc/letsencrypt/live/playground.substrate.dev/privkey.pem --cert /etc/letsencrypt/live/playground.substrate.dev/cert.pem  --namespace=playground --dry-run=client -o yaml | sudo kubectl apply -f -
 ```
 
 The new secret will be auomatically picked up.

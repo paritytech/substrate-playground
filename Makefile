@@ -138,4 +138,4 @@ k8s-create-namespace: k8s-assert
 
 # Creates or replaces the `templates` config map from `conf/k8s/overlays/ENVIRONMENT/templates`
 k8s-update-templates-config: k8s-assert
-	kubectl create configmap templates --namespace=${IDENTIFIER} --from-file=conf/k8s/overlays/${ENVIRONMENT}/templates/ --dry-run -o yaml | kubectl apply -f -
+	kubectl create configmap templates --namespace=${IDENTIFIER} --from-file=conf/k8s/overlays/${ENVIRONMENT}/templates/ --dry-run=client -o yaml | kubectl apply -f -

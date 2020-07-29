@@ -28,7 +28,7 @@ jobs:
       - uses: actions/checkout@v2
 
       - name: Deploy templates
-        run: kubectl create configmap templates --namespace=${NAMESPACE} --from-file=conf/k8s/overlays/${ENVIRONMENT}/templates/ --dry-run -o yaml | kubectl apply -f -
+        run: kubectl create configmap templates --namespace=${NAMESPACE} --from-file=conf/k8s/overlays/${ENVIRONMENT}/templates/ --dry-run=client -o yaml | kubectl apply -f -
 
 # TODO test image, rollback commit if fails
 # Do not rollback the rollback itself
