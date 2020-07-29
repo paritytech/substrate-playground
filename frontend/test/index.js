@@ -24,7 +24,18 @@ function playgroundDomain() {
     route.continue();
   });
   try {
+    const ghUser = process.env.GH_USER;
+    const ghPassword = process.env.GH_PASSWORD;
+    if (ghUser == null || ghPassword == null) {
+      console.error("Must provide credentials to GH");
+      process.exit(1);
+    }
+    // TODO log into GH
+
     const res = await page.goto(playgroundDomain());
+
+    // TODO Do some tests
+
     await browser.close();
     const status = res.status();
     if (status == 200) {

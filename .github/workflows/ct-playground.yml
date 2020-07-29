@@ -23,6 +23,8 @@ jobs:
         working-directory: ./frontend
         env:
           ENVIRONMENT: ${{ matrix.env }}
+          GH_USER: ${{ secrets.GH_USER }}
+          GH_PASSWORD: ${{ secrets.GH_PASSWORD }}
 
       - if: ${{ failure() }}
         uses: s3krit/matrix-message-action@v0.0.2
