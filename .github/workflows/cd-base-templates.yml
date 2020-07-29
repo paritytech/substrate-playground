@@ -133,6 +133,11 @@ jobs:
         echo "::set-env name=ENVIRONMENT::production"
     - uses: actions/checkout@v2
 
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.8
+
     - name: Install yq
       run: |
         python -m pip install --upgrade pip
@@ -143,9 +148,12 @@ jobs:
         JSON="{\"include\":["
         for FILE in "conf/k8s/overlays/$ENVIRONMENT/templates"/*
         do
-          echo $FILE
           IMAGE="$( yq r $FILE base-image )"
-          JSONline="{\"id\": \"$FILE\", \"image\": \"$IMAGE\"},"
+          ID=${foo##*/}
+          echo $FILE
+          echo $IMAGE
+          echo $ID
+          JSONline="{\"id\": \"$ID\", \"image\": \"$IMAGE\"},"
           JSON="$JSON$JSONline"
         done
         JSON="$JSON]}"
