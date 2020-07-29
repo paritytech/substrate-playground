@@ -149,7 +149,7 @@ jobs:
         for FILE in "conf/k8s/overlays/$ENVIRONMENT/templates"/*
         do
           echo $FILE
-          IMAGE="$( yq .base-image $FILE )"
+          IMAGE="$( yq .["base-image"] $FILE )"
           ID=${IMAGE##*/}
           echo $IMAGE
           echo $ID
