@@ -2,6 +2,8 @@
 # Then sets the new template image id in the right conf file.
 # This is turns triggers playground ConfigMap update (see `cd-templates.yml`)
 #
+# Images are automatically updated on `staging` only.
+#
 # Must be called with the following payload: `{id: "TEMPLATE_ID", image: "IMAGE_ID"}`
 name: Event template-updated
 
@@ -10,7 +12,6 @@ on:
     types: [template-updated]
 
 env:
-  GKE_ZONE: us-central1-a
   DOCKER_BUILDKIT: 1
   TEMPLATE_ID: ${{ github.event.client_payload.id }}
   TEMPLATE_IMAGE: ${{ github.event.client_payload.image }}
@@ -21,43 +22,10 @@ jobs:
   build-and-push:
     runs-on: ubuntu-latest
     steps:
-      - name: Set env to staging
-        if: endsWith(github.ref, '/develop')
-        run: |
-          echo "::set-env name=ENVIRONMENT::staging"
-          echo "::set-env name=GKE_CLUSTER::susbtrate-playground-staging"
-
-      - name: Set env to production
-        if: endsWith(github.ref, '/master')
-        run: |
-          echo "::set-env name=ENVIRONMENT::production"
-          echo "::set-env name=GKE_CLUSTER::susbtrate-playground"
-
       - uses: actions/checkout@v2
-      - uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
-        with:
-          service_account_key: ${{ secrets.GCLOUD_KEY }}
-          export_default_credentials: true
-          project_id: ${{ secrets.GKE_PROJECT }}
-      - run: gcloud --quiet auth configure-docker
-      - run: gcloud container clusters get-credentials "$GKE_CLUSTER" --zone "$GKE_ZONE"
-      - run: echo "::set-env name=ACCESS_TOKEN::$(gcloud auth print-access-token)"
 
       - name: Create template Dockerfile
         run: cat templates/Dockerfile.template | sed -e "s|%IMAGE%|${{ env.TEMPLATE_IMAGE }}|" > Dockerfile.theia
-
-      - name: Build and Push template image on GKE
-        uses: docker/build-push-action@v1
-        with:
-          username: oauth2accesstoken
-          password: ${{ env.ACCESS_TOKEN }}
-          dockerfile: Dockerfile.theia
-          repository: substrateplayground-252112/jeluard/substrate-playground-template-${{ env.TEMPLATE_ID }}-theia
-          registry: gcr.io
-          tags: latest
-          add_git_labels: true
-          tag_with_ref: true
-          tag_with_sha: true
 
       - name: Build and Push template image
         uses: docker/build-push-action@v1
@@ -89,13 +57,13 @@ jobs:
       - name: Update template version
         run: |-
           t=$(mktemp)
-          cat conf/k8s/overlays/${ENVIRONMENT}/templates/${TEMPLATE_ID} | yq -y ".image = \"${{ steps.env.outputs.image }}\"" > ${t} && yq -y ".base-image = \"${TEMPLATE_IMAGE}\"" > ${t} && mv ${t} conf/k8s/overlays/${ENVIRONMENT}/templates/${TEMPLATE_ID}
+          cat conf/k8s/overlays/staging/templates/${TEMPLATE_ID} | yq -y ".image = \"${{ steps.env.outputs.image }}\"" > ${t} && yq -y ".base-image = \"${TEMPLATE_IMAGE}\"" > ${t} && mv ${t} conf/k8s/overlays/staging/templates/${TEMPLATE_ID}
 
       - name: Commit template version update
         uses: EndBug/add-and-commit@v4
         with:
           message: ":bookmark: update template version for ${{ env.TEMPLATE_ID }}"
-          add: conf/k8s/overlays/${ENVIRONMENT}/templates/${{ env.TEMPLATE_ID }}
+          add: conf/k8s/overlays/staging/templates/${{ env.TEMPLATE_ID }}
           tag: templates-${{ steps.env.outputs.sha }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

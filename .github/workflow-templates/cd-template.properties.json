@@ -1,0 +1,8 @@
+{
+    "name": "Continuous Deployment playground template",
+    "description": "Octo Organization CI workflow template.",
+    "iconName": "playground-icon",
+    "categories": [
+        "Playground"
+    ]
+}
