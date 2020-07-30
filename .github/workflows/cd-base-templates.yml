@@ -150,7 +150,7 @@ jobs:
         do
           ID=${FILE##*/}
           IMAGE=`cat $FILE | yq .base`
-          JSONline="{\"id\": \"$ID\", \"image\": \"$IMAGE\"},"
+          JSONline="{\"id\": \"$ID\", \"image\": $IMAGE},"
           JSON="$JSON$JSONline"
         done
         JSON="$JSON]}"
