@@ -9,6 +9,9 @@ on:
     paths:
       - 'conf/k8s/overlays/**/templates/**'
 
+env:
+  GKE_ZONE: us-central1-a
+
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
@@ -26,6 +29,15 @@ jobs:
           echo "::set-env name=NAMESPACE::playground"
 
       - uses: actions/checkout@v2
+
+      - uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
+        with:
+          service_account_key: ${{ secrets.GCLOUD_KEY }}
+          export_default_credentials: true
+          project_id: ${{ secrets.GKE_PROJECT }}
+      - run: gcloud --quiet auth configure-docker
+      - run: gcloud container clusters get-credentials "substrate-$NAMESPACE" --zone "$GKE_ZONE"
+      - run: echo "::set-env name=ACCESS_TOKEN::$(gcloud auth print-access-token)"
 
       - name: Deploy templates
         run: kubectl create configmap templates --namespace=${NAMESPACE} --from-file=conf/k8s/overlays/${ENVIRONMENT}/templates/ --dry-run=client -o yaml | kubectl apply -f -
