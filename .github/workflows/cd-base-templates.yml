@@ -6,8 +6,8 @@ on:
       - develop
       - master
     paths:
-      - '.github/workflows/cd-base-templates.yml'
-      - 'templates/**'
+      - ".github/workflows/cd-base-templates.yml"
+      - "templates/**"
 
 env:
   GKE_ZONE: us-central1-a
@@ -115,48 +115,47 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-# Go through existing templates and trigger template rebuilds using newly created base templates
+  # Go through existing templates and trigger template rebuilds using newly created base templates
 
   list-existing-templates:
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.set-templates.outputs.matrix }}
     steps:
-    - name: Set env to staging
-      if: endsWith(github.ref, '/develop')
-      run: |
-        echo "::set-env name=ENVIRONMENT::staging"
+      - name: Set env to staging
+        if: endsWith(github.ref, '/develop')
+        run: |
+          echo "::set-env name=ENVIRONMENT::staging"
 
-    - name: Set env to production
-      if: endsWith(github.ref, '/master')
-      run: |
-        echo "::set-env name=ENVIRONMENT::production"
-    - uses: actions/checkout@v2
+      - name: Set env to production
+        if: endsWith(github.ref, '/master')
+        run: |
+          echo "::set-env name=ENVIRONMENT::production"
+      - uses: actions/checkout@v2
 
-    - name: Set up Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: 3.8
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
 
-    - name: Install yq
-      run: |
-        python -m pip install --upgrade pip
-        pip install yq
+      - name: Install yq
+        run: |
+          python -m pip install --upgrade pip
+          pip install yq
 
-    - id: set-templates
-      run: |
-        JSON="{\"include\":["
-        for FILE in "conf/k8s/overlays/$ENVIRONMENT/templates"/*
-        do
-          ID=${FILE##*/}
-          IMAGE=`cat $FILE | yq .base`
-          JSONline="{\"id\": \"$ID\", \"image\": $IMAGE},"
-          JSON="$JSON$JSONline"
-        done
-        JSON="$JSON]}"
-        echo $JSON
+      - id: set-templates
+        run: |
+          JSON="{\"include\":["
+          for FILE in "conf/k8s/overlays/$ENVIRONMENT/templates"/*
+          do
+            ID=${FILE##*/}
+            IMAGE=`cat $FILE | yq .base`
+            JSONline="{\"id\": \"$ID\", \"image\": $IMAGE},"
+            JSON="$JSON$JSONline"
+          done
+          JSON="$JSON]}"
 
-        echo "::set-output name=matrix::$( echo "$JSON" )"
+          echo "::set-output name=matrix::$( echo "$JSON" )"
 
   rebuild-existing-templates:
     needs: list-existing-templates
@@ -164,11 +163,11 @@ jobs:
     strategy:
       matrix: ${{fromJson(needs.list-existing-templates.outputs.matrix)}}
     steps:
-    - name: Rebuild template ${{ matrix.id }}
-      uses: peter-evans/repository-dispatch@v1
-      with:
-        token: ${{ secrets.PAT_TOKEN }}
-        event-type: template-updated
-        client-payload: '{"id": "${{ matrix.id }}", "image": "${{ matrix.image }}"}'
+      - name: Rebuild template ${{ matrix.id }}
+        uses: peter-evans/repository-dispatch@v1
+        with:
+          token: ${{ secrets.PAT_TOKEN }}
+          event-type: template-updated
+          client-payload: '{"id": "${{ matrix.id }}", "image": "${{ matrix.image }}"}'
 
 # TODO checkout template repo, check if based on a base template, if so create a PR to update to new version
