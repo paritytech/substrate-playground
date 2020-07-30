@@ -57,7 +57,7 @@ jobs:
       - name: Update template version
         run: |-
           t=$(mktemp)
-          cat conf/k8s/overlays/staging/templates/${TEMPLATE_ID} | yq -y ".image = \"${{ steps.env.outputs.image }}\"" > ${t} && yq -y ".base-image = \"${TEMPLATE_IMAGE}\"" > ${t} && mv ${t} conf/k8s/overlays/staging/templates/${TEMPLATE_ID}
+          cat conf/k8s/overlays/staging/templates/${TEMPLATE_ID} | yq -y ".image = \"${{ steps.env.outputs.image }}\"" > ${t} && yq -y ".base = \"${TEMPLATE_IMAGE}\"" > ${t} && mv ${t} conf/k8s/overlays/staging/templates/${TEMPLATE_ID}
 
       - name: Commit template version update
         uses: EndBug/add-and-commit@v4

@@ -148,15 +148,8 @@ jobs:
         JSON="{\"include\":["
         for FILE in "conf/k8s/overlays/$ENVIRONMENT/templates"/*
         do
-          echo $FILE
           ID=${FILE##*/}
-          echo $ID
-          CONTENT=`cat $FILE`
-          echo $CONTENT
-          IMAGE2=`cat $FILE | yq .image`
-          echo $IMAGE2
-          IMAGE="$( cat $FILE | yq .["base-image"] )"
-          echo $IMAGE
+          IMAGE=`cat $FILE | yq .base`
           JSONline="{\"id\": \"$ID\", \"image\": \"$IMAGE\"},"
           JSON="$JSON$JSONline"
         done
