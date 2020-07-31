@@ -66,14 +66,14 @@ jobs:
           add: conf/k8s/overlays/staging/templates/${{ env.TEMPLATE_ID }}
           tag: templates-${{ steps.env.outputs.sha }}
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
 
-      - name: Create Release
+      - name: Create Release for ${{ env.TEMPLATE_ID }}
         uses: actions/create-release@v1
         with:
-          tag_name: templates-${{ steps.env.outputs.sha }}
-          release_name: Release ${{ steps.env.outputs.sha }}
+          tag_name: template-${{ env.TEMPLATE_ID }}-${{ steps.env.outputs.sha }}
+          release_name: Release ${{ env.TEMPLATE_ID }}-${{ steps.env.outputs.sha }}
           body: |
-            Released ${{ steps.env.outputs.image }}
+            Released template for ${{ env.TEMPLATE_ID }} ${{ steps.env.outputs.image }}
         env:
           GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
