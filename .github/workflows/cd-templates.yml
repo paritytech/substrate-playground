@@ -7,7 +7,7 @@ on:
       - develop
       - master
     paths:
-      - 'conf/k8s/overlays/**/templates/**'
+      - 'conf/k8s/overlays/*/templates/*'
 
 env:
   GKE_ZONE: us-central1-a
