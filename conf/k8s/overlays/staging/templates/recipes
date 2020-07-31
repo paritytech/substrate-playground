@@ -1,4 +1,4 @@
-image: gcr.io/substrateplayground-252112/jeluard/substrate-playground-template-recipes-theia:sha-8b9a9d8
+image: gcr.io/substrateplayground-252112/jeluard/substrate-playground-template-recipes-theia:sha-f8a9715
 base: jeluard/substrate-playground-template-recipes:sha-d39fb70
 name: Recipes
 description: '## A Hands-On Cookbook for Aspiring Blockchain Chefs
