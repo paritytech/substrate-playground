@@ -30,7 +30,7 @@
         "@theia/plugin": "1.3.0",
         "@theia/plugin-dev": "1.3.0",
         "@theia/plugin-ext": "1.3.0",
-        "@theia/plugin-ext-vscode": "1.3.0",
+        "@theia/plugin-ext-vscode": "1.4.0",
         "@theia/preview": "1.3.0",
         "@theia/preferences": "1.3.0",
         "@theia/process": "1.3.0",
