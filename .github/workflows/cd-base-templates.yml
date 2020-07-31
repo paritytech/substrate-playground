@@ -101,7 +101,7 @@ jobs:
           add: "templates/Dockerfile.template"
           tag: base-templates-${{ steps.env.outputs.sha }}
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
 
       - name: Create Release
         uses: actions/create-release@v1
