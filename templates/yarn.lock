@@ -757,10 +757,10 @@
     "@babel/types" "^7.4.4"
     esutils "^2.0.2"
 
-"@babel/runtime@^7.5.5", "@babel/runtime@^7.8.4", "@babel/runtime@^7.8.7":
-  version "7.10.5"
-  resolved "https://registry.yarnpkg.com/@babel/runtime/-/runtime-7.10.5.tgz#303d8bd440ecd5a491eae6117fd3367698674c5c"
-  integrity sha512-otddXKhdNn7d0ptoFRHtMLa8LqDxLYwTjB4nYgM1yy5N6gU/MUf8zqyyLltCH3yAVitBzmwK4us+DD0l/MauAg==
+"@babel/runtime@^7.10.0", "@babel/runtime@^7.8.4", "@babel/runtime@^7.8.7":
+  version "7.11.0"
+  resolved "https://registry.yarnpkg.com/@babel/runtime/-/runtime-7.11.0.tgz#f10245877042a815e07f7e693faff0ae9d3a2aac"
+  integrity sha512-qArkXsjJq7H+T86WrIFV0Fnu/tNOkZ4cgXmjkzAu3b/58D5mFIO8JH/y77t7C9q0OdDRdh9s7Ue5GasYssxtXw==
   dependencies:
     regenerator-runtime "^0.13.4"
 
@@ -1833,10 +1833,10 @@
     webpack-cli "2.0.12"
     worker-loader "^1.1.1"
 
-"@theia/application-package@^1.3.0":
-  version "1.3.0"
-  resolved "https://registry.yarnpkg.com/@theia/application-package/-/application-package-1.3.0.tgz#7c993d81ab4c0cfbad9f510a9cc39253d69f1528"
-  integrity sha512-FBPjn8xX1u2ZGgx1Gp0USMFs9BpDKKqaAWteY4g/qVIDSD/Ftm2kI0YKq9z7vaIfhyorU0wX8SCXO83/x8leTQ==
+"@theia/application-package@^1.3.0", "@theia/application-package@^1.4.0":
+  version "1.4.0"
+  resolved "https://registry.yarnpkg.com/@theia/application-package/-/application-package-1.4.0.tgz#259eec8e62f7ec81b9ec36c906737e1db58e9d09"
+  integrity sha512-sm3j7pwue5ti0z8+jlmYuVJ5y1q3Hel0jbSRjJmWLJSpHx4Wk960FMtpv9z2KvEKZT/0TSV683OCT5bXPD8/hw==
   dependencies:
     "@types/fs-extra" "^4.0.2"
     "@types/request" "^2.0.3"
@@ -1908,15 +1908,15 @@
     "@theia/monaco" "^1.3.0"
     anser "^1.4.7"
 
-"@theia/core@1.3.0", "@theia/core@^1.3.0":
-  version "1.3.0"
-  resolved "https://registry.yarnpkg.com/@theia/core/-/core-1.3.0.tgz#d352301121fd7bb40724eaa5e6279265cfaadcf0"
-  integrity sha512-LldOindGbRULrRyYVi5Tzi7U85x9bqm2xee7svGBd5xvPyx3ohfla8wwUW8jrLgy2PkNtzSPhD0B6+bi2/Evfg==
+"@theia/core@1.4.0", "@theia/core@^1.3.0":
+  version "1.4.0"
+  resolved "https://registry.yarnpkg.com/@theia/core/-/core-1.4.0.tgz#6b6267522595e7eed34838d910f6d9d6bf102953"
+  integrity sha512-OL8738rAw6kst262nmQzfWUVWKtUUg5DVWlwPqmk77eJF+4yY37oX9hzF93ZdeMdml+TVrMUXq2iNT/JW9LCiQ==
   dependencies:
-    "@babel/runtime" "^7.5.5"
+    "@babel/runtime" "^7.10.0"
     "@phosphor/widgets" "^1.9.3"
     "@primer/octicons-react" "^9.0.0"
-    "@theia/application-package" "^1.3.0"
+    "@theia/application-package" "^1.4.0"
     "@types/body-parser" "^1.16.4"
     "@types/cookie" "^0.3.3"
     "@types/express" "^4.16.0"
@@ -13298,7 +13298,7 @@ vscode-json-languageservice@^3.4.12:
     vscode-nls "^4.1.2"
     vscode-uri "^2.1.2"
 
-vscode-jsonrpc@^5.0.0, vscode-jsonrpc@^5.0.1:
+vscode-jsonrpc@^5.0.0, vscode-jsonrpc@^5.0.0-next.2, vscode-jsonrpc@^5.0.1:
   version "5.0.1"
   resolved "https://registry.yarnpkg.com/vscode-jsonrpc/-/vscode-jsonrpc-5.0.1.tgz#9bab9c330d89f43fc8c1e8702b5c36e058a01794"
   integrity sha512-JvONPptw3GAQGXlVV2utDcHx0BiY34FupW/kI6mZ5x06ER5DdPG/tXWMVHjTNULF5uKPOUUD0SaXg5QaubJL0A==
@@ -13311,7 +13311,15 @@ vscode-languageclient@^6.0.0:
     semver "^6.3.0"
     vscode-languageserver-protocol "^3.15.3"
 
-vscode-languageserver-protocol@^3.15.0-next.8, vscode-languageserver-protocol@^3.15.3:
+vscode-languageserver-protocol@^3.15.0-next.8:
+  version "3.15.0-next.9"
+  resolved "https://registry.yarnpkg.com/vscode-languageserver-protocol/-/vscode-languageserver-protocol-3.15.0-next.9.tgz#e768256bd5b580b25bfbc8099bc03bc4c42ebf30"
+  integrity sha512-b9PAxouMmtsLEe8ZjbIMPb7wRWPhckGfgjwZLmp/dWnaAuRPYtY3lGO0/rNbLc3jKIqCVlnEyYVFKalzDAzj0g==
+  dependencies:
+    vscode-jsonrpc "^5.0.0-next.2"
+    vscode-languageserver-types "^3.15.0-next.5"
+
+vscode-languageserver-protocol@^3.15.3:
   version "3.15.3"
   resolved "https://registry.yarnpkg.com/vscode-languageserver-protocol/-/vscode-languageserver-protocol-3.15.3.tgz#3fa9a0702d742cf7883cb6182a6212fcd0a1d8bb"
   integrity sha512-zrMuwHOAQRhjDSnflWdJG+O2ztMWss8GqUUB8dXLR/FPenwkiBNkMIJJYfSN6sgskvsF0rHAoBowNQfbyZnnvw==
@@ -13324,10 +13332,15 @@ vscode-languageserver-textdocument@^1.0.1:
   resolved "https://registry.yarnpkg.com/vscode-languageserver-textdocument/-/vscode-languageserver-textdocument-1.0.1.tgz#178168e87efad6171b372add1dea34f53e5d330f"
   integrity sha512-UIcJDjX7IFkck7cSkNNyzIz5FyvpQfY7sdzVy+wkKN/BLaD4DQ0ppXQrKePomCxTS7RrolK1I0pey0bG9eh8dA==
 
-vscode-languageserver-types@3.15.1, vscode-languageserver-types@^3.15.0-next, vscode-languageserver-types@^3.15.1:
+vscode-languageserver-types@3.15.1, vscode-languageserver-types@^3.15.1:
   version "3.15.1"
   resolved "https://registry.yarnpkg.com/vscode-languageserver-types/-/vscode-languageserver-types-3.15.1.tgz#17be71d78d2f6236d414f0001ce1ef4d23e6b6de"
   integrity sha512-+a9MPUQrNGRrGU630OGbYVQ+11iOIovjCkqxajPa9w57Sd5ruK8WQNsslzpa0x/QJqC8kRc2DUxWjIFwoNm4ZQ==
+
+vscode-languageserver-types@^3.15.0-next, vscode-languageserver-types@^3.15.0-next.5:
+  version "3.15.0-next.5"
+  resolved "https://registry.yarnpkg.com/vscode-languageserver-types/-/vscode-languageserver-types-3.15.0-next.5.tgz#863d711bf47b338ff5e63ae19fb20d4fcd4d713b"
+  integrity sha512-7hrELhTeWieUgex3+6692KjCkcmO/+V/bFItM5MHGcBotzwmjEuXjapLLYTYhIspuJ1ibRSik5MhX5YwLpsPiw==
 
 vscode-languageserver@^6.0.1:
   version "6.1.1"
