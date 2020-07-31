@@ -8,9 +8,13 @@ on:
     paths-ignore:
       - 'README.md'
       - '.github/workflows/book.yml'
+      - '.github/workflows/release.yml'
       - '.github/workflows/ci-**'
       - '.github/workflows/cd-base-templates.yml'
       - '.github/workflows/cd-templates.yml'
+      - '.github/workflows/event-*'
+      - '.github/workflows/templates/*'
+      - '.github/workflow-templates/*'
       - 'docs/**'
       - 'conf/k8s/overlays/**/templates/**'
       - 'conf/k8s/overlays/production'
