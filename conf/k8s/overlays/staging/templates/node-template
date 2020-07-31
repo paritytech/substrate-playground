@@ -1,4 +1,4 @@
-image: gcr.io/substrateplayground-252112/jeluard/substrate-playground-template-node-template-theia:sha-8b9a9d8
+image: gcr.io/substrateplayground-252112/jeluard/substrate-playground-template-node-template-theia:sha-f8a9715
 base: paritytech/substrate-playground-template-node-template:sha-769ca1a
 name: Node template
 description: '## The Node template you know and love'
