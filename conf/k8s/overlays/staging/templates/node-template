@@ -1,5 +1,5 @@
-image: gcr.io/substrateplayground-252112/jeluard/substrate-playground-template-node-template-theia:sha-74e9dac
-base: paritytech/substrate-playground-template-node-template:sha-769ca1a
+image: gcr.io/substrateplayground-252112/jeluard/substrate-playground-template-node-template-theia:sha-e42ceaa
+base: paritytech/substrate-playground-template-node-template:sha-360f308
 name: Node template
 description: '## The Node template you know and love'
 public: true
