@@ -34,12 +34,14 @@ jobs:
         run: |
           echo "::set-env name=ENVIRONMENT::staging"
           echo "::set-env name=NAMESPACE::playground-staging"
+          echo "::set-env name=GKE_CLUSTER::susbtrate-playground-staging"
 
       - name: Set env to production
         if: endsWith(github.ref, '/master')
         run: |
           echo "::set-env name=ENVIRONMENT::production"
           echo "::set-env name=NAMESPACE::playground"
+          echo "::set-env name=GKE_CLUSTER::substrate-playground"
 
       - uses: actions/checkout@v2
       - uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
@@ -48,7 +50,7 @@ jobs:
           export_default_credentials: true
           project_id: ${{ secrets.GKE_PROJECT }}
       - run: gcloud --quiet auth configure-docker
-      - run: gcloud container clusters get-credentials "substrate-$NAMESPACE" --zone "$GKE_ZONE"
+      - run: gcloud container clusters get-credentials "$GKE_CLUSTER" --zone "$GKE_ZONE"
       - run: echo "::set-env name=ACCESS_TOKEN::$(gcloud auth print-access-token)"
 
       - uses: docker/build-push-action@v1

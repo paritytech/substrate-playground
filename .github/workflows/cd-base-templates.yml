@@ -27,7 +27,7 @@ jobs:
         if: endsWith(github.ref, '/master')
         run: |
           echo "::set-env name=ENVIRONMENT::production"
-          echo "::set-env name=GKE_CLUSTER::susbtrate-playground"
+          echo "::set-env name=GKE_CLUSTER::substrate-playground"
 
       - uses: actions/checkout@v2
       - uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
