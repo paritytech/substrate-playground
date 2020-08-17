@@ -17,6 +17,7 @@ import Divider from '@material-ui/core/Divider';
 import FeedbackIcon from '@material-ui/icons/Feedback';
 import HelpIcon from '@material-ui/icons/Help';
 import IconButton from '@material-ui/core/IconButton';
+import GitHubIcon from '@material-ui/icons/GitHub';
 import Link from '@material-ui/core/Link';
 import List from '@material-ui/core/List';
 import ListItem from '@material-ui/core/ListItem';
@@ -483,7 +484,7 @@ function Nav({ send, details, toggleDetails }) {
                                 <MenuItem onClick={async () => {handleClose(); await logout(); send(restart)}}>LOGOUT</MenuItem>
                             </Menu>
                         </div>
-                        : <Button onClick={login}>LOGIN</Button>}
+                        : <Button onClick={login} startIcon={<GitHubIcon />}>LOGIN</Button>}
                 </div>
             </Toolbar>
         </AppBar>
@@ -716,12 +717,10 @@ export function MainPanel({ history, location }) {
             } else {
                 return (
                 <Container style={{display: "flex", flex: 1, padding: 0, alignItems: "center", justifyContent: "center", flexDirection: "column"}}>
-                    <Typography variant="h3">
+                    <Typography variant="h3" style= {{ textAlign: "center" }}>
                         You must be logged to use Playground
                     </Typography>
-                    <div>
-                    Please <Button onClick={login} color="primary" variant="contained" disableElevation>LOGIN</Button>
-                    </div>
+                    <Button style={{ marginTop: 40 }} startIcon={<GitHubIcon />} onClick={login} color="primary" variant="contained" disableElevation>LOGIN</Button>
                 </Container>);
             }
         } else {

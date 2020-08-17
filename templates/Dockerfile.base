@@ -10,6 +10,7 @@
 ARG NODE_VERSION=12
 FROM node:${NODE_VERSION}
 
+# https://bevyengine.org/learn/book/getting-started/setup/
 RUN apt-get update && \
     apt-get install -y make gcc g++ dumb-init python sudo vim git cmake pkg-config libssl-dev git gcc build-essential git clang libclang-dev pkg-config xsel && \
     apt-get clean && \
