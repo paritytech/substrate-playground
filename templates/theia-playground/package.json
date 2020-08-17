@@ -79,7 +79,7 @@
         "vscode-builtin-yaml": "https://open-vsx.org/api/vscode/yaml/1.47.3/file/vscode.yaml-1.47.3.vsix",
         "vscode-editorconfig": "https://open-vsx.org/api/EditorConfig/EditorConfig/0.15.1/file/EditorConfig.EditorConfig-0.15.1.vsix",
         "vscode-eslint": "https://open-vsx.org/api/dbaeumer/vscode-eslint/2.1.3/file/dbaeumer.vscode-eslint-2.1.3.vsix",
-        "vscode-substrate": "hhttps://github.com/paritytech/vscode-substrate/releases/download/v0.4.11/vscode-substrate-0.4.11.vsix",
+        "vscode-substrate": "https://github.com/paritytech/vscode-substrate/releases/download/v0.5.0/vscode-substrate-0.5.0.vsix",
         "vscode-references-view": "https://open-vsx.org/api/ms-vscode/references-view/0.0.47/file/ms-vscode.references-view-0.0.47.vsix",
         "rls-vscode": "https://github.com/rust-lang/rls-vscode/releases/download/v0.7.8/rust.vsix",
         "vscode-yaml": "https://open-vsx.org/api/redhat/vscode-yaml/0.9.1/file/redhat.vscode-yaml-0.9.1.vsix",
