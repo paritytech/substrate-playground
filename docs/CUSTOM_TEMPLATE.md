@@ -19,7 +19,34 @@ After the associated Github workflow in [substrate-playground](https://github.co
 
 # Github workflow
 
-See a working example [here](https://github.com/substrate-developer-hub/substrate-node-template/blob/master/.github/workflows/build-push-template.yml).
+A template workflow can be found [here](https://github.com/paritytech/substrate-playground/blob/develop/.github/workflow-templates/cd-template.yml).
+
+This workflow will:
+
+* create and publish a standalone Docker image based on a local Dockerfile
+* update `.devcontainer/devcontainer.json` to use this new image
+* commit changes
+* trigger `template-updated` on `paritytech/substrate-playground`
+
+This event triggers the following actions in `paritytech/substrate-playground`:
+
+* create and publish a [composite docker image](https://github.com/paritytech/substrate-playground/blob/develop/templates/Dockerfile.template) from the new template one and latest [base one](https://github.com/paritytech/substrate-playground/blob/develop/templates/Dockerfile.base)
+* update [template image id](https://github.com/paritytech/substrate-playground/tree/develop/conf/k8s/overlays/staging/templates)
+* commit changes
+
+Changes to the configuration file are finally [continuously deployed](https://github.com/paritytech/substrate-playground/blob/develop/.github/workflows/cd-templates.yml) to the staging playground environment as kubernetes ConfigMap.
+
+Once live, images are tested and rollbacked if errors are detected.
+
+
+```mermaid
+sequenceDiagram
+	CUSTOM_TEMPLATE->>CUSTOM_TEMPLATE: Build docker image
+	CUSTOM_TEMPLATE->>PLAYGROUND: Trigger template-updated
+	PLAYGROUND-->>PLAYGROUND: Build template docker image
+	PLAYGROUND-->>PLAYGROUND: Push new configuration to staging
+    PLAYGROUND-->>PLAYGROUND: Test new image
+```
 
 ## Github secrets
 

@@ -23,8 +23,8 @@ jobs:
     - name: Setup mdBook
       uses: peaceiris/actions-mdbook@v1
 
-    - name: Install linkcheck
-      run: cargo install mdbook-linkcheck
+    - name: Install mermaid
+      run: cargo install mdbook-mermaid && mdbook-mermaid install ./docs
 
     - name: Build Book
       run: mdbook build

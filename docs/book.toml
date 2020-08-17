@@ -5,15 +5,9 @@ multilingual = false
 src = "."
 title = "Playground"
 
-#[preprocessor.mermaid]
-#command = "mdbook-mermaid"
+[preprocessor.mermaid]
+command = "mdbook-mermaid"
 
 [output.html]
-additional-js = [
-]
-
-#[output.linkcheck]
-#follow-web-links = true
-#warning-policy = "warn"
-#exclude = [
-#]
+additional-css = ["mermaid.css"]
+additional-js = ["mermaid.min.js", "mermaid-init.js"]
