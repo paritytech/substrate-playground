@@ -362,7 +362,7 @@ export function TheiaInstance({ uuid }) {
                 if (containerStatuses?.length > 0) {
                     const state = containerStatuses[0].state;
                     const reason = state?.waiting?.reason;
-                    if (reason === "ErrImagePull" || reason === "ImagePullBackOff" || reason === "InvalidImageName") {
+                    if (reason === "CrashLoopBackOff" || reason === "ErrImagePull" || reason === "ImagePullBackOff" || reason === "InvalidImageName") {
                         setData({ type: "ERROR", value: state?.waiting?.message, action: () => navigateToHomepage(history) });
                         return;
                     }
