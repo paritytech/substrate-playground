@@ -24,7 +24,6 @@ PLAYGROUND_BACKEND_API_DOCKER_IMAGE_NAME=${DOCKER_USERNAME}/substrate-playground
 PLAYGROUND_BACKEND_UI_DOCKER_IMAGE_NAME=${DOCKER_USERNAME}/substrate-playground-backend-ui
 TEMPLATE_BASE=${DOCKER_USERNAME}/substrate-playground-template-base
 TEMPLATE_THEIA_BASE=${DOCKER_USERNAME}/substrate-playground-template-theia-base
-GOOGLE_PROJECT_ID=substrateplayground-252112
 
 COLOR_BOLD:= $(shell tput bold)
 COLOR_RED:= $(shell tput bold; tput setaf 1)
@@ -53,20 +52,18 @@ clean: clean-frontend clean-backend
 build-template-base:
 	$(eval THEIA_DOCKER_IMAGE_VERSION=$(shell git rev-parse --short HEAD))
 	@cd templates; docker build --force-rm -f Dockerfile.base --label org.opencontainers.image.version=${THEIA_DOCKER_IMAGE_VERSION} -t ${TEMPLATE_BASE}:sha-${THEIA_DOCKER_IMAGE_VERSION} .
-	docker tag ${TEMPLATE_BASE}:sha-${THEIA_DOCKER_IMAGE_VERSION} gcr.io/${GOOGLE_PROJECT_ID}/${TEMPLATE_BASE}
 	docker image prune -f --filter label=stage=builder
 
-# Push a newly built theia image on docker.io and gcr.io
+# Push a newly built theia image on docker.io
 push-template-base: build-template-base
 	docker push ${TEMPLATE_BASE}:sha-${THEIA_DOCKER_IMAGE_VERSION}
 
 build-template-theia-base:
 	$(eval THEIA_DOCKER_IMAGE_VERSION=$(shell git rev-parse --short HEAD))
 	@cd templates; docker build --force-rm -f Dockerfile.theia-base --label org.opencontainers.image.version=${THEIA_DOCKER_IMAGE_VERSION} -t ${TEMPLATE_THEIA_BASE}:sha-${THEIA_DOCKER_IMAGE_VERSION} .
-	docker tag ${TEMPLATE_THEIA_BASE}:sha-${THEIA_DOCKER_IMAGE_VERSION} gcr.io/${GOOGLE_PROJECT_ID}/${TEMPLATE_THEIA_BASE}
 	docker image prune -f --filter label=stage=builder
 
-# Push a newly built theia image on docker.io and gcr.io
+# Push a newly built theia image on docker.io
 push-template-theia-base: build-template-theia-base
 	docker push ${TEMPLATE_THEIA_BASE}:sha-${THEIA_DOCKER_IMAGE_VERSION}
 

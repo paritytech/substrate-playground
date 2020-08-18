@@ -43,7 +43,7 @@ jobs:
 
       - run: |-
           echo ::set-output name=sha::${GITHUB_SHA::7}
-          echo ::set-output name=image::gcr.io/substrateplayground-252112/jeluard/substrate-playground-template-${TEMPLATE_ID}-theia:sha-${GITHUB_SHA::7}
+          echo ::set-output name=image::paritytech/substrate-playground-template-${TEMPLATE_ID}-theia:sha-${GITHUB_SHA::7}
         id: env
 
       - name: Set up Python

@@ -10,7 +10,6 @@ on:
       - "templates/**"
 
 env:
-  GKE_ZONE: us-central1-a
   DOCKER_BUILDKIT: 1
 
 jobs:
@@ -21,36 +20,13 @@ jobs:
         if: endsWith(github.ref, '/develop')
         run: |
           echo "::set-env name=ENVIRONMENT::staging"
-          echo "::set-env name=GKE_CLUSTER::susbtrate-playground-staging"
 
       - name: Set env to production
         if: endsWith(github.ref, '/master')
         run: |
           echo "::set-env name=ENVIRONMENT::production"
-          echo "::set-env name=GKE_CLUSTER::substrate-playground"
 
       - uses: actions/checkout@v2
-      - uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
-        with:
-          service_account_key: ${{ secrets.GCLOUD_KEY }}
-          export_default_credentials: true
-          project_id: ${{ secrets.GKE_PROJECT }}
-      - run: gcloud --quiet auth configure-docker
-      - run: gcloud container clusters get-credentials "$GKE_CLUSTER" --zone "$GKE_ZONE"
-      - run: echo "::set-env name=ACCESS_TOKEN::$(gcloud auth print-access-token)"
-
-      - uses: docker/build-push-action@v1
-        with:
-          username: oauth2accesstoken
-          password: ${{ env.ACCESS_TOKEN }}
-          path: templates
-          dockerfile: templates/Dockerfile.base
-          repository: substrateplayground-252112/jeluard/substrate-playground-template-base
-          registry: gcr.io
-          tags: latest
-          add_git_labels: true
-          tag_with_ref: true
-          tag_with_sha: true
 
       - uses: docker/build-push-action@v1
         with:
@@ -59,19 +35,6 @@ jobs:
           path: templates
           dockerfile: templates/Dockerfile.base
           repository: paritytech/substrate-playground-template-base
-          tags: latest
-          add_git_labels: true
-          tag_with_ref: true
-          tag_with_sha: true
-
-      - uses: docker/build-push-action@v1
-        with:
-          username: oauth2accesstoken
-          password: ${{ env.ACCESS_TOKEN }}
-          path: templates
-          dockerfile: templates/Dockerfile.theia-base
-          repository: substrateplayground-252112/jeluard/substrate-playground-template-theia-base
-          registry: gcr.io
           tags: latest
           add_git_labels: true
           tag_with_ref: true
