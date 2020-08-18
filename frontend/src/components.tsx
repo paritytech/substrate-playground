@@ -350,14 +350,7 @@ export function TheiaInstance({ uuid }) {
             }
 
             const phase = result?.pod?.details?.status?.phase;
-            if (phase == "Running") {
-                // Check URL is fine
-                const url = result.url;
-                if ((await fetchWithTimeout(url)).ok) {
-                    setData({ type: "SUCCESS", url: url });
-                    return;
-                }
-            } else if (phase == "Pending") {
+            if (phase == "Running" || phase == "Pending") {
                 const containerStatuses = result?.pod?.details?.status?.containerStatuses;
                 if (containerStatuses?.length > 0) {
                     const state = containerStatuses[0].state;
@@ -366,6 +359,12 @@ export function TheiaInstance({ uuid }) {
                         setData({ type: "ERROR", value: state?.waiting?.message, action: () => navigateToHomepage(history) });
                         return;
                     }
+                }
+                // Check URL is fine
+                const url = result.url;
+                if ((await fetchWithTimeout(url)).ok) {
+                    setData({ type: "SUCCESS", url: url });
+                    return;
                 }
             }
 
