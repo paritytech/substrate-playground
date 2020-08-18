@@ -1,10 +1,10 @@
 const { chromium } = require('playwright');
 
 function playgroundDomain() {
-    const env = process.env.ENVIRONMENT || "DEVELOPMENT";
+    const env = process.env.ENVIRONMENT || "development";
     switch (env) {
         case "development":
-            return "http://playground-dev.substrate.test";
+            return "http://playground-dev.substrate.test/";
         case "staging":
             return "https://playground-staging.substrate.dev/";
         case "production":
@@ -30,18 +30,36 @@ function playgroundDomain() {
       console.error("Must provide credentials to GH");
       process.exit(1);
     }
-    // TODO log into GH
 
     const res = await page.goto(playgroundDomain());
 
-    // TODO Do some tests
-
-    await browser.close();
     const status = res.status();
     if (status == 200) {
+
+      await page.click('text=login');
+      await page.fill('#login_field', ghUser);
+      await page.fill('#password', ghPassword);
+      await page.click('input[name=commit]');
+      await page.waitForTimeout(4000);
+
+      // Assuming the app is already authorized
+      if (!page.url().startsWith(playgroundDomain())) {
+        console.error(`GitHub authentication failed`, page.url());
+        process.exit(1);
+      }
+
+      await page.click('text=create');
+      await page.waitForNavigation();
+      await page.waitForSelector('//*[@id="shell-tab-plugin-view-container:substrate"]');
+      await page.click('//*[@id="shell-tab-plugin-view-container:substrate"]')
+      await page.waitForSelector('text=Actions', {timeout: 5000})
+
+      await browser.close();
       process.exit(0);
     } else {
       console.error(`Got unexpected status code ${status}`);
+
+      await browser.close();
       process.exit(1);
     }
   } catch (e) {
