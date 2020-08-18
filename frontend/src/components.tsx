@@ -530,7 +530,7 @@ function TemplateSelector({templates, onSelect, onRetryClick, state, user}) {
                         <Typography className={classes.root} variant="overline">
                             Built using the following
                             <Link
-                                        href={`https://${selection.image}`}
+                                        href={`https://hub.docker.com/r/${selection.image}/tags`}
                                         rel="noreferrer"
                                         variant="inherit"
                                         style={{ margin: 5 }}>
