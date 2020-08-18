@@ -505,6 +505,7 @@ function TemplateSelector({templates, onSelect, onRetryClick, state, user}) {
     const [selection, select] = useState(publicTemplates[0]);
     const templatesAvailable = templates?.length > 0;
     const classes = useStyles();
+    const imageName = selection.image.split(":")[0];
     return (
     <React.Fragment>
         <Typography variant="h5" style={{padding: 20}}>Select a template</Typography>
@@ -529,7 +530,7 @@ function TemplateSelector({templates, onSelect, onRetryClick, state, user}) {
                         <Typography className={classes.root} variant="overline">
                             Built using the following
                             <Link
-                                        href={`https://hub.docker.com/r/${selection.image}/tags`}
+                                        href={`https://hub.docker.com/r/${imageName}/tags`}
                                         rel="noreferrer"
                                         variant="inherit"
                                         style={{ margin: 5 }}>
