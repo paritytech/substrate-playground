@@ -36,7 +36,7 @@ function playgroundDomain() {
     const status = res.status();
     if (status == 200) {
 
-      await page.click('text=login');
+      /*await page.click('text=login');
       await page.fill('#login_field', ghUser);
       await page.fill('#password', ghPassword);
       await page.click('input[name=commit]');
@@ -51,7 +51,7 @@ function playgroundDomain() {
       await page.click('text=create');
       await page.waitForSelector('//*[@id="shell-tab-plugin-view-container:substrate"]');
       await page.click('//*[@id="shell-tab-plugin-view-container:substrate"]')
-      await page.waitForSelector('text=Actions', {timeout: 5000})
+      await page.waitForSelector('text=Actions', {timeout: 5000})*/
 
       await browser.close();
       process.exit(0);
