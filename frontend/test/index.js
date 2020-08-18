@@ -49,7 +49,6 @@ function playgroundDomain() {
       }
 
       await page.click('text=create');
-      await page.waitForNavigation();
       await page.waitForSelector('//*[@id="shell-tab-plugin-view-container:substrate"]');
       await page.click('//*[@id="shell-tab-plugin-view-container:substrate"]')
       await page.waitForSelector('text=Actions', {timeout: 5000})
