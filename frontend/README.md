@@ -24,8 +24,8 @@ yarn build
 Files are saved at `dist` folder.
 Inside `dist` folder there is also a file with information about bundle content sizes: `dist/report.html`.
 
-## Tests
+## Integration tests
 
 ```shell
-GH_USER=jeluard GH_PASSWORD=toto ENVIRONMENT=staging yarn test
+GH_USER=jeluard GH_PASSWORD=toto ENVIRONMENT=staging yarn itest
 ```
