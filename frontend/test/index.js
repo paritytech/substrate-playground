@@ -36,6 +36,8 @@ function playgroundDomain() {
     const status = res.status();
     if (status == 200) {
 
+// Log via cookie to short-circuit device verification?
+
       /*await page.click('text=login');
       await page.fill('#login_field', ghUser);
       await page.fill('#password', ghPassword);

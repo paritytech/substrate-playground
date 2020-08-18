@@ -54,3 +54,7 @@ The following secrets must be defined:
 
 `DOCKER_USERNAME` and `DOCKER_PASSWORD` to push the image to dockerhub (values will depend on the chosen docker image org)
 `REPO_ACCESS_TOKEN` a token with `public_repo` or repo scope
+
+## Keeping uptodate
+
+Docker images will be rebuilt and pushed each time there are changes to master branch. This can be tweaked by modifying the workflow.
