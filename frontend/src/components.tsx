@@ -292,6 +292,7 @@ export function TheiaInstance({ uuid }) {
     const [state, send] = useLifecycle(history, location);
     const details = state.context.details;
     const ref = useRef();
+    const user = details?.user;
     const [data, setData] = useState({ type: "LOADING" });
 
     useEffect(() => {
@@ -376,7 +377,7 @@ export function TheiaInstance({ uuid }) {
             }
         }
 
-        if (data.type != "ERROR" && data.type != "SUCCESS") {
+        if (user && data.type != "ERROR" && data.type != "SUCCESS") {
             fetchData();
         }
     }, [data, uuid]);
@@ -384,7 +385,11 @@ export function TheiaInstance({ uuid }) {
     if (data.type == "SUCCESS") {
         return <iframe ref={ref} src={data.url} frameBorder="0" width="100%" height="100%"></iframe>
     } else {
-        return <Wrapper send={send} details={details} state={data} />
+        if (details == null || user) {
+            return <Wrapper send={send} details={details} state={data} />;
+        } else {
+            return <Wrapper send={send} details={details}><LoginPanel /></Wrapper>;
+        }
     }
 }
 
@@ -422,6 +427,16 @@ function login(): void {
     window.location.href = githubAuthorizationURL();
 }
 
+function LoginPanel() {
+    return (
+        <Container style={{display: "flex", flex: 1, padding: 0, alignItems: "center", justifyContent: "center", flexDirection: "column"}}>
+            <Typography variant="h3" style= {{ textAlign: "center" }}>
+                You must be logged to use Playground
+            </Typography>
+            <Button style={{ marginTop: 40 }} startIcon={<GitHubIcon />} onClick={login} color="primary" variant="contained" disableElevation>LOGIN</Button>
+        </Container>);
+}
+
 function Nav({ send, details, toggleDetails }) {
     const user = details?.user;
     const history = useHistory();
@@ -434,6 +449,7 @@ function Nav({ send, details, toggleDetails }) {
       const handleClose = () => {
         setAnchorEl(null);
       };
+    const logged = details != null && user;
     return (
         <AppBar position="fixed">
             <Toolbar style={{ justifyContent: "space-between" }}>
@@ -451,7 +467,7 @@ function Nav({ send, details, toggleDetails }) {
                     >
                         <HelpIcon />
                     </IconButton>
-                    {user != null
+                    {logged
                         ? <div style={{paddingLeft: 12}}>
                             <IconButton
                                 aria-label="account of current user"
@@ -715,13 +731,7 @@ export function MainPanel({ history, location }) {
             } else if (details) {
                 return <TemplateSelector state={state} user={details.user} templates={details.templates} onRetryClick={() => send(restart)} onSelect={(template) => send(deploy, { template: template })} onErrorClick={() => send(restart)} />;
             } else {
-                return (
-                <Container style={{display: "flex", flex: 1, padding: 0, alignItems: "center", justifyContent: "center", flexDirection: "column"}}>
-                    <Typography variant="h3" style= {{ textAlign: "center" }}>
-                        You must be logged to use Playground
-                    </Typography>
-                    <Button style={{ marginTop: 40 }} startIcon={<GitHubIcon />} onClick={login} color="primary" variant="contained" disableElevation>LOGIN</Button>
-                </Container>);
+                return <LoginPanel />;
             }
         } else {
             return <div>Unknown state: ${state.value}</div>;

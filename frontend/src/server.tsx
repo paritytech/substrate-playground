@@ -27,7 +27,7 @@ const pod = {version: "1.23", details: {status: {phase: "Running", startTime: "2
 const uuid = "1234";
 const instance = {user_uuid: "", instance_uuid: uuid, template: template, pod: pod, url: url};
 
-export function intercept({noInstance = true, delay = 100}: {noInstance?: boolean, delay?: number}) {
+export function intercept({logged = false, noInstance = true, delay = 100}: {logged?: boolean, noInstance?: boolean, delay?: number}) {
   Polly.register(FetchAdapter);
 
   const polly = new Polly('Sign In', {
@@ -53,17 +53,19 @@ export function intercept({noInstance = true, delay = 100}: {noInstance?: boolea
     await server.timeout(delay);
     let templates = {workshop: template_private, workshop2: template, workshop3: template, workshop4: template, workshop5: template, workshop6: template, workshop7: template};
     let instances = noInstance ? [] : [instance];
-    res.status(200).json({
-      result: {
-        templates: templates,
-        instances: instances,
+    let user = logged ?
+      {
         user: {
           username: 'john',
           parity: true,
           admin: true
         }
-      },
-    });
+      } : null;
+    res.status(200).json({result: {
+      templates: templates,
+      instances: instances,
+      user: user
+    }});
   });
   server.delete('/api/:iuuid').intercept(async (req, res) => {
     await server.timeout(delay);
