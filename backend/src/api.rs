@@ -123,7 +123,7 @@ pub fn deploy(state: State<'_, Context>, user: User, template: String) -> JsonVa
     result_to_jsonrpc(manager.deploy(&user.username, &template))
 }
 
-#[post("/?<_template>")]
+#[post("/?<_template>", rank = 2)]
 pub fn deploy_unlogged(_template: String) -> status::Unauthorized<()> {
     status::Unauthorized::<()>(None)
 }
@@ -134,7 +134,7 @@ pub fn undeploy(state: State<'_, Context>, user: User, instance_uuid: String) ->
     result_to_jsonrpc(manager.undeploy(&user.username, &instance_uuid))
 }
 
-#[delete("/<_instance_uuid>")]
+#[delete("/<_instance_uuid>", rank = 2)]
 pub fn undeploy_unlogged(_instance_uuid: String) -> status::Unauthorized<()> {
     status::Unauthorized::<()>(None)
 }
