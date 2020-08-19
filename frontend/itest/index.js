@@ -77,7 +77,7 @@ describe('api', () => {
 
   it('unauthenticated - should not be able to create a new instance', async () => {
     const res = await fetch(`${playgroundDomain()}/api/?template=node-template`, { method: 'POST' });
-    expect(res.status).to.eql(404);
+    expect(res.status).to.eql(401);
   });
 
   it('unauthenticated - should have empty instances', async () => {
@@ -87,12 +87,12 @@ describe('api', () => {
 
   it('unauthenticated - should not have access to instances', async () => {
     const res = await fetch(`${playgroundDomain()}/api/${uuid}`);
-    expect(res.status).to.eql(404);
+    expect(res.status).to.eql(401);
   });
 
   it('unauthenticated - should not be able to delete instances', async () => {
     const res = await fetch(`${playgroundDomain()}/api/${uuid}`, { method: 'DELETE' });
-    expect(res.status).to.eql(404);
+    expect(res.status).to.eql(401);
   });
 
   const cookie = process.env.TEST_ACCOUNT_COOKIE;
