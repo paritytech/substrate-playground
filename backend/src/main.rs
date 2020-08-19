@@ -75,13 +75,16 @@ async fn main() -> Result<(), Box<dyn Error>> {
             "/api",
             routes![
                 api::deploy,
+                api::deploy_unlogged,
                 api::get,
-                api::get_logged,
+                api::get_unlogged,
                 api::get_user_instance,
+                api::get_user_instance_unlogged,
                 api::github_login,
                 api::logout,
                 api::post_install_callback,
-                api::undeploy
+                api::undeploy,
+                api::undeploy_unlogged,
             ],
         )
         .mount("/metrics", prometheus)
