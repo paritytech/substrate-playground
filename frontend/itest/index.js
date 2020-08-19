@@ -73,34 +73,11 @@ describe('api', () => {
   // TODO - Server certificate chain is incomplete
   process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
-  if (!process.env.TEST_ACCOUNT_COOKIE) {
-    console.error("Must provide test account cookie");
-    process.exit(1);
-  }
-  const cookie = process.env.TEST_ACCOUNT_COOKIE;
-
-  const headers = { cookie };
-
   let uuid;
 
   it('unauthenticated - should not be able to create a new instance', async () => {
     const res = await fetch(`${playgroundDomain()}/api/?template=node-template`, { method: 'POST' });
     expect(res.status).to.eql(404);
-  });
-
-  it('authenticated - should be able to create a new instance', async () => {
-    const res = await fetch(`${playgroundDomain()}/api/?template=node-template`, { method: 'POST', headers });
-    expect(res.status).to.eql(200);
-    const json = await res.json();
-    expect(json.result).to.not.be.empty();
-    uuid = json.result;
-  });
-
-  it('authenticated - should have access to instance information', async () => {
-    const res = await fetch(`${playgroundDomain()}/api/${uuid}`, { headers });
-    expect(res.status).to.eql(200);
-    const json = await res.json();
-    expect(json.result).to.not.be.empty();
   });
 
   it('unauthenticated - should have empty instances', async () => {
@@ -118,10 +95,30 @@ describe('api', () => {
     expect(res.status).to.eql(404);
   });
 
-  it('authenticated - should delete the instance', async () => {
-    const res = await fetch(`${playgroundDomain()}/api/${uuid}`, { method: 'DELETE', headers });
-    expect(res.status).to.eql(200);
-  });
+  const cookie = process.env.TEST_ACCOUNT_COOKIE;
+  if (cookie) {
+    const headers = { cookie };
+
+    it('authenticated - should be able to create a new instance', async () => {
+      const res = await fetch(`${playgroundDomain()}/api/?template=node-template`, { method: 'POST', headers });
+      expect(res.status).to.eql(200);
+      const json = await res.json();
+      expect(json.result).to.not.be.empty();
+      uuid = json.result;
+    });
+
+    it('authenticated - should have access to instance information', async () => {
+      const res = await fetch(`${playgroundDomain()}/api/${uuid}`, { headers });
+      expect(res.status).to.eql(200);
+      const json = await res.json();
+      expect(json.result).to.not.be.empty();
+    });
+
+    it('authenticated - should delete the instance', async () => {
+      const res = await fetch(`${playgroundDomain()}/api/${uuid}`, { method: 'DELETE', headers });
+      expect(res.status).to.eql(200);
+    });
+  }
 
   // TODO: Try accessing the instance of another user, being authenticated
 });
