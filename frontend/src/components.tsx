@@ -764,7 +764,7 @@ function WrappedContent({ state, content }) {
             const { value, action } = state;
             return (
                 <Container style={{ display: "flex", alignItems: "center" }}>
-                    <ErrorMessage reason={value || "Unknown error"} onClick={action} />
+                    <ErrorMessage reason={value?.toString() || "Unknown error"} onClick={action} />
                 </Container>
             );
         }

@@ -45,7 +45,8 @@ function lifecycle(history, location) {
           src: (context, _event) => async (callback) =>  {
             const response = (await getDetails());
             if (response.error) {
-              throw response;
+              callback({type: check, data: {}});
+              return;
             }
 
             const res = response.result;

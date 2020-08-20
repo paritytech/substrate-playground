@@ -4,13 +4,9 @@ const headers = {'Accept': 'application/json', 'Content-Type': 'application/json
 
 type JSONRPCResponse<T> = { result?: T} | { error?: string };
 
-interface RPCResponseError {
-    message: string;
-}
-
 interface RPCResponse<TResult> {
     result?: TResult;
-    error?: RPCResponseError;
+    error?: string;
 }
 
 async function fromResponse<T>(response: Response): Promise<RPCResponse<T>> {
@@ -18,7 +14,7 @@ async function fromResponse<T>(response: Response): Promise<RPCResponse<T>> {
         // Here the JSON is already in JSON-RPC format so return as-is
         return await response.json();
     } catch {
-        return {error: {message: (!response.ok && response.statusText) || "Internal error: failed to parse returned JSON"}};
+        return {error: (!response.ok && response.statusText) || "Internal error: failed to parse returned JSON"};
     }
 }
 

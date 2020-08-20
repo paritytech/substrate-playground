@@ -9,7 +9,7 @@ use hyper::{
     Client,
 };
 use rocket::request::{self, FromRequest, Request};
-use rocket::response::{status, Redirect};
+use rocket::response::Redirect;
 use rocket::{
     delete, get,
     http::{Cookie, Cookies, SameSite, Status},
@@ -43,6 +43,7 @@ fn token_valid(token: &str, client_id: &str, client_secret: &str) -> Result<bool
         .parse()
         .expect("parse GitHub MIME type");
 
+    // https://docs.github.com/en/rest/reference/apps#check-a-token
     let response: hyper::client::response::Response = client
         .post(format!("https://api.github.com/applications/{}/token", client_id).as_str())
         .header(Authorization(Basic {
@@ -79,7 +80,7 @@ impl<'a, 'r> FromRequest<'a, 'r> for User {
             )
             .map_err(|_| Err((Status::BadRequest, ())))?
             {
-                Outcome::Success(User {
+                return Outcome::Success(User {
                     username: username.value().to_string(),
                     avatar: avatar.value().to_string(),
                     token: token_value.to_string(),
@@ -88,12 +89,10 @@ impl<'a, 'r> FromRequest<'a, 'r> for User {
                 })
             } else {
                 clear(cookies);
-
-                Outcome::Failure((Status::BadRequest, ()))
             }
-        } else {
-            Outcome::Forward(())
         }
+
+        Outcome::Failure((Status::Unauthorized, ()))
     }
 }
 
@@ -110,12 +109,6 @@ pub fn get(state: State<'_, Context>, user: User) -> JsonValue {
     result_to_jsonrpc(manager.get_logged(user))
 }
 
-#[get("/", rank = 2)]
-pub fn get_unlogged(state: State<'_, Context>) -> JsonValue {
-    let manager = state.manager.clone();
-    result_to_jsonrpc(manager.get())
-}
-
 #[get("/<instance_uuid>")]
 pub fn get_user_instance(
     state: State<'_, Context>,
@@ -126,11 +119,6 @@ pub fn get_user_instance(
     result_to_jsonrpc(manager.get_instance(&user.username, &instance_uuid))
 }
 
-#[get("/<_instance_uuid>", rank = 2)]
-pub fn get_user_instance_unlogged(_instance_uuid: String) -> status::Unauthorized<()> {
-    status::Unauthorized::<()>(None)
-}
-
 /// Deploy `template` Docker container for `user_id`.
 #[post("/?<template>")]
 pub fn deploy(state: State<'_, Context>, user: User, template: String) -> JsonValue {
@@ -138,20 +126,10 @@ pub fn deploy(state: State<'_, Context>, user: User, template: String) -> JsonVa
     result_to_jsonrpc(manager.deploy(&user.username, &template))
 }
 
-#[post("/?<_template>", rank = 2)]
-pub fn deploy_unlogged(_template: String) -> status::Unauthorized<()> {
-    status::Unauthorized::<()>(None)
-}
-
 #[delete("/<instance_uuid>")]
 pub fn undeploy(state: State<'_, Context>, user: User, instance_uuid: String) -> JsonValue {
     let manager = state.manager.clone();
     result_to_jsonrpc(manager.undeploy(&user.username, &instance_uuid))
-}
-
-#[delete("/<_instance_uuid>", rank = 2)]
-pub fn undeploy_unlogged(_instance_uuid: String) -> status::Unauthorized<()> {
-    status::Unauthorized::<()>(None)
 }
 
 // GitHub login logic
