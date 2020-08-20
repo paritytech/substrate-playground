@@ -80,9 +80,9 @@ describe('api', () => {
     expect(res.status).to.eql(401);
   });
 
-  it('unauthenticated - should have empty instances', async () => {
-    const json = await (await fetch(`${playgroundDomain()}/api`)).json();
-    expect(json).to.eql({ result: '' });
+  it('unauthenticated - should not be able to list instances', async () => {
+    const res = await fetch(`${playgroundDomain()}/api`);
+    expect(res.status).to.eql(401);
   });
 
   it('unauthenticated - should not have access to instances', async () => {
