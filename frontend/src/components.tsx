@@ -384,7 +384,7 @@ export function TheiaInstance({ uuid }) {
         if (user && data.type != "ERROR" && data.type != "SUCCESS") {
             fetchData();
         }
-    }, [data, uuid]);
+    }, [data, uuid, user]);
 
     if (data.type == "SUCCESS") {
         return <iframe ref={ref} src={data.url} frameBorder="0" width="100%" height="100%"></iframe>
