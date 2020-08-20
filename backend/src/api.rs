@@ -2,22 +2,23 @@
 
 use crate::Context;
 use hyper::{
-    header::{qitem, Accept, Authorization, UserAgent},
+    header::{qitem, Accept, Authorization, Basic, UserAgent},
     mime::Mime,
     net::HttpsConnector,
+    status::StatusCode,
     Client,
 };
 use rocket::request::{self, FromRequest, Request};
 use rocket::response::{status, Redirect};
 use rocket::{
     delete, get,
-    http::{Cookie, Cookies, SameSite},
+    http::{Cookie, Cookies, SameSite, Status},
     post, Outcome, State,
 };
 use rocket_contrib::{json, json::JsonValue};
 use rocket_oauth2::{OAuth2, TokenResponse};
 use serde::{Deserialize, Serialize};
-use std::io::Read;
+use std::{env, io::Read};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct User {
@@ -34,26 +35,28 @@ const COOKIE_TOKEN: &str = "token";
 const COOKIE_PARITY: &str = "parity";
 const COOKIE_ADMIN: &str = "admin";
 
-/*
 fn token_valid(token: &str, client_id: &str, client_secret: &str) -> Result<bool, String> {
-    /*let response: hyper::client::response::Response = client
-        .get(format!("https://api.github.com/applications/{}/token", client_id))
-        .header(Authorization(format!("token {}", token.access_token())))
+    let https = HttpsConnector::new(hyper_sync_rustls::TlsClient::new());
+    let client = Client::with_connector(https);
+
+    let mime: Mime = "application/vnd.github.v3+json"
+        .parse()
+        .expect("parse GitHub MIME type");
+
+    let response: hyper::client::response::Response = client
+        .post(format!("https://api.github.com/applications/{}/token", client_id).as_str())
+        .header(Authorization(Basic {
+            username: client_id.to_owned(),
+            password: Some(client_secret.to_owned()),
+        }))
         .header(Accept(vec![qitem(mime.clone())]))
         .header(UserAgent("Substrate Playground".into()))
-        .send().map_err(|a| a.to_string())?;
+        .body(format!("{{\"access_token\":\"{}\"}}", token).as_str())
+        .send()
+        .map_err(|a| a.to_string())?;
 
-    response.status == hyper::client::response::status::StatusCode::Ok*/
-    Ok(true)
+    Ok(response.status == StatusCode::Ok)
 }
-
-fn assert_valid_token(token: &str, mut cookies: Cookies<'_>) -> Result<bool, String> {
-    if !token_valid(token, "client_id", "client_secret")? {
-        clear(cookies);
-    }
-    Ok(true)
-}
-*/
 
 // Extract a User from private cookies
 impl<'a, 'r> FromRequest<'a, 'r> for User {
@@ -69,13 +72,25 @@ impl<'a, 'r> FromRequest<'a, 'r> for User {
             cookies.get_private(COOKIE_ADMIN),
         ) {
             let token_value = token.value();
-            Outcome::Success(User {
-                username: username.value().to_string(),
-                avatar: avatar.value().to_string(),
-                token: token_value.to_string(),
-                parity: parity.value().to_string().parse().unwrap_or(false),
-                admin: admin.value().to_string().parse().unwrap_or(false),
-            })
+            if token_valid(
+                token_value,
+                &env::var("GITHUB_CLIENT_ID").map_err(|_| Err((Status::BadRequest, ())))?,
+                &env::var("GITHUB_CLIENT_SECRET").map_err(|_| Err((Status::BadRequest, ())))?,
+            )
+            .map_err(|_| Err((Status::BadRequest, ())))?
+            {
+                Outcome::Success(User {
+                    username: username.value().to_string(),
+                    avatar: avatar.value().to_string(),
+                    token: token_value.to_string(),
+                    parity: parity.value().to_string().parse().unwrap_or(false),
+                    admin: admin.value().to_string().parse().unwrap_or(false),
+                })
+            } else {
+                clear(cookies);
+
+                Outcome::Failure((Status::BadRequest, ()))
+            }
         } else {
             Outcome::Forward(())
         }
