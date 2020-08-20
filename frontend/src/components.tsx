@@ -265,9 +265,13 @@ function useQuery() {
 }
 
 export function AdminPanel() {
+    const location = useLocation();
+    const history = useHistory();
+    const [state, send] = useLifecycle(history, location);
+    const details = state.context.details;
     return (
         <div style={{ display: "flex", height: "100vh", alignItems: "center", justifyContent: "center"}}>
-            <Wrapper>
+            <Wrapper send={send} details={details}>
                 <div>
                 ADMIN PANEL
                 </div>
@@ -774,7 +778,7 @@ function WrappedContent({ state, content }) {
 }
 
 // state: PRELOADING, LOADING, ERROR (message, action) {type: value:}
-export function Wrapper({ send, details, state, children }) {
+export function Wrapper({ send, details, state, children }: {state?: any}) {
     const [showDetails, setDetails] = useState(false);
     function toggleDetails() { setDetails(!showDetails); }
     const type = state?.type;
