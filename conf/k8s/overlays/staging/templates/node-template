@@ -1,5 +1,5 @@
-image: paritytech/substrate-playground-template-node-template-theia:sha-051bb47
-base: paritytech/substrate-playground-template-node-template:sha-55f7ff5
+image: paritytech/substrate-playground-template-node-template-theia:sha-dd89103
+base: paritytech/substrate-playground-template-node-template:sha-7a3d8d6
 name: Node template
 description: '## The Node template you know and love'
 public: true
