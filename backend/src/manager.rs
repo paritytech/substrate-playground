@@ -162,10 +162,6 @@ fn new_runtime() -> Result<Runtime, String> {
 }
 
 impl Manager {
-    pub fn get(self) -> Result<String, String> {
-        Ok("".to_string())
-    }
-
     pub fn get_logged(self, user: User) -> Result<PlaygroundDetails, String> {
         let pod = new_runtime()?.block_on(self.clone().engine.get())?;
         let templates = new_runtime()?.block_on(self.clone().engine.get_templates())?;

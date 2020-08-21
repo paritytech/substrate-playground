@@ -50,7 +50,7 @@ fn token_valid(token: &str, client_id: &str, client_secret: &str) -> Result<bool
             username: client_id.to_owned(),
             password: Some(client_secret.to_owned()),
         }))
-        .header(Accept(vec![qitem(mime.clone())]))
+        .header(Accept(vec![qitem(mime]))
         .header(UserAgent("Substrate Playground".into()))
         .body(format!("{{\"access_token\":\"{}\"}}", token).as_str())
         .send()
