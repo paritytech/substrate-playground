@@ -86,7 +86,7 @@ impl<'a, 'r> FromRequest<'a, 'r> for User {
                     token: token_value.to_string(),
                     parity: parity.value().to_string().parse().unwrap_or(false),
                     admin: admin.value().to_string().parse().unwrap_or(false),
-                })
+                });
             } else {
                 clear(cookies);
             }
