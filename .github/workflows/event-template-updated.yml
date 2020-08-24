@@ -4,7 +4,11 @@
 #
 # Images are automatically updated on `staging` only.
 #
-# Must be called with the following payload: `{id: "TEMPLATE_ID", image: "IMAGE_ID"}`
+# Must be called with the following payload: `{id: "TEMPLATE_ID"}`
+#
+# Ideally the repository origin of the event would be matched against the locally configured one to avoid duplicate builds.
+# Unfortunately this information is not part of the event payload. Because the original repository is always used to build the image is always safe.
+
 name: Event template-updated
 
 on:
@@ -14,27 +18,64 @@ on:
 env:
   DOCKER_BUILDKIT: 1
   TEMPLATE_ID: ${{ github.event.client_payload.id }}
-  TEMPLATE_IMAGE: ${{ github.event.client_payload.image }}
-
-# TODO check that only the right repo can trigger build
+  TEMPLATE_REF: ${{ github.event.client_payload.ref }}
+  TEMPLATE_DOCKERFILE: ${{ github.event.client_payload.dockerFile }}
 
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
     steps:
-      - name: Dump GitHub context
-        env:
-          GITHUB_CONTEXT: ${{ toJson(github) }}
-        run: echo "$GITHUB_CONTEXT"
 
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+
+      - name: Install yq
+        run: |
+          python -m pip install --upgrade pip
+          pip install yq
+    
+      - run: |-
+          echo ::set-output name=sha::${GITHUB_SHA::7}
+          echo ::set-output name=tag::template-${EMPLATE_ID }-${GITHUB_SHA::7}
+          echo ::set-output name=image::paritytech/substrate-playground-template-${TEMPLATE_ID}:sha-${GITHUB_SHA::7}
+          echo ::set-output name=theia-image::paritytech/substrate-playground-template-${TEMPLATE_ID}-theia:sha-${GITHUB_SHA::7}
+          FILE=conf/k8s/overlays/$ENVIRONMENT/templates/$TEMPLATE_ID
+          REPOSITORY=`cat $FILE | yq .repository`
+          echo "::set-output name=repository::$( echo "$REPOSITORY" )
+          echo "::set-output name=ref::$( echo "${TEMPLATE_REF:-master}" )
+          echo "::set-output name=dockerFile::$( echo "${TEMPLATE_DOCKERFILE:-.devcontainer/Dockerfile}" )
+        id: env
+        
       - uses: actions/checkout@v2
         with:
           token: ${{ secrets.PAT_TOKEN }}
 
-      - name: Create template Dockerfile
-        run: cat templates/Dockerfile.template | sed -e "s|%IMAGE%|${{ env.TEMPLATE_IMAGE }}|" > Dockerfile.theia
+      - uses: actions/checkout@v2
+        with:
+          path: template
+          repository: ${{ steps.env.outputs.repository }}
+          ref: ${{ steps.env.outputs.ref }}
+          token: ${{ secrets.PAT_TOKEN }}
 
-      - name: Build and Push template image
+      - name: Build and push template Docker image
+        uses: docker/build-push-action@v1
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+          dockerfile: ${{ steps.env.outputs.dockerFile }}
+          repository: ${{ steps.env.outputs.repository }}
+          tags: latest
+          path: template
+          add_git_labels: true
+          tag_with_ref: true
+          tag_with_sha: true
+
+      - name: Create template Dockerfile
+        run: cat templates/Dockerfile.template | sed -e "s|%IMAGE%|${{ steps.env.outputs.image }}|" > Dockerfile.theia
+
+      - name: Build and Push theia template image
         uses: docker/build-push-action@v1
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
@@ -46,40 +87,25 @@ jobs:
           tag_with_ref: true
           tag_with_sha: true
 
-      - run: |-
-          echo ::set-output name=sha::${GITHUB_SHA::7}
-          echo ::set-output name=image::paritytech/substrate-playground-template-${TEMPLATE_ID}-theia:sha-${GITHUB_SHA::7}
-        id: env
-
-      - name: Set up Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: 3.8
-
-      - name: Install yq
-        run: |
-          python -m pip install --upgrade pip
-          pip install yq
-
       - name: Update template version
         run: |-
           t=$(mktemp)
-          cat conf/k8s/overlays/staging/templates/${TEMPLATE_ID} | yq -y ".image = \"${{ steps.env.outputs.image }}\"" | yq -y ".base = \"${TEMPLATE_IMAGE}\"" > ${t} && mv ${t} conf/k8s/overlays/staging/templates/${TEMPLATE_ID}
+          cat conf/k8s/overlays/staging/templates/${TEMPLATE_ID} | yq -y ".image = \"${{ steps.env.outputs.theia-image }}\"" | yq -y ".base = \"${{ steps.env.outputs.image }}\"" > ${t} && mv ${t} conf/k8s/overlays/staging/templates/${TEMPLATE_ID}
 
       - name: Commit template version update
         uses: EndBug/add-and-commit@v4
         with:
           message: ":bookmark: yee shall thurst into a new version of ${{ env.TEMPLATE_ID }}"
           add: conf/k8s/overlays/staging/templates/${{ env.TEMPLATE_ID }}
-          tag: templates-${{ steps.env.outputs.sha }}
+          tag: ${{ steps.env.outputs.tag }}
         env:
           GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
 
       - name: Create Release for ${{ env.TEMPLATE_ID }}
         uses: actions/create-release@v1
         with:
-          tag_name: template-${{ env.TEMPLATE_ID }}-${{ steps.env.outputs.sha }}
-          release_name: Release ${{ env.TEMPLATE_ID }}-${{ steps.env.outputs.sha }}
+          tag_name: ${{ steps.env.outputs.tag }}
+          release_name: Release ${{ steps.env.outputs.tag }}
           body: |
             Released template for ${{ env.TEMPLATE_ID }} ${{ steps.env.outputs.image }}
         env:
