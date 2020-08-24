@@ -1,6 +1,6 @@
 image: paritytech/substrate-playground-template-moonbeam-theia:sha-dd89103
 base: paritytech/substrate-playground-template-moonbeam:sha-7a3d8d6
-repository: PureStake/moonbeam
+repository: jeluard/moonbeam
 name: Moonbeam
 description: '## Moonbeam'
 public: false
