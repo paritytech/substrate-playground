@@ -38,7 +38,7 @@ jobs:
     
       - run: |-
           echo ::set-output name=sha::${GITHUB_SHA::7}
-          echo ::set-output name=tag::template-${EMPLATE_ID }-${GITHUB_SHA::7}
+          echo ::set-output name=tag::template-${TEMPLATE_ID}-${GITHUB_SHA::7}
           echo ::set-output name=image::paritytech/substrate-playground-template-${TEMPLATE_ID}:sha-${GITHUB_SHA::7}
           echo ::set-output name=theia-image::paritytech/substrate-playground-template-${TEMPLATE_ID}-theia:sha-${GITHUB_SHA::7}
           FILE=conf/k8s/overlays/$ENVIRONMENT/templates/$TEMPLATE_ID
