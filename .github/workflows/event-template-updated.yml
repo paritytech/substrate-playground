@@ -49,9 +49,9 @@ jobs:
           echo ::set-output name=theia-image::paritytech/substrate-playground-template-${TEMPLATE_ID}-theia:sha-${GITHUB_SHA::7}
           FILE=conf/k8s/overlays/staging/templates/$TEMPLATE_ID
           REPOSITORY=`cat $FILE | yq .repository`
-          echo "::set-output name=repository::$( echo "$REPOSITORY" )"
-          echo "::set-output name=ref::$( echo "${TEMPLATE_REF:-master}" )"
-          echo "::set-output name=dockerFile::$( echo "${TEMPLATE_DOCKERFILE:-.devcontainer/Dockerfile}" )"
+          echo "::set-output name=repository::$( echo $REPOSITORY )"
+          echo "::set-output name=ref::$( echo ${TEMPLATE_REF:-master} )"
+          echo "::set-output name=dockerFile::$( echo ${TEMPLATE_DOCKERFILE:-.devcontainer/Dockerfile} )"
         id: env
 
       - uses: actions/checkout@v2
