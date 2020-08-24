@@ -66,7 +66,7 @@ jobs:
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-          dockerfile: ${{ steps.env.outputs.dockerFile }}
+          dockerfile: template/${{ steps.env.outputs.dockerFile }}
           repository: ${{ steps.env.outputs.template }}
           tags: latest
           path: template
