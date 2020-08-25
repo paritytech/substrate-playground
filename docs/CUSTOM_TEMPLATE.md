@@ -13,22 +13,16 @@ Additionally there are a number of standard VSCode configuration files that will
 * .vscode/tasks.json
 * .vscode/snippets.code-snippets
 
-An example of adding support to an external repository can be found [here](https://github.com/substrate-developer-hub/substrate-node-template/).
-
-After the associated Github workflow in [substrate-playground](https://github.com/paritytech/substrate-playground) is triggered, playground will use the newly built image. 
+After the associated Github [workflow](https://github.com/paritytech/substrate-playground/blob/develop/.github/workflows/event-template-updated.yml) in substrate-playground is triggered, playground will use the newly built image. 
 
 # Github workflow
 
 A template workflow can be found [here](https://github.com/paritytech/substrate-playground/blob/develop/.github/workflow-templates/cd-template.yml).
 
-This workflow will:
+`client_payload` must define `id` pointing to one of the existing [templates](https://github.com/paritytech/substrate-playground/blob/develop/conf/k8s/overlays/staging/).
+It can also define a `ref` (branch/tag/commit used to build, defaults to _master_) and a `dockerFile` location (default to _.devcontainer/Dockerfile_)
 
-* create and publish a standalone Docker image based on a local Dockerfile
-* update `.devcontainer/devcontainer.json` to use this new image
-* commit changes
-* trigger `template-updated` on `paritytech/substrate-playground`
-
-This event triggers the following actions in `paritytech/substrate-playground`:
+This workflow will trigger the [_template-updated_ workflow](https://github.com/paritytech/substrate-playground/blob/develop/.github/workflows/event-template-updated.yml) on [substrate-playground](https://github.com/paritytech/substrate-playground/), including the following actions:
 
 * create and publish a [composite docker image](https://github.com/paritytech/substrate-playground/blob/develop/templates/Dockerfile.template) from the new template one and latest [base one](https://github.com/paritytech/substrate-playground/blob/develop/templates/Dockerfile.base)
 * update [template image id](https://github.com/paritytech/substrate-playground/tree/develop/conf/k8s/overlays/staging/templates)
@@ -41,8 +35,8 @@ Once live, images are tested and rollbacked if errors are detected.
 
 ```mermaid
 sequenceDiagram
-	CUSTOM_TEMPLATE->>CUSTOM_TEMPLATE: Build docker image
 	CUSTOM_TEMPLATE->>PLAYGROUND: Trigger template-updated
+	PLAYGROUND->>PLAYGROUND: Build docker image
 	PLAYGROUND-->>PLAYGROUND: Build template docker image
 	PLAYGROUND-->>PLAYGROUND: Push new configuration to staging
     PLAYGROUND-->>PLAYGROUND: Test new image
@@ -52,9 +46,4 @@ sequenceDiagram
 
 The following secrets must be defined:
 
-`DOCKER_USERNAME` and `DOCKER_PASSWORD` to push the image to dockerhub (values will depend on the chosen docker image org)
 `REPO_ACCESS_TOKEN` a token with `public_repo` or repo scope
-
-## Keeping uptodate
-
-Docker images will be rebuilt and pushed each time there are changes to master branch. This can be tweaked by modifying the workflow.
