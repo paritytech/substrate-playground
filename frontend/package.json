@@ -17,7 +17,7 @@
     "@material-ui/lab": "4.0.0-alpha.56",
     "@xstate/react": "0.8.1",
     "history": "4.10.1",
-    "jpeg-js": "0.4.1",
+    "jpeg-js": "0.4.2",
     "marked": "1.1.1",
     "react": "16.13.1",
     "react-dom": "16.13.1",
