@@ -1,4 +1,15 @@
-{{# DEPLOYMENT}}
+backend exposed metrics
+nginx
+
+N pod with theia
+infra
+
+End user
+
+Each machine can have some process running (e.g. substrate nodes)
+Only for end users
+Can't see infra level metrics
+1 prometheus per user? With grafana
 
 # Infrastructure
 
