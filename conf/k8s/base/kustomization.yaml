@@ -1,6 +1,11 @@
 commonLabels:
     app.kubernetes.io/part-of: playground
     app.kubernetes.io/managed-by: kustomize
+
+bases:
+    - prometheus
+    - grafana
+
 resources:
     - backend-api-deployment.yaml
     - backend-api-service.yaml

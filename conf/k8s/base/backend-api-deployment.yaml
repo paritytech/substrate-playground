@@ -4,8 +4,6 @@ metadata:
   name: backend-api-deployment
   labels:
     app.kubernetes.io/component: backend-api
-  annotations:
-    prometheus.io/scrape: "true"
 spec:
   replicas: 1
   selector:
@@ -15,6 +13,9 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/component: backend-api
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "80"
     spec:
       serviceAccountName: default-service-account
       containers:

@@ -16,6 +16,10 @@ spec:
         backend:
           serviceName: backend-ui-service
           servicePort: ui-port
+      - path: /grafana
+        backend:
+          serviceName: grafana-service
+          servicePort: grafana-port
       - path: /api
         backend:
           serviceName: backend-api-service
