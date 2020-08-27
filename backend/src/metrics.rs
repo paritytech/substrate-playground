@@ -45,7 +45,7 @@ impl Metrics {
     }
 
     pub fn create_registry(self) -> Result<Registry, Box<dyn Error>> {
-        let registry = Registry::new_custom(Some("manager".to_string()), None)?;
+        let registry = Registry::new_custom(Some("playground".to_string()), None)?;
         registry.register(Box::new(self.deploy_counter))?;
         registry.register(Box::new(self.deploy_failures_counter))?;
         registry.register(Box::new(self.undeploy_counter))?;
