@@ -1,5 +1,3 @@
-![](https://github.com/paritytech/substrate-playground/workflows/Continuous%20Integration%20Playground/badge.svg) ![](https://github.com/paritytech/substrate-playground/workflows/Continuous%20Integration%20Templates/badge.svg)
-
 ![](https://github.com/paritytech/substrate-playground/workflows/Continuous%20Testing%20Playground/badge.svg) 
 
 # Substrate playground
