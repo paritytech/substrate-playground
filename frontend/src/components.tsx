@@ -732,7 +732,7 @@ export function MainPanel({ history, location }) {
         if (state.matches(logged)) {
             if (details?.instances?.length > 0) {
                 return <ExistingInstances onConnectClick={(instance) => navigateToInstance(history, instance.instance_uuid)} onStopClick={(instance) => send(stop, {instance: instance})} instances={details.instances} />;
-            } else if (details) {
+            } else if (details?.user) {
                 return <TemplateSelector state={state} user={details.user} templates={details.templates} onRetryClick={() => send(restart)} onSelect={(template) => send(deploy, { template: template })} onErrorClick={() => send(restart)} />;
             } else {
                 return <LoginPanel />;

@@ -9,7 +9,7 @@ use hyper::{
     Client,
 };
 use rocket::request::{self, FromRequest, Request};
-use rocket::response::Redirect;
+use rocket::response::{status, Redirect};
 use rocket::{
     delete, get,
     http::{Cookie, Cookies, SameSite, Status},
@@ -92,7 +92,7 @@ impl<'a, 'r> FromRequest<'a, 'r> for User {
             }
         }
 
-        Outcome::Failure((Status::Unauthorized, ()))
+        Outcome::Forward(())
     }
 }
 
@@ -106,7 +106,13 @@ fn result_to_jsonrpc<T: Serialize>(res: Result<T, String>) -> JsonValue {
 #[get("/")]
 pub fn get(state: State<'_, Context>, user: User) -> JsonValue {
     let manager = state.manager.clone();
-    result_to_jsonrpc(manager.get_logged(user))
+    result_to_jsonrpc(manager.get(user))
+}
+
+#[get("/", rank = 2)]
+pub fn get_unlogged(state: State<'_, Context>) -> JsonValue {
+    let manager = state.manager.clone();
+    result_to_jsonrpc(manager.get_unlogged())
 }
 
 #[get("/<instance_uuid>")]
@@ -119,6 +125,11 @@ pub fn get_user_instance(
     result_to_jsonrpc(manager.get_instance(&user.username, &instance_uuid))
 }
 
+#[get("/<_instance_uuid>", rank = 2)]
+pub fn get_user_instance_unlogged(_instance_uuid: String) -> status::Unauthorized<()> {
+    status::Unauthorized::<()>(None)
+}
+
 /// Deploy `template` Docker container for `user_id`.
 #[post("/?<template>")]
 pub fn deploy(state: State<'_, Context>, user: User, template: String) -> JsonValue {
@@ -126,10 +137,20 @@ pub fn deploy(state: State<'_, Context>, user: User, template: String) -> JsonVa
     result_to_jsonrpc(manager.deploy(&user.username, &template))
 }
 
+#[post("/?<_template>", rank = 2)]
+pub fn deploy_unlogged(_template: String) -> status::Unauthorized<()> {
+    status::Unauthorized::<()>(None)
+}
+
 #[delete("/<instance_uuid>")]
 pub fn undeploy(state: State<'_, Context>, user: User, instance_uuid: String) -> JsonValue {
     let manager = state.manager.clone();
     result_to_jsonrpc(manager.undeploy(&user.username, &instance_uuid))
+}
+
+#[delete("/<_instance_uuid>", rank = 2)]
+pub fn undeploy_unlogged(_instance_uuid: String) -> status::Unauthorized<()> {
+    status::Unauthorized::<()>(None)
 }
 
 // GitHub login logic

@@ -56,7 +56,7 @@ pub struct PlaygroundDetails {
     pub pod: PodDetails,
     pub templates: BTreeMap<String, Template>,
     pub instances: Vec<InstanceDetails>,
-    pub user: User,
+    pub user: Option<User>,
 }
 
 impl Manager {
@@ -162,7 +162,7 @@ fn new_runtime() -> Result<Runtime, String> {
 }
 
 impl Manager {
-    pub fn get_logged(self, user: User) -> Result<PlaygroundDetails, String> {
+    pub fn get(self, user: User) -> Result<PlaygroundDetails, String> {
         let pod = new_runtime()?.block_on(self.clone().engine.get())?;
         let templates = new_runtime()?.block_on(self.clone().engine.get_templates())?;
         let instances = new_runtime()?.block_on(self.engine.list(user.username.as_str()))?;
@@ -170,7 +170,18 @@ impl Manager {
             pod,
             templates,
             instances,
-            user,
+            user: Some(user),
+        })
+    }
+
+    pub fn get_unlogged(self) -> Result<PlaygroundDetails, String> {
+        let pod = new_runtime()?.block_on(self.clone().engine.get())?;
+        let templates = new_runtime()?.block_on(self.clone().engine.get_templates())?;
+        Ok(PlaygroundDetails {
+            pod,
+            templates,
+            instances: vec![],
+            user: None,
         })
     }
 
