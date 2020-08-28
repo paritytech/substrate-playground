@@ -16,7 +16,8 @@ spec:
         - image: grafana/grafana
           name: grafana
           ports:
-            - containerPort: 3000
+            - name: grafana-port
+              containerPort: 3000
           resources:
             limits:
               cpu: 500m
