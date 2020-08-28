@@ -1,8 +1,6 @@
-##########################
-#     Theia runtime      #
-##########################
-
+# The theia image used to build theia
 # Based on https://github.com/theia-ide/theia-apps/blob/master/theia-docker/Dockerfile
+
 FROM node:12
 WORKDIR /home/theia
 ADD package.json .

@@ -1,14 +1,7 @@
-# The main playground Dockerfile. Runs the `backend`, serving on port 80 the `frontend` (under /) and the associated API (undre /api)
-#
-# A multi-stage docker image (https://docs.docker.com/develop/develop-images/multistage-build/)
-# 
+# The recommended base image for templates. 3rd party templates should inherit from it.
+# Currently must inherit node image to comply with theia requirements
 
-##########################
-#     Rust base          #
-##########################
-
-ARG NODE_VERSION=12
-FROM node:${NODE_VERSION}
+FROM node:12
 
 # https://bevyengine.org/learn/book/getting-started/setup/
 RUN apt-get update && \
