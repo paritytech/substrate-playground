@@ -80,9 +80,9 @@ describe('api', () => {
     expect(res.status).to.eql(401);
   });
 
-  it('unauthenticated - should not be able to list instances', async () => {
+  it('unauthenticated - should be able to list templates', async () => {
     const res = await fetch(`${playgroundDomain()}/api`);
-    expect(res.status).to.eql(401);
+    expect(res.status).to.eql(200);
   });
 
   it('unauthenticated - should not have access to instances', async () => {

@@ -137,8 +137,8 @@ pub fn deploy(state: State<'_, Context>, user: User, template: String) -> JsonVa
     result_to_jsonrpc(manager.deploy(&user.username, &template))
 }
 
-#[post("/?<_template>", rank = 2)]
-pub fn deploy_unlogged(_template: String) -> status::Unauthorized<()> {
+#[post("/", rank = 2)]
+pub fn deploy_unlogged() -> status::Unauthorized<()> {
     status::Unauthorized::<()>(None)
 }
 
