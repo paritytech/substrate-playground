@@ -458,7 +458,7 @@ function Nav({ send, details, toggleDetails }) {
         <AppBar position="fixed">
             <Toolbar style={{ justifyContent: "space-between" }}>
                 <Typography variant="h6">
-                    Playground
+                    <Button onClick={() => navigateToHomepage(history)}>Playground</Button>
                 </Typography>
                 <div style={{display: "flex", alignItems: "center"}}>
                     <IconButton
