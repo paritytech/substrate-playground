@@ -41,8 +41,12 @@ export class PlaygroundSingleFileDownloadHandler extends FileDownloadHandler {
             return;
         }
         const uri = new URI(query.uri).toString(true);
-        const stat = await this.fileSystem.getFileStat(uri);
-        if (stat === undefined) {
+        const filePath = FileUri.fsPath(uri);
+
+        let stat: fs.Stats;
+        try {
+            stat = await fs.stat(filePath);
+        } catch {
             this.handleError(response, `The file does not exist. URI: ${uri}.`, NOT_FOUND);
             return;
         }
@@ -90,8 +94,9 @@ export class PlaygroundMultiFileDownloadHandler extends FileDownloadHandler {
             return;
         }
         for (const uri of body.uris) {
-            const stat = await this.fileSystem.getFileStat(uri);
-            if (stat === undefined) {
+            try {
+                await fs.access(FileUri.fsPath(uri));
+            } catch {
                 this.handleError(response, `The file does not exist. URI: ${uri}.`, NOT_FOUND);
                 return;
             }
