@@ -500,7 +500,7 @@ function Nav({ send, details, toggleDetails }) {
                                 onClose={handleClose}
                             >
                                 <MenuItem onClick={async () => {handleClose(); await navigateToAdmin(history)}}>ADMIN</MenuItem>
-                                <MenuItem onClick={async () => {handleClose(); await logout(); send(restart)}}>LOGOUT</MenuItem>
+                                <MenuItem onClick={async () => {handleClose(); await logout(); await navigateToHomepage(history); send(restart)}}>LOGOUT</MenuItem>
                             </Menu>
                         </div>
                         : <Button onClick={login} startIcon={<GitHubIcon />}>LOGIN</Button>}
