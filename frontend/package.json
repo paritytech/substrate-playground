@@ -29,7 +29,7 @@
   "devDependencies": {
     "@pollyjs/adapter-fetch": "5.0.0",
     "@pollyjs/core": "5.0.0",
-    "@types/node": "14.6.1",
+    "@types/node": "14.6.2",
     "@types/react": "16.9.48",
     "@types/react-dom": "16.9.8",
     "@types/react-router-dom": "5.1.5",
