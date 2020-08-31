@@ -98,9 +98,9 @@ dig +short TXT _acme-challenge.playground-staging.substrate.dev @ 8.8.8.8
 Then update the tls secret:
 
 ```
-gcloud container clusters get-credentials substrate-playground-staging --region us-central1-a
+gcloud container clusters get-credentials susbtrate-playground-staging --region us-central1-a
 ENVIRONMENT=staging make k8s-setup-gke
-sudo kubectl create secret tls playground-tls --save-config --key /etc/letsencrypt/live/playground-staging.substrate.dev/privkey.pem --cert /etc/letsencrypt/live/playground-staging.substrate.dev/cert.pem  --namespace=playground-staging --dry-run=client -o yaml | sudo kubectl apply -f -
+sudo kubectl create secret tls playground-tls --save-config --key /etc/letsencrypt/live/playground-staging.substrate.dev/privkey.pem --cert /etc/letsencrypt/live/playground-staging.substrate.dev/fullchain.pem --namespace=playground-staging --dry-run=true -o yaml | sudo kubectl apply -f -
 ```
 
 The new secret will be auomatically picked up.
@@ -119,7 +119,7 @@ Then update the tls secret:
 ```
 gcloud container clusters get-credentials substrate-playground --region us-central1-a
 ENVIRONMENT=production make k8s-setup-gke
-sudo kubectl create secret tls playground-tls --save-config --key /etc/letsencrypt/live/playground.substrate.dev/privkey.pem --cert /etc/letsencrypt/live/playground.substrate.dev/cert.pem  --namespace=playground --dry-run=client -o yaml | sudo kubectl apply -f -
+sudo kubectl create secret tls playground-tls --save-config --key /etc/letsencrypt/live/playground.substrate.dev/privkey.pem --cert /etc/letsencrypt/live/playground.substrate.dev/fullchain.pem --namespace=playground --dry-run=true -o yaml | sudo kubectl apply -f -
 ```
 
 The new secret will be auomatically picked up.
@@ -127,7 +127,7 @@ The new secret will be auomatically picked up.
 Certificates can be checked using openssl:
 
 ```shell
-openssl s_client -connect  playground.substrate.dev:443 -servername playground.substrate.dev -showcerts
+openssl s_client -connect playground.substrate.dev:443 -servername playground.substrate.dev -showcerts
 # Or for client with no SNI support
 openssl s_client -connect  playground.substrate.dev:443 -showcerts
 ```
