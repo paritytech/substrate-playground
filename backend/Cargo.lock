@@ -1615,9 +1615,9 @@ dependencies = [
 
 [[package]]
 name = "rocket_oauth2"
-version = "0.3.1"
+version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f9a64db812efa96ca313c2d4dbb4159b90a36e0acb2540e6c8148c4e728196a6"
+checksum = "7834765a544e889219a645e4403e17bc1e5240ed7aa3e6611db3f5d607263ca4"
 dependencies = [
  "base64 0.12.3",
  "hyper 0.10.16",

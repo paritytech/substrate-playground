@@ -67,7 +67,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 None,
             );
             Ok(rocket.attach(OAuth2::<GitHubUserInfo>::custom(
-                HyperSyncRustlsAdapter,
+                HyperSyncRustlsAdapter::default().basic_auth(false),
                 config,
             )))
         }))
