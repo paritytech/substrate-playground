@@ -176,7 +176,7 @@ impl Manager {
 
     pub fn get_unlogged(self) -> Result<PlaygroundDetails, String> {
         let pod = new_runtime()?.block_on(self.clone().engine.get())?;
-        let templates = new_runtime()?.block_on(self.clone().engine.get_templates())?;
+        let templates = new_runtime()?.block_on(self.engine.get_templates())?;
         Ok(PlaygroundDetails {
             pod,
             templates,
