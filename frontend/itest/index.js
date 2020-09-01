@@ -70,9 +70,6 @@ describe('website', () => {
 
 describe('api', () => {
 
-  // TODO - Server certificate chain is incomplete
-  process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
-
   let uuid;
 
   it('unauthenticated - should not be able to create a new instance', async () => {
