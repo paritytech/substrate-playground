@@ -14,7 +14,7 @@ async function fromResponse<T>(response: Response): Promise<RPCResponse<T>> {
         // Here the JSON is already in JSON-RPC format so return as-is
         return await response.json();
     } catch {
-        return {error: (!response.ok && response.statusText) || "Internal error: failed to parse returned JSON"};
+        return {error: (!response.ok && response.statusText) || (response.status == 401 && "User unauthorized") || "Internal error: failed to parse returned JSON"};
     }
 }
 
