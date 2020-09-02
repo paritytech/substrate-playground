@@ -1,10 +1,22 @@
 {
-  "name": "@parity/substrate-playground-cli",
-  "version": "1.0.0",
+  "name": "@substrate/playground-cli",
+  "version": "1.0.1",
   "license": "MIT",
   "main": "index.js",
   "bin": {
     "substrate-playground": "./index.js"
+  },
+  "description": "Substrate Playground CLI",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/paritytech/substrate-playground/tree/develop/cli"
+  },
+  "author": {
+    "name": "Julien Eluard",
+    "email": "julien@parity.io"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "dependencies": {
     "import-jsx": "4.0.0",
@@ -24,10 +36,6 @@
     "@babel/preset-env": "7.11.5",
     "@babel/preset-react": "7.10.4"
   },
-  "files": [
-    "index.js",
-    "ui.js"
-  ],
   "babel": {
     "presets": [
       "@babel/preset-env",
