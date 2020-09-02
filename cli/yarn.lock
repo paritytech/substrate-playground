@@ -1737,10 +1737,10 @@ ink-select-input@4.0.0:
     lodash "^4.17.19"
     lodash.isequal "^4.5.0"
 
-ink@3.0.4:
-  version "3.0.4"
-  resolved "https://registry.yarnpkg.com/ink/-/ink-3.0.4.tgz#e8f40f260c34d27431be6b7db9b963c0104058b0"
-  integrity sha512-WURr4mZoIZNaIqrgRHS1QKJsZdhs4UEeZ7IFvQgGCE7xCgtC+Svu7f7MoEuVz2hexCsmOdBKrkhMCRwFncSe1A==
+ink@3.0.5:
+  version "3.0.5"
+  resolved "https://registry.yarnpkg.com/ink/-/ink-3.0.5.tgz#9397b21111a7c6c5f5e00cfeb7420f9c09ba044d"
+  integrity sha512-Zc/Yoi3P0cY0DC9ryb3HTwmi4Qgke9332ebOhDRaK9Cw6D+ABAOQPeHG8IdmI1GOkMKRMZwTP/1jRs/b1D1n9Q==
   dependencies:
     ansi-escapes "^4.2.1"
     auto-bind "4.0.0"
