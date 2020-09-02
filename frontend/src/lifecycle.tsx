@@ -51,13 +51,15 @@ function lifecycle(history, location) {
             const res = response.result;
             if (res) {
               const templates = res.templates;
+              const user = res.user;
               const template = context.template;
-              
               if (template) {
-                if (templates[template]) {
+                if (user && templates[template]) {
                   callback({type: deploy, template: template});
+                } else if (user) {
+                  throw {error: `Unknown template ${template}`};
                 } else {
-                  throw {error: `Unknown template ${template}`}
+                  throw {error: "Unauthorized"};
                 }
               }
               const indexedTemplates = Object.entries(templates).map(([k, v]) => {v["id"] = k; return v;});
