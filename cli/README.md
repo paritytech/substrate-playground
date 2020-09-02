@@ -1,11 +1,11 @@
 
 
 <p align="center">
-  <img width="600" src="https://cdn.rawgit.com/paritytech/substrate-playground/tree/develop/cli/assets/no-web.svg">
+  <img width="600" src="https://cdn.rawgit.com/paritytech/substrate-playground/develop/cli/assets/no-web.svg">
 </p>
 
 <p align="center">
-  <img width="600" src="https://cdn.rawgit.com/paritytech/substrate-playground/tree/develop/cli/assets/web.svg">
+  <img width="600" src="https://cdn.rawgit.com/paritytech/substrate-playground/develop/cli/assets/web.svg">
 </p>
 
 # Usage

@@ -19,7 +19,7 @@ npx @substrate/playground-cli --web
 Then [browse](http://localhost) a locally accessible web IDE.
 
 <p align="center">
-  <img width="600" src="https://cdn.rawgit.com/paritytech/substrate-playground/tree/develop/cli/assets/web.svg">
+  <img width="600" src="https://cdn.rawgit.com/paritytech/substrate-playground/develop/cli/assets/web.svg">
 </p>
 
 Find more details [here](cli/README.md)
