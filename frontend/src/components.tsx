@@ -428,6 +428,7 @@ export function TheiaPanel() {
 }
 
 function login(): void {
+    localStorage.setItem('login', "true");
     window.location.href = githubAuthorizationURL();
 }
 

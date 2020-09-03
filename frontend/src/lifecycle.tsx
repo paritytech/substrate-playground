@@ -31,6 +31,16 @@ export const stop = "@action/STOP";
 export const restart = "@action/RESTART";
 
 function lifecycle(history, location) {
+  const path = 'path';
+  const login = localStorage.getItem('login') == "true";
+  if (login) {
+    localStorage.setItem('login', "false");
+    // Restore query params
+    const params = localStorage.getItem(path);
+    if (params != "") {
+      history.replace(`?${new URLSearchParams(params).toString()}`);
+    }
+  }
   const template = new URLSearchParams(location.search).get("deploy");
   return Machine<Context>({
   id: 'lifecycle',
@@ -49,17 +59,21 @@ function lifecycle(history, location) {
             }
 
             const res = response.result;
+            if (!res.user) {
+              // Keep track of query params while unlogged. Will be restored after login.
+              const query = new URLSearchParams(window.location.search).toString();
+              localStorage.setItem(path, query);
+            }
+
             if (res) {
               const templates = res.templates;
               const user = res.user;
               const template = context.template;
-              if (template) {
-                if (user && templates[template]) {
+              if (user && template) {
+                if (templates[template]) {
                   callback({type: deploy, template: template});
-                } else if (user) {
-                  throw {error: `Unknown template ${template}`};
                 } else {
-                  throw {error: "Unauthorized"};
+                  throw {error: `Unknown template ${template}`};
                 }
               }
               const indexedTemplates = Object.entries(templates).map(([k, v]) => {v["id"] = k; return v;});
