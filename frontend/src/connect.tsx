@@ -1,4 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
+import { BroadcastChannel } from 'broadcast-channel';
 
 const GLOBAL_CHANNEL = "paritytech#playground-instance";
 const TYPE_DISCOVERY = "discovery";
