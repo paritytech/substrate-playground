@@ -38,7 +38,7 @@ function lifecycle(history, location) {
     // Restore query params
     const params = localStorage.getItem(path);
     if (params != "") {
-      history.replace(`?${new URLSearchParams(params).toString()}`);
+      history.replace(`/?${new URLSearchParams(params).toString()}`);
     }
   }
   const template = new URLSearchParams(location.search).get("deploy");
