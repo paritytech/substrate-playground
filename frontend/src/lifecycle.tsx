@@ -32,16 +32,19 @@ export const restart = "@action/RESTART";
 
 function lifecycle(history, location) {
   const path = 'path';
-  const login = localStorage.getItem('login') == "true";
-  if (login) {
-    localStorage.setItem('login', "false");
+  const login = 'login';
+  const deploy = 'deploy';
+  let template = new URLSearchParams(location.search).get(deploy);
+  if (localStorage.getItem(login) == "true") {
+    localStorage.setItem(login, "false");
     // Restore query params
-    const params = localStorage.getItem(path);
-    if (params != "") {
-      history.replace(`/?${new URLSearchParams(params).toString()}`);
+    const query = localStorage.getItem(path);
+    if (query != "") {
+      const params = new URLSearchParams(query);
+      template = params.get(deploy);
+      history.replace(`/?${params.toString()}`);
     }
   }
-  const template = new URLSearchParams(location.search).get("deploy");
   return Machine<Context>({
   id: 'lifecycle',
   initial: setup,
