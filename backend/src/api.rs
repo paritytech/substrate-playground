@@ -54,7 +54,7 @@ fn token_valid(token: &str, client_id: &str, client_secret: &str) -> Result<bool
         .header(UserAgent("Substrate Playground".into()))
         .body(format!("{{\"access_token\":\"{}\"}}", token).as_str())
         .send()
-        .map_err(|a| a.to_string())?;
+        .map_err(|op| format!("Failed to access Playground GitHub application: {}", op.to_string()))?;
 
     Ok(response.status == StatusCode::Ok)
 }
@@ -170,7 +170,7 @@ pub struct GitHubOrg {
     login: String,
 }
 
-#[rocket::get("/login/github")]
+#[get("/login/github")]
 pub fn github_login(oauth2: OAuth2<GitHubUserInfo>, mut cookies: Cookies<'_>) -> Redirect {
     oauth2.get_redirect(&mut cookies, &["user:read"]).unwrap()
 }
@@ -195,14 +195,14 @@ pub fn post_install_callback(
         .header(Accept(vec![qitem(mime.clone())]))
         .header(UserAgent("Substrate Playground".into()))
         .send()
-        .map_err(|a| a.to_string())?;
+        .map_err(|error| format!("Failed to access GitHub user profile: {}", error.to_string()))?;
 
     if !response.status.is_success() {
-        return Err(format!("got non-success status {}", response.status));
+        return Err(format!("Errorwhen accessing GitHub user profile:  {}", response.status));
     }
 
     let user_info: GitHubUserInfo =
-        serde_json::from_reader(response.take(2 * 1024 * 1024)).map_err(|a| a.to_string())?;
+        serde_json::from_reader(response.take(2 * 1024 * 1024)).map_err(|error| format!("Failed to read GitHubUserInfo: {}", error.to_string()))?;
 
     let response2: hyper::client::response::Response = client
         .get(format!("https://api.github.com/users/{}/orgs", user_info.login).as_str())
@@ -210,14 +210,14 @@ pub fn post_install_callback(
         .header(Accept(vec![qitem(mime)]))
         .header(UserAgent("Substrate Playground".into()))
         .send()
-        .map_err(|a| a.to_string())?;
+        .map_err(|error| format!("Failed to access GitHub organizations: {}", error.to_string()))?;
 
     if !response2.status.is_success() {
-        return Err(format!("got non-success status {}", response2.status));
+        return Err(format!("Errorwhen accessing GitHub organizations: {}", response2.status));
     }
 
     let orgs: Vec<GitHubOrg> =
-        serde_json::from_reader(response2.take(2 * 1024 * 1024)).map_err(|a| a.to_string())?;
+        serde_json::from_reader(response2.take(2 * 1024 * 1024)).map_err(|error| format!("Failed to read Vec<GitHubOrg>: {}", error.to_string()))?;
 
     cookies.add_private(
         Cookie::build(COOKIE_USERNAME, user_info.clone().login)
