@@ -34,12 +34,11 @@ import Typography from '@material-ui/core/Typography';
 import { makeStyles, createStyles, Theme } from '@material-ui/core/styles';
 import marked from 'marked';
 import { useHistory, useLocation, useParams } from "react-router-dom";
-import Zoom from '@material-ui/core/Zoom';
 import Fade from '@material-ui/core/Fade';
 import { Container } from "@material-ui/core";
 import { getInstanceDetails, logout } from "./api";
 import { startNode, openFile, gotoLine, cursorMove } from "./commands";
-import { Discoverer, Responder } from "./connect";
+import { Discoverer } from "./connect";
 import { useHover, useInterval, useWindowMaxDimension } from './hooks';
 import { useLifecycle, deploy, deploying, failed, logged, restart, setup, stop, stopping } from './lifecycle';
 import { fetchWithTimeout, navigateToAdmin, navigateToInstance, navigateToHomepage } from "./utils";
@@ -398,31 +397,11 @@ export function TheiaInstance({ uuid }) {
 }
 
 export function TheiaPanel() {
-    const query = useQuery();
-    const controller = query.get("controller");
-    const files = query.get("files");
     const { uuid } = useParams();
-    const instances = useDiscovery();
-
-    useEffect(() => {
-        const onlyInstance = instances.length == 1 ? instances[0] : null;
-        if (onlyInstance && files) {
-            decodeURIComponent(files).split(",").forEach(file => openFile(onlyInstance[1], { type: "URI", data: file }));
-        }
-    }, [instances]);
 
     return (
     <div style={{display: "flex", width: "100vw", height: "100vh"}}>
-    {controller != null
-        ?
-        <>
-            <InstanceController instances={instances} />
-            <div style={{display: "flex", flex: 1}}>
-                <TheiaInstance uuid={uuid} />
-            </div>
-        </>
-        : <TheiaInstance uuid={uuid} />
-    }
+        <TheiaInstance uuid={uuid} />
     </div>
     );
 }
