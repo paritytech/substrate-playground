@@ -36,7 +36,7 @@ function lifecycle(history, location) {
   const deploy = 'deploy';
   let template = new URLSearchParams(location.search).get(deploy);
   console.log("location", location);
-  if (location.state.freshLog) {
+  if (location.state?.freshLog) {
     // Restore query params
     const query = localStorage.getItem(path);
     console.log("query", query);
