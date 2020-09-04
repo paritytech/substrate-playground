@@ -1,7 +1,7 @@
 import * as React from "react";
 import ReactDOM from "react-dom";
 import { createMuiTheme, ThemeProvider } from '@material-ui/core/styles';
-import { Route, Router, Switch } from "react-router-dom";
+import { Redirect, Route, Router, Switch } from "react-router-dom";
 import { createBrowserHistory } from "history";
 import { AdminPanel, ControllerPanel, MainPanel, TheiaPanel } from './components';
 import { TutorialPanel } from './tutorial';
