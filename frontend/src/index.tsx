@@ -21,6 +21,14 @@ function App() {
       <Router history={history}>
         <Switch>
           <Route exact path={"/"} component={MainPanel} />
+          <Route exact path={"/logged"}>
+            <Redirect
+              to={{
+                pathname: "/",
+                state: { freshLog: true }
+              }}
+            />
+          </Route>
           <Route exact path={"/tutorial"} component={TutorialPanel} />
           <Route exact path={"/controller"} component={ControllerPanel} />
           <Route exact path={"/admin"} component={AdminPanel} />

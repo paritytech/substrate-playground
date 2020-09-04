@@ -249,7 +249,7 @@ pub fn post_install_callback(
             .same_site(SameSite::Lax)
             .finish(),
     );
-    Ok(Redirect::to("/"))
+    Ok(Redirect::to("/logged"))
 }
 
 #[get("/logout")]
@@ -266,6 +266,6 @@ fn clear(mut cookies: Cookies<'_>) {
 
 #[allow(dead_code)]
 #[catch(400)] // TODO move to catch(default) once it's available
-pub fn bad_request_catcher(req: &Request<'_>) -> content::Html<String> {
+pub fn bad_request_catcher(_req: &Request<'_>) -> content::Html<String> {
     content::Html("<p>Sorry something unexpected happened!</p>".to_string())
 }
