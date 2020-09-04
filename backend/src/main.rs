@@ -26,7 +26,7 @@ pub struct Context {
 async fn main() -> Result<(), Box<dyn Error>> {
     // Initialize log configuration. Reads `RUST_LOG` if any, otherwise fallsback to `default`
     if env::var("RUST_LOG").is_err() {
-        env::set_var("RUST_LOG", "warn");
+        env::set_var("RUST_LOG", "info");
     }
     env_logger::init();
 
@@ -43,14 +43,16 @@ async fn main() -> Result<(), Box<dyn Error>> {
     .to_cors()?;
 
     log::info!("Running in {:?} mode", Environment::active()?);
-    let version = env::var("GITHUB_SHA")?;
-    println!("Version {:?}", version);
+
+    match env::var("GITHUB_SHA") {
+        Ok(version) => log::info!("Version {}", version),
+        Err(_) => log::warn!("Unknown version"),
+    }
+
+    let client_id = env::var("GITHUB_CLIENT_ID").map_err(|_| "GITHUB_CLIENT_ID must be set")?;
+    let client_secret = env::var("GITHUB_CLIENT_SECRET").map_err(|_| "GITHUB_CLIENT_SECRET must be set")?;
 
     let manager = Manager::new().await?;
-
-    let client_id = env::var("GITHUB_CLIENT_ID")?;
-    let client_secret = env::var("GITHUB_CLIENT_SECRET")?;
-
     manager.clone().spawn_background_thread();
     let prometheus = PrometheusMetrics::with_registry(manager.clone().metrics.create_registry()?);
     let error = rocket::ignite()
