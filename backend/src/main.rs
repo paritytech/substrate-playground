@@ -10,7 +10,7 @@ mod template;
 use crate::api::GitHubUserInfo;
 use crate::manager::Manager;
 use rocket::fairing::AdHoc;
-use rocket::{config::Environment, http::Method, routes};
+use rocket::{catchers, config::Environment, http::Method, routes};
 use rocket_cors::{AllowedOrigins, CorsOptions};
 use rocket_oauth2::{HyperSyncRustlsAdapter, OAuth2, OAuthConfig, StaticProvider};
 use rocket_prometheus::PrometheusMetrics;
@@ -56,6 +56,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     manager.clone().spawn_background_thread();
     let prometheus = PrometheusMetrics::with_registry(manager.clone().metrics.create_registry()?);
     let error = rocket::ignite()
+        .register(catchers![api::bad_request_catcher])
         .attach(prometheus.clone())
         .attach(cors)
         .attach(AdHoc::on_attach("github", |rocket| {

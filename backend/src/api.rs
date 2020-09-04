@@ -9,9 +9,9 @@ use hyper::{
     Client,
 };
 use rocket::request::{self, FromRequest, Request};
-use rocket::response::{status, Redirect};
+use rocket::response::{content, status, Redirect};
 use rocket::{
-    delete, get,
+    catch, delete, get,
     http::{Cookie, Cookies, SameSite, Status},
     post, Outcome, State,
 };
@@ -262,4 +262,10 @@ fn clear(mut cookies: Cookies<'_>) {
     cookies.remove_private(Cookie::named(COOKIE_USERNAME));
     cookies.remove_private(Cookie::named(COOKIE_AVATAR));
     cookies.remove_private(Cookie::named(COOKIE_TOKEN));
+}
+
+#[allow(dead_code)]
+#[catch(400)] // TODO move to catch(default) once it's available
+pub fn bad_request_catcher(req: &Request<'_>) -> content::Html<String> {
+    content::Html("<p>Sorry something unexpected happened!</p>".to_string())
 }
