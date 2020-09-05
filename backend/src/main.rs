@@ -50,7 +50,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
     }
 
     let client_id = env::var("GITHUB_CLIENT_ID").map_err(|_| "GITHUB_CLIENT_ID must be set")?;
-    let client_secret = env::var("GITHUB_CLIENT_SECRET").map_err(|_| "GITHUB_CLIENT_SECRET must be set")?;
+    let client_secret =
+        env::var("GITHUB_CLIENT_SECRET").map_err(|_| "GITHUB_CLIENT_SECRET must be set")?;
 
     let manager = Manager::new().await?;
     manager.clone().spawn_background_thread();
