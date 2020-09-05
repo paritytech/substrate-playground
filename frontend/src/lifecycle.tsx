@@ -35,11 +35,9 @@ function lifecycle(history, location) {
   const path = 'path';
   const deploy = 'deploy';
   let template = new URLSearchParams(location.search).get(deploy);
-  console.log("location", location);
   if (location.state?.freshLog) {
     // Restore query params
     const query = localStorage.getItem(path);
-    console.log("query", query);
     if (query != "") {
       const params = new URLSearchParams(query);
       template = params.get(deploy);
@@ -73,15 +71,15 @@ function lifecycle(history, location) {
               const templates = res.templates;
               const user = res.user;
               const template = context.template;
-              if (user && template) {
-                if (templates[template]) {
-                  callback({type: deploy, template: template});
-                } else {
-                  throw {error: `Unknown template ${template}`};
-                }
-              }
               const indexedTemplates = Object.entries(templates).map(([k, v]) => {v["id"] = k; return v;});
               const data = {details: { ...res, ...{templates: indexedTemplates } }};
+              if (user && template) {
+                if (templates[template]) {
+                  callback({type: deploy, template: template, data: data});
+                } else {
+                  throw {error: `Unknown template ${template}`, data: data};
+                }
+              }
   
               callback({type: check, data: data});
             } else {
@@ -90,12 +88,12 @@ function lifecycle(history, location) {
           },
           onError: {
             target: failed,
-            actions: assign({ error: (_context, event) => event.data.error})
+            actions: assign({ error: (_context, event) => event.data.error, details: (_context, event) => event.data?.details})
           }
         },
         on: {
           [deploy]: { target: deploying,
-                      actions: assign({template: (_context, event) => event.template}) },
+                      actions: assign({template: (_context, event) => event.template, details: (_context, event) => event.data?.details}) },
           [check]: { target: logged,
                      actions: assign({details: (_context, event) => event.data?.details}) }
         }
