@@ -398,6 +398,16 @@ export function TheiaInstance({ uuid }) {
 
 export function TheiaPanel() {
     const { uuid } = useParams();
+    const query = useQuery();
+    const files = query.get("files");
+    const instances = useDiscovery();
+
+    useEffect(() => {
+        const onlyInstance = instances.length == 1 ? instances[0] : null;
+        if (onlyInstance && files) {
+            decodeURIComponent(files).split(",").forEach(file => openFile(onlyInstance[1], { type: "URI", data: file }));
+        }
+    }, [instances]);
 
     return (
     <div style={{display: "flex", width: "100vw", height: "100vh"}}>
