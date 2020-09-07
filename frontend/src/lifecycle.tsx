@@ -31,14 +31,13 @@ export const stop = "@action/STOP";
 export const restart = "@action/RESTART";
 
 function lifecycle(history, location) {
-  console.log("location", location);
   const path = 'path';
   const deploy = 'deploy';
   let template = new URLSearchParams(location.search).get(deploy);
   if (location.state?.freshLog) {
     // Restore query params
     const query = localStorage.getItem(path);
-    if (query != "") {
+    if (query && query != "") {
       const params = new URLSearchParams(query);
       template = params.get(deploy);
       history.replace(`/?${params.toString()}`);
