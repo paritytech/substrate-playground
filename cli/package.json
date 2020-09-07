@@ -26,7 +26,7 @@
     "ink-link": "2.0.0",
     "ink-markdown": "1.0.1",
     "ink-select-input": "4.0.0",
-    "node-fetch": "2.6.0",
+    "node-fetch": "2.6.1",
     "react": "16.13.1",
     "yargs": "15.4.1"
   },
