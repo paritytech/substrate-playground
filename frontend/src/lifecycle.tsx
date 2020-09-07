@@ -31,15 +31,15 @@ export const stop = "@action/STOP";
 export const restart = "@action/RESTART";
 
 function lifecycle(history, location) {
-  const path = 'path';
-  const deploy = 'deploy';
-  let template = new URLSearchParams(location.search).get(deploy);
+  const pathParam = 'path';
+  const deployParam = 'deploy';
+  let template = new URLSearchParams(location.search).get(deployParam);
   if (location.state?.freshLog) {
     // Restore query params
-    const query = localStorage.getItem(path);
+    const query = localStorage.getItem(pathParam);
     if (query && query != "") {
       const params = new URLSearchParams(query);
-      template = params.get(deploy);
+      template = params.get(deployParam);
       history.replace(`/?${params.toString()}`);
     }
   }
@@ -63,7 +63,7 @@ function lifecycle(history, location) {
             if (!res.user) {
               // Keep track of query params while unlogged. Will be restored after login.
               const query = new URLSearchParams(window.location.search).toString();
-              localStorage.setItem(path, query);
+              localStorage.setItem(pathParam, query);
             }
 
             if (res) {
