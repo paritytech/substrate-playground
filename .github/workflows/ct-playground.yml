@@ -20,8 +20,8 @@ jobs:
       - uses: microsoft/playwright-github-action@v1
 
       - name: Run tests
-        run: yarn && yarn itest
-        working-directory: ./frontend
+        run: yarn && yarn test
+        working-directory: ./e2e
         env:
           ENVIRONMENT: ${{ matrix.env }}
           GH_USER: ${{ secrets.GH_USER }}

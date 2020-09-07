@@ -1,0 +1,14 @@
+{
+  "name": "@parity/substrate-playground-e2e",
+  "version": "1.0.0",
+  "license": "MIT",
+  "scripts": {
+    "test": "ava",
+    "clean": "rm -rf node_modules/ yarn.lock"
+  },
+  "devDependencies": {
+    "ava": "3.12.1",
+    "node-fetch": "2.6.1",
+    "playwright": "1.3.0"
+  }
+}
