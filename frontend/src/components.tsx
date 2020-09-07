@@ -306,7 +306,7 @@ export function TheiaInstance({ uuid }) {
             } else {
                 console.error("No accessible iframe instance");
             }
-        });
+        }, {url: document.location.href});
 
         const processMessage = (o) => {
             const type = o.data.type;

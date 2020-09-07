@@ -15,10 +15,11 @@ export class Discoverer {
     #channel = new BroadcastChannel(GLOBAL_CHANNEL);
     #instances = new Map();
 
-    constructor(onInstanceAppeared, onInstanceLeft) {
-        this.#channel.onmessage = (o) => {
-            const type = o.data.type;
-            const uuid = o.data.uuid;
+    constructor(onInstanceAppeared: (Instance) => void, onInstanceLeft?: (string) => void) {
+        this.#channel.onmessage = (oo) => {
+            const o = JSON.parse(oo);
+            const type = o.type;
+            const uuid = o.uuid;
             switch (type) {
                 case TYPE_DISCOVERY:
                     // Another instance of Discoverer is sending 'discovery' request; ignore
@@ -29,7 +30,7 @@ export class Discoverer {
                         onInstanceAppeared(existingInstance);
                     } else {
                         // TODO use `url` to figure out if an instance is not available anymore
-                        const url = o.data.url;
+                        const url = o.url;
                         const instance = new Instance(uuid, {url: url});
                         this.#instances.set(uuid, instance);
                         onInstanceAppeared(instance);
@@ -37,8 +38,8 @@ export class Discoverer {
                     break;
                 }
                 case TYPE_INSTANCE_LEFT: {
-                    if (this.#instances.delete(uuid) && onInstanceLeft) {
-                        onInstanceLeft(uuid);
+                    if (this.#instances.delete(uuid)) {
+                        onInstanceLeft?.(uuid);
                     }
                     break;
                 }
@@ -47,12 +48,8 @@ export class Discoverer {
                     break;
             }
         };
-        this.#channel.onmessageerror = (o) => {
-            console.error('Received error from global channel', o);
-            // TODO
-        };
         // Fire this initial events to trigger a response from already running instances
-        this.#channel.postMessage({type: TYPE_DISCOVERY});
+        this.#channel.postMessage(JSON.stringify({type: TYPE_DISCOVERY}));
     }
 
     get instances() {
@@ -74,12 +71,15 @@ export class Responder {
     #instanceChannel;
     #uuid;
     online;
+    #extras;
 
-    constructor(uuid: string, onInstanceMessage) {
+    constructor(uuid: string, onInstanceMessage: (object) => void, extras = {}) {
         this.online = false;
         this.#uuid = uuid;
-        this.#channel.onmessage = (o) => {
-            const type = o.data.type;
+        this.#extras = extras;
+        this.#channel.onmessage = (oo) => {
+            const o = JSON.parse(oo);
+            const type = o.type;
             switch (type) {
                 case TYPE_INSTANCE_ANNOUNCED:
                     // Another instance is anouncing itself; ignore
@@ -95,12 +95,8 @@ export class Responder {
                     break;
             }
         };
-        this.#channel.onmessageerror = (o) => {
-            console.error(`error ${o}`);
-        };
         this.#instanceChannel = new BroadcastChannel(instanceChannelId(uuid));
-        this.#instanceChannel.onmessage = onInstanceMessage;
-        this.#instanceChannel.onmessageerror = console.error;
+        this.#instanceChannel.onmessage = (s: string) => onInstanceMessage(JSON.parse(s));
     }
 
     setStatus(online: boolean): void {
@@ -108,15 +104,15 @@ export class Responder {
     }
 
     announce(): void {
-        this.#channel.postMessage({type: TYPE_INSTANCE_ANNOUNCED, uuid: this.#uuid, url: document.location.href});
+        this.#channel.postMessage(JSON.stringify(Object.assign({type: TYPE_INSTANCE_ANNOUNCED, uuid: this.#uuid}, this.#extras)));
     }
 
     unannounce(): void {
-        this.#channel.postMessage({type: TYPE_INSTANCE_LEFT, uuid: this.#uuid});
+        this.#channel.postMessage(JSON.stringify({type: TYPE_INSTANCE_LEFT, uuid: this.#uuid}));
     }
 
     respond(data: Object): void {
-        this.#instanceChannel.postMessage(data);
+        this.#instanceChannel.postMessage(JSON.stringify(data));
     }
 
     close(): void {
@@ -144,20 +140,21 @@ export class Instance {
     async sendMessage(data) {
         return new Promise((resolve, reject) => {
             const messageUuid = uuidv4();
-            const callback = (o) => {
+            const callback = (oo) => {
+                const o = JSON.parse(oo);
                 // TODO introduce a timeout mechanism: automatically unregister and reject after some time
-                if (o.data.uuid == messageUuid) {
+                if (o.uuid == messageUuid) {
                     this.#channel.removeEventListener('message', callback);
-                    const type = o.data.type;
+                    const type = o.type;
                     switch (type) {
                         case "extension-answer":
-                            resolve(o.data.data);
+                            resolve(o.data);
                             break;
                         case "extension-answer-offline":
                             reject({message: "Instance is offline"});
                             break;
                         case "extension-answer-error":
-                            reject(o.data.data);
+                            reject(o.data);
                             break;
                         default:
                             console.error(`Unknown callback type ${type}`, o)
@@ -166,11 +163,11 @@ export class Instance {
                 }
             };
             this.#channel.addEventListener('message', callback);
-            this.#channel.postMessage(Object.assign({uuid: messageUuid}, data));
+            this.#channel.postMessage(JSON.stringify(Object.assign({uuid: messageUuid}, data)));
         });
     }
 
-    async execute(action, data = {}) {
+    async execute(action: string, data = {}) {
         return this.sendMessage({type: "action", name: action, data: data});
     }
 
