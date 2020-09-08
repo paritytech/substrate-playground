@@ -310,9 +310,10 @@ export function TheiaInstance({ uuid }) {
 
         const processMessage = o => {
             const {type, data} = o.data;
+            console.log("data", data)
             switch (type) {
                 case "extension-advertise":
-                    if (data.data.online) {
+                    if (data.online) {
                         responder.announce();
                     } else {
                         responder.unannounce();
