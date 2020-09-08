@@ -238,12 +238,12 @@ function InstanceController({ instances }) {
                 }
                 {selectedInstance &&
                     <>
-                        <Button style={{ marginTop: 10 }} color="primary" variant="contained" disableElevation onClick={startNode}>START NODE</Button>
+                        <Button style={{ marginTop: 10 }} color="primary" variant="contained" disableElevation onClick={() => startNode(selectInstance)}>START NODE</Button>
                         <div style={{ marginTop: 10 }}>
-                            <Button color="primary" variant="contained" disableElevation onClick={gotoLine}>GOTO LINE</Button>
+                            <Button color="primary" variant="contained" disableElevation onClick={() => gotoLine(selectInstance)}>GOTO LINE</Button>
                         </div>
                         <div style={{ marginTop: 10 }}>
-                            <Button color="primary" variant="contained" disableElevation onClick={cursorMove}>CURSOR MOVE</Button>
+                            <Button color="primary" variant="contained" disableElevation onClick={() => cursorMove(selectInstance)}>CURSOR MOVE</Button>
                         </div>
                     </>}
             </div>
