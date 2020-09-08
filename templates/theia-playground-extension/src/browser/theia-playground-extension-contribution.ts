@@ -54,10 +54,13 @@ function updateStatus(status: ConnectionStatus): void {
 }
 
 function unmarshall(payload) {
-    if (payload.type) {
-        switch(payload.type) {
+    const {type, data} = payload;
+    if (type) {
+        switch(type) {
             case "URI":
-                return URI.parse(payload.data);
+                return URI.parse(data);
+            default:
+                throw new Error(`Failed to unmarshall unknown type ${type}`);
         }
     } else {
         return payload;
@@ -67,12 +70,8 @@ function unmarshall(payload) {
 function registerBridge(registry, connectionStatusService, messageService) {
     // Listen to message from parent frame
     window.addEventListener('message', async (o) => {
-        const type = o.data.type;
-
+        const {type, name, data, uuid} = o.data;
         if (type) { // Filter extension related message
-            const name = o.data.name;
-            const data = o.data.data;
-            const uuid = o.data.uuid;
             const status = connectionStatusService.currentStatus;
             if (status === ConnectionStatus.OFFLINE) {
                 answer("extension-answer-offline", uuid);
@@ -86,7 +85,7 @@ function registerBridge(registry, connectionStatusService, messageService) {
                         answer("extension-answer", uuid, result);
                     } catch (error) {
                         messageService.error(`Error while executing ${name}.`, error.message);
-                        answer("extension-answer-error", uuid, {name: error.name, message: error.message});
+                        answer("extension-answer-error", uuid, {name: name, message: error.message, data: data});
                     }
                     break;
                 }
