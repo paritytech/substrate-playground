@@ -180,7 +180,7 @@ function InstanceController({ instances }) {
         }
     }, [instances]);
 
-    async function selectInstance(instance) {
+    async function selectInstance(instance: Instance): void {
         setInstance(instance);
         const commands = await instance.list();
         setCommands(commands);
@@ -310,7 +310,6 @@ export function TheiaInstance({ uuid }) {
 
         const processMessage = o => {
             const {type, data} = o.data;
-            console.log("data", data)
             switch (type) {
                 case "extension-advertise":
                     if (data.online) {
@@ -334,7 +333,7 @@ export function TheiaInstance({ uuid }) {
                     console.error("Error while processing message", o);
                 case "extension-answer":
                     // Got an answer from the instance, respond back
-                    responder.respond(data);
+                    responder.respond(o.data);
                     break;
                 default:
                     console.error(`Unknown instance message type ${type}`, o);
