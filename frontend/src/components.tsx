@@ -38,7 +38,7 @@ import Fade from '@material-ui/core/Fade';
 import { Container } from "@material-ui/core";
 import { getInstanceDetails, logout } from "./api";
 import { startNode, openFile, gotoLine, cursorMove } from "./commands";
-import { Discoverer, Responder } from "./connect";
+import { Discoverer, Instance, Responder } from "./connect";
 import { useHover, useInterval, useWindowMaxDimension } from './hooks';
 import { useLifecycle, deploy, deploying, failed, logged, restart, setup, stop, stopping } from './lifecycle';
 import { fetchWithTimeout, navigateToAdmin, navigateToInstance, navigateToHomepage } from "./utils";
@@ -186,9 +186,9 @@ function InstanceController({ instances }) {
         setCommands(commands);
     }
 
-    async function executeCommand(command, data) {
+    async function executeCommand(instance: Instance, command: string, data = {}) {
         try {
-            const result = await selectedInstance.execute(command, data);
+            const result = await instance.execute(command, data);
             setResult(result);
         } catch (error) {
             console.error(error);
@@ -238,12 +238,12 @@ function InstanceController({ instances }) {
                 }
                 {selectedInstance &&
                     <>
-                        <Button style={{ marginTop: 10 }} color="primary" variant="contained" disableElevation onClick={() => startNode(selectInstance)}>START NODE</Button>
+                        <Button style={{ marginTop: 10 }} color="primary" variant="contained" disableElevation onClick={() => startNode(selectedInstance)}>START NODE</Button>
                         <div style={{ marginTop: 10 }}>
-                            <Button color="primary" variant="contained" disableElevation onClick={() => gotoLine(selectInstance)}>GOTO LINE</Button>
+                            <Button color="primary" variant="contained" disableElevation onClick={() => gotoLine(selectedInstance)}>GOTO LINE</Button>
                         </div>
                         <div style={{ marginTop: 10 }}>
-                            <Button color="primary" variant="contained" disableElevation onClick={() => cursorMove(selectInstance)}>CURSOR MOVE</Button>
+                            <Button color="primary" variant="contained" disableElevation onClick={() => cursorMove(selectedInstance)}>CURSOR MOVE</Button>
                         </div>
                     </>}
             </div>
@@ -299,7 +299,7 @@ export function TheiaInstance({ uuid }) {
     const [data, setData] = useState({ type: "LOADING" });
 
     useEffect(() => {
-        const responder = new Responder(uuid, (o) => {
+        const responder = new Responder(uuid, o => {
             const el = ref.current;
             if (el) {
                 el.contentWindow.postMessage(o, "*")
@@ -308,11 +308,11 @@ export function TheiaInstance({ uuid }) {
             }
         }, {url: document.location.href});
 
-        const processMessage = (o) => {
-            const type = o.data.type;
+        const processMessage = o => {
+            const {type, data} = o.data;
             switch (type) {
                 case "extension-advertise":
-                    if (o.data.data.online) {
+                    if (data.data.online) {
                         responder.announce();
                     } else {
                         responder.unannounce();
@@ -330,10 +330,10 @@ export function TheiaInstance({ uuid }) {
                     break;
                 case "extension-answer-offline":
                 case "extension-answer-error":
-                    console.error(`Error while processing message`, o);
+                    console.error("Error while processing message", o);
                 case "extension-answer":
                     // Got an answer from the instance, respond back
-                    responder.respond(o.data);
+                    responder.respond(data);
                     break;
                 default:
                     console.error(`Unknown instance message type ${type}`, o);
@@ -341,7 +341,10 @@ export function TheiaInstance({ uuid }) {
             }
         };
         window.addEventListener('message', processMessage, false);
-        return () => { responder.close(); window.removeEventListener('message', processMessage, false); }
+        return () => {
+            window.removeEventListener('message', processMessage, false);
+            responder.close();
+        }
     }, []);
 
     useEffect(() => {

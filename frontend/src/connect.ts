@@ -13,7 +13,7 @@ function instanceChannelId(uuid: string) {
 export class Discoverer {
 
     #channel = new BroadcastChannel(GLOBAL_CHANNEL);
-    #instances = new Map();
+    #instances = new Map<string, Instance>();
 
     constructor(onInstanceAppeared: (Instance) => void, onInstanceLeft?: (string) => void) {
         this.#channel.onmessage = (oo) => {
@@ -52,11 +52,11 @@ export class Discoverer {
         this.#channel.postMessage(JSON.stringify({type: TYPE_DISCOVERY}));
     }
 
-    get instances() {
+    get instances(): Map<string, Instance> {
         return this.#instances;
     }
 
-    close() {
+    close(): void {
         this.#channel.close();
     }
 
@@ -111,7 +111,7 @@ export class Responder {
         this.#channel.postMessage(JSON.stringify({type: TYPE_INSTANCE_LEFT, uuid: this.#uuid}));
     }
 
-    respond(data: Object): void {
+    respond(data: object): void {
         this.#instanceChannel.postMessage(JSON.stringify(data));
     }
 
@@ -131,13 +131,13 @@ export class Instance {
     details;
     #channel;
 
-    constructor(uuid: string, details: object) {
+    constructor(uuid: string, details: object = {}) {
         this.uuid = uuid;
         this.details = details;
         this.#channel = new BroadcastChannel(instanceChannelId(uuid));
     }
 
-    async sendMessage(data) {
+    async sendMessage(data: object): Promise<object> {
         return new Promise((resolve, reject) => {
             const messageUuid = uuidv4();
             const callback = (oo) => {
@@ -167,19 +167,19 @@ export class Instance {
         });
     }
 
-    async execute(action: string, data = {}) {
+    async execute(action: string, data = {}): Promise<object> {
         return this.sendMessage({type: "action", name: action, data: data});
     }
 
-    async list() {
+    async list(): Promise<object> {
         return this.sendMessage({type: "list-actions"});
     }
 
-    close() {
+    close(): void {
         this.#channel.close();
     }
 
-    toString() {
+    toString(): string {
         return `Instance ${this.uuid}`;
     }
 
