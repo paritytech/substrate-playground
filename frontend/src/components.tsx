@@ -302,7 +302,7 @@ export function TheiaInstance({ uuid }) {
         const responder = new Responder(uuid, (o) => {
             const el = ref.current;
             if (el) {
-                el.contentWindow.postMessage(o.data, "*")
+                el.contentWindow.postMessage(o, "*")
             } else {
                 console.error("No accessible iframe instance");
             }
