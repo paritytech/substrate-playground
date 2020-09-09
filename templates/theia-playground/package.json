@@ -78,10 +78,11 @@
         "vscode-eslint": "https://open-vsx.org/api/dbaeumer/vscode-eslint/2.1.3/file/dbaeumer.vscode-eslint-2.1.3.vsix",
         "vscode-substrate": "https://github.com/paritytech/vscode-substrate/releases/download/v0.5.0/vscode-substrate-0.5.0.vsix",
         "vscode-references-view": "https://open-vsx.org/api/ms-vscode/references-view/0.0.47/file/ms-vscode.references-view-0.0.47.vsix",
-        "rls-vscode": "https://github.com/rust-lang/rls-vscode/releases/download/v0.7.8/rust.vsix",
+        "rust-analyzer": "https://github.com/rust-analyzer/rust-analyzer/releases/download/2020-09-07/rust-analyzer.vsix",
         "vscode-yaml": "https://open-vsx.org/api/redhat/vscode-yaml/0.9.1/file/redhat.vscode-yaml-0.9.1.vsix",
         "vscode-lldb": "https://github.com/vadimcn/vscode-lldb/releases/download/v1.5.3/codelldb-x86_64-linux.vsix",
-        "better-toml": "https://open-vsx.org/api/bungcip/better-toml/0.3.2/file/bungcip.better-toml-0.3.2.vsix"
+        "better-toml": "https://open-vsx.org/api/bungcip/better-toml/0.3.2/file/bungcip.better-toml-0.3.2.vsix",
+        "crates": "https://open-vsx.org/api/serayuzgur/crates/0.5.3/file/serayuzgur.crates-0.5.3.vsix"
     },
     "scripts": {
         "prepare": "theia build --mode development",
