@@ -7,6 +7,9 @@ FROM paritytech/substrate-playground-template-theia-base:sha-8b98760 as theia-ba
 # Will be replaced by the image remotely built
 FROM %IMAGE%
 
+# Copy VSCode user settings
+COPY --chown=substrate:substrate .vscode/* /home/substrate/.config/Code/User/
+
 # Copy the whole theia folder, including node_modules
 # This is the recommended approach: https://spectrum.chat/theia/dev/theia-packaging~6c10127c-a316-4e87-9a27-e4b70fb647c1
 COPY --from=theia-base --chown=substrate:substrate /home/theia /home/theia
