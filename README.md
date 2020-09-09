@@ -28,6 +28,14 @@ Find more details [here](cli/README.md)
 
 Documentation can be found at [paritytech.github.io/substrate-playground/](https://paritytech.github.io/substrate-playground/) (and its source [here](./docs/))
 
+### Integrate
+
+Playground can be [integrated](docs/INTEGRATION.md) in external pages. This opens the door for more advanced usage e.g. interactive tutorials.
+
+### Contribute a template
+
+Extra `template` (custom docker images) can be [created](docs/CUSTOM_TEMPLATE.md) and made available on playground.
+
 ## Roadmap
 
 Track progress [here](https://github.com/paritytech/substrate-playground/projects/1)
