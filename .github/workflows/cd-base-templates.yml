@@ -81,6 +81,7 @@ jobs:
   # Go through existing templates and trigger template rebuilds using newly created base templates
 
   list-existing-templates:
+    needs: build-and-push
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.set-templates.outputs.matrix }}
