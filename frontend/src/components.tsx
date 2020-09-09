@@ -39,7 +39,7 @@ import { Container } from "@material-ui/core";
 import { getInstanceDetails, logout } from "./api";
 import { startNode, openFile, gotoLine, cursorMove } from "./commands";
 import { Discoverer, Instance, Responder } from "./connect";
-import { useHover, useInterval, useWindowMaxDimension } from './hooks';
+import { useInterval } from './hooks';
 import { useLifecycle, deploy, deploying, failed, logged, restart, setup, stop, stopping } from './lifecycle';
 import { fetchWithTimeout, navigateToAdmin, navigateToInstance, navigateToHomepage } from "./utils";
 
@@ -52,53 +52,6 @@ import Select from '@material-ui/core/Select';
 //https://playground-staging.substrate.dev/login-callback?error=redirect_uri_mismatch&error_description=The+redirect_uri+MUST+match+the+registered+callback+URL+for+this+application.&error_uri=https%3A%2F%2Fdeveloper.github.com%2Fapps%2Fmanaging-oauth-apps%2Ftroubleshooting-authorization-request-errors%2F%23redirect-uri-mismatch&state=secret123
 function githubAuthorizationURL(): string {
     return '/api/login/github';
-}
-
-export function Background({ state }: { state: string }) {
-    const preloading = state == "PRELOADING";
-    const loading = state == "LOADING";
-    const blurFactor = preloading ? 0 : 10;
-    const dimension = useWindowMaxDimension();
-
-    useEffect(() => {
-        const className = "loading";
-        if (loading) {
-            document.body.classList.add(className);
-        }
-        return () => { document.body.classList.remove(className); }
-    });
-
-    return (
-        <React.Fragment>
-            <div className="box-bg box-fullscreen bg-screen" style={{ filter: `blur(${blurFactor}px)` }}></div>
-            <div className="box-bg box-fullscreen">
-                <div id="svgBox" className="box-svg" data-state={preloading ? 2 : 1} style={{ width: dimension, height: dimension }}>
-                    <svg id="svg" width={dimension} height={dimension} viewBox="0 0 1535 1535" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M0 483.5H1535" stroke="#C4C4C4" strokeWidth="120" />
-                        <path d="M0 820H1535" stroke="#DBDCDC" strokeWidth="120" />
-                        <path d="M0 1363.5H1535" stroke="#DBDCDC" strokeWidth="120" />
-                        <path d="M0 130.5H1535" stroke="#FF1864" />
-                        <path d="M0 249.5H1535" stroke="#C4C4C4" />
-                        <path d="M0 397.5H1535" stroke="#FF1864" />
-                        <path d="M0 513.5H1535" stroke="#000000" />
-                        <path d="M0 620.5H1535" stroke="#C4C4C4" />
-                        <path d="M0 688.5H1535" stroke="#6E6E6E" />
-                        <path d="M0 756.5H1535" stroke="#FF1864" />
-                        <path d="M0 921.5H1535" stroke="#C4C4C4" />
-                        <path d="M0 850H1535" stroke="#FF1864" />
-                        <path d="M0 1097.5H1535" stroke="#000000" />
-                        <path d="M0 1196.5H1535" stroke="#C4C4C4" />
-                        <path d="M0 1253.5H1535" stroke="#FF1864" />
-                        <path d="M0 1273.5H1535" stroke="#FF1864" />
-                        <path d="M0 1293.5H1535" stroke="#C4C4C4" />
-
-                        <path d="M0 938.5H1535" stroke="#000000" />
-                        <path d="M0 738.5H1535" stroke="#FFFFFF" />
-                        <path d="M0 338.5H1535" stroke="#FF1864" />
-                    </svg>
-                </div>
-            </div>
-        </React.Fragment>);
 }
 
 export function ErrorMessage({ reason, onClick }: { reason?: string, onClick: () => void }) {
@@ -306,7 +259,7 @@ export function TheiaInstance({ uuid }) {
             } else {
                 console.error("No accessible iframe instance");
             }
-        }, {url: document.location.href});
+        });
 
         const processMessage = o => {
             const {type, data} = o.data;
@@ -695,7 +648,6 @@ function ExistingInstances({instances, onStopClick, onConnectClick}) {
 
 export function MainPanel({ history, location }) {
     const [state, send] = useLifecycle(history, location);
-    const [hoverRef, isHovered] = useHover();
 
     useEffect(() => {
         // Force refresh each time instances set changes
@@ -712,8 +664,6 @@ export function MainPanel({ history, location }) {
         } else if (state.matches(failed)) {
             
             return { type: "ERROR", value: state.context.error, action: () => send(restart) };
-        } else if (isHovered) {
-            return { type: "PRELOADING" };
         } else {
             if (details?.instances?.length + details?.templates?.length == 0) {
                 return { type: "ERROR", value: "No templates", action: () => send(restart) };
@@ -741,7 +691,7 @@ export function MainPanel({ history, location }) {
             <Wrapper send={send} details={details} state={gstate()}>
                 {conten &&
                     <Container style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>
-                        <Paper ref={hoverRef} style={{ display: "flex", flexDirection: "column", height: "60vh", width: "60vw" }} elevation={3}>
+                        <Paper style={{ display: "flex", flexDirection: "column", height: "60vh", width: "60vw" }} elevation={3}>
                             {conten}
                         </Paper>
                     </Container>
@@ -770,15 +720,13 @@ function WrappedContent({ state, content }) {
     }
 }
 
-// state: PRELOADING, LOADING, ERROR (message, action) {type: value:}
-export function Wrapper({ send, details, state, children }: {state?: any}) {
+// state: LOADING, ERROR (message, action) {type: value:}
+export function Wrapper({ send, details, state, children}: {state?: any}) {
     const [showDetails, setDetails] = useState(false);
     function toggleDetails() { setDetails(!showDetails); }
     const type = state?.type;
     return (
         <>
-            <Background state={type} />
-
             <Dialog open={showDetails} onClose={toggleDetails}>
                 <DialogTitle>Playground</DialogTitle>
                 <DialogContent>

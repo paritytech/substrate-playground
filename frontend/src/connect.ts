@@ -29,9 +29,7 @@ export class Discoverer {
                     if (existingInstance) {
                         onInstanceAppeared(existingInstance);
                     } else {
-                        // TODO use `url` to figure out if an instance is not available anymore
-                        const url = o.url;
-                        const instance = new Instance(uuid, {url: url});
+                        const instance = new Instance(uuid);
                         this.#instances.set(uuid, instance);
                         onInstanceAppeared(instance);
                     }
@@ -71,12 +69,10 @@ export class Responder {
     #instanceChannel;
     #uuid;
     online;
-    #extras;
 
-    constructor(uuid: string, onInstanceMessage: (object) => void, extras = {}) {
+    constructor(uuid: string, onInstanceMessage: (object) => void) {
         this.online = false;
         this.#uuid = uuid;
-        this.#extras = extras;
         this.#channel.onmessage = (oo) => {
             const o = JSON.parse(oo);
             const type = o.type;
@@ -104,7 +100,7 @@ export class Responder {
     }
 
     announce(): void {
-        this.#channel.postMessage(JSON.stringify(Object.assign({type: TYPE_INSTANCE_ANNOUNCED, uuid: this.#uuid}, this.#extras)));
+        this.#channel.postMessage(JSON.stringify({type: TYPE_INSTANCE_ANNOUNCED, uuid: this.#uuid}));
     }
 
     unannounce(): void {
@@ -128,12 +124,10 @@ export class Responder {
 export class Instance {
 
     uuid;
-    details;
     #channel;
 
-    constructor(uuid: string, details: object = {}) {
+    constructor(uuid: string) {
         this.uuid = uuid;
-        this.details = details;
         this.#channel = new BroadcastChannel(instanceChannelId(uuid));
     }
 

@@ -52,13 +52,6 @@ export async function deployInstance(template: string) {
     }));
 }
 
-export async function login(code: string) {
-    return fromResponse(await fetchWithTimeout(`/api/login?code=${code}`, {
-        method: 'GET',
-        headers: headers
-    }));
-}
-
 export async function stopInstance(instanceUUID: string) {
     return fromResponse(await fetchWithTimeout(`/api/${instanceUUID}`, {
         method: 'DELETE',
