@@ -28,7 +28,7 @@
     "ink-select-input": "4.0.0",
     "node-fetch": "2.6.1",
     "react": "16.13.1",
-    "yargs": "15.4.1"
+    "yargs": "16.0.2"
   },
   "devDependencies": {
     "@babel/cli": "7.11.6",
