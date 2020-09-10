@@ -17,18 +17,17 @@ test('discoverer', t => {
   });
 });
 
-test('instance', t => {
+test('instance', async t => {
+  const action = "some-action";
+  const answer = {o: "answer"};
   const uuid = 'uuid';
   const instance = new Instance(uuid);
-  const responder = new Responder(uuid, (i) => {
-    console.log(i)
+  const responder = new Responder(uuid, o => {
+    responder.respond({type: "extension-answer", uuid: o.uuid, data: answer});
   });
-  instance.execute("aa");
 
-  return new Promise(function(resolve) {
-      setTimeout(() => {
-       // t.is(true, discoverer.instances.has(uuid));
-        resolve();
-      }, 1000);
-  });
+  t.deepEqual(answer, await instance.execute(action));
+
+  instance.close();
+  responder.close();
 });

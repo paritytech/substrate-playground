@@ -70,10 +70,10 @@ export class Responder {
     #uuid;
     online;
 
-    constructor(uuid: string, onInstanceMessage: (object) => void) {
+    constructor(uuid: string, onInstanceMessage: (o: any) => void) {
         this.online = false;
         this.#uuid = uuid;
-        this.#channel.onmessage = (oo) => {
+        this.#channel.onmessage = (oo: string) => {
             const o = JSON.parse(oo);
             const type = o.type;
             switch (type) {
@@ -134,7 +134,7 @@ export class Instance {
     async sendMessage(data: object): Promise<object> {
         return new Promise((resolve, reject) => {
             const messageUuid = uuidv4();
-            const callback = (oo) => {
+            const callback = (oo: string) => {
                 const o = JSON.parse(oo);
                 // TODO introduce a timeout mechanism: automatically unregister and reject after some time
                 if (o.uuid == messageUuid) {
