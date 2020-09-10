@@ -1,5 +1,5 @@
-image: paritytech/substrate-playground-template-moonbeam-theia:sha-ef6c770
-base: paritytech/substrate-playground-template-moonbeam:sha-ef6c770
+image: paritytech/substrate-playground-template-moonbeam-theia:sha-f1f3860
+base: paritytech/substrate-playground-template-moonbeam:sha-f1f3860
 repository: jeluard/moonbeam
 name: Moonbeam
 description: '## Moonbeam'
