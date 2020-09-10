@@ -11,7 +11,7 @@ FROM node:14.4.0-alpine3.10 AS builder
 
 WORKDIR /opt
 
-COPY package.json yarn.lock tsconfig.json .eslintrc.js /opt/
+COPY package.json yarn.lock tsconfig.json .eslintrc.cjs /opt/
 
 ARG GITHUB_SHA
 ENV GITHUB_SHA=$GITHUB_SHA
