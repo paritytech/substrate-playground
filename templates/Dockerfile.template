@@ -10,7 +10,7 @@ FROM paritytech/substrate-playground-template-theia-base:sha-7e67fa4 as theia-ba
 FROM %IMAGE%
 
 # Copy VSCode user settings
-COPY --chown=substrate:substrate .vscode/* /home/substrate/.config/Code/User/
+COPY --chown=substrate:substrate .vscode/* /home/substrate/.theia/
 
 # Copy the whole theia folder, including node_modules
 # This is the recommended approach: https://spectrum.chat/theia/dev/theia-packaging~6c10127c-a316-4e87-9a27-e4b70fb647c1
