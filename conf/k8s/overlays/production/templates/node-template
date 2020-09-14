@@ -1,0 +1,12 @@
+image: paritytech/substrate-playground-template-node-template-theia:sha-45ea8e6
+base: paritytech/substrate-playground-template-node-template:sha-45ea8e6
+repository: substrate-developer-hub/substrate-node-template
+name: Node template
+description: '## The Node template you know and love'
+public: true
+runtime:
+  ports:
+    - name: wss
+      protocol: TCP
+      path: /wss
+      port: 9944

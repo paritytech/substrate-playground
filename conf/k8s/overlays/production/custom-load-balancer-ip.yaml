@@ -1,6 +1,0 @@
-kind: Service
-apiVersion: v1
-metadata:
-  name: ingress-nginx
-spec:
-  loadBalancerIP: 35.202.224.243

@@ -5,27 +5,45 @@ commonLabels:
   app.kubernetes.io/environment: production
   app.kubernetes.io/version: "1.0"
 
-bases:
-- ../../base
+namespace: playground
 
 resources:
+- ../../base
 - resource-quota.yaml
-
-namespace: playground
 
 images:
 - name: paritytech/substrate-playground-backend-api
-  newTag: sha-ae6a78e
+  newTag: sha-29f1451
 - name: paritytech/substrate-playground-backend-ui
-  newTag: sha-ae6a78e
+  newTag: sha-29f1451
 
 patches:
-- custom-load-balancer-ip.yaml
-
-patchesJson6902:
-- target:
+- patch: |-
+    - op: replace
+      path: /spec/rules/0/host
+      value: playground.substrate.dev
+  target:
     group: extensions
-    version: v1beta1
     kind: Ingress
     name: ingress
-  path: ingress-patch.yaml
+    version: v1beta1
+
+patchesStrategicMerge:
+- |-
+  apiVersion: v1
+  kind: Service
+  metadata:
+    name: ingress-nginx
+    namespace: ingress-nginx
+  spec:
+    loadBalancerIP: 35.202.224.243
+- |-
+  apiVersion: extensions/v1beta1
+  kind: Ingress
+  metadata:
+    name: ingress
+  spec:
+    tls:
+    - hosts:
+      - '*.playground.substrate.dev'
+      secretName: playground-tls
