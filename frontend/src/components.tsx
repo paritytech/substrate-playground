@@ -277,7 +277,7 @@ export function ControllerPanel() {
     );
 }
 
-export function TheiaInstance({ uuid }) {
+export function TheiaInstance({ uuid, embedded }) {
     const maxRetries = 5*60;
     const location = useLocation();
     const history = useHistory();
@@ -389,17 +389,15 @@ export function TheiaInstance({ uuid }) {
         return <iframe ref={ref} src={data.url} frameBorder="0" width="100%" height="100%"></iframe>
     } else {
         return (
-        <div style={{ display: "flex", width: "100vw", height: "100vh" }}>
-            <Wrapper send={send} details={details}>
-                <Container style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-                    <Paper style={{ display: "flex", flexDirection: "column", height: "60vh", width: "60vw", justifyContent: "center"}} elevation={3}>
-                        {(details == null || user)
-                        ? <Content data={data} />
-                        : <LoginPanel />}
-                    </Paper>
-                </Container>
-            </Wrapper>
-        </div>
+        <Wrapper send={send} details={details} embedded={embedded}>
+            <Container style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+                <Paper style={{ display: "flex", flexDirection: "column", height: "60vh", width: "60vw", justifyContent: "center"}} elevation={3}>
+                    {(details == null || user)
+                    ? <Content data={data} />
+                    : <LoginPanel />}
+                </Paper>
+            </Container>
+        </Wrapper>
         );
     }
 }
@@ -770,7 +768,7 @@ export function MainPanel({ history, location }) {
     );
 }
 
-export function Wrapper({ send, details, children}) {
+export function Wrapper({ send, details, embedded = false, children}) {
     const [showDetails, setDetails] = useState(false);
     function toggleDetails() { setDetails(!showDetails); }
     return (
@@ -787,7 +785,8 @@ export function Wrapper({ send, details, children}) {
                 </DialogContent>
             </Dialog>
 
-            <Nav send={send} details={details} toggleDetails={toggleDetails} />
+            {!embedded &&
+            <Nav send={send} details={details} toggleDetails={toggleDetails} />}
 
             <Fade in appear>
                 <Container style={{ display: "flex", flex: "1", alignItems: "center" }}>
@@ -795,6 +794,7 @@ export function Wrapper({ send, details, children}) {
                 </Container>
             </Fade>
 
+            {!embedded &&
             <Container style={{display: "flex", justifyContent: "center"}} component="footer" maxWidth={false}>
                 <Link
                     href="https://www.parity.io/privacy/"
@@ -803,7 +803,7 @@ export function Wrapper({ send, details, children}) {
                     style={{ margin: 15 }}>
                     Privacy Policy
                 </Link>
-            </Container>
+            </Container>}
 
         </div>
     );

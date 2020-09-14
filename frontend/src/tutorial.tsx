@@ -13,7 +13,7 @@ import { Container } from "@material-ui/core";
 import { deployInstance } from "./api";
 import { startNode } from "./commands";
 import { TheiaInstance } from "./components";
-import { Discoverer } from "./connect";
+import { Instance } from "./connect";
 
 import { makeStyles, Theme, createStyles } from '@material-ui/core/styles';
 import Stepper from '@material-ui/core/Stepper';
@@ -41,33 +41,28 @@ const useStyles = makeStyles((theme: Theme) =>
   }),
 );
 
-function createSteps(instance) {
+//Array<object>
+
+function createSpecs(instance: Instance): object {
   const url = `wss://${instance.uuid}.playground-staging.substrate.dev/wss`;
-  return [
-      {label: 'Launch your instance',
-       content: `First start by launching your instance in a personal instance`,
-       actions: {launch: () => startNode(instance, "/home/substrate/workspace/nodes/kitchen-node")}},
-      {label: 'Access via PolkadotJS',
-       content: `Use PolkadotJS Apps to interact with your chain.`,
-       actions: {open: () => window.open(`https://polkadot.js.org/apps/?rpc=${url}`)}},
-      {label: 'Add a new pallet dependency',
-       content: `Using the nice integrated view`},
-      {label: 'Relaunch your instance',
-       content: `Stop and restart your instance. See how changes are reflected`,
-       actions: {launch: () => startNode(instance, "/home/substrate/workspace/nodes/kitchen-node")}}];
+  return {template: "node-template",
+          steps:
+          [{label: 'Launch your instance',
+            content: `First start by launching your instance in a personal instance`,
+            actions: {launch: () => startNode(instance, "/home/substrate/workspace")}},
+          {label: 'Access via PolkadotJS',
+            content: `Use PolkadotJS Apps to interact with your chain.`,
+            actions: {open: () => window.open(`https://polkadot.js.org/apps/?rpc=${url}`)}},
+          {label: 'Add a new pallet dependency',
+            content: `Using the nice integrated view`},
+          {label: 'Relaunch your instance',
+            content: `Stop and restart your instance. See how changes are reflected`,
+            actions: {launch: () => startNode(instance, "/home/substrate/workspace")}}]};
 }
 
-function VerticalLinearStepper({ uuid }) {
+function VerticalLinearStepper({ steps }) {
     const classes = useStyles();
     const [activeStep, setActiveStep] = useState(0);
-    const [steps, setSteps] = useState([]);
-
-    useEffect(() => {
-        const discoverer = new Discoverer(instance => {
-          setSteps(createSteps(instance));
-        }, null);
-        return () => discoverer.close();
-      }, []);
   
     const handleNext = () => {
       setActiveStep((prevActiveStep) => prevActiveStep + 1);
@@ -150,26 +145,24 @@ function VerticalLinearStepper({ uuid }) {
     }
   }
 
-const template = "recipes";
-
 function Cartouche({children}) {
     return (
     <Paper style={{display: "flex", flex: 1, alignItems: "center"}}>
-        <div style={{display: "flex", flex: 1, alignItems: "center", justifyContent: "center", height: "50vh"}}>
+        <div style={{display: "flex", flex: 1, alignItems: "center", justifyContent: "center", height: "50vh", padding: 20}}>
             {children}
         </div>
     </Paper>
     );
 }
 
-function TutorialController({uuid}) {
+function TutorialController({steps, uuid}) {
     return (
-      <div style={{display: "flex", flex: 1, alignItems: "center", justifyContent: "center"}}>
-        <div style={{flex: 1}}>
-            <VerticalLinearStepper uuid={uuid} />
+      <div style={{display: "flex", flex: 1, alignItems: "center", justifyContent: "center", border: "1px #424242 solid", overflow: "auto"}}>
+        <div style={{flex: 1, padding: 20, maxWidth: "300px"}}>
+            <VerticalLinearStepper steps={steps} />
         </div>
-        <div style={{flex: 2, margin: 20, height: "50vh"}}>
-            <TheiaInstance uuid={uuid} />
+        <div style={{display: "flex", flex: 2, height: "50vh", padding: 20}}>
+            <TheiaInstance uuid={uuid} embedded={true} />
         </div>
       </div>
     );
@@ -220,25 +213,27 @@ export function TutorialPanel() {
         fetchData();
       }, []);
 
-    async function createInstance() {
+    async function createInstance(template: string) {
         const {result, error} = await deployInstance(template);
         if (result) {
           setInstanceUUID(result);
         }
     }
 
+    const specs = createSpecs(new Instance(instanceUUID));
+
     return (
       <div style={{display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", margin: 20}}>
         <Media />
         <div style={{width: "100%", margin: 40}}>
           {instanceUUID ?
-          <TutorialController uuid={instanceUUID} />
+          <TutorialController steps={specs.steps} uuid={instanceUUID} />
           :
           <Cartouche>
               <Container style={{display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center"}}>
                   <Typography>Want to give it a try?</Typography>
                   {user
-                  ? <Button onClick={createInstance}>GO</Button>
+                  ? <Button onClick={() => createInstance(specs.template)}>GO</Button>
                   : <Button onClick={login}>LOGIN</Button>}
               </Container> 
           </Cartouche>
