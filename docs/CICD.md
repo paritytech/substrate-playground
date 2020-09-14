@@ -8,7 +8,6 @@ The main branch is [develop](https://github.com/paritytech/substrate-playground/
 [develop](https://github.com/paritytech/substrate-playground/tree/develop) (reflected by [staging](http://playground-staging.substrate.dev/)) and [master](https://github.com/paritytech/substrate-playground/tree/master) (reflected by [production](http://playground.substrate.dev/)) are continuously deployed on their respective environment.
 
 Once manually approved on the staging environment, changes are promoted to master.
-(TODO via releases? tags?)
 
 ## Base template images
 

@@ -4,7 +4,6 @@
 * select right context (`ENVIRONMENT=staging make k8s-setup-gke`)
 * deploy on GKE (`ENVIRONMENT=staging make k8s-deploy-playground`)
 
-
 # Kubernetes
 
 Kubernetes is used as a deployment platform for the playground. It can be deployed on GCE or locally via minikube.
@@ -21,7 +20,7 @@ gcloud container clusters get-credentials  susbtrate-playground-staging --zone u
 ENVIRONMENT=staging make k8s-setup-gke
 ```
 
-Make sure a Github OAuth App is [created](https://docs.github.com/en/developers/apps/creating-an-oauth-app). The Authorization callback URL should be `BASE/api/auth/github`.
+Make sure a Github OAuth App is [created](https://docs.github.com/en/developers/apps/creating-an-oauth-app). The Authorization callback URL should be `$BASE/api/auth/github`.
 
 Set required ConfigMap and Secret as defined in the newly created OAuth app:
 
