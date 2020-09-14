@@ -29,11 +29,7 @@ ENV HOME=/home/substrate \
     LANG=en_US.UTF-8 \
     CARGO_HOME=/home/substrate/.cargo \
     PATH=/home/substrate/.cargo/bin:$PATH \
-    SHELL=/bin/bash \
-    VSCODE_API_VERSION=1.46.0\
-    THEIA_DEFAULT_PLUGINS=local-dir:/home/theia/theia-playground/plugins \
-    USE_LOCAL_GIT=true \
-    HOST=0.0.0.0
+    SHELL=/bin/bash
 
 USER substrate
 
