@@ -4,7 +4,7 @@
 
 # This image assumes both a 'substrate' and a 'theia' user
 
-FROM paritytech/substrate-playground-template-theia-base:sha-685dc9a as theia-base
+FROM paritytech/substrate-playground-template-theia-base:sha-8fa10f5 as theia-base
 
 # Will be replaced by the image remotely built
 FROM %IMAGE%
