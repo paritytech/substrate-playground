@@ -1,5 +1,5 @@
-image: paritytech/substrate-playground-template-node-template-theia:sha-85f0c94
-base: paritytech/substrate-playground-template-node-template:sha-85f0c94
+image: paritytech/substrate-playground-template-node-template-theia:sha-d8f19f9
+base: paritytech/substrate-playground-template-node-template:sha-d8f19f9
 repository: substrate-developer-hub/substrate-node-template
 name: Node template
 description: '## The Node template you know and love'
