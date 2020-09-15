@@ -39,7 +39,7 @@ import { Container } from "@material-ui/core";
 import { getInstanceDetails, logout } from "./api";
 import { startNode, openFile, gotoLine, cursorMove } from "./commands";
 import { Discoverer, Instance, Responder } from "./connect";
-import { useInterval } from './hooks';
+import { useInterval, useLocalStorage } from './hooks';
 import { useLifecycle, deploy, deploying, failed, logged, restart, setup, stop, stopping } from './lifecycle';
 import { fetchWithTimeout, navigateToAdmin, navigateToInstance, navigateToHomepage } from "./utils";
 
@@ -48,6 +48,8 @@ import Menu from '@material-ui/core/Menu';
 import MenuItem from '@material-ui/core/MenuItem';
 import FormControl from '@material-ui/core/FormControl';
 import Select from '@material-ui/core/Select';
+
+import terms from './terms.md';
 
 function githubAuthorizationURL(): string {
     return '/api/login/github';
@@ -376,13 +378,35 @@ function login(): void {
     window.location.href = githubAuthorizationURL();
 }
 
+function Terms({ show, set, hide }) {
+    return (
+        <Dialog open={show}>
+        <DialogTitle>Terms</DialogTitle>
+        <DialogContent>
+            <DialogContentText id="alert-dialog-description">
+                <Typography>
+                    <span dangerouslySetInnerHTML={{__html:marked(terms)}}></span>
+                </Typography>
+            </DialogContentText>
+            <Button onClick={() => {set("true"); hide();}}>ACCEPT</Button>
+            <Button onClick={hide}>CLOSE</Button>
+        </DialogContent>
+    </Dialog>
+    );
+}
+
 function LoginPanel() {
+    const [termsApproved, setTermsApproved] = useLocalStorage('termsApproved', "false");
+    const [showTerms, setVisibleTerms] = useState(false);
     return (
         <Container style={{display: "flex", flex: 1, padding: 0, alignItems: "center", justifyContent: "center", flexDirection: "column"}}>
             <Typography variant="h3" style= {{ textAlign: "center" }}>
                 You must be logged to use Playground
             </Typography>
-            <Button style={{ marginTop: 40 }} startIcon={<GitHubIcon />} onClick={login} color="primary" variant="contained" disableElevation>LOGIN</Button>
+            <Terms show={showTerms} set={setTermsApproved} hide={() => setVisibleTerms(false)} />
+            {termsApproved == "false"
+            ?<Button onClick={() => setVisibleTerms(true)}>Show terms</Button>
+            :<Button style={{ marginTop: 40 }} startIcon={<GitHubIcon />} onClick={login} color="primary" variant="contained" disableElevation disabled={termsApproved == "false"}>LOGIN</Button>}
         </Container>);
 }
 
@@ -725,7 +749,7 @@ export function Wrapper({ send, details, state, children}: {state?: any}) {
     function toggleDetails() { setDetails(!showDetails); }
     const type = state?.type;
     return (
-        <>
+        <div style={{display: "flex", flexDirection: "column", width: "inherit"}}>
             <Dialog open={showDetails} onClose={toggleDetails}>
                 <DialogTitle>Playground</DialogTitle>
                 <DialogContent>
@@ -744,6 +768,16 @@ export function Wrapper({ send, details, state, children}: {state?: any}) {
                 <WrappedContent state={state} content={children} />
             </Fade>
 
-        </>
+            <Container style={{display: "flex", justifyContent: "center"}} component="footer" maxWidth={false}>
+                <Link
+                    href="https://www.parity.io/privacy/"
+                    rel="noreferrer"
+                    variant="inherit"
+                    style={{ margin: 15 }}>
+                    Privacy Policy
+                </Link>
+            </Container>
+
+        </div>
     );
 }
