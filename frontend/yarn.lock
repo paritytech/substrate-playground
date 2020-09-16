@@ -1779,10 +1779,10 @@ brfs@^1.2.0:
     static-module "^2.2.0"
     through2 "^2.0.0"
 
-broadcast-channel@3.1.0:
-  version "3.1.0"
-  resolved "https://registry.yarnpkg.com/broadcast-channel/-/broadcast-channel-3.1.0.tgz#b4a6970fc72c4d68fc859321a6af850e66cb2dfa"
-  integrity sha512-zrjTunJRva1aFW9UlLtoMnB05tu8hbb7qbv3PxXXGnxp3t9VA/KcTIwcC0+u7oLBdlXSnv0yy7pB+UemLjANyQ==
+broadcast-channel@3.2.0:
+  version "3.2.0"
+  resolved "https://registry.yarnpkg.com/broadcast-channel/-/broadcast-channel-3.2.0.tgz#6e5f66744d0c291181276d4a9c45bb89abe7e62a"
+  integrity sha512-LaFTMPcULFJ84ROED6TNaKmp4pnJohPbuQ8RmQ2plB7U4YgVkHdl58cgP6bK+zUYo5EIydACMH6JalA2nac/3g==
   dependencies:
     "@babel/runtime" "^7.7.2"
     detect-node "^2.0.4"
