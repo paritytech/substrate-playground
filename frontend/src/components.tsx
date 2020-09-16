@@ -9,6 +9,7 @@ import Box from '@material-ui/core/Box';
 import Card from '@material-ui/core/Card';
 import CardContent from '@material-ui/core/CardContent';
 import Checkbox from '@material-ui/core/Checkbox';
+import CircularProgress from '@material-ui/core/CircularProgress';
 import Dialog from '@material-ui/core/Dialog';
 import DialogContent from '@material-ui/core/DialogContent';
 import DialogContentText from '@material-ui/core/DialogContentText';
@@ -55,12 +56,48 @@ function githubAuthorizationURL(): string {
     return '/api/login/github';
 }
 
-export function ErrorMessage({ reason, onClick }: { reason?: string, onClick: () => void }) {
+function wrapAction(action: (() => void) | Promise<void>, call: (boolean) => void):(() => void) | Promise<void> {
+    if (action instanceof Promise) {
+        call(true);
+        return new Promise<void>((resolve, reject) => {
+            action.then(() => {
+                resolve();
+            }).catch(() => {
+                reject();
+            }).finally(() => {
+                call(false);
+            });
+        });
+    }
+    return action;
+}
+
+function ErrorMessageAction({action, actionTitle = "TRY AGAIN"}: {action: (() => void) | Promise<void> , actionTitle?: string}) {
+    if (action instanceof Promise) {
+        const [executing, setExecuting] = useState(false);
+        return (
+            <Button onClick={async () => {wrapAction(action, setExecuting)}}>
+                {executing &&
+                <CircularProgress size={20} />}
+                {actionTitle}
+            </Button>
+        );
+    } else {
+        return (
+            <Button onClick={action}>
+                {actionTitle}
+            </Button>
+        );
+    }
+}
+
+export function ErrorMessage({ title, reason, action, actionTitle }: { title?: string, reason?: string, action: (() => void) | Promise<void> , actionTitle?: string}) {
     return (
-        <Alert severity="error" style={{ flex: 1, padding: 20, alignItems: "center" }}
-            action={<Button onClick={onClick}>TRY AGAIN</Button>}>
-            <AlertTitle>Oops! Looks like something went wrong :(</AlertTitle>
-            <Box component="span" display="block">{reason}</Box>
+        <Alert severity="error" style={{ margin: 20, alignItems: "center" }}
+            action={<ErrorMessageAction action={action} actionTitle={actionTitle} />}>
+            <AlertTitle>{title || "Oops! Looks like something went wrong :("}</AlertTitle>
+            {reason &&
+            <Box component="span" display="block">{reason}</Box>}
         </Alert>
     );
 }
@@ -342,13 +379,29 @@ export function TheiaInstance({ uuid }) {
         }
     }, [data, uuid, user]);
 
+    function Content(data) {
+        if (data.type == 'LOADING') {
+            return <Loading phase={data.phase} retry={data.retry} />;
+        } else {
+            return <ErrorMessage reason={data.value} action={data.action} />
+        }
+    }
+
     if (data.type == "SUCCESS") {
         return <iframe ref={ref} src={data.url} frameBorder="0" width="100%" height="100%"></iframe>
     } else {
         if (details == null || user) {
-            return <Wrapper send={send} details={details} state={data} />;
+            return (
+                <Wrapper send={send} details={details}>
+                    <Content data={data} />
+                </Wrapper>
+            );
         } else {
-            return <Wrapper send={send} details={details}><LoginPanel /></Wrapper>;
+            return (
+                <Wrapper send={send} details={details}>
+                    <LoginPanel />
+                </Wrapper>
+            );
         }
     }
 }
@@ -528,7 +581,7 @@ function TemplateSelector({templates, onSelect, onRetryClick, state, user}) {
                                 </Typography>
                             </div>}
                     </div>
-                    : <ErrorMessage reason={"Can't find any template. Is the templates configuration incorrect."} onClick={onRetryClick} />
+                    : <ErrorMessage reason="Can't find any template. Is the templates configuration incorrect." action={onRetryClick} />
                 }
             </Container>
             <Divider orientation="horizontal" />
@@ -681,20 +734,7 @@ export function MainPanel({ history, location }) {
 
     const details = state.context.details;
 
-    function gstate() {
-        if (state.matches(setup) || state.matches(stopping) || state.matches(deploying)) {
-            return { type: "LOADING" };
-        } else if (state.matches(failed)) {
-            
-            return { type: "ERROR", value: state.context.error, action: () => send(restart) };
-        } else {
-            if (details?.instances?.length + details?.templates?.length == 0) {
-                return { type: "ERROR", value: "No templates", action: () => send(restart) };
-            }
-        }
-    }
-
-    function content() {
+    function Content() {
         if (state.matches(logged)) {
             if (details?.instances?.length > 0) {
                 return <ExistingInstances onConnectClick={(instance) => navigateToInstance(history, instance.instance_uuid)} onStopClick={(instance) => send(stop, {instance: instance})} instances={details.instances} />;
@@ -703,51 +743,37 @@ export function MainPanel({ history, location }) {
             } else {
                 return <LoginPanel />;
             }
+        } else if (state.matches(setup) || state.matches(stopping) || state.matches(deploying)) {
+            return <Loading />;
+        } else if (state.matches(failed)) {
+            if (state.context?.data?.instances) {
+                return <ErrorMessage title="Quota reached" actionTitle="Shoot it" reason="Your maximum number of instances concurrently running has been reached" action={() => send(stopping)} />;
+            } else {
+                return <ErrorMessage reason={state.context.error?.toString() || "Unknown error"} action={() => send(restart)} />;
+            }
+        } else if (details?.instances?.length + details?.templates?.length == 0) {
+            return <ErrorMessage reason={"No templates"} action={() => send(restart)} />;
         } else {
             return <div>Unknown state: ${state.value}</div>;
         }
     }
 
-    const conten = content();
     return (
         <div style={{ display: "flex", width: "100vw", height: "100vh" }}>
-            <Wrapper send={send} details={details} state={gstate()}>
-                {conten &&
-                    <Container style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>
-                        <Paper style={{ display: "flex", flexDirection: "column", height: "60vh", width: "60vw" }} elevation={3}>
-                            {conten}
-                        </Paper>
-                    </Container>
-                }
+            <Wrapper send={send} details={details}>
+                <Container style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+                    <Paper style={{ display: "flex", flexDirection: "column", height: "60vh", width: "60vw", justifyContent: "center"}} elevation={3}>
+                        <Content />
+                    </Paper>
+                </Container>
             </Wrapper>
         </div>
     );
 }
 
-function WrappedContent({ state, content }) {
-    switch(state?.type) {
-        case "ERROR": {
-            const { value, action } = state;
-            return (
-                <Container style={{ display: "flex", flex: "1", alignItems: "center" }}>
-                    <ErrorMessage reason={value?.toString() || "Unknown error"} onClick={action} />
-                </Container>
-            );
-        }
-        case "LOADING": {
-            const { phase, retry } = state;
-            return <Loading phase={phase} retry={retry} />;
-        }
-        default:
-            return <>{content}</>;
-    }
-}
-
-// state: LOADING, ERROR (message, action) {type: value:}
-export function Wrapper({ send, details, state, children}: {state?: any}) {
+export function Wrapper({ send, details, children}) {
     const [showDetails, setDetails] = useState(false);
     function toggleDetails() { setDetails(!showDetails); }
-    const type = state?.type;
     return (
         <div style={{display: "flex", flexDirection: "column", width: "inherit"}}>
             <Dialog open={showDetails} onClose={toggleDetails}>
@@ -765,7 +791,9 @@ export function Wrapper({ send, details, state, children}: {state?: any}) {
             <Nav send={send} details={details} toggleDetails={toggleDetails} />
 
             <Fade in appear>
-                <WrappedContent state={state} content={children} />
+                <Container style={{ display: "flex", flex: "1", alignItems: "center" }}>
+                    {children}
+                </Container>
             </Fade>
 
             <Container style={{display: "flex", justifyContent: "center"}} component="footer" maxWidth={false}>

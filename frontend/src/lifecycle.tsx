@@ -74,7 +74,12 @@ function lifecycle(history, location) {
               const data = {details: { ...res, ...{templates: indexedTemplates } }};
               if (user && template) {
                 if (templates[template]) {
-                  callback({type: deploy, template: template, data: data});
+                  const instances = res.instances;
+                  if (instances?.length > 0) {
+                    throw {error: `Instance running`, data: {instances: instances}};
+                  } else {
+                    callback({type: deploy, template: template, data: data});
+                  }
                 } else {
                   throw {error: `Unknown template ${template}`, data: data};
                 }
@@ -87,7 +92,7 @@ function lifecycle(history, location) {
           },
           onError: {
             target: failed,
-            actions: assign({ error: (_context, event) => event.data.error, details: (_context, event) => event.data?.details})
+            actions: assign({ error: (_context, event) => event.data.error, data: (_context, event) => event.data.data, details: (_context, event) => event.data?.details})
           }
         },
         on: {

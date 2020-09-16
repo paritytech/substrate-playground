@@ -49,7 +49,7 @@ function devMode() {
 
 if (devMode()) {
   console.log("Installing HTTP interceptor");
-  intercept({noInstance: true});
+  intercept({noInstance: false, logged: true});
 }
 
 const version = process.env.GITHUB_SHA;
