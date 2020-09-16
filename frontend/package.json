@@ -16,7 +16,7 @@
     "@material-ui/icons": "4.9.1",
     "@material-ui/lab": "4.0.0-alpha.56",
     "@xstate/react": "0.8.1",
-    "broadcast-channel": "3.1.0",
+    "broadcast-channel": "3.2.0",
     "history": "4.10.1",
     "jpeg-js": "0.4.2",
     "marked": "1.1.1",
