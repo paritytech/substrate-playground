@@ -115,6 +115,8 @@ const loadingPhrases = [
 
 function Phase({ value }: { value: string }) {
     switch (value) {
+        case "Preparing":
+            return <div>Preparing...</div>;
         case "Pending":
             return <div>Deploying image</div>;
         case "Running":
@@ -287,7 +289,7 @@ export function TheiaInstance({ uuid }) {
     const details = state.context.details;
     const ref = useRef();
     const user = details?.user;
-    const [data, setData] = useState({ type: "LOADING" });
+    const [data, setData] = useState({ type: "LOADING", phase: "Preparing" });
 
     useEffect(() => {
         const responder = new Responder(uuid, o => {
