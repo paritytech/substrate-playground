@@ -21,13 +21,13 @@ async function playgroundDetail(base) {
 }
 
 (async function() {
-	const env =  argv.env || 'staging';
+	const env =  argv.env || 'production';
 	const playgroundBase = playgroundBaseFrom(env);
 
 	const res = await playgroundDetail(playgroundBase);
 	const object = await res.json();
 
-	rend(object);
+	rend(Object.assign(object, {env: env}));
   }().catch(e => {
-	  console.log(e)
+	  console.error("Failed to start template" ,e)
 }));

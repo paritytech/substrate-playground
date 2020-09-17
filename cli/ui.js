@@ -20,6 +20,7 @@ async function dockerRun(templateId, tag, ui, debug) {
 }
 
 const App = (object) => {
+	const env = object.env;
 	const templates = object.result.templates;
 	const templateIds = Object.keys(templates);
 	const [description, setDescription] = useState(templates[templateIds[0]].description);
@@ -56,7 +57,7 @@ const App = (object) => {
 			<Gradient name="rainbow">
 				<BigText text="Playground"/>
 			</Gradient>
-			<Text>Locally deploy a playground <Text bold>template</Text> from CLI (<Text bold color="green">{argv.env || 'staging'}</Text> environment)</Text>
+			<Text>Locally deploy a playground <Text bold>template</Text> from CLI (<Text bold color="green">{env}</Text> environment)</Text>
 		</Box>
 		
 		{templateId == null &&
