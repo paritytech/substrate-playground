@@ -38,3 +38,10 @@ substrate-playground --web --template=node-template
 npm add-user
 npm publish --access public
 ```
+
+# Development
+
+```shell
+yarn
+node index.js
+```
