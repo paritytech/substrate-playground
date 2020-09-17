@@ -5,14 +5,10 @@ import { navigateToInstance } from './utils';
 
 export interface Context {
   details?: object,
-  authToken?: string,
-  instanceUUID?: string;
-  instanceURL?: string;
   instances?: Array<string>;
   template?: string;
   templates?: Array<string>;
   phase?: string;
-  checkOccurences: number;
   error?: string
 }
 
@@ -47,7 +43,6 @@ function lifecycle(history, location) {
   id: 'lifecycle',
   initial: setup,
   context: {
-    checkOccurences: 0,
     template: template,
   },
   states: {
@@ -104,16 +99,15 @@ function lifecycle(history, location) {
       },
       [logged]: {
         on: {[restart]: setup,
-             [stop]: {target: stopping,
-                      actions: assign({ instanceUUID: (_, event) => event.instance.instance_uuid})},
+             [stop]: {target: stopping},
              [deploy]: {target: deploying,
                         actions: assign({ template: (_, event) => event.template})}}
       },
       [stopping]: {
         invoke: {
           src: (context, event) => async (callback) => {
-            console.log("event", event);
-            await stopInstance(context.instanceUUID);
+            const instanceUUID = event.instance.instance_uuid;
+            await stopInstance(instanceUUID);
             // Ignore failures, consider that this call is idempotent
 
             async function waitForRemoval(count: number) {
@@ -121,7 +115,7 @@ function lifecycle(history, location) {
                 callback({type: failure, error: "Failed to stop instance in time"});
               }
 
-              const { error } = await getInstanceDetails(context.instanceUUID);
+              const { error } = await getInstanceDetails(instanceUUID);
               if (error) {
                 // The instance doesn't exist anymore, stopping is done
                 callback({type: success});
