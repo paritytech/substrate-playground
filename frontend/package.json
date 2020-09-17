@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "lint": "npx eslint ./src/ --ext .js,.jsx,.jsx,.ts,.tsx",
-    "dev": "parcel dev public/index.html",
+    "dev": "parcel dev public/index.html --port 80",
     "watch": "parcel watch public/index.html",
     "build": "parcel build public/index.html && mkdir -p dist/assets/ && cp -R public/assets/* dist/assets/ && cp public/robots.txt dist/",
     "test": "ava",
