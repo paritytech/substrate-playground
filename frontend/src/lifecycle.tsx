@@ -112,6 +112,7 @@ function lifecycle(history, location) {
       [stopping]: {
         invoke: {
           src: (context, event) => async (callback) => {
+            console.log("event", event);
             await stopInstance(context.instanceUUID);
             // Ignore failures, consider that this call is idempotent
 

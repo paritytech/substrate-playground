@@ -91,11 +91,11 @@ function ErrorMessageAction({action, actionTitle = "TRY AGAIN"}: {action: (() =>
     }
 }
 
-export function ErrorMessage({ title, reason, action, actionTitle }: { title?: string, reason?: string, action: (() => void) | Promise<void> , actionTitle?: string}) {
+export function ErrorMessage({ title = "Oops! Looks like something went wrong :(", reason, action, actionTitle }:{ title?: string, reason?: string, action: (() => void) | Promise<void> , actionTitle?: string}) {
     return (
         <Alert severity="error" style={{ margin: 20, alignItems: "center" }}
             action={<ErrorMessageAction action={action} actionTitle={actionTitle} />}>
-            <AlertTitle>{title || "Oops! Looks like something went wrong :("}</AlertTitle>
+            <AlertTitle>{title}</AlertTitle>
             {reason &&
             <Box component="span" display="block">{reason}</Box>}
         </Alert>
@@ -379,30 +379,30 @@ export function TheiaInstance({ uuid }) {
         }
     }, [data, uuid, user]);
 
-    function Content(data) {
-        if (data.type == 'LOADING') {
-            return <Loading phase={data.phase} retry={data.retry} />;
+    function Content({data}) {
+        if (data.type == 'ERROR') {
+            return <ErrorMessage reason={data.value} action={data.action} />;
         } else {
-            return <ErrorMessage reason={data.value} action={data.action} />
+            return <Loading phase={data.phase} retry={data.retry} />;
         }
     }
 
     if (data.type == "SUCCESS") {
         return <iframe ref={ref} src={data.url} frameBorder="0" width="100%" height="100%"></iframe>
     } else {
-        if (details == null || user) {
-            return (
-                <Wrapper send={send} details={details}>
-                    <Content data={data} />
-                </Wrapper>
-            );
-        } else {
-            return (
-                <Wrapper send={send} details={details}>
-                    <LoginPanel />
-                </Wrapper>
-            );
-        }
+        return (
+        <div style={{ display: "flex", width: "100vw", height: "100vh" }}>
+            <Wrapper send={send} details={details}>
+                <Container style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+                    <Paper style={{ display: "flex", flexDirection: "column", height: "60vh", width: "60vw", justifyContent: "center"}} elevation={3}>
+                        {(details == null || user)
+                        ? <Content data={data} />
+                        : <LoginPanel />}
+                    </Paper>
+                </Container>
+            </Wrapper>
+        </div>
+        );
     }
 }
 
@@ -747,7 +747,8 @@ export function MainPanel({ history, location }) {
             return <Loading />;
         } else if (state.matches(failed)) {
             if (state.context?.data?.instances) {
-                return <ErrorMessage title="Quota reached" actionTitle="Shoot it" reason="Your maximum number of instances concurrently running has been reached" action={() => send(stopping)} />;
+                const instance = state.context?.data?.instances[0];
+                return <ErrorMessage title="Quota reached" actionTitle="Shoot it" reason="Your maximum number of instances concurrently running has been reached" action={() => send(stop, {instance: instance})} />;
             } else {
                 return <ErrorMessage reason={state.context.error?.toString() || "Unknown error"} action={() => send(restart)} />;
             }
