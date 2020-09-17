@@ -475,7 +475,7 @@ function Nav({ send, details, toggleDetails }) {
       };
     const logged = details != null && user;
     return (
-        <AppBar position="fixed">
+        <AppBar position="sticky">
             <Toolbar style={{ justifyContent: "space-between" }}>
                 <Typography variant="h6">
                     <Button onClick={() => navigateToHomepage(history)}>Playground</Button>
