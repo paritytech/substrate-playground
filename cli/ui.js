@@ -6,7 +6,6 @@ const Markdown = require('ink-markdown');
 const Gradient = require('ink-gradient');
 const BigText = require('ink-big-text');
 const Link = require('ink-link');
-const { argv } = require('yargs')
 
 async function dockerRun(templateId, tag, ui, debug) {
 	const { spawn } = require('child_process');
@@ -19,15 +18,35 @@ async function dockerRun(templateId, tag, ui, debug) {
 	}
 }
 
+function Cartouche({web, templateId}) {
+	return (
+		<Box borderStyle="double" borderColor="green" flexDirection="column" margin={2}>
+			<Box flexDirection="column" alignItems="center" justifyContent="center" margin={1}>
+				{web
+				?<>
+					<Link url="http://localhost">Browse <Text bold color="green">{templateId}</Text> at <Text bold>localhost</Text></Link>
+					<Text>Hit <Text color="red" bold>Ctrl+c</Text> to exit</Text>
+				 </>
+				:<>
+					<Text>Starting <Text bold color="green">{templateId}</Text></Text>
+					<Text>Hit <Text color="red" bold>Ctrl+d</Text> to exit</Text>
+				 </>}
+
+			</Box>
+		</Box>
+	);
+}
+
 const App = (object) => {
+	const web = object.web;
+	const debug = object.debug;
 	const env = object.env;
 	const templates = object.result.templates;
 	const templateIds = Object.keys(templates);
+	const items = templateIds.map((key) => {return {label: key, value: key}});
 	const [description, setDescription] = useState(templates[templateIds[0]].description);
-	const [templateId, setTemplateId] = useState(argv.template);
+	const [templateId, setTemplateId] = useState(object.template);
 	const template = templates[templateId];
-	const web = argv.web;
-	const debug = argv.debug;
 
 	const handleSelect = (template) => {
 		setTemplateId(template.value);
@@ -48,8 +67,6 @@ const App = (object) => {
 			deploy(template);
 		}
 	}, [templateId]);
-	
-	const items = templateIds.map((key) => {return {label: key, value: key}});
 	
 	return (
 	<Box flexDirection="column">
@@ -73,21 +90,8 @@ const App = (object) => {
 			</Box>
 		</Box>}
 
-		{(template && web) &&
-		<Box borderStyle="double" borderColor="green" flexDirection="column" margin={2}>
-			<Box flexDirection="column" alignItems="center" justifyContent="center" margin={1}>
-				<Link url="http://localhost">Browse <Text bold color="green">{templateId}</Text> at <Text bold>localhost</Text></Link>
-				<Text>Hit <Text color="red" bold>Ctrl+c</Text> to exit</Text>
-			</Box>
-		</Box>}
-
-		{(template && !web) &&
-		<Box borderStyle="double" borderColor="green" flexDirection="column" margin={2}>
-			<Box flexDirection="column" alignItems="center" justifyContent="center" margin={1}>
-				<Text>Starting <Text bold color="green">{templateId}</Text></Text>
-				<Text>Hit <Text color="red" bold>Ctrl+d</Text> to exit</Text>
-			</Box>
-		</Box>}
+		{template &&
+		<Cartouche web={web} templateId={templateId} />}
 
 		{(templateId && !template) &&
 		<Box borderStyle="double" borderColor="red" flexDirection="column" margin={2}>

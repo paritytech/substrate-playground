@@ -1,9 +1,33 @@
 #!/usr/bin/env node
 
-const { argv } = require('yargs')
 const fetch = require('node-fetch');
 const importJsx = require('import-jsx');
 const rend = importJsx('./ui');
+const argv = require('yargs')
+	.options({
+		'web': {
+			alias: 'w',
+			describe: 'run your program',
+			type: 'boolean'
+		},
+		'env': {
+			alias: 'e',
+			describe: 'provide a path to file',
+			choices: ['production', 'staging', 'dev'],
+			default: 'production'
+		},
+		'template': {
+			alias: 't',
+			describe: 'provide a path to file',
+			type: 'string'
+		},
+		'debug': {
+			alias: 'd',
+			describe: 'program specifications',
+			type: 'boolean'
+		}
+	})
+	.argv
 
 function playgroundBaseFrom(env) {
 	switch (env) {
@@ -21,13 +45,13 @@ async function playgroundDetail(base) {
 }
 
 (async function() {
-	const env =  argv.env || 'production';
+	const env =  argv.env;
 	const playgroundBase = playgroundBaseFrom(env);
 
 	const res = await playgroundDetail(playgroundBase);
 	const object = await res.json();
 
-	rend(Object.assign(object, {env: env}));
+	rend(Object.assign(object, argv));
   }().catch(e => {
 	  console.error("Failed to start template" ,e)
 }));
