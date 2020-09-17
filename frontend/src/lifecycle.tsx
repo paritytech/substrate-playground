@@ -160,7 +160,8 @@ function lifecycle(history, location) {
         }
       },
       [failed]: {
-        on: { [restart]: setup }
+        on: { [stop]: {target: stopping},
+              [restart]: setup }
       }
   }
 })}

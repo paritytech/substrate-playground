@@ -68,7 +68,7 @@ export async function stopInstance(instanceUUID: string) {
 }
 
 export function githubAuthorizationURL(): string {
-    return `${apiBaseURL()}/login/github`;
+    return "/api/login/github";
 }
 
 export async function logout() {
