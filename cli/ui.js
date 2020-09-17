@@ -8,12 +8,12 @@ const BigText = require('ink-big-text');
 const Link = require('ink-link');
 const { argv } = require('yargs')
 
-async function dockerRun(templateId, tag, ui) {
+async function dockerRun(templateId, tag, ui, debug) {
 	const { spawn } = require('child_process');
 
 	const image = `paritytech/substrate-playground-template-${templateId}${ui?"-theia":""}:${tag}`;
 	if (ui) {
-		return spawn('docker', ['run', '-p', '80:3000' , image]);
+		return spawn('docker', ['run', '-p', '80:3000' , image], debug ? {stdio: 'inherit'} : {});
 	} else {
 		return spawn('docker', ['run', '-it', image, 'bash'], {stdio: 'inherit'});
 	}
@@ -24,7 +24,9 @@ const App = (object) => {
 	const templateIds = Object.keys(templates);
 	const [description, setDescription] = useState(templates[templateIds[0]].description);
 	const [templateId, setTemplateId] = useState(argv.template);
-	const [web, setWeb] = useState(argv.web);
+	const template = templates[templateId];
+	const web = argv.web;
+	const debug = argv.debug;
 
 	const handleSelect = (template) => {
 		setTemplateId(template.value);
@@ -35,16 +37,14 @@ const App = (object) => {
 	};
 
 	useEffect(() => {
-		async function deploy() {
-			const tag = templates[templateId].image.split(":").slice(-1)[0];
-			const p = await dockerRun(templateId, tag, web);
-			p.on('exit', function (code) {
-				console.log('\nTemplate shut down');
-			});
+		async function deploy(template) {
+			const tag = template.image.split(":").slice(-1)[0];
+			const p = await dockerRun(templateId, tag, web, debug);
+			p.on('exit', () => console.log('\nTemplate shut down'));
 		}
 
-		if (templateId && templates[templateId]) {
-			deploy();
+		if (templateId && template) {
+			deploy(template);
 		}
 	}, [templateId]);
 	
@@ -72,7 +72,7 @@ const App = (object) => {
 			</Box>
 		</Box>}
 
-		{(templateId && templates[templateId] && web) &&
+		{(template && web) &&
 		<Box borderStyle="double" borderColor="green" flexDirection="column" margin={2}>
 			<Box flexDirection="column" alignItems="center" justifyContent="center" margin={1}>
 				<Link url="http://localhost">Browse <Text bold color="green">{templateId}</Text> at <Text bold>localhost</Text></Link>
@@ -80,7 +80,7 @@ const App = (object) => {
 			</Box>
 		</Box>}
 
-		{(templateId && templates[templateId] && !web) &&
+		{(template && !web) &&
 		<Box borderStyle="double" borderColor="green" flexDirection="column" margin={2}>
 			<Box flexDirection="column" alignItems="center" justifyContent="center" margin={1}>
 				<Text>Starting <Text bold color="green">{templateId}</Text></Text>
@@ -88,7 +88,7 @@ const App = (object) => {
 			</Box>
 		</Box>}
 
-		{(templateId && !templates[templateId]) &&
+		{(templateId && !template) &&
 		<Box borderStyle="double" borderColor="red" flexDirection="column" margin={2}>
 			<Text>Unknown template <Text bold color="green">{templateId}</Text></Text>
 		</Box>}
