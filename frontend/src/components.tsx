@@ -661,7 +661,7 @@ function InstanceDetails({ instance }) {
     }
 
     return (
-        <Card style={{ margin: 20, alignSelf: "baseline" }} variant="outlined">
+        <Card style={{ margin: 20 }} variant="outlined">
             <CardContent>
                 <Typography>
                     {name} ({instance_uuid})
@@ -702,7 +702,7 @@ function ExistingInstances({instances, onStopClick, onConnectClick}) {
     <React.Fragment>
         <Typography variant="h5" style={{padding: 20}}>Existing instance</Typography>
         <Divider orientation="horizontal" />
-        <Container style={{display: "flex", flex: 1, padding: 0, justifyContent: "center", overflowY: "auto"}}>
+        <Container style={{display: "flex", flex: 1, padding: 0, justifyContent: "center", alignItems: "center", overflowY: "auto"}}>
             <InstanceDetails instance={instance} />
         </Container>
         <Divider orientation="horizontal" />
