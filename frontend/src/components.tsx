@@ -37,7 +37,7 @@ import marked from 'marked';
 import { useHistory, useLocation, useParams } from "react-router-dom";
 import Fade from '@material-ui/core/Fade';
 import { Container } from "@material-ui/core";
-import { getInstanceDetails, logout } from "./api";
+import { getInstanceDetails, githubAuthorizationURL, logout } from "./api";
 import { startNode, openFile, gotoLine, cursorMove } from "./commands";
 import { Discoverer, Instance, Responder } from "./connect";
 import { useInterval, useLocalStorage } from './hooks';
@@ -51,10 +51,6 @@ import FormControl from '@material-ui/core/FormControl';
 import Select from '@material-ui/core/Select';
 
 import terms from './terms.md';
-
-function githubAuthorizationURL(): string {
-    return '/api/login/github';
-}
 
 function wrapAction(action: (() => void) | Promise<void>, call: (boolean) => void):(() => void) | Promise<void> {
     if (action instanceof Promise) {

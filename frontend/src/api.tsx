@@ -23,8 +23,16 @@ export interface Details {
     name: string,
 }
 
+function apiBaseURL() {
+    const base = process.env.BASE_URL;
+    if (base) {
+        return `${base}/api`;
+    }
+    return "/api";
+}
+
 export async function getDetails(): Promise<RPCResponse<Details>> {
-    return fromResponse(await fetchWithTimeout(`/api/`, {
+    return fromResponse(await fetchWithTimeout(apiBaseURL(), {
         method: 'GET',
         headers: headers
     }));
@@ -39,28 +47,32 @@ export interface UserDetails {
 type Phase = "Pending" | "Running" | "Succeeded" | "Failed" | "Unknown";
 
 export async function getInstanceDetails(instanceUUID: string): Promise<JSONRPCResponse<Phase>> {
-    return fromResponse(await fetchWithTimeout(`/api/${instanceUUID}`, {
+    return fromResponse(await fetchWithTimeout(`${apiBaseURL()}/${instanceUUID}`, {
         method: 'GET',
         headers: headers
     }));
 }
 
 export async function deployInstance(template: string) {
-    return fromResponse(await fetchWithTimeout(`/api/?template=${template}`, {
+    return fromResponse(await fetchWithTimeout(`${apiBaseURL()}/?template=${template}`, {
         method: 'POST',
         headers: headers
     }));
 }
 
 export async function stopInstance(instanceUUID: string) {
-    return fromResponse(await fetchWithTimeout(`/api/${instanceUUID}`, {
+    return fromResponse(await fetchWithTimeout(`${apiBaseURL()}/${instanceUUID}`, {
         method: 'DELETE',
         headers: headers
     }));
 }
 
+export function githubAuthorizationURL(): string {
+    return `${apiBaseURL()}/login/github`;
+}
+
 export async function logout() {
-    return fromResponse(await fetchWithTimeout(`/api/logout`, {
+    return fromResponse(await fetchWithTimeout(`${apiBaseURL()}/logout`, {
         method: 'GET',
         headers: headers
     }));

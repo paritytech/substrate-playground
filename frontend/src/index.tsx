@@ -47,9 +47,14 @@ function devMode() {
   return process.env.NODE_ENV === 'development';
 }
 
-if (devMode()) {
-  console.log("Installing HTTP interceptor");
-  intercept({noInstance: false, logged: true});
+const base = process.env.BASE_URL;
+if (base) {
+  console.log(`Using custom base URL: ${base}`);
+} else {
+  if (devMode()) {
+    console.log("Installing HTTP interceptor");
+    intercept({noInstance: false, logged: true});
+  }
 }
 
 const version = process.env.GITHUB_SHA;

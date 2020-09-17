@@ -13,6 +13,12 @@ This command will:
 
 Basically each time you save a file, you will see automatically the result at http://localhost:1234 without refreshing the page.
 
+The base URL used to access the remote API server can be customized:
+
+```bash
+BASE_URL=https://playground-staging.substrate.dev yarn dev
+```
+
 ## Build production bundle
 
 ```bash
