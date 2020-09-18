@@ -452,7 +452,7 @@ function LoginPanel() {
     return (
         <Container style={{display: "flex", flex: 1, padding: 0, alignItems: "center", justifyContent: "center", flexDirection: "column"}}>
             <Typography variant="h3" style= {{ textAlign: "center" }}>
-                You must be logged to use Playground
+                You must log in to use Playground
             </Typography>
             <Terms show={showTerms} set={setTermsApproved} hide={() => setVisibleTerms(false)} />
             {termsApproved == "false"
