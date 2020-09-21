@@ -8,24 +8,30 @@ const argv = require('yargs')
 	.options({
 		'web': {
 			alias: 'w',
-			describe: 'run your program',
+			describe: 'enable web IDE',
 			type: 'boolean'
 		},
 		'env': {
 			alias: 'e',
-			describe: 'provide a path to file',
+			describe: 'provide the environment to interact with',
 			choices: ['production', 'staging', 'dev'],
 			default: 'production'
 		},
 		'template': {
 			alias: 't',
-			describe: 'provide a path to file',
+			describe: 'provide template id',
 			type: 'string'
 		},
 		'debug': {
 			alias: 'd',
-			describe: 'program specifications',
+			describe: 'enable debug logs',
 			type: 'boolean'
+		},
+		'port': {
+			alias: 'p',
+			describe: 'web port',
+			type: 'int',
+			default: 80
 		}
 	})
 	.argv

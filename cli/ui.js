@@ -8,18 +8,18 @@ const BigText = require('ink-big-text');
 const Link = require('ink-link');
 const Spinner = require('ink-spinner');
 
-async function dockerRun(templateId, tag, web) {
+async function dockerRun(templateId, tag, web, port) {
 	const { spawn } = require('child_process');
 
 	const image = `paritytech/substrate-playground-template-${templateId}${web?"-theia":""}:${tag}`;
 	if (web) {
-		return spawn('docker', ['run', '-p', '80:3000' , image]);
+		return spawn('docker', ['run', '-p', `${port}:3000` , image]);
 	} else {
 		return spawn('docker', ['run', '-it', image, 'bash'], {stdio: 'inherit'});
 	}
 }
 
-function WebCartouche({ state, templateId }) {
+function WebCartouche({ state, templateId, port }) {
 	switch (state) {
 		case STATE_INIT:
 		case STATE_DOWNLOADING:
@@ -31,7 +31,7 @@ function WebCartouche({ state, templateId }) {
 			return (
 				<>
 					<Text><Text bold color="green">{templateId}</Text> started</Text>
-					<Link url="http://localhost">Browse <Text bold>http://localhost</Text></Link>
+					<Link url={`http://localhost:${port}`}>Browse <Text bold>{`http://localhost:${port}`}</Text></Link>
 					<Text>Hit <Text color="red" bold>Ctrl+c</Text> to exit</Text>
 				</>
 			);
@@ -44,13 +44,13 @@ function CLICartouche() {
 	return <Text>Hit <Text color="red" bold>Ctrl+d</Text> to exit</Text>;
 }
 
-function Cartouche({state, web, templateId}) {
+function Cartouche({state, web, templateId, port}) {
 	const borderColor = state == STATE_PORT_ALREADY_USED ? "red" : "green";
 	return (
 		<Box borderStyle="double" borderColor={borderColor} flexDirection="column" margin={2}>
 			<Box flexDirection="column" alignItems="center" justifyContent="center" margin={1}>
 				{web
-				 ? <WebCartouche state={state} templateId={templateId} />
+				 ? <WebCartouche state={state} templateId={templateId} port={port} />
 				 : <CLICartouche />}
 			</Box>
 		</Box>
@@ -66,7 +66,7 @@ const STATE_PORT_ALREADY_USED = "STATE_PORT_ALREADY_USED";
 
 const App = (object) => {
 	const web = object.web;
-	const debug = object.debug;
+	const port = object.port;
 	const env = object.env;
 	const templates = object.result.templates;
 	const templateIds = Object.keys(templates);
@@ -87,7 +87,7 @@ const App = (object) => {
 	useEffect(() => {
 		async function deploy(template) {
 			const tag = template.image.split(":").slice(-1)[0];
-			const p = await dockerRun(templateId, tag, web);
+			const p = await dockerRun(templateId, tag, web, port);
 			if (p.stderr) {
 				p.stderr.on('data', function(data) {
 					const s = data.toString();
@@ -141,7 +141,7 @@ const App = (object) => {
 		</Box>}
 
 		{template &&
-		<Cartouche state={state} web={web} templateId={templateId} />}
+		<Cartouche state={state} templateId={templateId} web={web} port={port} />}
 
 		{(templateId && !template) &&
 		<Box borderStyle="double" borderColor="red" flexDirection="column" margin={2}>
