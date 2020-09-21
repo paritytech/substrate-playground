@@ -2,6 +2,7 @@
 
 const fetch = require('node-fetch');
 const importJsx = require('import-jsx');
+const { lookpath } = require('lookpath');
 const rend = importJsx('./ui');
 const argv = require('yargs')
 	.options({
@@ -45,6 +46,11 @@ async function playgroundDetail(base) {
 }
 
 (async function() {
+	if (!await lookpath('dockera')) {
+		console.error("A local docker installation is required");
+		process.exit(1);
+	}
+
 	const env =  argv.env;
 	const playgroundBase = playgroundBaseFrom(env);
 
