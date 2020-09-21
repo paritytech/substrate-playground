@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "import-jsx": "4.0.0",
-    "ink": "3.0.5",
+    "ink": "3.0.6",
     "ink-big-text": "1.2.0",
     "ink-gradient": "2.0.0",
     "ink-link": "2.0.0",

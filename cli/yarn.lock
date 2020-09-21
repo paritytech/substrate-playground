@@ -1732,17 +1732,17 @@ ink-select-input@4.0.0:
     lodash "^4.17.19"
     lodash.isequal "^4.5.0"
 
-ink-spinner@^4.0.1:
+ink-spinner@4.0.1:
   version "4.0.1"
   resolved "https://registry.yarnpkg.com/ink-spinner/-/ink-spinner-4.0.1.tgz#f67a59ff6d4698a5d67b7bb66266ea6829a8a4e1"
   integrity sha512-2eYtzzUPb22Z0Cn2bGvE4BteYjcqDhgrHnCzGJM81EHXXlyNU7aYfucPgZs2CZPy0LWz/5hwoecFhd0mj1hrbw==
   dependencies:
     cli-spinners "^2.3.0"
 
-ink@3.0.5:
-  version "3.0.5"
-  resolved "https://registry.yarnpkg.com/ink/-/ink-3.0.5.tgz#9397b21111a7c6c5f5e00cfeb7420f9c09ba044d"
-  integrity sha512-Zc/Yoi3P0cY0DC9ryb3HTwmi4Qgke9332ebOhDRaK9Cw6D+ABAOQPeHG8IdmI1GOkMKRMZwTP/1jRs/b1D1n9Q==
+ink@3.0.6:
+  version "3.0.6"
+  resolved "https://registry.yarnpkg.com/ink/-/ink-3.0.6.tgz#d40d7a3b84b4521c1a05944a936c284170299ffc"
+  integrity sha512-MOaRUKlDdyzBr6IhiBpBA5+9tv+OlVvQrEErQlN2dfofJ0Q52Xc3gZ5YtgGj0UVD24Ex79WL2QZGJh0emz+jDQ==
   dependencies:
     ansi-escapes "^4.2.1"
     auto-bind "4.0.0"
