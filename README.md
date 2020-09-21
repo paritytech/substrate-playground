@@ -12,8 +12,11 @@ Access playground at [playground.substrate.dev](https://playground.substrate.dev
 
 ### CLI
 
-```
-npx @substrate/playground-cli --web
+```shell
+npm install -g @substrate/playground-cli
+substrate-playground
+# or
+npx @substrate/playground-cli
 ```
 
 Then [browse](http://localhost) a locally accessible web IDE.
