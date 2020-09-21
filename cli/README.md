@@ -11,11 +11,9 @@
 # Usage
 
 ```shell
-yarn global add @substrate/playground-cli
+npm install -g @substrate/playground-cli
 substrate-playground
-
 # or
-
 npx @substrate/playground-cli
 ```
 
