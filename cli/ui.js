@@ -24,7 +24,7 @@ function WebCartouche({ state, templateId }) {
 		case STATE_INIT:
 		case STATE_DOWNLOADING:
 			return <Text>Downloading image for <Text bold color="green">{templateId}</Text> <Spinner.default /></Text>;
-		case STATE_DOWNLOADING:
+		case STATE_DOWNLOADED:
 		case STATE_STARTING:
 			return <Text>Starting <Text bold color="green">{templateId}</Text></Text>;
 		case STATE_STARTED:
@@ -35,20 +35,23 @@ function WebCartouche({ state, templateId }) {
 					<Text>Hit <Text color="red" bold>Ctrl+c</Text> to exit</Text>
 				</>
 			);
+		case STATE_PORT_ALREADY_USED:
+			return <Text>Port 80 already used!</Text>;
 	}
 }
 
-function CLICartouche({ templateId }) {
+function CLICartouche() {
 	return <Text>Hit <Text color="red" bold>Ctrl+d</Text> to exit</Text>;
 }
 
 function Cartouche({state, web, templateId}) {
+	const borderColor = state == STATE_PORT_ALREADY_USED ? "red" : "green";
 	return (
-		<Box borderStyle="double" borderColor="green" flexDirection="column" margin={2}>
+		<Box borderStyle="double" borderColor={borderColor} flexDirection="column" margin={2}>
 			<Box flexDirection="column" alignItems="center" justifyContent="center" margin={1}>
 				{web
 				 ? <WebCartouche state={state} templateId={templateId} />
-				 : <CLICartouche templateId={templateId} />}
+				 : <CLICartouche />}
 			</Box>
 		</Box>
 	);
@@ -59,6 +62,7 @@ const STATE_DOWNLOADING = "DOWNLOADING";
 const STATE_DOWNLOADED = "DOWNLOADED";
 const STATE_STARTING = "STARTING";
 const STATE_STARTED = "STARTED";
+const STATE_PORT_ALREADY_USED = "STATE_PORT_ALREADY_USED";
 
 const App = (object) => {
 	const web = object.web;
@@ -83,7 +87,15 @@ const App = (object) => {
 	useEffect(() => {
 		async function deploy(template) {
 			const tag = template.image.split(":").slice(-1)[0];
-			const p = await dockerRun(templateId, tag, web, debug);
+			const p = await dockerRun(templateId, tag, web);
+			if (p.stderr) {
+				p.stderr.on('data', function(data) {
+					const s = data.toString();
+					if (s.match(/.*Ports are not available.*/)) {
+						setState(STATE_PORT_ALREADY_USED);
+					}
+				});
+			}
 			if (p.stdout) {
 				p.stdout.on('data', function(data) {
 					const s = data.toString();
@@ -98,7 +110,6 @@ const App = (object) => {
 					}
 				});
 			}
-			p.on('exit', () => console.log('\nTemplate shut down'));
 		}
 
 		if (templateId && template) {

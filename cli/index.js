@@ -46,7 +46,7 @@ async function playgroundDetail(base) {
 }
 
 (async function() {
-	if (!await lookpath('dockera')) {
+	if (!await lookpath('docker')) {
 		console.error("A local docker installation is required");
 		process.exit(1);
 	}
