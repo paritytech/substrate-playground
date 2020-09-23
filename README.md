@@ -12,6 +12,8 @@ Access playground at [playground.substrate.dev](https://playground.substrate.dev
 
 ### CLI
 
+Playground templates can be started on a local machine (`docker` must be available).
+
 ```shell
 npm install -g @substrate/playground-cli
 substrate-playground

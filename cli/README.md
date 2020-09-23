@@ -1,4 +1,4 @@
-
+A simple CLI allowing to locally start a playground template. Docker must be available on the local machine.
 
 <p align="center">
   <img width="600" src="https://cdn.rawgit.com/paritytech/substrate-playground/develop/cli/assets/no-web.svg">

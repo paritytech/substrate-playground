@@ -1,5 +1,6 @@
 const {useState, useEffect} = require('react');
 const React = require('react');
+const { spawn } = require('child_process');
 const {render, Box, Text} = require('ink');
 const SelectInput = require('ink-select-input');
 const Markdown = require('ink-markdown');
@@ -9,8 +10,6 @@ const Link = require('ink-link');
 const Spinner = require('ink-spinner');
 
 async function dockerRun(templateId, tag, web, port) {
-	const { spawn } = require('child_process');
-
 	const image = `paritytech/substrate-playground-template-${templateId}${web?"-theia":""}:${tag}`;
 	if (web) {
 		return spawn('docker', ['run', '-p', `${port}:3000` , image]);
@@ -19,8 +18,43 @@ async function dockerRun(templateId, tag, web, port) {
 	}
 }
 
-function WebCartouche({ state, templateId, port }) {
+function TemplateSelector({ templates, onSelect }) {
+	const items = templates.map(t => {return {label: t.id, value: t.id, template: t}});
+	const [description, setDescription] = useState(templates[0].description);
+	const handleHighlight = item => setDescription(item.template.description);
+	return (
+		<Box flexDirection="column" margin={2}>
+			<Text>Select a template:</Text>
+			<Box borderStyle="double" borderColor="green">
+				<Box flexGrow={1}>
+					<SelectInput.default items={items} onSelect={onSelect} onHighlight={handleHighlight} />
+				</Box>
+				<Box flexGrow={3} justifyContent="flex-start">
+					<Markdown.default>{description}</Markdown.default>
+				</Box>
+			</Box>
+		</Box>
+	);
+}
+
+function Cartouche({borderColor, children}) {
+	return (
+		<Box borderStyle="double" borderColor={borderColor} flexDirection="column" margin={2}>
+			<Box flexDirection="column" alignItems="center" justifyContent="center" margin={1}>
+				{children}
+			</Box>
+		</Box>
+	);
+}
+
+function StatusContent({state, web, templateId, port}) {
 	switch (state) {
+		case STATE_NO_TEMPLATE:
+			return <Text>No templates</Text>;
+		case STATE_UNKNOWN_TEMPLATE:
+			return <Text>Unknown template <Text bold color="green">{templateId}</Text></Text>;
+		case STATE_PORT_ALREADY_USED:
+			return <Text>Port {port} already used!</Text>;
 		case STATE_INIT:
 		case STATE_DOWNLOADING:
 			return <Text>Downloading image for <Text bold color="green">{templateId}</Text> <Spinner.default /></Text>;
@@ -28,66 +62,57 @@ function WebCartouche({ state, templateId, port }) {
 		case STATE_STARTING:
 			return <Text>Starting <Text bold color="green">{templateId}</Text></Text>;
 		case STATE_STARTED:
-			return (
-				<>
-					<Text><Text bold color="green">{templateId}</Text> started</Text>
-					<Link url={`http://localhost:${port}`}>Browse <Text bold>{`http://localhost:${port}`}</Text></Link>
-					<Text>Hit <Text color="red" bold>Ctrl+c</Text> to exit</Text>
-				</>
-			);
-		case STATE_PORT_ALREADY_USED:
-			return <Text>Port 80 already used!</Text>;
+			if (web) {
+				return (
+					<>
+						<Text><Text bold color="green">{templateId}</Text> started</Text>
+						<Link url={`http://localhost:${port}`}>Browse <Text bold>{`http://localhost:${port}`}</Text></Link>
+						<Text>Hit <Text color="red" bold>Ctrl+c</Text> to exit</Text>
+					</>
+				);
+			} else {
+				return <Text>Hit <Text color="red" bold>Ctrl+d</Text> to exit</Text>;
+			}
 	}
 }
 
-function CLICartouche() {
-	return <Text>Hit <Text color="red" bold>Ctrl+d</Text> to exit</Text>;
+function statusBorderColor(state) {
+	switch (state) {
+		case STATE_UNKNOWN_TEMPLATE:
+		case STATE_NO_TEMPLATE:
+		case STATE_PORT_ALREADY_USED:
+			return "red";
+		default:
+			return "green";
+	}
 }
 
-function Cartouche({state, web, templateId, port}) {
-	const borderColor = state == STATE_PORT_ALREADY_USED ? "red" : "green";
+function Status({state, web, templateId, port}) {
 	return (
-		<Box borderStyle="double" borderColor={borderColor} flexDirection="column" margin={2}>
-			<Box flexDirection="column" alignItems="center" justifyContent="center" margin={1}>
-				{web
-				 ? <WebCartouche state={state} templateId={templateId} port={port} />
-				 : <CLICartouche />}
-			</Box>
-		</Box>
+		<Cartouche borderColor={statusBorderColor(state)}>
+			<StatusContent state={state} web={web} templateId={templateId} port={port} />
+		</Cartouche>
 	);
 }
 
 const STATE_INIT = "INIT";
+const STATE_UNKNOWN_TEMPLATE = "UNKNOWN_TEMPLATE";
+const STATE_NO_TEMPLATE = "NO_TEMPLATE";
 const STATE_DOWNLOADING = "DOWNLOADING";
 const STATE_DOWNLOADED = "DOWNLOADED";
 const STATE_STARTING = "STARTING";
 const STATE_STARTED = "STARTED";
 const STATE_PORT_ALREADY_USED = "STATE_PORT_ALREADY_USED";
 
-const App = (object) => {
-	const web = object.web;
-	const port = object.port;
-	const env = object.env;
-	const templates = object.result.templates;
-	const templateIds = Object.keys(templates);
-	const items = templateIds.map((key) => {return {label: key, value: key}});
-	const [description, setDescription] = useState(templates[templateIds[0]].description);
-	const [templateId, setTemplateId] = useState(object.template);
-	const template = templates[templateId];
-	const [state, setState] = useState(STATE_INIT);
-
-	const handleSelect = (template) => {
-		setTemplateId(template.value);
-	};
-
-	const handleHighlight = selection => {
-		setDescription(templates[selection.value].description);
-	};
+const App = ({web, port, env, template, templates, offline}) => {
+	const defaultemplate = templates.find(t => t.id == template);
+	const [state, setState] = useState((template && !defaultemplate) ? STATE_UNKNOWN_TEMPLATE : (templates.length > 0 ? null : STATE_NO_TEMPLATE));
+	const [selectedTemplate, setTemplate] = useState(defaultemplate);
 
 	useEffect(() => {
 		async function deploy(template) {
-			const tag = template.image.split(":").slice(-1)[0];
-			const p = await dockerRun(templateId, tag, web, port);
+			setState(STATE_INIT);
+			const p = await dockerRun(template.id, template.tag, web, port);
 			if (p.stderr) {
 				p.stderr.on('data', function(data) {
 					const s = data.toString();
@@ -109,13 +134,15 @@ const App = (object) => {
 						setState(STATE_STARTING);
 					}
 				});
+			} else {
+				setState(STATE_STARTED);
 			}
 		}
 
-		if (templateId && template) {
-			deploy(template);
+		if (selectedTemplate) {
+			deploy(selectedTemplate);
 		}
-	}, [templateId]);
+	}, [selectedTemplate]);
 
 	return (
 	<Box flexDirection="column">
@@ -124,34 +151,17 @@ const App = (object) => {
 			<Gradient name="rainbow">
 				<BigText text="Playground"/>
 			</Gradient>
-			<Text>Locally deploy a playground <Text bold>template</Text> from CLI (<Text bold color="green">{env}</Text> environment)</Text>
+			<Text>Locally deploy a playground <Text bold>template</Text> from CLI (<Text bold color="green">{offline ? "OFFLINE": env}</Text>)</Text>
 		</Box>
-		
-		{templateId == null &&
-		<Box flexDirection="column" margin={2}>
-			<Text>Select a template:</Text>
-			<Box borderStyle="double" borderColor="green">
-				<Box flexGrow={1}>
-					<SelectInput.default items={items} onSelect={handleSelect} onHighlight={handleHighlight} />
-				</Box>
-				<Box flexGrow={3} justifyContent="flex-start">
-					<Markdown.default>{description}</Markdown.default>
-				</Box>
-			</Box>
-		</Box>}
 
-		{template &&
-		<Cartouche state={state} templateId={templateId} web={web} port={port} />}
-
-		{(templateId && !template) &&
-		<Box borderStyle="double" borderColor="red" flexDirection="column" margin={2}>
-			<Text>Unknown template <Text bold color="green">{templateId}</Text></Text>
-		</Box>}
+		{state
+		? <Status state={state} web={web} templateId={template || (selectedTemplate && selectedTemplate.id)} port={port} />
+		: <TemplateSelector templates={templates} onSelect={item => setTemplate(item.template)} />}
 	</Box>);
 };
 
-function rend(templates) {
-	return render(React.createElement(App, templates));
+function ui(object) {
+	return render(React.createElement(App, object));
 }
 
-module.exports = rend;
+module.exports = ui;

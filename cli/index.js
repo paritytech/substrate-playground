@@ -3,7 +3,8 @@
 const fetch = require('node-fetch');
 const importJsx = require('import-jsx');
 const { lookpath } = require('lookpath');
-const rend = importJsx('./ui');
+const { spawn } = require('child_process');
+const ui = importJsx('./ui');
 const argv = require('yargs')
 	.options({
 		'web': {
@@ -32,6 +33,12 @@ const argv = require('yargs')
 			describe: 'web port',
 			type: 'int',
 			default: 80
+		},
+		'offline': {
+			alias: 'o',
+			describe: 'disable internet access',
+			type: 'boolean',
+			default: false
 		}
 	})
 	.argv
@@ -47,8 +54,42 @@ function playgroundBaseFrom(env) {
 	}
 }
 
-async function playgroundDetail(base) {
-	return await fetch(`${base}/api/`);
+async function templates({offline, web, env}) {
+	if (offline) {
+		const templates = await new Promise((resolve, reject) => {
+			const templates = [];
+			const filter = web ? 'paritytech/substrate-playground-template-*-theia' : 'paritytech/substrate-playground-template-*';
+			const regexp = web ? /paritytech\/substrate-playground-template-(.*?)-theia/ : /paritytech\/substrate-playground-template-(.*)/;
+			const p = spawn('docker', ['images', filter, '--format' , '{{.Repository}}:{{.Tag}}']);
+			p.stdout.on('data', function(data) {
+				const s = data.toString();
+				s.split("\n").forEach(line => {
+					const [template, tag] = line.split(":");
+					if (template) {
+						if (!web && template.endsWith("theia")) {
+							return;
+						}
+						const [_, id] = regexp.exec(template);
+						if (!templates.find(t => t.id == id)) {
+							templates.push({id: id, tag: tag, description: template});
+						}
+					}
+				});
+			});
+			p.stdout.on('close', function(data) {
+				resolve(templates);
+			});
+        });
+		return templates;
+	} else {
+		const res = await (await fetch(`${playgroundBaseFrom(env)}/api/`)).json();
+		return Object.entries(res.result.templates)
+			.map(([k, v]) => {
+				v.id = k;
+				v.tag = v.image.split(":").slice(-1)[0];
+				return v;
+			});
+	}
 }
 
 (async function() {
@@ -57,13 +98,7 @@ async function playgroundDetail(base) {
 		process.exit(1);
 	}
 
-	const env =  argv.env;
-	const playgroundBase = playgroundBaseFrom(env);
-
-	const res = await playgroundDetail(playgroundBase);
-	const object = await res.json();
-
-	rend(Object.assign(object, argv));
+	ui(Object.assign({templates: await templates(argv)}, argv));
   }().catch(e => {
 	  console.error("Failed to start template" ,e)
 }));
