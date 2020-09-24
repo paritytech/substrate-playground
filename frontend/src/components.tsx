@@ -37,7 +37,7 @@ import marked from 'marked';
 import { useHistory, useLocation, useParams } from "react-router-dom";
 import Fade from '@material-ui/core/Fade';
 import { Container } from "@material-ui/core";
-import { getInstanceDetails, githubAuthorizationURL, logout } from "./api";
+import { Client } from "@substrate/playground-api";
 import { startNode, openFile, gotoLine, cursorMove } from "./commands";
 import { Discoverer, Instance, Responder } from "./connect";
 import { useInterval, useLocalStorage } from './hooks';
@@ -253,10 +253,10 @@ function useQuery() {
     return new URLSearchParams(useLocation().search);
 }
 
-export function AdminPanel() {
+export function AdminPanel({ client }) {
     const location = useLocation();
     const history = useHistory();
-    const [state, send] = useLifecycle(history, location);
+    const [state, send] = useLifecycle(history, location, client);
     const details = state.context.details;
     return (
         <div style={{ display: "flex", height: "100vh", alignItems: "center", justifyContent: "center"}}>
@@ -278,11 +278,11 @@ export function ControllerPanel() {
     );
 }
 
-export function TheiaInstance({ uuid, embedded }) {
+export function TheiaInstance({ uuid, embedded, client }) {
     const maxRetries = 5*60;
     const location = useLocation();
     const history = useHistory();
-    const [state, send] = useLifecycle(history, location);
+    const [state, send] = useLifecycle(history, location, client);
     const details = state.context.details;
     const ref = useRef();
     const user = details?.user;
@@ -339,7 +339,7 @@ export function TheiaInstance({ uuid, embedded }) {
 
     useEffect(() => {
         async function fetchData() {
-            const { result, error } = await getInstanceDetails(uuid);
+            const { result, error } = await client.getInstanceDetails(uuid);
             if (error) {
                 // This instance doesn't exist
                 setData({ type: "ERROR", value: "Couldn't locate the theia instance", action: () => navigateToHomepage(history) });
@@ -403,7 +403,7 @@ export function TheiaInstance({ uuid, embedded }) {
     }
 }
 
-export function TheiaPanel() {
+export function TheiaPanel({ client }) {
     const { uuid } = useParams();
     const query = useQuery();
     const files = query.get("files");
@@ -418,14 +418,14 @@ export function TheiaPanel() {
 
     return (
     <div style={{display: "flex", width: "100vw", height: "100vh"}}>
-        <TheiaInstance uuid={uuid} />
+        <TheiaInstance client={client} uuid={uuid} />
     </div>
     );
 }
 
 function login(): void {
     localStorage.setItem('login', "true");
-    window.location.href = githubAuthorizationURL();
+    window.location.href = "/api/login/github";
 }
 
 function Terms({ show, set, hide }) {
@@ -719,8 +719,10 @@ function ExistingInstances({instances, onStopClick, onConnectClick}) {
     );
 }
 
-export function MainPanel({ history, location }) {
-    const [state, send] = useLifecycle(history, location);
+export function MainPanel({ client }) {
+    const location = useLocation();
+    const history = useHistory();
+    const [state, send] = useLifecycle(history, location, client);
 
     useEffect(() => {
         // Force refresh each time instances set changes

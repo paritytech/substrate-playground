@@ -1,6 +1,6 @@
 import { useMachine } from '@xstate/react';
 import { assign, Machine } from 'xstate';
-import { deployInstance, getDetails, getInstanceDetails, stopInstance } from './api';
+import { Client } from '@substrate/playground-api';
 import { navigateToInstance } from './utils';
 
 export interface Context {
@@ -26,7 +26,7 @@ export const deploy = "@action/DEPLOY";
 export const stop = "@action/STOP";
 export const restart = "@action/RESTART";
 
-function lifecycle(history, location) {
+function lifecycle(history, location, client: Client) {
   const pathParam = 'path';
   const deployParam = 'deploy';
   let template = new URLSearchParams(location.search).get(deployParam);
@@ -49,7 +49,7 @@ function lifecycle(history, location) {
       [setup]: {
         invoke: {
           src: (context, _event) => async (callback) =>  {
-            const response = (await getDetails());
+            const response = (await client.getDetails());
             if (response.error) {
               throw response;
             }
@@ -107,7 +107,7 @@ function lifecycle(history, location) {
         invoke: {
           src: (context, event) => async (callback) => {
             const instanceUUID = event.instance.instance_uuid;
-            await stopInstance(instanceUUID);
+            await client.stopInstance(instanceUUID);
             // Ignore failures, consider that this call is idempotent
 
             async function waitForRemoval(count: number) {
@@ -115,7 +115,7 @@ function lifecycle(history, location) {
                 callback({type: failure, error: "Failed to stop instance in time"});
               }
 
-              const { error } = await getInstanceDetails(instanceUUID);
+              const { error } = await client.getInstanceDetails(instanceUUID);
               if (error) {
                 // The instance doesn't exist anymore, stopping is done
                 callback({type: success});
@@ -141,7 +141,7 @@ function lifecycle(history, location) {
       [deploying]: {
         invoke: {
           src: (context, _) => async (callback) => {
-            const {result, error} = await deployInstance(context.template);
+            const {result, error} = await client.deployInstance(context.template);
             if (error != undefined) {
               callback({type: failure, error: error});
             } else {
@@ -166,6 +166,6 @@ function lifecycle(history, location) {
   }
 })}
 
-export function useLifecycle(history, location) {
-    return useMachine(lifecycle(history, location), { devTools: true });
+export function useLifecycle(history, location, client: Client) {
+    return useMachine(lifecycle(history, location, client), { devTools: true });
 }

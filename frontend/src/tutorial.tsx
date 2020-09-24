@@ -10,7 +10,7 @@ import marked from 'marked';
 import { useHistory, useLocation } from "react-router-dom";
 import { useLifecycle } from './lifecycle';
 import { Container } from "@material-ui/core";
-import { deployInstance } from "./api";
+import { Client } from "@substrate/playground-api";
 import { startNode } from "./commands";
 import { TheiaInstance } from "./components";
 import { Instance } from "./connect";
@@ -191,10 +191,10 @@ function login(): void {
   window.location.href = '/api/login/github';
 }
 
-export function TutorialPanel() {
+export function TutorialPanel({ client }) {
     const location = useLocation();
     const history = useHistory();
-    const [state, send] = useLifecycle(history, location);
+    const [state, send] = useLifecycle(history, location, client);
     const [instanceUUID, setInstanceUUID] = useState(null);
     const user = state.context.details?.user;
 
@@ -214,14 +214,13 @@ export function TutorialPanel() {
       }, []);
 
     async function createInstance(template: string) {
-        const {result, error} = await deployInstance(template);
+        const {result, error} = await new Client().deployInstance(template);
         if (result) {
           setInstanceUUID(result);
         }
     }
 
     const specs = createSpecs(new Instance(instanceUUID));
-
     return (
       <div style={{display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", margin: 20}}>
         <Media />

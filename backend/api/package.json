@@ -1,0 +1,29 @@
+{
+  "name": "@parity/substrate-api",
+  "version": "1.0.0",
+  "description": "An isomorphic API client for Substrate Playground",
+  "main": "dist/index.js",
+  "browser": "dist/index.browser.js",
+  "scripts": {
+    "build": "tsc && tsc -p tsconfig.browser.json"
+  },
+  "files": [
+    "dist"
+  ],
+  "homepage": "https://github.com/paritytech/substrate-playground/tree/master/backend/api",
+  "author": "Julien Eluard <julien@parity.io>",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/paritytech/substrate-playground.git"
+  },
+  "bugs": {
+    "url": "https://github.com/paritytech/substrate-playground/issues"
+  },
+  "dependencies": {
+    "cross-fetch": "3.0.6"
+  },
+  "devDependencies": {
+    "typescript": "3.8.3"
+  }
+}

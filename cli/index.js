@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-const fetch = require('node-fetch');
+const { Client } = require('@substrate/playground-api');
 const importJsx = require('import-jsx');
 const { lookpath } = require('lookpath');
 const { spawn } = require('child_process');
@@ -43,17 +43,6 @@ const argv = require('yargs')
 	})
 	.argv
 
-function playgroundBaseFrom(env) {
-	switch (env) {
-		case 'production':
-			return 'https://playground.substrate.dev/';
-		case 'staging':
-			return 'https://playground-staging.substrate.dev/';
-		case 'dev':
-			return 'https://playground-dev.substrate.test/';
-	}
-}
-
 async function templates({offline, web, env}) {
 	if (offline) {
 		const templates = await new Promise((resolve, reject) => {
@@ -82,7 +71,8 @@ async function templates({offline, web, env}) {
         });
 		return templates;
 	} else {
-		const res = await (await fetch(`${playgroundBaseFrom(env)}/api/`)).json();
+		const client = new Client({env: env});
+		const res = await client.getDetails();
 		return Object.entries(res.result.templates)
 			.map(([k, v]) => {
 				v.id = k;
