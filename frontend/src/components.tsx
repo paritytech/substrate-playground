@@ -49,6 +49,7 @@ import Menu from '@material-ui/core/Menu';
 import MenuItem from '@material-ui/core/MenuItem';
 import FormControl from '@material-ui/core/FormControl';
 import Select from '@material-ui/core/Select';
+import crypto from 'crypto';
 
 import terms from './terms.md';
 
@@ -433,11 +434,9 @@ function Terms({ show, set, hide }) {
         <DialogTitle>Terms</DialogTitle>
         <DialogContent>
             <DialogContentText id="alert-dialog-description">
-                <Typography>
-                    <span dangerouslySetInnerHTML={{__html:marked(terms)}}></span>
-                </Typography>
+                <span dangerouslySetInnerHTML={{__html:marked(terms)}}></span>
             </DialogContentText>
-            <Button onClick={() => {set("true"); hide();}}>ACCEPT</Button>
+            <Button onClick={() => {set(); hide();}}>ACCEPT</Button>
             <Button onClick={hide}>CLOSE</Button>
         </DialogContent>
     </Dialog>
@@ -445,17 +444,19 @@ function Terms({ show, set, hide }) {
 }
 
 function LoginPanel() {
-    const [termsApproved, setTermsApproved] = useLocalStorage('termsApproved', "false");
+    const [previousTermsHash, setTermsHash] = useLocalStorage('termsApproved', "");
     const [showTerms, setVisibleTerms] = useState(false);
+    const termsHash = crypto.createHash('md5').update(terms).digest('hex');
+    const termsApproved = previousTermsHash == termsHash;
     return (
         <Container style={{display: "flex", flex: 1, padding: 0, alignItems: "center", justifyContent: "center", flexDirection: "column"}}>
             <Typography variant="h3" style= {{ textAlign: "center" }}>
                 You must log in to use Playground
             </Typography>
-            <Terms show={showTerms} set={setTermsApproved} hide={() => setVisibleTerms(false)} />
-            {termsApproved == "false"
-            ?<Button onClick={() => setVisibleTerms(true)}>Show terms</Button>
-            :<Button style={{ marginTop: 40 }} startIcon={<GitHubIcon />} onClick={login} color="primary" variant="contained" disableElevation disabled={termsApproved == "false"}>LOGIN</Button>}
+            <Terms show={showTerms} set={() => setTermsHash(termsHash)} hide={() => setVisibleTerms(false)} />
+            {termsApproved
+            ?<Button style={{ marginTop: 40 }} startIcon={<GitHubIcon />} onClick={login} color="primary" variant="contained" disableElevation disabled={!termsApproved}>LOGIN</Button>
+            :<Button onClick={() => setVisibleTerms(true)}>Show terms</Button>}
         </Container>);
 }
 
