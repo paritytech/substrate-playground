@@ -6,6 +6,9 @@
     "test": "ava",
     "clean": "rm -rf node_modules/ yarn.lock"
   },
+  "dependencies": {
+    "@substrate/playground-api": "file:../backend/api"
+  },
   "devDependencies": {
     "ava": "3.12.1",
     "node-fetch": "2.6.1",

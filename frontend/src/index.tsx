@@ -1,5 +1,6 @@
 import * as React from "react";
 import ReactDOM from "react-dom";
+import { Client } from '@substrate/playground-api';
 import { createMuiTheme, ThemeProvider } from '@material-ui/core/styles';
 import { Redirect, Route, Router, Switch } from "react-router-dom";
 import { createBrowserHistory } from "history";
@@ -7,9 +8,27 @@ import { AdminPanel, ControllerPanel, MainPanel, TheiaPanel } from './components
 import { TutorialPanel } from './tutorial';
 import { intercept } from './server';
 
-const history = createBrowserHistory();
+const base = process.env.BASE_URL;
+if (base) {
+  console.log(`Using custom base URL: ${base}`);
+} else {
+  if (devMode()) {
+    console.log("Installing HTTP interceptor");
+    intercept({noInstance: false, logged: true});
+  }
+}
 
-function App() {
+function apiBaseURL(base: string | undefined) {
+  if (base) {
+      return `${base}/api`;
+  }
+  return "/api";
+}
+
+const client = new Client({base: apiBaseURL(base)});
+
+function App({ client }) {
+  const history = createBrowserHistory();
   const theme = createMuiTheme({
     palette: {
       type: 'dark',
@@ -20,7 +39,7 @@ function App() {
     <ThemeProvider theme={theme}>
       <Router history={history}>
         <Switch>
-          <Route exact path={"/"} component={MainPanel} />
+          <Route exact path={"/"} component={() => <MainPanel client={client} />} />
           <Route exact path={"/logged"}>
             <Redirect
               to={{
@@ -29,10 +48,10 @@ function App() {
               }}
             />
           </Route>
-          <Route exact path={"/tutorial"} component={TutorialPanel} />
+          <Route exact path={"/tutorial"} component={() => <TutorialPanel client={client} />} />
           <Route exact path={"/controller"} component={ControllerPanel} />
-          <Route exact path={"/admin"} component={AdminPanel} />
-          <Route path={"/:uuid"} component={TheiaPanel} />
+          <Route exact path={"/admin"} component={() => <AdminPanel client={client} />} />
+          <Route path={"/:uuid"} component={() => <TheiaPanel client={client} />} />
         </Switch>
       </Router>
     </ThemeProvider>
@@ -47,23 +66,13 @@ function devMode() {
   return process.env.NODE_ENV === 'development';
 }
 
-const base = process.env.BASE_URL;
-if (base) {
-  console.log(`Using custom base URL: ${base}`);
-} else {
-  if (devMode()) {
-    console.log("Installing HTTP interceptor");
-    intercept({noInstance: false, logged: true});
-  }
-}
-
 const version = process.env.GITHUB_SHA;
 if (version) {
   console.log(`Version ${version}`);
 }
 
 ReactDOM.render(
-    <App />,
+    <App client={client} />,
     document.querySelector("main")
 );
 
