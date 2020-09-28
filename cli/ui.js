@@ -9,8 +9,7 @@ const BigText = require('ink-big-text');
 const Link = require('ink-link');
 const Spinner = require('ink-spinner');
 
-async function dockerRun(templateId, tag, web, port) {
-	const image = `paritytech/substrate-playground-template-${templateId}${web?"-theia":""}:${tag}`;
+async function dockerRun(image, web, port) {
 	if (web) {
 		return spawn('docker', ['run', '-p', `${port}:3000` , image]);
 	} else {
@@ -104,7 +103,7 @@ const STATE_STARTING = "STARTING";
 const STATE_STARTED = "STARTED";
 const STATE_PORT_ALREADY_USED = "STATE_PORT_ALREADY_USED";
 
-const App = ({web, port, env, template, templates, offline}) => {
+const App = ({web, port, env, template, templates, offline, debug}) => {
 	const defaultemplate = templates.find(t => t.id == template);
 	const [state, setState] = useState((template && !defaultemplate) ? STATE_UNKNOWN_TEMPLATE : (templates.length > 0 ? null : STATE_NO_TEMPLATE));
 	const [selectedTemplate, setTemplate] = useState(defaultemplate);
@@ -112,7 +111,11 @@ const App = ({web, port, env, template, templates, offline}) => {
 	useEffect(() => {
 		async function deploy(template) {
 			setState(STATE_INIT);
-			const p = await dockerRun(template.id, template.tag, web, port);
+			const image = `paritytech/substrate-playground-template-${template.id}${web?"-theia":""}:${template.tag}`;
+			if(debug) {
+				console.log(`Using image ${image}`);
+			}
+			const p = await dockerRun(image, web, port);
 			if (p.stderr) {
 				p.stderr.on('data', function(data) {
 					const s = data.toString();
