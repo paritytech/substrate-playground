@@ -2,8 +2,8 @@
   "compilerOptions": {
     "baseUrl": ".",
     "outDir": "./dist",
-    "target": "es2015",
-    "module": "es2015",
+    "target": "es5",
+    "module": "CommonJS",
     "moduleResolution": "node",
     "lib": ["es2016", "dom", "es5"]
   },

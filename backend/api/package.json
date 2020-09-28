@@ -5,6 +5,7 @@
   "main": "dist/index.js",
   "browser": "dist/index.browser.js",
   "scripts": {
+    "clean": "rm -rf dist/ dist.browser/ node_modules/ yarn.lock",
     "build": "tsc && tsc -p tsconfig.browser.json"
   },
   "files": [

@@ -24,7 +24,7 @@ function apiBaseURL(base: string | undefined) {
   }
   return "/api";
 }
-
+console.log(apiBaseURL(base))
 const client = new Client({base: apiBaseURL(base)});
 
 function App({ client }) {
