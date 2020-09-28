@@ -8,7 +8,7 @@
     "clean": "rm -rf node_modules/ yarn.lock"
   },
   "dependencies": {
-    "@substrate/playground-api": "file:../backend/api"
+    "@substrate/playground-api": "1.0.0"
   },
   "devDependencies": {
     "ava": "3.12.1",

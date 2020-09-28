@@ -1,5 +1,5 @@
 {
-  "name": "@parity/substrate-api",
+  "name": "@substrate/playground-api",
   "version": "1.0.0",
   "description": "An isomorphic API client for Substrate Playground",
   "main": "dist/index.js",

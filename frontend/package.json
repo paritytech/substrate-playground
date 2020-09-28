@@ -15,7 +15,7 @@
     "@material-ui/core": "4.11.0",
     "@material-ui/icons": "4.9.1",
     "@material-ui/lab": "4.0.0-alpha.56",
-    "@substrate/playground-api": "file:../backend/api",
+    "@substrate/playground-api": "1.0.0",
     "@xstate/react": "0.8.1",
     "broadcast-channel": "3.2.0",
     "history": "4.10.1",
