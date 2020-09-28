@@ -1,4 +1,4 @@
-import fetch from 'cross-fetch';
+import 'cross-fetch/polyfill';
 
 function timeout<T>(promise: Promise<T>, ms: number): Promise<T> {
     return new Promise(function(resolve, reject) {
@@ -26,7 +26,8 @@ async function fromResponse<T>(response: Response): Promise<RPCResponse<T>> {
     try {
         // Here the JSON is already in JSON-RPC format so return as-is
         return await response.json();
-    } catch {
+    } catch (e) {
+        console.error(e);
         return {error: (!response.ok && response.statusText) || (response.status == 401 && "User unauthorized") || "Internal error: failed to parse returned JSON"};
     }
 }
@@ -61,7 +62,7 @@ function playgroundBaseURL(env: Environment) {
 
 export class Client {
 
-    #base;
+    base;
 
     constructor({ base, env }: {base?: string, env?: Environment}) {
         if (!base && !env) {
@@ -70,39 +71,39 @@ export class Client {
         if (base && env) {
             throw new Error('Both `base` or `env` cannot be set')
         }
-        this.#base = base || playgroundBaseURL(env);
+        this.base = base || playgroundBaseURL(env);
     }
 
     async getDetails(): Promise<RPCResponse<Details>> {
-        return fromResponse(await fetchWithTimeout(this.#base, {
+        return fromResponse(await fetchWithTimeout(this.base, {
             method: 'GET',
             headers: headers
         }));
     }
     
     async getInstanceDetails(instanceUUID: string): Promise<JSONRPCResponse<Phase>> {
-        return fromResponse(await fetchWithTimeout(`${this.#base}/${instanceUUID}`, {
+        return fromResponse(await fetchWithTimeout(`${this.base}/${instanceUUID}`, {
             method: 'GET',
             headers: headers
         }));
     }
     
     async deployInstance(template: string) {
-        return fromResponse(await fetchWithTimeout(`${this.#base}/?template=${template}`, {
+        return fromResponse(await fetchWithTimeout(`${this.base}/?template=${template}`, {
             method: 'POST',
             headers: headers
         }));
     }
     
     async stopInstance(instanceUUID: string) {
-        return fromResponse(await fetchWithTimeout(`${this.#base}/${instanceUUID}`, {
+        return fromResponse(await fetchWithTimeout(`${this.base}/${instanceUUID}`, {
             method: 'DELETE',
             headers: headers
         }));
     }
     
     async logout() {
-        return fromResponse(await fetchWithTimeout(`${this.#base}/logout`, {
+        return fromResponse(await fetchWithTimeout(`${this.base}/logout`, {
             method: 'GET',
             headers: headers
         }));
