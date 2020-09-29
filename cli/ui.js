@@ -18,7 +18,7 @@ async function dockerRun(image, web, port) {
 }
 
 function TemplateSelector({ templates, onSelect }) {
-	const items = templates.map(t => {return {label: t.id, value: t.id, template: t}});
+	const items = templates.filter(t => t.public).map(t => {return {label: t.id, value: t.id, template: t}});
 	const [description, setDescription] = useState(templates[0].description);
 	const handleHighlight = item => setDescription(item.template.description);
 	return (

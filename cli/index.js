@@ -60,7 +60,7 @@ async function templates({offline, web, env}) {
 						}
 						const [_, id] = regexp.exec(template);
 						if (!templates.find(t => t.id == id)) {
-							templates.push({id: id, tag: tag, description: template});
+							templates.push({id: id, tag: tag, description: template, public: true});
 						}
 					}
 				});
