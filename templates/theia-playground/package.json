@@ -75,8 +75,8 @@
         "vscode-builtin-typescript-language-features": "https://open-vsx.org/api/vscode/typescript-language-features/1.47.3/file/vscode.typescript-language-features-1.47.3.vsix",
         "vscode-editorconfig": "https://open-vsx.org/api/EditorConfig/EditorConfig/0.15.1/file/EditorConfig.EditorConfig-0.15.1.vsix",
         "vscode-eslint": "https://open-vsx.org/api/dbaeumer/vscode-eslint/2.1.8/file/dbaeumer.vscode-eslint-2.1.8.vsix",
-        "vscode-substrate": "https://github.com/paritytech/vscode-substrate/releases/download/v0.5.0/vscode-substrate-0.5.0.vsix",
-        "vscode-references-view": "https://open-vsx.org/api/ms-vscode/references-view/0.0.63/file/ms-vscode.references-view-0.0.63.vsix",
+        "vscode-substrate": "https://github.com/paritytech/vscode-substrate/releases/download/v0.5.1/vscode-substrate-0.5.1.vsix",
+        "vscode-references-view": "https://open-vsx.org/api/ms-vscode/references-view/0.0.47/file/ms-vscode.references-view-0.0.47.vsix",
         "rls-vscode": "https://github.com/rust-lang/rls-vscode/releases/download/v0.7.8/rust.vsix",
         "vscode-yaml": "https://open-vsx.org/api/redhat/vscode-yaml/0.9.1/file/redhat.vscode-yaml-0.9.1.vsix",
         "vscode-lldb": "https://github.com/vadimcn/vscode-lldb/releases/download/v1.5.3/codelldb-x86_64-linux.vsix",
@@ -85,7 +85,7 @@
     },
     "scripts": {
         "prepare": "theia build --mode development",
-        "start": "theia start",
+        "start": "theia start --mode development",
         "watch": "theia build --watch --mode development"
     }
 }
