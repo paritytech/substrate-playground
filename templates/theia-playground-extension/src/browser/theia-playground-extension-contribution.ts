@@ -1,45 +1,34 @@
 import { injectable, inject } from "inversify";
-import { CommandContribution, CommandRegistry, MenuContribution, MenuModelRegistry } from "@theia/core/lib/common";
-import { CommonMenus } from "@theia/core/lib/browser";
+import { Client } from "@substrate/playground-api";
+import { MAIN_MENU_BAR, CommandContribution, CommandRegistry, MenuContribution, MenuModelRegistry } from "@theia/core/lib/common";
 import { ConnectionStatusService, ConnectionStatus } from '@theia/core/lib/browser/connection-status-service';
-import { MaybePromise } from '@theia/core/lib/common/types';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
 import { FileNavigatorContribution } from '@theia/navigator/lib/browser/navigator-contribution';
-import { LocationMapper } from '@theia/mini-browser/lib/browser/location-mapper-service';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
+import { FileService } from "@theia/filesystem/lib/browser/file-service";
 import { FileDownloadService } from '@theia/filesystem/lib/browser/download/file-download-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
-import { URI } from 'vscode-uri';
-
-const hostname = window.location.hostname;
-const localhost = hostname == "localhost";
-const nodeWebsocket = localhost ? `ws://${hostname}:9944` : `wss://${hostname}/wss`;
-const port = 8000;
-const frontendURL = localhost ? `//${hostname}:${port}/front-end/` : `//${hostname}/front-end`;
-const HOME = "/home/substrate/workspace";
+import { URI as VSCodeURI } from 'vscode-uri';
 
 export const SendFeedbackCommand = {
     id: 'TheiaSubstrateExtension.send-feedback-command',
     label: "Send feedback"
 };
 
-export const StartFrontEndTerminalCommand = {
-    id: 'TheiaSubstrateExtension.start-front-end-terminal-command',
-    label: "Start Front-End"
+export const StopInstanceCommand = {
+    id: 'TheiaSubstrateExtension.stop-instance-command',
+    label: "Stop this instance"
 };
 
-export const OpenFrontEndCommand = {
-    id: 'TheiaSubstrateExtension.open-front-end-command',
-    label: "Open Front-End"
-};
-
-async function newTerminal(terminalService: TerminalService, id: string, cwd: string, command: string) {
-    let terminalWidget = await terminalService.newTerminal({cwd: cwd, id: id});
+/*
+ newTerminal(this.terminalService, "front-end", `${HOME}/substrate-front-end-template`, `REACT_APP_PROVIDER_SOCKET=${nodeWebsocket} yarn build && rm -rf front-end/ && mv build front-end && python -m SimpleHTTPServer ${port}\r`)
+ async function newTerminal(terminalService: TerminalService, id: string, cwd: string, command: string) {
+    const terminalWidget = await terminalService.newTerminal({cwd: cwd, id: id});
     await terminalWidget.start();
-    await terminalService.activateTerminal(terminalWidget);
+    await terminalService.open(terminalWidget);
     await terminalWidget.sendText(command)
-}
+}*/
 
 function answer(type: string, uuid?: string, data?: any): void {
     window.parent.postMessage({type: type, uuid: uuid, data: data}, "*");
@@ -58,7 +47,7 @@ function unmarshall(payload) {
     if (type) {
         switch(type) {
             case "URI":
-                return URI.parse(data);
+                return VSCodeURI.parse(data);
             default:
                 throw new Error(`Failed to unmarshall unknown type ${type}`);
         }
@@ -110,6 +99,25 @@ function registerBridge(registry, connectionStatusService, messageService) {
     answer("extension-advertise", "", {online: online});
 }
 
+function envFromDomain(domain: string) {
+    switch(domain) {
+        case "playground":
+            return "production";
+        case "playground-staging":
+            return "staging";
+        case "playground-dev":
+            return "dev";
+    }
+}
+
+function instanceDetails() {
+    const [id, domain] = window.location.host.split(".");
+    return {
+        instance: id,
+        env: envFromDomain(domain)
+    };
+}
+
 @injectable()
 export class TheiaSubstrateExtensionCommandContribution implements CommandContribution {
 
@@ -137,15 +145,19 @@ export class TheiaSubstrateExtensionCommandContribution implements CommandContri
     @inject(FrontendApplicationStateService)
     protected readonly stateService: FrontendApplicationStateService;
 
+    @inject(FileService)
+    protected readonly fileService: FileService;
+
     registerCommands(registry: CommandRegistry): void {
+        const {env, instance} = instanceDetails();
+        const client = new Client({env: env});
         registry.registerCommand(SendFeedbackCommand, {
             execute: () => window.open('https://docs.google.com/forms/d/e/1FAIpQLSdXpq_fHqS_ow4nC7EpGmrC_XGX_JCIRzAqB1vaBtoZrDW-ZQ/viewform?edit_requested=true')
         });
-        registry.registerCommand(StartFrontEndTerminalCommand, {
-            execute: () => newTerminal(this.terminalService, "front-end", `${HOME}/substrate-front-end-template`, `REACT_APP_PROVIDER_SOCKET=${nodeWebsocket} yarn build && rm -rf front-end/ && mv build front-end && python -m SimpleHTTPServer ${port}\r`)
-        });
-        registry.registerCommand(OpenFrontEndCommand, {
-            execute: () => window.open(frontendURL)
+        registry.registerCommand(StopInstanceCommand, {
+            execute: async () => {
+                client.stopInstance(instance);
+            }
         });
 
         if (window !== window.parent) {
@@ -166,38 +178,17 @@ export class TheiaSubstrateExtensionCommandContribution implements CommandContri
 export class TheiaSubstrateExtensionMenuContribution implements MenuContribution {
 
     registerMenus(menus: MenuModelRegistry): void {
-        const SUBSTRATE_LINKS = [...CommonMenus.HELP, '1_links'];
-        const SUBSTRATE_FEEDBACK = [...CommonMenus.HELP, '2_feedback'];
-        menus.registerMenuAction(SUBSTRATE_LINKS, {
-            commandId: StartFrontEndTerminalCommand.id,
+        const PLAYGROUND = [...MAIN_MENU_BAR, '8_playground'];
+        const PLAYGROUND_STOP_INSTANCE = [...PLAYGROUND, '1_links'];
+        const PLAYGROUND_SEND_FEEDBACK = [...PLAYGROUND, '2_feedback'];
+        menus.registerSubmenu(PLAYGROUND, 'Playground');
+        menus.registerMenuAction(PLAYGROUND_STOP_INSTANCE, {
+            commandId: StopInstanceCommand.id,
             order: "1"
         });
-        menus.registerMenuAction(SUBSTRATE_LINKS, {
-            commandId: OpenFrontEndCommand.id,
-            order: "2"
-        });
-        menus.registerMenuAction(SUBSTRATE_FEEDBACK, {
+        menus.registerMenuAction(PLAYGROUND_SEND_FEEDBACK, {
             commandId: SendFeedbackCommand.id
         });
-    }
-
-}
-
-function isLocalhost(location: string): boolean {
-    return location.startsWith('localhost') || location.startsWith('http://localhost') || location.startsWith('https://localhost');
-}
-
-/*
- Replace localhost access with DNS
-*/@injectable()
-export class HTTPLocationMapper implements LocationMapper {
-
-    canHandle(location: string): MaybePromise<number> {
-        return isLocalhost(location) ? 2 : 0;
-    }
-
-    map(location: string): MaybePromise<string> {
-        return location.replace(/localhost/, window.location.hostname);
     }
 
 }
