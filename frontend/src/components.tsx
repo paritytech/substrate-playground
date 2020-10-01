@@ -278,7 +278,7 @@ export function ControllerPanel() {
     );
 }
 
-export function TheiaInstance({ uuid, embedded, client }) {
+export function TheiaInstance({ uuid, embedded, client: Client }) {
     const maxRetries = 5*60;
     const location = useLocation();
     const history = useHistory();
@@ -405,16 +405,6 @@ export function TheiaInstance({ uuid, embedded, client }) {
 
 export function TheiaPanel({ client }) {
     const { uuid } = useParams();
-    const query = useQuery();
-    const files = query.get("files");
-    const instances = useDiscovery();
-
-    useEffect(() => {
-        const onlyInstance = instances.length == 1 ? instances[0] : null;
-        if (onlyInstance && files) {
-            decodeURIComponent(files).split(",").forEach(file => openFile(onlyInstance[1], { type: "URI", data: file }));
-        }
-    }, [instances]);
 
     return (
     <div style={{display: "flex", width: "100vw", height: "100vh"}}>
