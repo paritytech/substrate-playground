@@ -9,6 +9,7 @@
     "src"
   ],
   "dependencies": {
+    "@substrate/playground-api": "1.0.0",
     "@theia/core": "1.6.0",
     "gunzip-maybe": "1.4.2",
     "vscode-uri": "2.1.2"
