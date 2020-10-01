@@ -5,7 +5,6 @@ A substrate ready Docker image based on theia.
 ## Dev
 
 ```
-nvm use 10
 yarn
 yarn dev
 ```
