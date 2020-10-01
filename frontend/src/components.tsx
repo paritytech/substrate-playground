@@ -278,7 +278,7 @@ export function ControllerPanel() {
     );
 }
 
-export function TheiaInstance({ uuid, embedded, client: Client }) {
+export function TheiaInstance({ uuid, embedded = false, client }: { uuid: string, embedded: boolean, client: Client }) {
     const maxRetries = 5*60;
     const location = useLocation();
     const history = useHistory();
