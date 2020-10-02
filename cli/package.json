@@ -24,7 +24,7 @@
   "dependencies": {
     "@substrate/playground-api": "1.0.0",
     "import-jsx": "4.0.0",
-    "ink": "3.0.6",
+    "ink": "3.0.7",
     "ink-big-text": "1.2.0",
     "ink-gradient": "2.0.0",
     "ink-link": "2.0.0",
