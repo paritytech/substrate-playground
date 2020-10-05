@@ -687,10 +687,10 @@ ink-markdown@1.0.1:
     marked "^0.8.0"
     marked-terminal "^4.0.0"
 
-ink-select-input@4.1.0:
-  version "4.1.0"
-  resolved "https://registry.yarnpkg.com/ink-select-input/-/ink-select-input-4.1.0.tgz#992201d98506f6dab2e0bb249775255b54b35415"
-  integrity sha512-ZweW/zFFIas4cusiphRWu3KMYOjkRCy9VuWQ2ocu/FG6DW9mHO8o9017J603c/rIJ9jI6rFthWi5HUdVv0t7Bg==
+ink-select-input@4.2.0:
+  version "4.2.0"
+  resolved "https://registry.yarnpkg.com/ink-select-input/-/ink-select-input-4.2.0.tgz#a03dc1cae81f09c29cdd4612ae0be610c65c269f"
+  integrity sha512-pNpVNNlvbERKKj7yFZcNCecnz6RA7Lc6UZVfwYe1a3e56LPQmTYL0mbtfENQ9PBeMagny1tCtg0pQwr9y7NtVw==
   dependencies:
     arr-rotate "^1.0.0"
     figures "^3.2.0"
