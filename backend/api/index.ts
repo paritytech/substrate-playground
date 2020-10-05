@@ -9,8 +9,8 @@ function timeout<T>(promise: Promise<T>, ms: number): Promise<T> {
     });
 }
 
-async function fetchWithTimeout(url: string, opts: Object = {cache: "no-store"}, ms: number = 30000): Promise<Response>  {
-    return timeout(fetch(url, opts), ms).catch(error => error);
+async function fetchWithTimeout(url: string, opts: Object = {cache: "no-store"}, ms: number = 30000): Promise<Response | Error>  {
+    return timeout(fetch(url, opts), ms).catch((error: Error) => error);
 }
 
 const headers = {'Accept': 'application/json', 'Content-Type': 'application/json'};
@@ -22,13 +22,17 @@ interface RPCResponse<TResult> {
     error?: string;
 }
 
-async function fromResponse<T>(response: Response): Promise<RPCResponse<T>> {
-    try {
-        // Here the JSON is already in JSON-RPC format so return as-is
-        return await response.json();
-    } catch (e) {
-        console.error(e);
-        return {error: (!response.ok && response.statusText) || (response.status == 401 && "User unauthorized") || "Internal error: failed to parse returned JSON"};
+async function fromResponse<T>(response: Response | Error): Promise<RPCResponse<T>> {
+    if (response instanceof Response) {
+        try {
+            // Here the JSON is already in JSON-RPC format so return as-is
+            return await response.json();
+        } catch (e) {
+            console.error(e);
+            return {error: (!response.ok && response.statusText) || (response.status == 401 && "User unauthorized")};
+        }
+    } else {
+        return {error: response.message};
     }
 }
 
