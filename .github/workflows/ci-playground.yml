@@ -3,6 +3,9 @@ name: Continuous Integration Playground
 on:
   pull_request:
     paths-ignore:
+      - 'cli/**'
+      - 'conf/**'
+      - 'e2e/**'
       - 'templates/**'
 
 jobs:
