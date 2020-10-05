@@ -25,11 +25,18 @@ interface RPCResponse<TResult> {
 async function fromResponse<T>(response: Response | Error): Promise<RPCResponse<T>> {
     if (response instanceof Response) {
         try {
-            // Here the JSON is already in JSON-RPC format so return as-is
-            return await response.json();
+            if (response.ok) {
+                // Here the JSON is already in JSON-RPC format so return as-is
+                return await response.json();
+            } else {
+                if (response.status == 401) {
+                    return {error: "User unauthorized"};
+                }
+                return {error: response.statusText};
+            }
         } catch (e) {
             console.error(e);
-            return {error: (!response.ok && response.statusText) || (response.status == 401 && "User unauthorized")};
+            return {error: response.statusText};
         }
     } else {
         return {error: response.message};
