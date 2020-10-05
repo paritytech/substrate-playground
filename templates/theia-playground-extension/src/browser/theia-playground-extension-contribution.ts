@@ -150,12 +150,12 @@ export class TheiaSubstrateExtensionCommandContribution implements CommandContri
 
     registerCommands(registry: CommandRegistry): void {
         const {env, instance} = instanceDetails();
-        const client = new Client({env: env});
         registry.registerCommand(SendFeedbackCommand, {
             execute: () => window.open('https://docs.google.com/forms/d/e/1FAIpQLSdXpq_fHqS_ow4nC7EpGmrC_XGX_JCIRzAqB1vaBtoZrDW-ZQ/viewform?edit_requested=true')
         });
         registry.registerCommand(StopInstanceCommand, {
             execute: async () => {
+                const client = new Client({env: env});
                 client.stopInstance(instance);
             }
         });
