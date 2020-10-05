@@ -50,7 +50,6 @@ function lifecycle(history, location, client: Client) {
         invoke: {
           src: (context, _event) => async (callback) =>  {
             const response = (await client.getDetails());
-            console.log(response)
             if (response.error) {
               throw response;
             }
