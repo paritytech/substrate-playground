@@ -106,7 +106,7 @@ function envFromDomain(domain: string) {
         case "playground-staging":
             return "staging";
         case "playground-dev":
-            return "dev";
+            return "development";
     }
 }
 
