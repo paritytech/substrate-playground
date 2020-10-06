@@ -6,6 +6,7 @@ import { MessageService } from '@theia/core/lib/common/message-service';
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
 import { FileNavigatorContribution } from '@theia/navigator/lib/browser/navigator-contribution';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
+import { TerminalWidgetOptions, TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
 import { FileService } from "@theia/filesystem/lib/browser/file-service";
 import { FileDownloadService } from '@theia/filesystem/lib/browser/download/file-download-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
@@ -21,14 +22,12 @@ export const StopInstanceCommand = {
     label: "Stop this instance"
 };
 
-/*
- newTerminal(this.terminalService, "front-end", `${HOME}/substrate-front-end-template`, `REACT_APP_PROVIDER_SOCKET=${nodeWebsocket} yarn build && rm -rf front-end/ && mv build front-end && python -m SimpleHTTPServer ${port}\r`)
- async function newTerminal(terminalService: TerminalService, id: string, cwd: string, command: string) {
-    const terminalWidget = await terminalService.newTerminal({cwd: cwd, id: id});
-    await terminalWidget.start();
-    await terminalService.open(terminalWidget);
-    await terminalWidget.sendText(command)
-}*/
+async function openTerminal(terminalService: TerminalService, options: TerminalWidgetOptions = {}): Promise<TerminalWidget> {
+   const terminalWidget = await terminalService.newTerminal(options);
+   await terminalWidget.start();
+   await terminalService.open(terminalWidget);
+   return terminalWidget;
+}
 
 function answer(type: string, uuid?: string, data?: any): void {
     window.parent.postMessage({type: type, uuid: uuid, data: data}, "*");
@@ -168,7 +167,13 @@ export class TheiaSubstrateExtensionCommandContribution implements CommandContri
         }
 
         this.stateService.reachedState('ready').then(
-            () => this.fileNavigatorContribution.openView({reveal: true})
+            async () => {
+                this.fileNavigatorContribution.openView({reveal: true});
+                if (this.terminalService.all.length == 0) {
+                    // TODO only open when no Devcontainer exists
+                    await openTerminal(this.terminalService);
+                }
+            }
         );
     }
 
