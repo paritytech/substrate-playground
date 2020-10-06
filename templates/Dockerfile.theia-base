@@ -8,4 +8,4 @@ ADD lerna.json .
 ADD theia-playground theia-playground
 ADD theia-playground-extension theia-playground-extension
 RUN yarn && \
-    yarn build
+    NODE_OPTIONS="--max-old-space-size=5120" yarn build
