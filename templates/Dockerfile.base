@@ -3,36 +3,38 @@
 
 FROM node:12
 
-# https://bevyengine.org/learn/book/getting-started/setup/
+# Install required dependencies
 RUN apt-get update && \
-    apt-get install -y make gcc g++ dumb-init python sudo vim git cmake pkg-config libssl-dev git gcc build-essential git clang libclang-dev pkg-config xsel && \
+    apt-get install -y make gcc g++ dumb-init python sudo vim git cmake pkg-config libssl-dev git gcc build-essential git clang libclang-dev pkg-config xsel htop && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-RUN adduser --disabled-password --gecos '' substrate && \
-    mkdir -p /etc/sudoers.d && \
-    echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers && \
-    echo "user ALL=(root) NOPASSWD:ALL" >> /etc/sudoers.d/user && \
-    chmod 0440 /etc/sudoers.d/user;
+# Install rust as required by substrate env
+# Pick up the version from https://rust-lang.github.io/rustup-components-history/index.html (rls is required)
+ARG RUST_VERSION=nightly-2020-10-04
+ARG USER=playground
+ARG HOME=/home/$USER
+ARG WORKSPACE=$HOME/workspace
+
+# Setup main user
+RUN adduser --quiet --disabled-password --shell /bin/bash --home $HOME --gecos '' $USER && \
+    echo "$USER:password" | chpasswd && \
+    adduser $USER sudo
 
 RUN chmod g+rw /home && \
-    mkdir -p /home/theia && \
-    mkdir -p /home/substrate/workspace && \
-    chown -R substrate:substrate /home/theia && \
-    chown -R substrate:substrate /home/substrate;
+    mkdir -p $WORKSPACE && \
+    chown -R $USER:$USER $HOME;
 
-# Pick up the version from https://rust-lang.github.io/rustup-components-history/index.html
-ARG RUST_VERSION=nightly-2020-06-21
+USER playground
 
-ENV HOME=/home/substrate \
-    WORKSPACE=/home/substrate/workspace \
+ENV HOME=$HOME \
+    WORKSPACE=$WORKSPACE \
     LANG=en_US.UTF-8 \
-    CARGO_HOME=/home/substrate/.cargo \
-    PATH=/home/substrate/.cargo/bin:$PATH \
+    CARGO_HOME=$HOME/.cargo \
+    PATH=$HOME/.cargo/bin:$PATH \
     SHELL=/bin/bash
 
-USER substrate
-
+# Install rust toolchain
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain none \
     && . $CARGO_HOME/env \
     && rustup install $RUST_VERSION \
@@ -41,11 +43,13 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --de
     && rustup component add rls rust-analysis rust-src clippy rustfmt llvm-tools-preview \
     && rustup target add wasm32-unknown-unknown --toolchain $RUST_VERSION
 
+# Install some subtrate tools
 RUN cargo install --force --git https://github.com/alexcrichton/wasm-gc \
     && cargo install --force --git https://github.com/paritytech/substrate subkey \
     && cargo install substrate-deps \
     && cargo install diener
 
-WORKDIR /home/substrate/workspace
+WORKDIR $WORKSPACE
 
-ONBUILD ADD --chown=substrate . .
+# Add all files from inheriting Dockerfile
+ONBUILD ADD --chown=$USER . .
