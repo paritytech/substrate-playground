@@ -1,8 +1,7 @@
 import { injectable, inject } from "inversify";
-import { FrontendApplicationContribution, FrontendApplication, OpenerService, WidgetOpenerOptions, ApplicationShell, Widget, open } from "@theia/core/lib/browser";
+import { FrontendApplicationContribution, FrontendApplication, OpenerService, ApplicationShell } from "@theia/core/lib/browser";
 import URI from '@theia/core/lib/common/uri';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
-import { PreviewUri } from '@theia/preview/lib/browser/preview-uri';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileStat } from '@theia/filesystem/lib/common/files';
 
@@ -24,7 +23,15 @@ export class DevcontainerSupport implements FrontendApplicationContribution {
 
     async onStart(_app: FrontendApplication) {
         const uri = await this.locateDevcontainer();
-        console.log(uri)
+        if (uri) {
+            const file = await this.fileService.readFile(uri);
+            const container = file.value.toString();
+            console.log(container)
+            /*
+            if (container.postCommand) {
+
+            }*/
+        }
     }
 
     protected async locateDevcontainer(): Promise<URI | undefined> {
@@ -33,22 +40,26 @@ export class DevcontainerSupport implements FrontendApplicationContribution {
             return undefined;
         }
         for (const f of location.children) {
-            if (!f.isDirectory) {
+            if (f.isFile) {
                 const fileName = f.resource.path.base.toLowerCase();
-                if (fileName.startsWith('readme.md')) {
+                if (fileName.startsWith('devcontainer.json')) {
                     return f.resource;
                 }
+            } else {
+                const fileName = f.resource.path.base.toLowerCase();
+                const f2 = await this.fileService.resolve(f.resource);
+                if (fileName.startsWith('.devcontainer') && f2.children) {
+                    for (const ff of f2.children) {
+                        const ffileName = ff.resource.path.base.toLowerCase();
+                        if (ffileName.startsWith('devcontainer.json')) {
+                            return ff.resource;
+                        }
+                    }
+                }
             }
+            f.children
         }
         return undefined;
-    }
-
-    protected async revealFile(uri: URI, preview: boolean = false): Promise<void> {
-        const previewUri = preview ? PreviewUri.encode(uri) : uri;
-        const widget = await open(this.openerService, previewUri, <WidgetOpenerOptions>{ mode: 'reveal' });
-        if (widget instanceof Widget) {
-            this.shell.activateWidget(widget.id);
-        }
     }
 
 }
