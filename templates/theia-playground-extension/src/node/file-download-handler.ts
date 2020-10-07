@@ -12,6 +12,13 @@ import { FileUri } from '@theia/core/lib/node/file-uri';
 import { FileDownloadHandler } from '@theia/filesystem/lib/node/download/file-download-handler';
 import { FileDownloadData } from '@theia/filesystem/lib/common/download/file-download-data';
 
+interface PrepareDownloadOptions {
+    filePath: string;
+    downloadId: string;
+    remove: boolean;
+    root?: string;
+}
+
 async function archive(inputPath: string, outputPath: string, options: PackOptions): Promise<void> {
     return new Promise<void>(async (resolve, reject) => {
         pack(inputPath, options).pipe(gunzip()).pipe(fs.createWriteStream(outputPath)).on('finish', () => resolve()).on('error', e => reject(e));
@@ -52,9 +59,8 @@ export class PlaygroundSingleFileDownloadHandler extends FileDownloadHandler {
         }
         try {
             const downloadId = v4();
-            const filePath = FileUri.fsPath(uri);
-            const options = { root: "", filePath, downloadId, remove: false };
-            if (!stat.isDirectory) {
+            const options: PrepareDownloadOptions = { filePath, downloadId, remove: false };
+            if (!stat.isDirectory()) {
                 await this.prepareDownload(request, response, options);
             } else {
                 const outputRootPath = await this.createTempDir(downloadId);
