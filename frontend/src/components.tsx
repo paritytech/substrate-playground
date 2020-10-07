@@ -53,6 +53,8 @@ import crypto from 'crypto';
 
 import terms from './terms.md';
 
+const termsHash = crypto.createHash('md5').update(terms).digest('hex');
+
 function wrapAction(action: (() => void) | Promise<void>, call: (boolean) => void):(() => void) | Promise<void> {
     if (action instanceof Promise) {
         call(true);
@@ -420,7 +422,7 @@ function login(): void {
 
 function Terms({ show, set, hide }) {
     return (
-        <Dialog open={show}>
+    <Dialog open={show} maxWidth="md">
         <DialogTitle>Terms</DialogTitle>
         <DialogContent>
             <DialogContentText id="alert-dialog-description">
@@ -436,7 +438,6 @@ function Terms({ show, set, hide }) {
 function LoginPanel() {
     const [previousTermsHash, setTermsHash] = useLocalStorage('termsApproved', "");
     const [showTerms, setVisibleTerms] = useState(false);
-    const termsHash = crypto.createHash('md5').update(terms).digest('hex');
     const termsApproved = previousTermsHash == termsHash;
     return (
         <Container style={{display: "flex", flex: 1, padding: 0, alignItems: "center", justifyContent: "center", flexDirection: "column"}}>

@@ -221,7 +221,7 @@ __Contact us__
 Should you have any reasons for a complaint, we will endeavour to resolve the issue and avoid any re-occurrence in the future. You can always contact us by using the following details:
 
 _Address_: Ignition Law, Moray House Floor 1, 23-31 Great Titchfield Street, London, United Kingdom, WC1W 7PA
-_Email address_: legal@parity.io
+_Email address_: <a href="mailto:legal@parity.io">legal@parity.io</a>
 
 __Statutory information__
 
