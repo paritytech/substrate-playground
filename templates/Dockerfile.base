@@ -11,7 +11,7 @@ RUN apt-get update && \
 
 # Install rust as required by substrate env
 # Pick up the version from https://rust-lang.github.io/rustup-components-history/index.html (rls is required)
-ARG RUST_VERSION=nightly-2020-06-21
+ARG RUST_VERSION=nightly-2020-10-04
 ARG USER=playground
 ARG HOME=/home/$USER
 ARG WORKSPACE=$HOME/workspace
@@ -45,7 +45,7 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --de
 
 # Install some subtrate tools
 RUN cargo install --force --git https://github.com/alexcrichton/wasm-gc \
-    && cargo install --force --git https://github.com/paritytech/substrate subkey \
+#    && cargo install --force --git https://github.com/paritytech/substrate --tag v2.0.0 subkey \
     && cargo install substrate-deps \
     && cargo install diener
 
