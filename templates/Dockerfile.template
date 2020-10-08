@@ -23,6 +23,7 @@ COPY --chown=$USER:$USER .vscode/* $HOME/.theia/
 # Copy the whole theia folder, including node_modules
 # This is the recommended approach: https://spectrum.chat/theia/dev/theia-packaging~6c10127c-a316-4e87-9a27-e4b70fb647c1
 COPY --from=theia-base --chown=$USER:$USER /home/theia $THEIA_HOME
+COPY --from=theia-base --chown=$USER:$USER /usr/local/bin/node $THEIA_HOME
 
 ENV VSCODE_API_VERSION=1.46.0 \
     USE_LOCAL_GIT=true \
@@ -39,4 +40,4 @@ ENV VSCODE_API_VERSION=1.46.0 \
 # Folder matches the entry point from templates/
 WORKDIR $THEIA_PLAYGROUND_HOME
 
-ENTRYPOINT [ "dumb-init", "node", "--always-compact", "--max-old-space-size=64", "src-gen/backend/main.js", "$WORKSPACE", "--hostname=0.0.0.0" ] 
+ENTRYPOINT [ "dumb-init", "/home/playground/theia/node", "--always-compact", "--max-old-space-size=64", "src-gen/backend/main.js", "/home/playground/workspace", "--hostname=0.0.0.0" ] 
