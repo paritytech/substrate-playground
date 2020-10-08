@@ -133,5 +133,3 @@ jobs:
           token: ${{ secrets.PAT_TOKEN }}
           event-type: template-updated
           client-payload: '{"id": "${{ matrix.id }}", "image": "${{ matrix.image }}"}'
-
-# TODO checkout template repo, check if based on a base template, if so create a PR to update to new version

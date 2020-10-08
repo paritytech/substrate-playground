@@ -1,11 +1,11 @@
-# The recommended base image for templates. 3rd party templates should inherit from it.
+# The recommended base image for templates.
 
 FROM ubuntu:20.10
 
 # Install required dependencies
 RUN apt-get update && \
     apt-get upgrade -y && \
-    apt-get install -y make gcc g++ curl dumb-init python sudo vim git cmake pkg-config libssl-dev git gcc build-essential git clang libclang-dev pkg-config xsel htop nodejs && \
+    apt-get install -y make gcc g++ curl dumb-init python sudo vim git cmake pkg-config libssl-dev git gcc build-essential git clang libclang-dev pkg-config xsel htop nodejs jq && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
@@ -49,9 +49,3 @@ RUN cargo install --force --git https://github.com/alexcrichton/wasm-gc \
 #    && cargo install --force --git https://github.com/paritytech/substrate --tag v2.0.0 subkey \
     && cargo install substrate-deps \
     && cargo install diener
-
-WORKDIR $WORKSPACE
-
-# Add all files from inheriting Dockerfile
-# Make sure to rely on COPY: more background here: https://github.com/moby/moby/issues/35018
-ONBUILD COPY --chown=$USER . .
