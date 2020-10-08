@@ -1,45 +1,16 @@
 # The image serving as base for templates.
-# Inherits from the 3rd party docker image and adds the relevant bits so that it can run theia
-# Built as a multi-stage image (https://docs.docker.com/develop/develop-images/multistage-build/)
 
-# This image assumes a 'playground' user
+ARG BASE_TEMPLATE_VERSION=sha-a9df3c8
 
-FROM paritytech/substrate-playground-template-theia-base:sha-c2e862c as theia-base
-
-# Will be replaced by the image remotely built
-
-FROM %IMAGE%
+FROM paritytech/substrate-playground-template-base:$BASE_TEMPLATE_VERSION
 
 RUN [ ! -z "${USER}" ] || { echo "USER env variable must be set"; exit 1; } && \
     [ ! -z "${HOME}" ] || { echo "HOME env variable must be set"; exit 1; } && \
     [ ! -z "${WORKSPACE}" ] || { echo "WORKSPACE env variable must be set"; exit 1; }
 
-# From theia base
-ARG THEIA_HOME=$HOME/theia 
-ARG THEIA_PLAYGROUND_HOME=$THEIA_HOME/theia-playground 
+WORKDIR $WORKSPACE
 
-# Copy VSCode user settings
-COPY --chown=$USER:$USER .vscode/* $HOME/.theia/
+COPY --chown=$USER . .
 
-# Copy the whole theia folder, including node_modules
-# This is the recommended approach: https://spectrum.chat/theia/dev/theia-packaging~6c10127c-a316-4e87-9a27-e4b70fb647c1
-COPY --from=theia-base --chown=$USER:$USER /home/theia $THEIA_HOME
-COPY --from=theia-base --chown=$USER:$USER /usr/local/bin/node $THEIA_HOME
-
-ENV VSCODE_API_VERSION=1.46.0 \
-    USE_LOCAL_GIT=true \
-    HOST=0.0.0.0 \
-    # Use the instance hostname for webviews.
-    # By default theia uses a unique domain per webview but this is not a security consideration here.
-    # See:
-    # * https://github.com/eclipse-theia/theia/blob/master/CHANGELOG.md#v0130
-    # * https://github.com/eclipse-theia/theia/pull/6465#issuecomment-557494879
-    # * https://spectrum.chat/theia/dev/any-breaking-changes-made-recently-to-webview~e5bd31a3-eee7-4288-b092-cf7407468780
-    THEIA_WEBVIEW_EXTERNAL_ENDPOINT={{hostname}} \
-    THEIA_DEFAULT_PLUGINS=local-dir:$THEIA_PLAYGROUND_HOME/plugins
-
-# Folder matches the entry point from templates/
-WORKDIR $THEIA_PLAYGROUND_HOME
-
-# TODO replace with entrypoint script so that env variable can be used
-ENTRYPOINT [ "dumb-init", "/home/playground/theia/node", "--always-compact", "--max-old-space-size=64", "src-gen/backend/main.js", "/home/playground/workspace", "--hostname=0.0.0.0" ] 
+RUN sh -x \
+    && eval $(cat .devcontainer/devcontainer.json | jq -r '.postCreateCommand // "cargo run --release && cargo check"')

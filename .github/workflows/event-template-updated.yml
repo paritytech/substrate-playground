@@ -19,7 +19,6 @@ env:
   DOCKER_BUILDKIT: 1
   TEMPLATE_ID: ${{ github.event.client_payload.id }}
   TEMPLATE_REF: ${{ github.event.client_payload.ref }}
-  TEMPLATE_DOCKERFILE: ${{ github.event.client_payload.dockerFile }}
 
 jobs:
   build-and-push:
@@ -40,7 +39,8 @@ jobs:
           python -m pip install --upgrade pip
           pip install yq
 
-      - run: |-
+      - name: Set variables
+        run: |-
           echo ::set-output name=sha::${GITHUB_SHA::7}
           echo ::set-output name=tag::template-${TEMPLATE_ID}-${GITHUB_SHA::7}
           echo ::set-output name=template::paritytech/substrate-playground-template-${TEMPLATE_ID}
@@ -51,10 +51,10 @@ jobs:
           REPOSITORY=`cat $FILE | yq -r .repository`
           echo "::set-output name=repository::$( echo $REPOSITORY )"
           echo "::set-output name=ref::$( echo ${TEMPLATE_REF:-master} )"
-          echo "::set-output name=dockerFile::$( echo ${TEMPLATE_DOCKERFILE:-.devcontainer/Dockerfile} )"
         id: env
 
-      - uses: actions/checkout@v2
+      - name: Checkout remote repository
+        uses: actions/checkout@v2
         with:
           path: template
           repository: ${{ steps.env.outputs.repository }}
@@ -66,16 +66,14 @@ jobs:
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-          dockerfile: template/${{ steps.env.outputs.dockerFile }}
+          dockerfile: ../templates/Dockerfile.template
           repository: ${{ steps.env.outputs.template }}
           tags: latest
           path: template
           add_git_labels: true
           tag_with_ref: true
           tag_with_sha: true
-
-      - name: Create template Dockerfile
-        run: cat templates/Dockerfile.template | sed -e "s|%IMAGE%|${{ steps.env.outputs.image }}|" > Dockerfile.theia
+          # TODO set (and keep uptodate) base image version
 
       - name: Build and Push theia template image
         uses: docker/build-push-action@v1
@@ -83,12 +81,13 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
           path: templates
-          dockerfile: Dockerfile.theia
+          dockerfile: Dockerfile.theia-template
           repository: ${{ steps.env.outputs.template-theia }}
           tags: latest
           add_git_labels: true
           tag_with_ref: true
           tag_with_sha: true
+          build_args: TEMPLATE_IMAGE=${{ steps.env.outputs.image }}
 
       - name: Update template version
         run: |-
