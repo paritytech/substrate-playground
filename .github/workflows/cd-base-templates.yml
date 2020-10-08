@@ -114,7 +114,7 @@ jobs:
           do
             ID=${FILE##*/}
             IMAGE=`cat $FILE | yq .base`
-            JSONline="{\"id\": \"$ID\", \"image\": $IMAGE},"
+            JSONline="{\"id\": \"$ID\"},"
             JSON="$JSON$JSONline"
           done
           JSON="$JSON]}"
@@ -132,4 +132,4 @@ jobs:
         with:
           token: ${{ secrets.PAT_TOKEN }}
           event-type: template-updated
-          client-payload: '{"id": "${{ matrix.id }}", "image": "${{ matrix.image }}"}'
+          client-payload: '{"id": "${{ matrix.id }}"}'
