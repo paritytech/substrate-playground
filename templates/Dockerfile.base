@@ -1,11 +1,10 @@
 # The recommended base image for templates. 3rd party templates should inherit from it.
 
-# Currently must inherit node image to comply with theia requirements
-FROM node:12
+FROM ubuntu:20.10
 
 # Install required dependencies
 RUN apt-get update && \
-    apt-get install -y make gcc g++ dumb-init python sudo vim git cmake pkg-config libssl-dev git gcc build-essential git clang libclang-dev pkg-config xsel htop && \
+    apt-get install -y make gcc g++ curl dumb-init python sudo vim git cmake pkg-config libssl-dev git gcc build-essential git clang libclang-dev pkg-config xsel htop && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
