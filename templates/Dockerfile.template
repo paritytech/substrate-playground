@@ -7,6 +7,7 @@
 FROM paritytech/substrate-playground-template-theia-base:sha-e8f33a4 as theia-base
 
 # Will be replaced by the image remotely built
+
 FROM %IMAGE%
 
 RUN [ ! -z "${USER}" ] || { echo "USER env variable must be set"; exit 1; } && \
@@ -40,4 +41,5 @@ ENV VSCODE_API_VERSION=1.46.0 \
 # Folder matches the entry point from templates/
 WORKDIR $THEIA_PLAYGROUND_HOME
 
+# TODO replace with entrypoint script so that env variable can be used
 ENTRYPOINT [ "dumb-init", "/home/playground/theia/node", "--always-compact", "--max-old-space-size=64", "src-gen/backend/main.js", "/home/playground/workspace", "--hostname=0.0.0.0" ] 
