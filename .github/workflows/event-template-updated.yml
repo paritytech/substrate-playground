@@ -73,7 +73,7 @@ jobs:
           add_git_labels: true
           tag_with_ref: true
           tag_with_sha: true
-          # TODO set (and keep uptodate) base image version
+          # TODO set (and keep uptodate) base image version: build_args: BASE_TEMPLATE_VERSION=${{ steps.env.outputs.baseVersion }}
 
       - name: Build and Push theia template image
         uses: docker/build-push-action@v1
@@ -92,7 +92,9 @@ jobs:
       - name: Update template version
         run: |-
           t=$(mktemp)
-          cat conf/k8s/overlays/staging/templates/${TEMPLATE_ID} | yq -y ".image = \"${{ steps.env.outputs.theia-image }}\"" | yq -y ".base = \"${{ steps.env.outputs.image }}\"" > ${t} && mv ${t} conf/k8s/overlays/staging/templates/${TEMPLATE_ID}
+          cat conf/k8s/overlays/staging/templates/${TEMPLATE_ID} | yq -y ".image = \"${{ steps.env.outputs.theia-image }}\"" > ${t} && mv ${t} conf/k8s/overlays/staging/templates/${TEMPLATE_ID}
+
+# TODO update name, desc, .. from devcontainer.json
 
       - name: Commit template version update
         uses: EndBug/add-and-commit@v4
