@@ -1,6 +1,6 @@
 # The recommended base image for templates. 3rd party templates should inherit from it.
-# Currently must inherit node image to comply with theia requirements
 
+# Currently must inherit node image to comply with theia requirements
 FROM node:12
 
 # Install required dependencies
@@ -25,9 +25,10 @@ RUN chmod g+rw /home && \
     mkdir -p $WORKSPACE && \
     chown -R $USER:$USER $HOME;
 
-USER playground
+USER $USER
 
 ENV HOME=$HOME \
+    USER=$USER \
     WORKSPACE=$WORKSPACE \
     LANG=en_US.UTF-8 \
     CARGO_HOME=$HOME/.cargo \
@@ -52,4 +53,5 @@ RUN cargo install --force --git https://github.com/alexcrichton/wasm-gc \
 WORKDIR $WORKSPACE
 
 # Add all files from inheriting Dockerfile
-ONBUILD ADD --chown=$USER . .
+# Make sure to rely on COPY: more background here: https://github.com/moby/moby/issues/35018
+ONBUILD COPY --chown=$USER . .

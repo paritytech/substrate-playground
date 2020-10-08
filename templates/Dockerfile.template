@@ -9,17 +9,20 @@ FROM paritytech/substrate-playground-template-theia-base:sha-311db44 as theia-ba
 # Will be replaced by the image remotely built
 FROM %IMAGE%
 
-ARG USER=playground
-ARG HOME=/home/$USER
-ARG WORKSPACE=$HOME/workspace
-ARG THEIA_HOME=$HOME/theia
+RUN [ ! -z "${USER}" ] || { echo "USER env variable must be set"; exit 1; } && \
+    [ ! -z "${HOME}" ] || { echo "HOME env variable must be set"; exit 1; } && \
+    [ ! -z "${WORKSPACE}" ] || { echo "WORKSPACE env variable must be set"; exit 1; }
+
+# From theia base
+ARG THEIA_HOME=$HOME/theia 
+ARG THEIA_PLAYGROUND_HOME=$THEIA_HOME/theia-playground 
 
 # Copy VSCode user settings
 COPY --chown=$USER:$USER .vscode/* $HOME/.theia/
 
 # Copy the whole theia folder, including node_modules
 # This is the recommended approach: https://spectrum.chat/theia/dev/theia-packaging~6c10127c-a316-4e87-9a27-e4b70fb647c1
-COPY --from=theia-base --chown=$USER:$USER $THEIA_HOME $THEIA_HOME
+COPY --from=theia-base --chown=$USER:$USER /home/theia $THEIA_HOME
 
 ENV VSCODE_API_VERSION=1.46.0 \
     USE_LOCAL_GIT=true \
@@ -30,8 +33,10 @@ ENV VSCODE_API_VERSION=1.46.0 \
     # * https://github.com/eclipse-theia/theia/blob/master/CHANGELOG.md#v0130
     # * https://github.com/eclipse-theia/theia/pull/6465#issuecomment-557494879
     # * https://spectrum.chat/theia/dev/any-breaking-changes-made-recently-to-webview~e5bd31a3-eee7-4288-b092-cf7407468780
-    THEIA_WEBVIEW_EXTERNAL_ENDPOINT={{hostname}}
+    THEIA_WEBVIEW_EXTERNAL_ENDPOINT={{hostname}} \
+    THEIA_DEFAULT_PLUGINS=local-dir:$THEIA_PLAYGROUND_HOME/plugins
 
-WORKDIR $THEIA_HOME/theia-playground/
+# Folder matches the entry point from templates/
+WORKDIR $THEIA_PLAYGROUND_HOME
 
 ENTRYPOINT [ "dumb-init", "node", "--always-compact", "--max-old-space-size=64", "src-gen/backend/main.js", "$WORKSPACE", "--hostname=0.0.0.0" ] 
