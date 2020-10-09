@@ -19,6 +19,7 @@ env:
   DOCKER_BUILDKIT: 1
   TEMPLATE_ID: ${{ github.event.client_payload.id }}
   TEMPLATE_REF: ${{ github.event.client_payload.ref }}
+  BASE_TEMPLATE_VERSION: sha-a9df3c8
 
 jobs:
   build-and-push:
@@ -73,7 +74,7 @@ jobs:
           add_git_labels: true
           tag_with_ref: true
           tag_with_sha: true
-          # TODO set (and keep uptodate) base image version: build_args: BASE_TEMPLATE_VERSION=${{ steps.env.outputs.baseVersion }}
+          build_args: BASE_TEMPLATE_VERSION=${{ env.BASE_TEMPLATE_VERSION }}
 
       - name: Build and Push theia template image
         uses: docker/build-push-action@v1

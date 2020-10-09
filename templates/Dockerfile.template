@@ -1,6 +1,6 @@
 # The image serving as base for templates.
 
-ARG BASE_TEMPLATE_VERSION=sha-a9df3c8
+ARG BASE_TEMPLATE_VERSION
 
 FROM paritytech/substrate-playground-template-base:$BASE_TEMPLATE_VERSION
 
