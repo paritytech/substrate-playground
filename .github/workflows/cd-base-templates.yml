@@ -80,7 +80,7 @@ jobs:
 
       - uses: docker/build-push-action@v2
         with:
-          path: templates
+          context: templates
           file: templates/Dockerfile.base
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.prep.outputs.tags-base }}
