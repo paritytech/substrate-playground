@@ -3,12 +3,14 @@
 #
 # Built as a multi-stage image (https://docs.docker.com/develop/develop-images/multistage-build/)
 
+ARG BASE_TEMPLATE_VERSION
 ARG TEMPLATE_IMAGE
 
-FROM paritytech/substrate-playground-template-theia-base:sha-e8f33a4 as theia-base
+FROM paritytech/substrate-playground-template-theia-base:BASE_TEMPLATE_VERSION as theia-base
 
 FROM $TEMPLATE_IMAGE
 
+# Env variable must be set by the inherited image
 RUN [ ! -z "${USER}" ] || { echo "USER env variable must be set"; exit 1; } && \
     [ ! -z "${HOME}" ] || { echo "HOME env variable must be set"; exit 1; } && \
     [ ! -z "${WORKSPACE}" ] || { echo "WORKSPACE env variable must be set"; exit 1; }
