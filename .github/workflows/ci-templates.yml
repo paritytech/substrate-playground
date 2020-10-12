@@ -25,3 +25,13 @@ jobs:
       - name: Build
         run: yarn workspace @parity/theia-playground theia build
         working-directory: ./templates
+
+      - uses: docker/setup-buildx-action@v1
+        with:
+          install: true
+
+      - name: Build Dockerfile.base
+        run: cd templates && docker build -f Dockerfile.base .
+
+      - name: Build Dockerfile.theia-base
+        run: cd templates && docker build -f Dockerfile.theia-base .
