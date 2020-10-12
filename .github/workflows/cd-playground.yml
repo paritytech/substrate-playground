@@ -146,7 +146,7 @@ jobs:
           ./kustomize edit set image paritytech/substrate-playground-backend-ui:${{ steps.env.outputs.sha }}
         working-directory: conf/k8s/overlays/${{ env.ENVIRONMENT }}
 
-      - uses: EndBug/add-and-commit@v4
+      - uses: EndBug/add-and-commit@v5.1.0
         with:
           message: ":bookmark: upon which, hails onto us a new release of Playground"
           add: "conf/k8s/overlays/${{ env.ENVIRONMENT }}/kustomization.yaml"
