@@ -6,7 +6,7 @@
 ARG BASE_TEMPLATE_VERSION
 ARG TEMPLATE_IMAGE
 
-FROM paritytech/substrate-playground-template-theia-base:BASE_TEMPLATE_VERSION as theia-base
+FROM paritytech/substrate-playground-template-theia-base:$BASE_TEMPLATE_VERSION as theia-base
 
 FROM $TEMPLATE_IMAGE
 
