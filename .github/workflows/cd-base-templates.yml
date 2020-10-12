@@ -55,6 +55,14 @@ jobs:
       - name: Prepare labels template-base
         id: prep-base
         run: |
+            VERSION=edge
+            if [[ $GITHUB_REF == refs/tags/* ]]; then
+              VERSION=${GITHUB_REF#refs/tags/}
+            elif [[ $GITHUB_REF == refs/heads/* ]]; then
+              VERSION=$(echo ${GITHUB_REF#refs/heads/} | sed -r 's#/+#-#g')
+            elif [[ $GITHUB_REF == refs/pull/* ]]; then
+              VERSION=pr-${{ github.event.number }}
+            fi
             DOCKER_IMAGE=paritytech/substrate-playground-template-base
             TAGS="${DOCKER_IMAGE}:latest,${DOCKER_IMAGE}:${VERSION}"
             if [ "${{ github.event_name }}" = "push" ]; then
@@ -65,6 +73,14 @@ jobs:
       - name: Prepare labels template-theia-base
         id: prep-theia-base
         run: |
+            VERSION=edge
+            if [[ $GITHUB_REF == refs/tags/* ]]; then
+              VERSION=${GITHUB_REF#refs/tags/}
+            elif [[ $GITHUB_REF == refs/heads/* ]]; then
+              VERSION=$(echo ${GITHUB_REF#refs/heads/} | sed -r 's#/+#-#g')
+            elif [[ $GITHUB_REF == refs/pull/* ]]; then
+              VERSION=pr-${{ github.event.number }}
+            fi
             DOCKER_IMAGE=paritytech/substrate-playground-template-theia-base
             TAGS="${DOCKER_IMAGE}:latest,${DOCKER_IMAGE}:${VERSION}"
             if [ "${{ github.event_name }}" = "push" ]; then

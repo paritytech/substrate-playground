@@ -73,6 +73,14 @@ jobs:
       - name: Prepare labels paritytech/substrate-playground-backend-api
         id: prep-api
         run: |
+            VERSION=edge
+            if [[ $GITHUB_REF == refs/tags/* ]]; then
+              VERSION=${GITHUB_REF#refs/tags/}
+            elif [[ $GITHUB_REF == refs/heads/* ]]; then
+              VERSION=$(echo ${GITHUB_REF#refs/heads/} | sed -r 's#/+#-#g')
+            elif [[ $GITHUB_REF == refs/pull/* ]]; then
+              VERSION=pr-${{ github.event.number }}
+            fi
             DOCKER_IMAGE=paritytech/substrate-playground-backend-api
             TAGS="${DOCKER_IMAGE}:latest,${DOCKER_IMAGE}:${VERSION}"
             if [ "${{ github.event_name }}" = "push" ]; then
@@ -83,6 +91,14 @@ jobs:
       - name: Prepare labels paritytech/substrate-playground-backend-ui
         id: prep-ui
         run: |
+            VERSION=edge
+            if [[ $GITHUB_REF == refs/tags/* ]]; then
+              VERSION=${GITHUB_REF#refs/tags/}
+            elif [[ $GITHUB_REF == refs/heads/* ]]; then
+              VERSION=$(echo ${GITHUB_REF#refs/heads/} | sed -r 's#/+#-#g')
+            elif [[ $GITHUB_REF == refs/pull/* ]]; then
+              VERSION=pr-${{ github.event.number }}
+            fi
             DOCKER_IMAGE=paritytech/substrate-playground-backend-ui
             TAGS="${DOCKER_IMAGE}:latest,${DOCKER_IMAGE}:${VERSION}"
             if [ "${{ github.event_name }}" = "push" ]; then
