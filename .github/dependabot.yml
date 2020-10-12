@@ -1,0 +1,42 @@
+version: 2
+updates:
+- package-ecosystem: npm
+  directory: "/backend/api"
+  schedule:
+    interval: daily
+    time: "03:00"
+    timezone: Europe/Berlin
+  open-pull-requests-limit: 20
+  rebase-strategy: disabled
+- package-ecosystem: npm
+  directory: "/cli"
+  schedule:
+    interval: daily
+    time: "03:00"
+    timezone: Europe/Berlin
+  open-pull-requests-limit: 20
+  rebase-strategy: disabled
+- package-ecosystem: npm
+  directory: "/templates"
+  schedule:
+    interval: daily
+    time: "03:00"
+    timezone: Europe/Berlin
+  open-pull-requests-limit: 20
+  rebase-strategy: disabled
+- package-ecosystem: cargo
+  directory: "/backend"
+  schedule:
+    interval: daily
+    time: "03:00"
+    timezone: Europe/Berlin
+  open-pull-requests-limit: 20
+  rebase-strategy: disabled
+- package-ecosystem: npm
+  directory: "/frontend"
+  schedule:
+    interval: daily
+    time: "03:00"
+    timezone: Europe/Berlin
+  open-pull-requests-limit: 20
+  rebase-strategy: disabled
