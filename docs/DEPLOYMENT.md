@@ -91,7 +91,7 @@ Then request new challenges. Two DNS entries will have to be updated.
 sudo certbot certonly --manual --preferred-challenges dns --server https://acme-v02.api.letsencrypt.org/directory --manual-public-ip-logging-ok --agree-tos -m admin@parity.io -d *.playground-staging.substrate.dev -d playground-staging.substrate.dev
 
 # Make sure to check it's been propagated 
-dig +short TXT _acme-challenge.playground-staging.substrate.dev @ 8.8.8.8
+dig +short TXT _acme-challenge.playground-staging.substrate.dev @8.8.8.8
 ```
 
 Then update the tls secret:
@@ -110,7 +110,7 @@ The new secret will be auomatically picked up.
 sudo certbot certonly --manual --preferred-challenges dns --server https://acme-v02.api.letsencrypt.org/directory --manual-public-ip-logging-ok --agree-tos -m admin@parity.io -d *.playground.substrate.dev -d playground.substrate.dev
 
 # Make sure to check it's been propagated 
-dig +short TXT _acme-challenge.playground.substrate.dev @ 8.8.8.8
+dig +short TXT _acme-challenge.playground.substrate.dev @8.8.8.8
 ```
 
 Then update the tls secret:
