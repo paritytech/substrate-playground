@@ -8,8 +8,10 @@ import { FileNavigatorContribution } from '@theia/navigator/lib/browser/navigato
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 import { TerminalWidgetOptions, TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
 import { FileService } from "@theia/filesystem/lib/browser/file-service";
+import { FileStat } from '@theia/filesystem/lib/common/files';
 import { FileDownloadService } from '@theia/filesystem/lib/browser/download/file-download-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
+import URI from '@theia/core/lib/common/uri';
 import { URI as VSCodeURI } from 'vscode-uri';
 
 export const SendFeedbackCommand = {
@@ -147,6 +149,34 @@ export class TheiaSubstrateExtensionCommandContribution implements CommandContri
     @inject(FileService)
     protected readonly fileService: FileService;
 
+    protected async locateDevcontainer(): Promise<URI | undefined> {
+        const location: FileStat | undefined = (await this.workspaceService.roots)[0];
+        if (!location || !location?.children) {
+            return undefined;
+        }
+        for (const f of location.children) {
+            if (f.isFile) {
+                const fileName = f.resource.path.base.toLowerCase();
+                if (fileName.startsWith('devcontainer.json')) {
+                    return f.resource;
+                }
+            } else {
+                const fileName = f.resource.path.base.toLowerCase();
+                const f2 = await this.fileService.resolve(f.resource);
+                if (fileName.startsWith('.devcontainer') && f2.children) {
+                    for (const ff of f2.children) {
+                        const ffileName = ff.resource.path.base.toLowerCase();
+                        if (ffileName.startsWith('devcontainer.json')) {
+                            return ff.resource;
+                        }
+                    }
+                }
+            }
+            f.children
+        }
+        return undefined;
+    }
+
     registerCommands(registry: CommandRegistry): void {
         const {env, instance} = instanceDetails();
         registry.registerCommand(SendFeedbackCommand, {
@@ -170,8 +200,16 @@ export class TheiaSubstrateExtensionCommandContribution implements CommandContri
             async () => {
                 this.fileNavigatorContribution.openView({reveal: true});
                 if (this.terminalService.all.length == 0) {
-                    // TODO only open when no Devcontainer exists
                     await openTerminal(this.terminalService);
+                }
+                const uri = await this.locateDevcontainer();
+                if (uri) {
+                    const file = await this.fileService.readFile(uri);
+                    const { postStartCommand } = JSON.parse(file.value.toString());
+                    if (typeof postStartCommand === "string") {
+                        const terminal = this.terminalService.all[0];
+                        terminal.sendText(postStartCommand+'\r');
+                    }
                 }
             }
         );

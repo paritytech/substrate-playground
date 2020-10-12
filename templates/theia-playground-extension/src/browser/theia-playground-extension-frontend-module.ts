@@ -2,7 +2,6 @@
  * Main theia-extension entry point
  */
 
-import { DevcontainerSupport } from './devcontainer-support';
 import { HTTPLocationMapper } from './http-location-mapper';
 import { InitialFilesOpen } from './initial-files-open';
 import { TheiaSubstrateExtensionCommandContribution, TheiaSubstrateExtensionMenuContribution } from './theia-playground-extension-contribution';
@@ -15,9 +14,6 @@ import '../../src/browser/style/index.css';
 export default new ContainerModule(bind => {
     bind(InitialFilesOpen).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(InitialFilesOpen);
-
-    bind(DevcontainerSupport).toSelf().inSingletonScope();
-    bind(FrontendApplicationContribution).toService(DevcontainerSupport);
 
     bind(CommandContribution).to(TheiaSubstrateExtensionCommandContribution);
     bind(MenuContribution).to(TheiaSubstrateExtensionMenuContribution);
