@@ -19,7 +19,7 @@ env:
   DOCKER_BUILDKIT: 1
   TEMPLATE_ID: ${{ github.event.client_payload.id }}
   TEMPLATE_REF: ${{ github.event.client_payload.ref }}
-  BASE_TEMPLATE_VERSION: sha-a9df3c8
+  BASE_TEMPLATE_VERSION: sha-c2e862c
 
 jobs:
   build-and-push:
@@ -88,7 +88,7 @@ jobs:
           add_git_labels: true
           tag_with_ref: true
           tag_with_sha: true
-          build_args: TEMPLATE_IMAGE=${{ steps.env.outputs.image }}
+          build_args: BASE_TEMPLATE_VERSION=${{ env.BASE_TEMPLATE_VERSION }},TEMPLATE_IMAGE=${{ steps.env.outputs.image }}
 
       - name: Update template version
         run: |-
