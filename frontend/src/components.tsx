@@ -51,7 +51,7 @@ import FormControl from '@material-ui/core/FormControl';
 import Select from '@material-ui/core/Select';
 import crypto from 'crypto';
 
-import terms from './terms.md';
+import terms from 'bundle-text:./terms.md';
 
 const termsHash = crypto.createHash('md5').update(terms).digest('hex');
 
