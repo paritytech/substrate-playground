@@ -1847,10 +1847,10 @@
   resolved "https://registry.yarnpkg.com/@stroncium/procfs/-/procfs-1.2.1.tgz#6b9be6fd20fb0a4c20e99a8695e083c699bb2b45"
   integrity sha512-X1Iui3FUNZP18EUvysTHxt+Avu2nlVzyf90YM8OYgP6SGzTzzX/0JgObfO1AQQDzuZtNNz29bVh8h5R97JrjxA==
 
-"@substrate/playground-api@1.0.0":
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/@substrate/playground-api/-/playground-api-1.0.0.tgz#f6b78bfacdcb2430cd3e38d0c50afe43261a1248"
-  integrity sha512-y4jBsRYzJ/In0S6dr7iggDa577TPi0gII60jqwMTGor87eNEh9Bxvi5DF8ff2J0ZIUEp2pDUUSKwDjYFqP7WRA==
+"@substrate/playground-api@1.0.1":
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/@substrate/playground-api/-/playground-api-1.0.1.tgz#54b0fa552da5d1fd5bf3c79a756976acb0750640"
+  integrity sha512-Hlk9sCrxIJuj0nav2Ikg5sMYQ/BRHrDKhMyIhCZMYaHK0OoeE8SUJDSdDdn0aDqYb/HZtcHbxPRDioWox+dGxQ==
   dependencies:
     cross-fetch "3.0.6"
 

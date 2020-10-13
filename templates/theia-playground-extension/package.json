@@ -9,7 +9,7 @@
     "src"
   ],
   "dependencies": {
-    "@substrate/playground-api": "1.0.0",
+    "@substrate/playground-api": "1.0.1",
     "@theia/core": "1.6.0",
     "gunzip-maybe": "1.4.2",
     "vscode-uri": "2.1.2"
@@ -20,7 +20,8 @@
   "scripts": {
     "prepare": "yarn run build",
     "build": "tsc",
-    "watch": "tsc -w"
+    "watch": "tsc -w",
+    "clean": "rm -rf lib/ node_modules/ yarn.lock"
   },
   "theiaExtensions": [
     {
