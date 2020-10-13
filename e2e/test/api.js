@@ -7,7 +7,7 @@ const client = new Client({env: env});
 
 test('unauthenticated - should not be able to create a new instance', async (t) => {
   const res = await client.deployInstance('node-template');
-  t.is(res.error, 'Unauthorized');
+  t.is(res.error, 'User unauthorized');
 });
 
 test('unauthenticated - should be able to list templates', async (t) => {
