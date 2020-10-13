@@ -205,10 +205,14 @@ export class TheiaSubstrateExtensionCommandContribution implements CommandContri
                 const uri = await this.locateDevcontainer();
                 if (uri) {
                     const file = await this.fileService.readFile(uri);
-                    const { postStartCommand } = JSON.parse(file.value.toString());
+                    const { postStartCommand, postAttachCommand } = JSON.parse(file.value.toString());
                     if (typeof postStartCommand === "string") {
                         const terminal = this.terminalService.all[0];
                         terminal.sendText(postStartCommand+'\r');
+                    }
+                    if (typeof postAttachCommand === "string") {
+                        const terminal = this.terminalService.all[0];
+                        terminal.sendText(postAttachCommand+'\r');
                     }
                 }
             }
