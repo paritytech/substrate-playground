@@ -13,4 +13,4 @@ WORKDIR $WORKSPACE
 COPY --chown=$USER . .
 
 RUN sh -x \
-    && eval $(cat .devcontainer/devcontainer.json | jq -r '.postCreateCommand // "cargo run --release && cargo check"')
+    && eval $(cat .devcontainer/devcontainer.json | jq -r '.preCreateCommand // "cargo build --release && cargo check"')
