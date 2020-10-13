@@ -18,19 +18,32 @@ function timeout(promise, ms) {
 }
 function fetchWithTimeout(url, opts = { cache: "no-store" }, ms = 30000) {
     return __awaiter(this, void 0, void 0, function* () {
-        return timeout(fetch(url, opts), ms).catch(error => error);
+        return timeout(fetch(url, opts), ms).catch((error) => error);
     });
 }
 const headers = { 'Accept': 'application/json', 'Content-Type': 'application/json' };
 function fromResponse(response) {
     return __awaiter(this, void 0, void 0, function* () {
-        try {
-            // Here the JSON is already in JSON-RPC format so return as-is
-            return yield response.json();
+        if (response instanceof Response) {
+            try {
+                if (response.ok) {
+                    // Here the JSON is already in JSON-RPC format so return as-is
+                    return yield response.json();
+                }
+                else {
+                    if (response.status == 401) {
+                        return { error: "User unauthorized" };
+                    }
+                    return { error: response.statusText };
+                }
+            }
+            catch (e) {
+                console.error(e);
+                return { error: response.statusText };
+            }
         }
-        catch (e) {
-            console.error(e);
-            return { error: (!response.ok && response.statusText) || (response.status == 401 && "User unauthorized") || "Internal error: failed to parse returned JSON" };
+        else {
+            return { error: response.message };
         }
     });
 }
