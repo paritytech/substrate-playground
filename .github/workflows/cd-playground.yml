@@ -168,13 +168,29 @@ jobs:
           urls: https://$NAMESPACE.substrate.dev/
           uploadArtifacts: true
 
+      - uses: microsoft/playwright-github-action@v1
+
+      - name: Run tests
+        run: yarn && yarn test
+        working-directory: ./e2e
+        continue-on-error: true
+        env:
+          ENVIRONMENT: $ENVIRONMENT
+
+      - if: ${{ failure() }}
+        uses: s3krit/matrix-message-action@v0.0.3
+        with:
+          room_id: ${{ secrets.MATRIX_ROOM_ID }}
+          access_token: ${{ secrets.MATRIX_ACCESS_TOKEN }}
+          message: "Integration tests failed"
+          server: "matrix.parity.io"
+
       # TODO
-      # run e2e tests
-      # if ok, perform screenshots and attach
-      # if not, fails and rollback
+      # if not ok, fails and rollback
       # https://learnk8s.io/kubernetes-rollbacks
       # https://medium.com/@copyconstruct/testing-in-production-the-safe-way-18ca102d0ef1
-      - name: Create Release
+      - if: ${{ success() }}
+        name: Create Release
         uses: actions/create-release@v1
         with:
           tag_name: ${{ steps.env.outputs.sha }}-${{ env.ENVIRONMENT }}

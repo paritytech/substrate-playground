@@ -25,6 +25,7 @@ jobs:
       - name: Run tests
         run: yarn && yarn test
         working-directory: ./e2e
+        continue-on-error: true
         env:
           ENVIRONMENT: ${{ matrix.env }}
 
