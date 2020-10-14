@@ -1,5 +1,5 @@
 #![feature(async_closure, proc_macro_hygiene, decl_macro)]
-#![deny(intra_doc_link_resolution_failure)]
+#![deny(broken_intra_doc_links)]
 
 mod api;
 mod kubernetes;

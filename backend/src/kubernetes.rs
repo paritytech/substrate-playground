@@ -16,7 +16,6 @@ use kube::{
 };
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::{collections::BTreeMap, error::Error};
-use uuid::Uuid;
 
 const APP_LABEL: &str = "app.kubernetes.io/part-of";
 const APP_VALUE: &str = "playground";
@@ -474,7 +473,7 @@ impl Engine {
         let instance_template = &Template::parse(&template)?;
 
         // Create a unique ID for this instance
-        let instance_uuid = format!("{}", Uuid::new_v4());
+        let instance_uuid = format!("{}", user_uuid);
         let namespace = &self.namespace;
 
         let pod_api: Api<Pod> = Api::namespaced(client.clone(), namespace);
