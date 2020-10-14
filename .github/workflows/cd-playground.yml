@@ -44,6 +44,8 @@ jobs:
           echo "::set-env name=GKE_CLUSTER::substrate-playground"
 
       - uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
 
       - uses: actions/checkout@v2
       - uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
