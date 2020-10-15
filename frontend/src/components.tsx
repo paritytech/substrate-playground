@@ -354,11 +354,6 @@ function Nav({ send, details, toggleDetails }) {
                     >
                         <FeedbackIcon />
                     </IconButton>
-                    <IconButton
-                        onClick={toggleDetails}
-                    >
-                        <HelpIcon />
-                    </IconButton>
                     {logged
                         ? <div style={{paddingLeft: 12}}>
                             <IconButton
