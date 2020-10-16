@@ -119,6 +119,49 @@ function instanceDetails() {
     };
 }
 
+async function locateDevcontainer(workspaceService: WorkspaceService, fileService: FileService): Promise<URI | undefined> {
+    const location: FileStat | undefined = (await workspaceService.roots)[0];
+    if (!location || !location?.children) {
+        return undefined;
+    }
+    for (const f of location.children) {
+        if (f.isFile) {
+            const fileName = f.resource.path.base.toLowerCase();
+            if (fileName.startsWith('devcontainer.json')) {
+                return f.resource;
+            }
+        } else {
+            const fileName = f.resource.path.base.toLowerCase();
+            const f2 = await fileService.resolve(f.resource);
+            if (fileName.startsWith('.devcontainer') && f2.children) {
+                for (const ff of f2.children) {
+                    const ffileName = ff.resource.path.base.toLowerCase();
+                    if (ffileName.startsWith('devcontainer.json')) {
+                        return ff.resource;
+                    }
+                }
+            }
+        }
+        f.children
+    }
+    return undefined;
+}
+
+function replaceVariable(arg: string): string {
+    return arg.replace("$HOST", window.location.host);
+}
+
+async function executeAction(type: string, args: Array<string>) : Promise<void> {
+    const sanitizedArgs = args.map(replaceVariable);
+    switch(type) {
+        case "external-preview":
+            window.open(sanitizedArgs[0]);
+            break;
+        default:
+            console.error(`Unknown type: ${type}`);
+    }
+}
+
 @injectable()
 export class TheiaSubstrateExtensionCommandContribution implements CommandContribution {
 
@@ -149,34 +192,6 @@ export class TheiaSubstrateExtensionCommandContribution implements CommandContri
     @inject(FileService)
     protected readonly fileService: FileService;
 
-    protected async locateDevcontainer(): Promise<URI | undefined> {
-        const location: FileStat | undefined = (await this.workspaceService.roots)[0];
-        if (!location || !location?.children) {
-            return undefined;
-        }
-        for (const f of location.children) {
-            if (f.isFile) {
-                const fileName = f.resource.path.base.toLowerCase();
-                if (fileName.startsWith('devcontainer.json')) {
-                    return f.resource;
-                }
-            } else {
-                const fileName = f.resource.path.base.toLowerCase();
-                const f2 = await this.fileService.resolve(f.resource);
-                if (fileName.startsWith('.devcontainer') && f2.children) {
-                    for (const ff of f2.children) {
-                        const ffileName = ff.resource.path.base.toLowerCase();
-                        if (ffileName.startsWith('devcontainer.json')) {
-                            return ff.resource;
-                        }
-                    }
-                }
-            }
-            f.children
-        }
-        return undefined;
-    }
-
     registerCommands(registry: CommandRegistry): void {
         const {env, instance} = instanceDetails();
         registry.registerCommand(SendFeedbackCommand, {
@@ -202,10 +217,22 @@ export class TheiaSubstrateExtensionCommandContribution implements CommandContri
                 if (this.terminalService.all.length == 0) {
                     await openTerminal(this.terminalService);
                 }
-                const uri = await this.locateDevcontainer();
+                const uri = await locateDevcontainer(this.workspaceService, this.fileService);
                 if (uri) {
                     const file = await this.fileService.readFile(uri);
-                    const { postStartCommand, postAttachCommand } = JSON.parse(file.value.toString());
+                    const { menuActions, postStartCommand, postAttachCommand } = JSON.parse(file.value.toString());
+                    if (Array.isArray(menuActions)) {
+                        menuActions.forEach(([id, label, type, args]) => {
+                            const command = {id: id, label: label};
+                            registry.registerCommand(command, {
+                                execute: async () => {
+                                    executeAction(type, args);
+                                }
+                            });
+                        });
+                    } else if (menuActions) {
+                        console.error(`Incorrect value for menuActions: ${menuActions}`);
+                    }
                     if (typeof postStartCommand === "string") {
                         const terminal = this.terminalService.all[0];
                         terminal.sendText(postStartCommand+'\r');
@@ -224,18 +251,40 @@ export class TheiaSubstrateExtensionCommandContribution implements CommandContri
 @injectable()
 export class TheiaSubstrateExtensionMenuContribution implements MenuContribution {
 
-    registerMenus(menus: MenuModelRegistry): void {
+    @inject(WorkspaceService)
+    protected readonly workspaceService: WorkspaceService;
+
+    @inject(FileService)
+    protected readonly fileService: FileService;
+
+    async registerMenus(menus: MenuModelRegistry): Promise<void> {
         const PLAYGROUND = [...MAIN_MENU_BAR, '8_playground'];
-        //const PLAYGROUND_STOP_INSTANCE = [...PLAYGROUND, '1_links'];
-        const PLAYGROUND_SEND_FEEDBACK = [...PLAYGROUND, '2_feedback'];
         menus.registerSubmenu(PLAYGROUND, 'Playground');
-        /*menus.registerMenuAction(PLAYGROUND_STOP_INSTANCE, {
+        /*const PLAYGROUND_STOP_INSTANCE = [...PLAYGROUND, '1_links'];
+        menus.registerMenuAction(PLAYGROUND_STOP_INSTANCE, {
             commandId: StopInstanceCommand.id,
             order: "1"
         });*/
+        const feedbackIndex = 2;
+        const PLAYGROUND_SEND_FEEDBACK = [...PLAYGROUND, '${feedbackIndex}_feedback'];
         menus.registerMenuAction(PLAYGROUND_SEND_FEEDBACK, {
             commandId: SendFeedbackCommand.id
         });
+        const uri = await locateDevcontainer(this.workspaceService, this.fileService);
+        if (uri) {
+            const file = await this.fileService.readFile(uri);
+            const { menuActions } = JSON.parse(file.value.toString());
+            if (Array.isArray(menuActions)) {
+                menuActions.forEach(([id], i) => {
+                    const MENU_ITEM = [...PLAYGROUND, `${feedbackIndex+1+i}_${id}`];
+                    menus.registerMenuAction(MENU_ITEM, {
+                        commandId: id
+                    });
+                });
+            } else if (menuActions) {
+                console.error(`Incorrect value for menuActions: ${menuActions}`);
+            }
+        }
     }
 
 }

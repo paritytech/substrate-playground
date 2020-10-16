@@ -86,6 +86,7 @@
     "scripts": {
         "prepare": "theia build --mode development",
         "start": "theia start --mode development",
-        "watch": "theia build --watch --mode development"
+        "watch": "theia build --watch --mode development",
+        "clean": "rm -rf node_modules/ src-gen/ lib/ plugins/ gen-webpack.config.js"
     }
 }
