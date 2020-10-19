@@ -220,19 +220,7 @@ export class TheiaSubstrateExtensionCommandContribution implements CommandContri
                 const uri = await locateDevcontainer(this.workspaceService, this.fileService);
                 if (uri) {
                     const file = await this.fileService.readFile(uri);
-                    const { menuActions, postStartCommand, postAttachCommand } = JSON.parse(file.value.toString());
-                    if (Array.isArray(menuActions)) {
-                        menuActions.forEach(([id, label, type, args]) => {
-                            const command = {id: id, label: label};
-                            registry.registerCommand(command, {
-                                execute: async () => {
-                                    executeAction(type, args);
-                                }
-                            });
-                        });
-                    } else if (menuActions) {
-                        console.error(`Incorrect value for menuActions: ${menuActions}`);
-                    }
+                    const { postStartCommand, postAttachCommand } = JSON.parse(file.value.toString());
                     if (typeof postStartCommand === "string") {
                         const terminal = this.terminalService.all[0];
                         terminal.sendText(postStartCommand+'\r');
@@ -257,6 +245,9 @@ export class TheiaSubstrateExtensionMenuContribution implements MenuContribution
     @inject(FileService)
     protected readonly fileService: FileService;
 
+    @inject(CommandRegistry)
+    protected readonly registry: CommandRegistry;
+
     async registerMenus(menus: MenuModelRegistry): Promise<void> {
         const PLAYGROUND = [...MAIN_MENU_BAR, '8_playground'];
         menus.registerSubmenu(PLAYGROUND, 'Playground');
@@ -275,10 +266,18 @@ export class TheiaSubstrateExtensionMenuContribution implements MenuContribution
             const file = await this.fileService.readFile(uri);
             const { menuActions } = JSON.parse(file.value.toString());
             if (Array.isArray(menuActions)) {
-                menuActions.forEach(([id], i) => {
-                    const MENU_ITEM = [...PLAYGROUND, `${feedbackIndex+1+i}_${id}`];
+                menuActions.forEach(({id, label, type, args}, i) => {
+                    const command = {id: id, label: label};
+                    this.registry.registerCommand(command, {
+                        execute: async () => {
+                            executeAction(type, args);
+                        }
+                    });
+
+                    const index = `${feedbackIndex+1+i}_${id}`;
+                    const MENU_ITEM = [...PLAYGROUND, index];
                     menus.registerMenuAction(MENU_ITEM, {
-                        commandId: id
+                        commandId: command.id
                     });
                 });
             } else if (menuActions) {
