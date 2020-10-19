@@ -45,10 +45,6 @@ jobs:
     if: "! contains(github.event.head_commit.message, '[CI Skip]')"
     steps:
 
-      # Workaround https://github.com/actions-rs/toolchain/issues/110
-      - name: Make toolchain version available in current directory
-        run: cp backend/rust-toolchain .
-
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
@@ -56,6 +52,10 @@ jobs:
           components: rustfmt, clippy
 
       - uses: actions/checkout@v2
+
+      # Workaround https://github.com/actions-rs/toolchain/issues/110
+      - name: Make toolchain version available in current directory
+        run: cp backend/rust-toolchain .
 
       - name: Check Formatting
         run: cargo check-fmt
