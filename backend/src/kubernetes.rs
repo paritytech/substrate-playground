@@ -473,7 +473,7 @@ impl Engine {
         let instance_template = &Template::parse(&template)?;
 
         // Create a unique ID for this instance
-        let instance_uuid = format!("{}", user_uuid);
+        let instance_uuid = user_uuid.to_string();
         let namespace = &self.namespace;
 
         let pod_api: Api<Pod> = Api::namespaced(client.clone(), namespace);
