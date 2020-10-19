@@ -82,6 +82,8 @@ jobs:
         with:
           install: true
 
+      - uses: actions/checkout@v2
+
       - name: Build frontend Dockerfile
         run: cd frontend && docker build -f Dockerfile .
 
