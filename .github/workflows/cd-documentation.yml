@@ -6,7 +6,7 @@ on:
     - master
     - develop
     paths:
-    - '.github/workflows/book.yml'
+    - '.github/workflows/cd-documentation.yml'
     - 'docs/**'
 
 jobs:
