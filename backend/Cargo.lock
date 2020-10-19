@@ -1366,7 +1366,7 @@ name = "playground"
 version = "0.1.0"
 dependencies = [
  "env_logger",
- "hyper 0.10.16",
+ "hyper 0.13.6",
  "hyper-sync-rustls",
  "k8s-openapi",
  "kube",
