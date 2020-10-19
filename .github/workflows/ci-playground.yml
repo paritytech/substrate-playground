@@ -45,17 +45,17 @@ jobs:
     if: "! contains(github.event.head_commit.message, '[CI Skip]')"
     steps:
 
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          override: true
-          components: rustfmt, clippy
-
       - uses: actions/checkout@v2
 
       # Workaround https://github.com/actions-rs/toolchain/issues/110
       - name: Make toolchain version available in current directory
         run: cp backend/rust-toolchain .
+
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          override: true
+          components: rustfmt, clippy
 
       - name: Check Formatting
         run: cargo check-fmt
@@ -78,11 +78,11 @@ jobs:
     if: "! contains(github.event.head_commit.message, '[CI Skip]')"
     steps:
 
+      - uses: actions/checkout@v2
+
       - uses: docker/setup-buildx-action@v1
         with:
           install: true
-
-      - uses: actions/checkout@v2
 
       - name: Build frontend Dockerfile
         run: cd frontend && docker build -f Dockerfile .
