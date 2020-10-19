@@ -2,8 +2,8 @@ External users can provide and maintain templates used by the playground.
 
 To create a template the following steps are mandatory:
 
-* create `.devcontainer/devcontainer.json` (find an example [here](.github/workflow-templates/devcontainer.json))
-* create a Github worflow that build this image then dispatches an event to `substrate-playground` (find an example [here](.github/workflow-templates/cd-template.yml))
+* create `.devcontainer/devcontainer.json` (find an example [here](https://github.com/paritytech/substrate-playground/blob/develop/.github/workflow-templates/devcontainer.json))
+* create a Github worflow that build this image then dispatches an event to `substrate-playground` (find an example [here](https://github.com/paritytech/substrate-playground/blob/develop/.github/workflow-templates/cd-template.yml))
 
 Additionally there are a number of standard VSCode configuration files that will be leveraged by the playground:
 
