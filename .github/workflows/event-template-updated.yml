@@ -19,7 +19,7 @@ env:
   DOCKER_BUILDKIT: 1
   TEMPLATE_ID: ${{ github.event.client_payload.id }}
   TEMPLATE_REF: ${{ github.event.client_payload.ref }}
-  BASE_TEMPLATE_VERSION: sha-ab5960e
+  BASE_TEMPLATE_VERSION: sha-c5ccc0f
 
 jobs:
   build-and-push:
