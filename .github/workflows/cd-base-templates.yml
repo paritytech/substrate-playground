@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - develop
-      - master
     paths:
       - ".github/workflows/cd-base-templates.yml"
       - "templates/**"
