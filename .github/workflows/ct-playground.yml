@@ -42,6 +42,6 @@ jobs:
         uses: peter-evans/create-issue-from-file@v2
         with:
           title: Integration tests failed
-          content-filepath: ./templates/ct-issue.md
+          content-filepath: ../workflows-templates/ct-issue.md
           labels: report, automated issue
           assignees: jeluard
