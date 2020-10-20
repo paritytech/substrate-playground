@@ -472,8 +472,8 @@ impl Engine {
             .ok_or_else(|| format!("Unknow image {}", template_id))?;
         let instance_template = &Template::parse(&template)?;
 
-        // Create a unique ID for this instance
-        let instance_uuid = user_uuid.to_string();
+        // Create a unique ID for this instance. Use lowercase to make sure the result can be used as part of a DNS
+        let instance_uuid = user_uuid.to_string().to_lowercase();
         let namespace = &self.namespace;
 
         let pod_api: Api<Pod> = Api::namespaced(client.clone(), namespace);
