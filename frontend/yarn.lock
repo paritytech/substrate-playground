@@ -2542,10 +2542,10 @@ braces@^3.0.1, braces@~3.0.2:
   dependencies:
     fill-range "^7.0.1"
 
-broadcast-channel@3.2.1:
-  version "3.2.1"
-  resolved "https://registry.yarnpkg.com/broadcast-channel/-/broadcast-channel-3.2.1.tgz#b30b90fb3f87a6bd4086fc450ec8b5bcc708442f"
-  integrity sha512-RH8GDrwgVUWGZtRD3f0wkTu9GOdCwtiUF5z8f1INkUEWTTWLpjiisF8JE3G8ytmhpeIO5WtO6hCvJSl6MCa05Q==
+broadcast-channel@3.3.0:
+  version "3.3.0"
+  resolved "https://registry.yarnpkg.com/broadcast-channel/-/broadcast-channel-3.3.0.tgz#5541bbec6b4e9ee03f4c5462a52b0bc5ecd0690c"
+  integrity sha512-mi0xKJxdHHMb/PqIGLybPlAHMqs/ShxXSylaVYVM20ViizXEbjaXAy9Q6YalUGX5FoAls0UBNaT8mX8LR259bA==
   dependencies:
     "@babel/runtime" "^7.7.2"
     detect-node "^2.0.4"
