@@ -99,7 +99,7 @@ ifeq ($(SKIP_ACK), )
 endif
 
 k8s-setup-development: k8s-assert
-	kubectl config use-context docker-for-desktop
+	kubectl config use-context docker-desktop
 	kubectl config set-context --current --namespace=${IDENTIFIER}
 
 k8s-setup-gke: k8s-assert
