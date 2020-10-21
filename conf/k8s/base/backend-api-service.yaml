@@ -5,7 +5,8 @@ metadata:
 spec:
   type: NodePort
   ports:
-  - port: 80
+  - name: api-port
+    port: 80
     targetPort: 80
   selector:
     app.kubernetes.io/component: backend-api

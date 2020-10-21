@@ -26,7 +26,8 @@ Set required ConfigMap and Secret as defined in the newly created OAuth app:
 
 ```shell
 kubectl create configmap config --namespace=playground-staging --from-literal=github.clientId=''
-kubectl create secret generic secrets --namespace=playground-staging --from-literal=github.clientSecret=''
+ROCKET_SECRET_KEY=`openssl rand -base64 32`
+kubectl create secret generic secrets --namespace=playground-staging --from-literal=github.clientSecret='' --from-literal=rocket.secretKey='ROCKET_SECRET_KEY'
 ```
 
 Deploy on GKE:

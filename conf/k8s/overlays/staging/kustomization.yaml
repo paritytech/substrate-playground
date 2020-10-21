@@ -22,7 +22,7 @@ patches:
       path: /spec/rules/0/host
       value: playground-staging.substrate.dev
   target:
-    group: extensions
+    group: networking.k8s.io
     kind: Ingress
     name: ingress
     version: v1beta1
@@ -32,8 +32,8 @@ patchesStrategicMerge:
   apiVersion: v1
   kind: Service
   metadata:
-    name: ingress-nginx
-    namespace: ingress-nginx
+    name: ingress-nginx-controller
+    namespace: ingress-nginx-controller
   spec:
     loadBalancerIP: 34.69.4.59
 - |-

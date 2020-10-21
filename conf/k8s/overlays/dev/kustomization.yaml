@@ -23,7 +23,7 @@ patches:
       path: /spec/rules/0/host
       value: playground-dev.substrate.test
   target:
-    group: extensions
+    group: networking.k8s.io
     kind: Ingress
     name: ingress
     version: v1beta1
@@ -38,3 +38,4 @@ secretGenerator:
     literals:
     # Safe as it is used for a .test TLD (can't be registered)
     - github.clientSecret=abdcf38dd290429b98f43074d010b989cf970461
+    - rocket.secretKey=tNxYqkQ5o9KiT8mQPVxqxu+H2Sl+Jd4CxkpFZmkw6Kw=

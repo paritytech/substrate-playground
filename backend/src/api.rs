@@ -232,7 +232,7 @@ pub fn post_install_callback(
 
     if !response2.status.is_success() {
         return Err(format!(
-            "Errorwhen accessing GitHub organizations: {}",
+            "Error when accessing GitHub organizations: {}",
             response2.status
         ));
     }
@@ -283,6 +283,8 @@ fn clear(mut cookies: Cookies<'_>) {
     cookies.remove_private(Cookie::named(COOKIE_USERNAME));
     cookies.remove_private(Cookie::named(COOKIE_AVATAR));
     cookies.remove_private(Cookie::named(COOKIE_TOKEN));
+    cookies.remove_private(Cookie::named(COOKIE_PARITY));
+    cookies.remove_private(Cookie::named(COOKIE_ADMIN));
 }
 
 #[allow(dead_code)]
