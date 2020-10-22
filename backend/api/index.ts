@@ -9,7 +9,7 @@ function timeout<T>(promise: Promise<T>, ms: number): Promise<T> {
     });
 }
 
-async function fetchWithTimeout(url: string, opts: Object = {cache: "no-store"}, ms: number = 30000): Promise<Response | Error>  {
+async function fetchWithTimeout(url: string, opts: Object, ms: number = 30000): Promise<Response | Error>  {
     return timeout(fetch(url, opts), ms).catch((error: Error) => error);
 }
 
@@ -71,11 +71,14 @@ function playgroundBaseURL(env: Environment) {
     }
 }
 
+const DEFAULT_OPTS = {credentials: "include"};
+
 export class Client {
 
     base;
+    defaultOpts;
 
-    constructor({ base, env }: {base?: string, env?: Environment}) {
+    constructor({ base, env, defaultOpts = DEFAULT_OPTS }: {base?: string, env?: Environment, defaultOpts?: Object }) {
         if (!base && !env) {
             throw new Error('At least one of `base` or `env` must be set')
         }
@@ -83,40 +86,46 @@ export class Client {
             throw new Error('Both `base` or `env` cannot be set')
         }
         this.base = base || playgroundBaseURL(env);
+        this.defaultOpts = defaultOpts;
     }
 
-    async getDetails(): Promise<RPCResponse<Details>> {
+    async getDetails(opts: Object = this.defaultOpts): Promise<RPCResponse<Details>> {
         return fromResponse(await fetchWithTimeout(this.base, {
             method: 'GET',
-            headers: headers
+            headers: headers,
+            ...opts
         }));
     }
     
-    async getInstanceDetails(instanceUUID: string): Promise<JSONRPCResponse<Phase>> {
+    async getInstanceDetails(instanceUUID: string, opts: Object = this.defaultOpts): Promise<JSONRPCResponse<Phase>> {
         return fromResponse(await fetchWithTimeout(`${this.base}/${instanceUUID}`, {
             method: 'GET',
-            headers: headers
+            headers: headers,
+            ...opts
         }));
     }
     
-    async deployInstance(template: string) {
+    async deployInstance(template: string, opts: Object = this.defaultOpts) {
         return fromResponse(await fetchWithTimeout(`${this.base}/?template=${template}`, {
             method: 'POST',
-            headers: headers
+            headers: headers,
+            ...opts
         }));
     }
     
-    async stopInstance(instanceUUID: string) {
+    async stopInstance(instanceUUID: string, opts: Object = this.defaultOpts) {
         return fromResponse(await fetchWithTimeout(`${this.base}/${instanceUUID}`, {
             method: 'DELETE',
-            headers: headers
+            headers: headers,
+            ...opts
         }));
     }
     
-    async logout() {
+    async logout(opts: Object = this.defaultOpts) {
         return fromResponse(await fetchWithTimeout(`${this.base}/logout`, {
             method: 'GET',
-            headers: headers
+            headers: headers,
+            ...opts
         }));
     }
 
