@@ -251,11 +251,11 @@ export class TheiaSubstrateExtensionMenuContribution implements MenuContribution
     async registerMenus(menus: MenuModelRegistry): Promise<void> {
         const PLAYGROUND = [...MAIN_MENU_BAR, '8_playground'];
         menus.registerSubmenu(PLAYGROUND, 'Playground');
-        /*const PLAYGROUND_STOP_INSTANCE = [...PLAYGROUND, '1_links'];
+        const PLAYGROUND_STOP_INSTANCE = [...PLAYGROUND, '1_links'];
         menus.registerMenuAction(PLAYGROUND_STOP_INSTANCE, {
             commandId: StopInstanceCommand.id,
             order: "1"
-        });*/
+        });
         const feedbackIndex = 2;
         const PLAYGROUND_SEND_FEEDBACK = [...PLAYGROUND, '${feedbackIndex}_feedback'];
         menus.registerMenuAction(PLAYGROUND_SEND_FEEDBACK, {
