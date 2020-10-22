@@ -19,10 +19,10 @@ env:
   DOCKER_BUILDKIT: 1
   TEMPLATE_ID: ${{ github.event.client_payload.id }}
   TEMPLATE_REF: ${{ github.event.client_payload.ref }}
-  BASE_TEMPLATE_VERSION: sha-b4adbff
 
 jobs:
   build-and-push:
+    name: Building ${{ env.TEMPLATE_ID }} (${{ env.TEMPLATE_REF }})
     runs-on: ubuntu-latest
     steps:
 
@@ -50,8 +50,10 @@ jobs:
           echo ::set-output name=theia-image::paritytech/substrate-playground-template-${TEMPLATE_ID}-theia:sha-${GITHUB_SHA::7}
           FILE=conf/k8s/overlays/staging/templates/$TEMPLATE_ID
           REPOSITORY=`cat $FILE | yq -r .repository`
+          BASE_TEMPLATE_VERSION=`grep BASE_TEMPLATE_VERSION .github/workflows/.env | cut -d '=' -f2`
           echo "::set-output name=repository::$( echo $REPOSITORY )"
           echo "::set-output name=ref::$( echo ${TEMPLATE_REF:-master} )"
+          echo "::set-output name=base::$( echo ${BASE_TEMPLATE_VERSION} )"
         id: env
 
       - name: Checkout remote repository
@@ -120,7 +122,7 @@ jobs:
         with:
           context: template
           file: templates/Dockerfile.template
-          build-args: BASE_TEMPLATE_VERSION=${{ env.BASE_TEMPLATE_VERSION }}
+          build-args: BASE_TEMPLATE_VERSION=${{ steps.env.outputs.base }}
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.prep-template.outputs.tags }}
           labels: |
@@ -133,7 +135,7 @@ jobs:
         with:
           context: templates
           file: templates/Dockerfile.theia-template
-          build-args: BASE_TEMPLATE_VERSION=${{ env.BASE_TEMPLATE_VERSION }},TEMPLATE_IMAGE=${{ steps.env.outputs.image }}
+          build-args: BASE_TEMPLATE_VERSION=${{ steps.env.outputs.base }},TEMPLATE_IMAGE=${{ steps.env.outputs.image }}
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.prep-template-theia.outputs.tags }}
           labels: |

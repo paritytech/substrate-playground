@@ -111,8 +111,9 @@ jobs:
       - run: echo ::set-output name=sha::sha-${GITHUB_SHA::7}
         id: env
 
-      - name: Update Dockerfile.template base image
-        run: sed -i 's/BASE_TEMPLATE_VERSION:\ sha-[^. ]*/BASE_TEMPLATE_VERSION:\ ${{ steps.env.outputs.sha }}/g' .github/workflows/event-template-updated.yml
+# TODO update .env
+      - name: Update event-template-updated.yml
+        run: sed -i 's/BASE_TEMPLATE_VERSION=sha-[^. ]*/BASE_TEMPLATE_VERSION=${{ steps.env.outputs.sha }}/g' .github/workflows/.env
 
       - uses: EndBug/add-and-commit@v4
         with:

@@ -5,14 +5,9 @@ metadata:
   name: templates
 data:
   recipes: |
-    image: paritytech/substrate-playground-template-recipes-theia:sha-3fbbcfe
-    name: Recipes
-    description: '## A Hands-On Cookbook for Aspiring Blockchain Chefs
-
-
-      Contains some real nodes!
-
-      '
+    image: paritytech/substrate-playground-template-test-theia:latest
+    name: Test
+    description: 'A stock template'
     public: true
     runtime:
       ports:

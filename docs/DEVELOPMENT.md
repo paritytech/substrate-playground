@@ -60,6 +60,14 @@ An alternative is to use [skaffold](https://skaffold.dev/). This tool will re-co
 make k8s-dev
 ```
 
+Additionally, to use a fresh `Test` template, run the following before:
+
+```bash
+make build-template-base
+make build-template-theia-base
+make push-test-templates
+```
+
 ## Dashboard
 
 Some simple dashboards can be deployed to offer finer grain cluster details.
