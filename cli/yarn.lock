@@ -253,10 +253,10 @@
     lodash "^4.17.19"
     to-fast-properties "^2.0.0"
 
-"@substrate/playground-api@1.0.1":
-  version "1.0.1"
-  resolved "https://registry.yarnpkg.com/@substrate/playground-api/-/playground-api-1.0.1.tgz#54b0fa552da5d1fd5bf3c79a756976acb0750640"
-  integrity sha512-Hlk9sCrxIJuj0nav2Ikg5sMYQ/BRHrDKhMyIhCZMYaHK0OoeE8SUJDSdDdn0aDqYb/HZtcHbxPRDioWox+dGxQ==
+"@substrate/playground-api@1.0.3":
+  version "1.0.3"
+  resolved "https://registry.yarnpkg.com/@substrate/playground-api/-/playground-api-1.0.3.tgz#683aaa3c8d8db367e194126335704029d1f2da95"
+  integrity sha512-Iit212HzqcaitCfTLDmyHJvF6z9S3lfRCEieq9eNkBCxos2Md8pUpDcddipZPZYc8Sa5Vd52tghaAOp6G5AI6g==
   dependencies:
     cross-fetch "3.0.6"
 
