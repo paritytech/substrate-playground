@@ -149,7 +149,7 @@ export function AdminPanel({ client }) {
     const details = state.context.details;
     return (
         <div style={{ display: "flex", height: "100vh", alignItems: "center", justifyContent: "center"}}>
-            <Wrapper send={send} details={details}>
+            <Wrapper client={client} send={send} details={details}>
                 <div>
                 ADMIN PANEL
                 </div>
@@ -270,7 +270,7 @@ export function TheiaInstance({ uuid, embedded = false, client }: { uuid: string
         return <iframe ref={ref} src={data.url} frameBorder="0" width="100%" height="100%"></iframe>
     } else {
         return (
-        <Wrapper send={send} details={details} embedded={embedded}>
+        <Wrapper client={client} send={send} details={details} embedded={embedded}>
             <Container style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
                 <Paper style={{ display: "flex", flexDirection: "column", height: "60vh", width: "60vw", justifyContent: "center"}} elevation={3}>
                     {(details == null || user)
@@ -329,7 +329,7 @@ function LoginPanel() {
         </Container>);
 }
 
-function Nav({ send, details, toggleDetails }) {
+function Nav({ client, send, details, toggleDetails }) {
     const user = details?.user;
     const history = useHistory();
     const [anchorEl, setAnchorEl] = React.useState(null);
@@ -383,7 +383,7 @@ function Nav({ send, details, toggleDetails }) {
                                 onClose={handleClose}
                             >
                                 <MenuItem onClick={async () => {handleClose(); await navigateToAdmin(history)}}>ADMIN</MenuItem>
-                                <MenuItem onClick={async () => {handleClose(); await logout(); await navigateToHomepage(history); send(restart)}}>LOGOUT</MenuItem>
+                                <MenuItem onClick={async () => {handleClose(); await client.logout(); await navigateToHomepage(history); send(restart)}}>LOGOUT</MenuItem>
                             </Menu>
                         </div>
                         : <Button onClick={login} startIcon={<GitHubIcon />}>LOGIN</Button>}
@@ -617,7 +617,7 @@ export function MainPanel({ client }) {
 
     return (
         <div style={{ display: "flex", width: "100vw", height: "100vh" }}>
-            <Wrapper send={send} details={details}>
+            <Wrapper client={client} send={send} details={details}>
                 <Container style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
                     <Paper style={{ display: "flex", flexDirection: "column", height: "60vh", width: "60vw", justifyContent: "center"}} elevation={3}>
                         <Content />
@@ -628,7 +628,7 @@ export function MainPanel({ client }) {
     );
 }
 
-export function Wrapper({ send, details, embedded = false, children}) {
+export function Wrapper({ client, send, details, embedded = false, children}) {
     const [showDetails, setDetails] = useState(false);
     function toggleDetails() { setDetails(!showDetails); }
     return (
@@ -646,7 +646,7 @@ export function Wrapper({ send, details, embedded = false, children}) {
             </Dialog>
 
             {!embedded &&
-            <Nav send={send} details={details} toggleDetails={toggleDetails} />}
+            <Nav client={client} send={send} details={details} toggleDetails={toggleDetails} />}
 
             <Fade in appear>
                 <Container style={{ display: "flex", flex: "1", alignItems: "center" }}>
