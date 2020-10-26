@@ -4,7 +4,9 @@
 
 A hosted website that enables the user to navigate [Substrate](https://github.com/paritytech/substrate) runtimes, modify them and run remotely accessible chain. In a couple minutes!
 
-![Playground Demo](docs/assets/demo.gif)
+<p align="center">
+  <img width="600" src="docs/assets/demo.gif" alt="Playground demo">
+</p>
 
 Playground allows end-user to spin up a substrate based development environment in seconds. A full machine with terminal is then available from a web browser, ready to launch a chain and remotely access it.
 Playground templates can be [created and maintained](https://paritytech.github.io/substrate-playground/CUSTOM_TEMPLATE.html) by 3rd parties. Playground instances can be [integrated and manipulated](https://paritytech.github.io/substrate-playground/INTEGRATION.html) via a JavaScript API.
@@ -29,7 +31,7 @@ npx @substrate/playground-cli
 Then [browse](http://localhost) a locally accessible web IDE.
 
 <p align="center">
-  <img width="600" src="https://cdn.rawgit.com/paritytech/substrate-playground/develop/cli/assets/web.svg">
+  <img width="600" src="https://cdn.rawgit.com/paritytech/substrate-playground/develop/cli/assets/web.svg" alt="CLI demo">
 </p>
 
 Find more details [here](cli/README.md)
