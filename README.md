@@ -2,7 +2,7 @@
 
 # Substrate playground
 
-A hosted website that enables the user to navigate [Substrate](https://github.com/paritytech/substrate) runtimes, modify them and run remotely accessible chain. In a couple minutes!
+A hosted website that enables the user to navigate [Substrate](https://github.com/paritytech/substrate) runtimes, modify them and run remotely accessible chain. In a couple seconds!
 
 <p align="center">
   <img width="600" src="docs/assets/demo.gif" alt="Playground demo">
