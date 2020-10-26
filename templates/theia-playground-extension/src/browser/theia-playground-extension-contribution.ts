@@ -199,7 +199,7 @@ export class TheiaSubstrateExtensionCommandContribution implements CommandContri
         });
         registry.registerCommand(StopInstanceCommand, {
             execute: async () => {
-                const client = new Client({env: env});
+                const client = new Client({env: env}, {credentials: "include"});
                 client.stopInstance(instance);
             }
         });
