@@ -4,7 +4,10 @@ metadata:
   name: ingress
   annotations:
     kubernetes.io/ingress.class: "nginx"
-    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      more_set_headers 'Access-Control-Allow-credentials: true';
+      more_set_headers 'Access-Control-Allow-Methods: PUT, GET, POST, PATCH, DELETE, OPTIONS';
+      more_set_headers 'Access-Control-Allow-Origin: $http_origin';
 spec:
   rules:
   - http:

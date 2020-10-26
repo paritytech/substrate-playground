@@ -30,17 +30,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     }
     env_logger::init();
 
-    // Configure CORS
-    let allowed_origins = AllowedOrigins::All;
-    let cors = CorsOptions {
-        allowed_origins,
-        allowed_methods: vec![Method::Get].into_iter().map(From::from).collect(),
-        //TODO only from host
-        //allowed_headers: AllowedHeaders::some(&["Authorization", "Accept"]),
-        allow_credentials: true,
-        ..Default::default()
-    }
-    .to_cors()?;
+    // Prints basic details
 
     log::info!("Running in {:?} mode", Environment::active()?);
 
@@ -54,7 +44,22 @@ async fn main() -> Result<(), Box<dyn Error>> {
         env::var("GITHUB_CLIENT_SECRET").map_err(|_| "GITHUB_CLIENT_SECRET must be set")?;
 
     let manager = Manager::new().await?;
+    let engine = manager.clone().engine;
+    let host = engine.host;
+    let namespace = engine.namespace;
     manager.clone().spawn_background_thread();
+
+    log::info!("Host {} {}", host, namespace);
+
+    // Configure CORS
+    let cors = CorsOptions {
+        allowed_origins: AllowedOrigins::some_regex( &[format!("https?://{}", host), format!("^https?://(.+).{}$", host)]),
+        allowed_methods: vec![Method::Get, Method::Delete].into_iter().map(From::from).collect(),
+        allow_credentials: true,
+        ..Default::default()
+    }
+    .to_cors()?;
+
     let prometheus = PrometheusMetrics::with_registry(manager.clone().metrics.create_registry()?);
     let error = rocket::ignite()
         .register(catchers![api::bad_request_catcher])

@@ -46,7 +46,7 @@ fn running_instances(
 
 #[derive(Clone)]
 pub struct Manager {
-    engine: Engine,
+    pub engine: Engine,
     pub metrics: Metrics,
     instances: Arc<Mutex<BTreeMap<String, String>>>,
 }

@@ -231,8 +231,8 @@ pub async fn get_templates(
 
 #[derive(Clone)]
 pub struct Engine {
-    host: String,
-    namespace: String,
+    pub host: String,
+    pub namespace: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
