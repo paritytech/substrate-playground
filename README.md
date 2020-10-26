@@ -4,6 +4,11 @@
 
 A hosted website that enables the user to navigate [Substrate](https://github.com/paritytech/substrate) runtimes, modify them and run remotely accessible chain. In a couple minutes!
 
+![Playground Demo](docs/assets/demo.gif)
+
+Playground allows end-user to spin up a substrate based development environment in seconds. A full machine with terminal is then available from a web browser, ready to launch a chain and remotely access it.
+Playground templates can be [created and maintained](https://paritytech.github.io/substrate-playground/CUSTOM_TEMPLATE.html) by 3rd parties. Playground instances can be [integrated and manipulated](https://paritytech.github.io/substrate-playground/INTEGRATION.html) via a JavaScript API.
+
 ## Trying it out
 
 ### Web
@@ -35,11 +40,11 @@ Documentation can be found at [paritytech.github.io/substrate-playground/](https
 
 ### Integrate
 
-Playground can be [integrated](docs/INTEGRATION.md) in external pages. This opens the door for more advanced usage e.g. interactive tutorials.
+Playground can be [integrated](https://paritytech.github.io/substrate-playground/INTEGRATION.html) in external pages. This opens the door for more advanced usage e.g. interactive tutorials.
 
 ### Contribute a template
 
-Extra `template` (custom docker images) can be [created](docs/CUSTOM_TEMPLATE.md) and made available on playground.
+Extra `template` (custom docker images) can be [created](https://paritytech.github.io/substrate-playground/CUSTOM_TEMPLATE.html) and made available on playground.
 
 ## Roadmap
 
