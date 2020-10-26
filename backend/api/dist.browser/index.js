@@ -16,7 +16,7 @@ function timeout(promise, ms) {
         promise.then(resolve, reject);
     });
 }
-function fetchWithTimeout(url, opts = { cache: "no-store" }, ms = 30000) {
+function fetchWithTimeout(url, opts, ms = 30000) {
     return __awaiter(this, void 0, void 0, function* () {
         return timeout(fetch(url, opts), ms).catch((error) => error);
     });
@@ -59,8 +59,9 @@ function playgroundBaseURL(env) {
             throw new Error(`Unrecognized env ${env}`);
     }
 }
+const DEFAULT_OPTS = { credentials: "include" };
 export class Client {
-    constructor({ base, env }) {
+    constructor({ base, env, defaultOpts = DEFAULT_OPTS }) {
         if (!base && !env) {
             throw new Error('At least one of `base` or `env` must be set');
         }
@@ -68,45 +69,31 @@ export class Client {
             throw new Error('Both `base` or `env` cannot be set');
         }
         this.base = base || playgroundBaseURL(env);
+        this.defaultOpts = defaultOpts;
     }
-    getDetails() {
+    getDetails(opts = this.defaultOpts) {
         return __awaiter(this, void 0, void 0, function* () {
-            return fromResponse(yield fetchWithTimeout(this.base, {
-                method: 'GET',
-                headers: headers
-            }));
+            return fromResponse(yield fetchWithTimeout(this.base, Object.assign({ method: 'GET', headers: headers }, opts)));
         });
     }
-    getInstanceDetails(instanceUUID) {
+    getInstanceDetails(instanceUUID, opts = this.defaultOpts) {
         return __awaiter(this, void 0, void 0, function* () {
-            return fromResponse(yield fetchWithTimeout(`${this.base}/${instanceUUID}`, {
-                method: 'GET',
-                headers: headers
-            }));
+            return fromResponse(yield fetchWithTimeout(`${this.base}/${instanceUUID}`, Object.assign({ method: 'GET', headers: headers }, opts)));
         });
     }
-    deployInstance(template) {
+    deployInstance(template, opts = this.defaultOpts) {
         return __awaiter(this, void 0, void 0, function* () {
-            return fromResponse(yield fetchWithTimeout(`${this.base}/?template=${template}`, {
-                method: 'POST',
-                headers: headers
-            }));
+            return fromResponse(yield fetchWithTimeout(`${this.base}/?template=${template}`, Object.assign({ method: 'POST', headers: headers }, opts)));
         });
     }
-    stopInstance(instanceUUID) {
+    stopInstance(instanceUUID, opts = this.defaultOpts) {
         return __awaiter(this, void 0, void 0, function* () {
-            return fromResponse(yield fetchWithTimeout(`${this.base}/${instanceUUID}`, {
-                method: 'DELETE',
-                headers: headers
-            }));
+            return fromResponse(yield fetchWithTimeout(`${this.base}/${instanceUUID}`, Object.assign({ method: 'DELETE', headers: headers }, opts)));
         });
     }
-    logout() {
+    logout(opts = this.defaultOpts) {
         return __awaiter(this, void 0, void 0, function* () {
-            return fromResponse(yield fetchWithTimeout(`${this.base}/logout`, {
-                method: 'GET',
-                headers: headers
-            }));
+            return fromResponse(yield fetchWithTimeout(`${this.base}/logout`, Object.assign({ method: 'GET', headers: headers }, opts)));
         });
     }
 }

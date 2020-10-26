@@ -22,7 +22,7 @@
     "clean": "rm -rf node_modules/ yarn.lock"
   },
   "dependencies": {
-    "@substrate/playground-api": "1.0.2",
+    "@substrate/playground-api": "1.0.3",
     "import-jsx": "4.0.0",
     "ink": "3.0.8",
     "ink-big-text": "1.2.0",
