@@ -33,7 +33,7 @@ patchesStrategicMerge:
   kind: Service
   metadata:
     name: ingress-nginx-controller
-    namespace: ingress-nginx-controller
+    namespace: ingress-nginx
   spec:
     loadBalancerIP: 34.69.4.59
 - |-
