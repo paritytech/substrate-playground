@@ -40,7 +40,7 @@ ARG GITHUB_SHA
 
 ENV GITHUB_SHA=$GITHUB_SHA\
     RUST_BACKTRACE=full\
-    RUST_LOG="warn"
+    RUST_LOG="warn,playground=info"
 
 COPY --from=builder /opt/bin/$BINARY_NAME /
 
