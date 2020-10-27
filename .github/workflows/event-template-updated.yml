@@ -135,7 +135,9 @@ jobs:
         with:
           context: templates
           file: templates/Dockerfile.theia-template
-          build-args: BASE_TEMPLATE_VERSION=${{ steps.env.outputs.base }},TEMPLATE_IMAGE=${{ steps.env.outputs.image }}
+          build-args: |
+            BASE_TEMPLATE_VERSION=${{ steps.env.outputs.base }}
+            TEMPLATE_IMAGE=${{ steps.env.outputs.image }}
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.prep-template-theia.outputs.tags }}
           labels: |
