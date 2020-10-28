@@ -149,6 +149,7 @@ pub fn deploy_unlogged() -> status::Unauthorized<()> {
 
 #[delete("/<instance_uuid>")]
 pub fn undeploy(state: State<'_, Context>, user: User, instance_uuid: String) -> JsonValue {
+    // TODO only delete your own instance
     let manager = state.manager.clone();
     result_to_jsonrpc(manager.undeploy(&user.username, &instance_uuid))
 }
