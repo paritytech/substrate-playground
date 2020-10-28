@@ -15,7 +15,7 @@ spec:
         app.kubernetes.io/component: backend-ui
     spec:
       containers:
-      - name: playground
+      - name: backend-ui
         image: paritytech/substrate-playground-backend-ui
         ports:
         - containerPort: 80
