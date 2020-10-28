@@ -108,7 +108,7 @@ function InstanceController({ instances }) {
             <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <Typography variant="h6">
                     No instance detected
-            </Typography>
+                </Typography>
             </div>
         );
     }
