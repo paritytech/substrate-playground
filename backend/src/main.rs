@@ -53,8 +53,14 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     // Configure CORS
     let cors = CorsOptions {
-        allowed_origins: AllowedOrigins::some_regex( &[format!("https?://{}", host), format!("^https?://(.+).{}$", host)]),
-        allowed_methods: vec![Method::Get, Method::Delete].into_iter().map(From::from).collect(),
+        allowed_origins: AllowedOrigins::some_regex(&[
+            format!("https?://{}", host),
+            format!("^https?://(.+).{}$", host),
+        ]),
+        allowed_methods: vec![Method::Get, Method::Delete]
+            .into_iter()
+            .map(From::from)
+            .collect(),
         allow_credentials: true,
         ..Default::default()
     }
