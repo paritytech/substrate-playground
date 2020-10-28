@@ -1,5 +1,6 @@
 .DEFAULT_GOAL=help
 
+# ENVIRONMENT defaults to dev
 ifeq ($(ENVIRONMENT),)
   ENVIRONMENT=dev
 endif
@@ -10,20 +11,24 @@ ifeq ($(filter $(ENVIRONMENT),$(ENVIRONMENTS)),)
     $(error ENVIRONMENT should be one of ($(ENVIRONMENTS)) but was $(ENVIRONMENT))
 endif
 
-ifeq ($(ENVIRONMENT), production)
-  IDENTIFIER=playground
-else ifeq ($(ENVIRONMENT), dev)
-  IDENTIFIER=default
-else
-  IDENTIFIER=playground-${ENVIRONMENT}
-endif
-
 GKE_REGION=us-central1
 DOCKER_USERNAME=paritytech
 PLAYGROUND_BACKEND_API_DOCKER_IMAGE_NAME=${DOCKER_USERNAME}/substrate-playground-backend-api
 PLAYGROUND_BACKEND_UI_DOCKER_IMAGE_NAME=${DOCKER_USERNAME}/substrate-playground-backend-ui
 TEMPLATE_BASE=${DOCKER_USERNAME}/substrate-playground-template-base
 TEMPLATE_THEIA_BASE=${DOCKER_USERNAME}/substrate-playground-template-theia-base
+
+# Derive NAMESPACE and CONTEXT from ENVIRONMENT
+ifeq ($(NAMESPACE), production)
+  NAMESPACE=playground
+  CONTEXT=gke_substrateplayground-252112_${GKE_REGION}-a_substrate-playground
+else ifeq ($(ENVIRONMENT), staging)
+  NAMESPACE=playground-staging
+  CONTEXT=gke_substrateplayground-252112_${GKE_REGION}-a_susbtrate-playground-staging
+else
+  NAMESPACE=default
+  CONTEXT=docker-desktop
+endif
 
 COLOR_BOLD:= $(shell tput bold)
 COLOR_RED:= $(shell tput bold; tput setaf 1)
@@ -88,15 +93,23 @@ push-backend-docker-images: build-backend-docker-images ## Push newly built back
 
 ##@ Kubernetes deployment
 
-k8s-assert:
-	$(eval CURRENT_NAMESPACE=$(shell kubectl config view --minify --output 'jsonpath={..namespace}'))
+k8s-setup:
 	$(eval CURRENT_CONTEXT=$(shell kubectl config current-context))
+	$(eval CURRENT_NAMESPACE=$(shell kubectl config view --minify --output 'jsonpath={..namespace}'))
 	@echo "You are about to interact with the ${COLOR_GREEN}${ENVIRONMENT}${COLOR_RESET} environment. (Modify the environment by setting the ${COLOR_BOLD}'ENVIRONMENT'${COLOR_RESET} variable)"
 	@echo "(namespace: ${COLOR_GREEN}${CURRENT_NAMESPACE}${COLOR_RESET}, context: ${COLOR_GREEN}${CURRENT_CONTEXT}${COLOR_RESET})"
-	@if [ "${CURRENT_NAMESPACE}" != "${IDENTIFIER}" ] ;then \
-	  read -p "Current namespace (${COLOR_GREEN}${CURRENT_NAMESPACE}${COLOR_RESET}) doesn't match environment. Update to ${COLOR_RED}${IDENTIFIER}${COLOR_RESET}? [yN]" proceed; \
+	@if [ "${CURRENT_CONTEXT}" != "${CONTEXT}" ] ;then \
+	  read -p "Current context (${COLOR_GREEN}${CURRENT_CONTEXT}${COLOR_RESET}) doesn't match environment. Update to ${COLOR_RED}${CONTEXT}${COLOR_RESET}? [yN]" proceed; \
 	  if [ "$${proceed}" == "Y" ] ;then \
-	  	kubectl config set-context --current --namespace=${IDENTIFIER}; \
+	  	kubectl config use-context ${CONTEXT}; \
+	  else \
+		exit 1; \
+	  fi; \
+	fi
+	@if [ "${CURRENT_NAMESPACE}" != "${NAMESPACE}" ] ;then \
+	  read -p "Current namespace (${COLOR_GREEN}${CURRENT_NAMESPACE}${COLOR_RESET}) doesn't match environment. Update to ${COLOR_RED}${NAMESPACE}${COLOR_RESET}? [yN]" proceed; \
+	  if [ "$${proceed}" == "Y" ] ;then \
+	  	kubectl config set-context --current --namespace=${NAMESPACE}; \
 	  else \
 		exit 1; \
 	  fi; \
@@ -105,37 +118,21 @@ ifeq ($(SKIP_ACK), )
 	@read -p $$'Ok to proceed? [yN]' answer; if [ "$${answer}" != "Y" ] ;then exit 1; fi
 endif
 
-k8s-setup-development: k8s-assert
-	kubectl config use-context docker-desktop
-	kubectl config set-context --current --namespace=${IDENTIFIER}
+k8s-gke-static-ip: k8s-setup
+	gcloud compute addresses describe ${NAMESPACE} --region=${GKE_REGION} --format="value(address)"
 
-k8s-setup-gke: k8s-assert
-	kubectl config use-context gke_substrateplayground-252112_us-central1-a_susbtrate-${IDENTIFIER}
-	kubectl config set-context --current --namespace=${IDENTIFIER}
-
-k8s-gke-static-ip: k8s-assert
-	gcloud compute addresses describe ${IDENTIFIER} --region=${GKE_REGION} --format="value(address)"
-
-k8s-update-playground-version:
-	$(eval PLAYGROUND_DOCKER_IMAGE_VERSION=$(shell git rev-parse --short HEAD))
-	kustomize edit set image ${PLAYGROUND_BACKEND_API_DOCKER_IMAGE_NAME}:sha-${PLAYGROUND_DOCKER_IMAGE_VERSION};
-	kustomize edit set image ${PLAYGROUND_BACKEND_UI_DOCKER_IMAGE_NAME}:sha-${PLAYGROUND_DOCKER_IMAGE_VERSION};
-
-k8s-dev: k8s-assert
+k8s-dev: k8s-setup
 	@cd conf/k8s; skaffold dev
 
-k8s-deploy-playground: k8s-assert ## Deploy playground on kubernetes
+k8s-deploy-playground: k8s-setup ## Deploy playground on kubernetes
 	kustomize build conf/k8s/overlays/${ENVIRONMENT}/ | kubectl apply --record -f -
 
-k8s-undeploy-playground: k8s-assert ## Undeploy playground from kubernetes
+k8s-undeploy-playground: k8s-setup ## Undeploy playground from kubernetes
 	# Do not delete `${ENVIRONMENT}` namespace as it would remove all ConfigMaps/Secrets too
 	kustomize build conf/k8s/overlays/${ENVIRONMENT}/ | kubectl delete -f -
 
-k8s-undeploy-theia: k8s-assert ## Undeploy all theia pods and services from kubernetes
-	kubectl delete pods,services -l app.kubernetes.io/component=theia --namespace=${IDENTIFIER}
+k8s-undeploy-theia: k8s-setup ## Undeploy all theia pods and services from kubernetes
+	kubectl delete pods,services -l app.kubernetes.io/component=theia --namespace=${NAMESPACE}
 
-k8s-create-namespace: k8s-assert
-	kubectl create namespace ${ENVIRONMENT}
-
-k8s-update-templates-config: k8s-assert ## Creates or replaces the `templates` config map from `conf/k8s/overlays/ENVIRONMENT/templates`
-	kubectl create configmap templates --namespace=${IDENTIFIER} --from-file=conf/k8s/overlays/${ENVIRONMENT}/templates/ --dry-run=client -o yaml | kubectl apply -f -
+k8s-update-templates-config: k8s-setup ## Creates or replaces the `templates` config map from `conf/k8s/overlays/ENVIRONMENT/templates`
+	kubectl create configmap templates --namespace=${NAMESPACE} --from-file=conf/k8s/overlays/${ENVIRONMENT}/templates/ --dry-run=client -o yaml | kubectl apply -f -

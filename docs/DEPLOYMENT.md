@@ -1,7 +1,6 @@
 # Update playground image
 
 * build and push new image (`make push-playground-docker-image`)
-* select right context (`ENVIRONMENT=staging make k8s-setup-gke`)
 * deploy on GKE (`ENVIRONMENT=staging make k8s-deploy-playground`)
 
 # Kubernetes
@@ -17,7 +16,7 @@ For OSX
 brew cask install google-cloud-sdk
 gcloud init
 gcloud container clusters get-credentials  susbtrate-playground-staging --zone us-central1-a
-ENVIRONMENT=staging make k8s-setup-gke
+ENVIRONMENT=staging make k8s-setup
 ```
 
 Make sure a Github OAuth App is [created](https://docs.github.com/en/developers/apps/creating-an-oauth-app). The Authorization callback URL should be `$BASE/api/auth/github`.
@@ -99,7 +98,7 @@ Then update the tls secret:
 
 ```
 gcloud container clusters get-credentials susbtrate-playground-staging --region us-central1-a
-ENVIRONMENT=staging make k8s-setup-gke
+ENVIRONMENT=staging make k8s-setup
 sudo kubectl create secret tls playground-tls --save-config --key /etc/letsencrypt/live/playground-staging.substrate.dev/privkey.pem --cert /etc/letsencrypt/live/playground-staging.substrate.dev/fullchain.pem --namespace=playground-staging --dry-run=true -o yaml | sudo kubectl apply -f -
 ```
 
@@ -118,7 +117,7 @@ Then update the tls secret:
 
 ```
 gcloud container clusters get-credentials substrate-playground --region us-central1-a
-ENVIRONMENT=production make k8s-setup-gke
+ENVIRONMENT=production make k8s-setup
 sudo kubectl create secret tls playground-tls --save-config --key /etc/letsencrypt/live/playground.substrate.dev/privkey.pem --cert /etc/letsencrypt/live/playground.substrate.dev/fullchain.pem --namespace=playground --dry-run=true -o yaml | sudo kubectl apply -f -
 ```
 
