@@ -3,8 +3,13 @@ kind: Kustomization
 resources:
 - datasources.yaml
 - deployment.yaml
+- providers.yaml
 - service.yaml
-- grafana.yaml
 images:
 - name: grafana/grafana
   newTag: 7.1.5
+configMapGenerator:
+- name: grafana-dashboards
+  files:
+  - dashboards/home.json
+  - dashboards/deployments.json
