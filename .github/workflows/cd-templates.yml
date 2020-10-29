@@ -10,6 +10,7 @@ on:
       - 'conf/k8s/overlays/*/templates/*'
 
 env:
+  GKE_PROJECT: gke_substrateplayground-252112
   GKE_ZONE: us-central1-a
 
 jobs:
@@ -36,7 +37,7 @@ jobs:
         with:
           service_account_key: ${{ secrets.GCLOUD_KEY }}
           export_default_credentials: true
-          project_id: ${{ secrets.GKE_PROJECT }}
+          project_id: ${{ env.GKE_PROJECT }}
       - run: gcloud --quiet auth configure-docker
       - run: gcloud container clusters get-credentials "$GKE_CLUSTER" --zone "$GKE_ZONE"
       - run: echo "::set-env name=ACCESS_TOKEN::$(gcloud auth print-access-token)"
