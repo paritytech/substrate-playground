@@ -18,17 +18,19 @@ jobs:
         id: env
         run: |
           NAMESPACE=`grep NAMESPACE .env | cut -d '=' -f2`
-          PROJECT=`grep PROJECT .env | cut -d '=' -f2`
-          ZONE=`grep ZONE .env | cut -d '=' -f2`
+          PROJECT=`grep GKE_PROJECT .env | cut -d '=' -f2`
+          ZONE=`grep GKE_ZONE .env | cut -d '=' -f2`
           echo ::set-output name=namespace::$( echo ${NAMESPACE} )
           echo ::set-output name=project::$( echo ${PROJECT} )
           echo ::set-output name=zone::$( echo ${ZONE} )
           if [[ $GITHUB_REF == 'refs/heads/master' ]]; then
               echo ::set-output name=environment::production
-              echo ::set-output name=cluster::substrate-playground
+              CLUSTER=`grep GKE_CLUSTER .env.production | cut -d '=' -f2`
+              echo ::set-output name=cluster::$( echo ${CLUSTER} )
           else if [[ $GITHUB_REF == 'refs/heads/develop' ]]; then
               echo ::set-output name=environment::staging
-              echo ::set-output name=cluster::susbtrate-playground-staging
+              CLUSTER=`grep GKE_CLUSTER .env.staging | cut -d '=' -f2`
+              echo ::set-output name=cluster::$( echo ${CLUSTER} )
           fi
 
       - uses: actions/checkout@v2
