@@ -11,9 +11,7 @@ export function AdminPanel({ client }) {
     return (
         <div style={{ display: "flex", width: "100vw", height: "100vh", alignItems: "center", justifyContent: "center"}}>
             <Wrapper client={client} send={send} details={details}>
-                <div>
-                <iframe src="http://playground-dev.substrate.test/grafana/dashboard-solo/new?from=1598506143076&to=1598527743076&orgId=1&panelId=2" width="600" height="400" frameborder="0"></iframe>
-                </div>
+                <iframe src="http://playground-dev.substrate.test/grafana/" width="100%" height="100%" frameBorder="0"></iframe>
             </Wrapper>
         </div>
     );
