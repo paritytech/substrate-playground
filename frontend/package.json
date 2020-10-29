@@ -34,7 +34,7 @@
     "@pollyjs/adapter-fetch": "5.0.0",
     "@pollyjs/core": "5.0.0",
     "@types/node": "14.14.6",
-    "@types/react": "16.9.54",
+    "@types/react": "16.9.55",
     "@types/react-dom": "16.9.9",
     "@types/react-router-dom": "5.1.6",
     "@types/uuid": "8.3.0",
