@@ -19,8 +19,6 @@ Once manually approved on the staging environment, changes are promoted to maste
 
 A number of `secrets` must be defined:
 
-`GKE_PROJECT`
-
 `GCLOUD_KEY` is the base64 of the gcloud service account JSON file
              Get the JSON file from https://console.cloud.google.com/iam-admin/serviceaccounts?authuser=1&hl=fr&project=substrateplayground-252112&folder=&organizationId=&supportedpurview=project
              ... -> Actions -> Create Key

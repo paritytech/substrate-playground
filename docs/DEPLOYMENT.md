@@ -15,7 +15,7 @@ For OSX
 ```
 brew cask install google-cloud-sdk
 gcloud init
-gcloud container clusters get-credentials  susbtrate-playground-staging --zone us-central1-a
+gcloud container clusters get-credentials susbtrate-playground-staging --zone us-central1-a
 ENVIRONMENT=staging make k8s-setup
 ```
 
@@ -34,7 +34,7 @@ Deploy on GKE:
 ```
 kubectl config use-context gke_substrateplayground-252112_us-central1-a_substrate-playground
 kubectl config set-context --current --namespace=playground-staging
-PLAYGROUND_DOCKER_IMAGE_VERSION="paritytech/substrate-playground@_VERSION_" make k8s-deploy-playground
+make k8s-deploy-playground
 ```
 
 ## Clusters
