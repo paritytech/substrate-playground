@@ -13,6 +13,7 @@ endif
 
 NAMESPACE=playground
 GKE_REGION=us-central1
+GKE_PROJECT=gke_substrateplayground-252112
 DOCKER_ORG=paritytech
 PLAYGROUND_BACKEND_API_DOCKER_IMAGE_NAME=${DOCKER_ORG}/substrate-playground-backend-api
 PLAYGROUND_BACKEND_UI_DOCKER_IMAGE_NAME=${DOCKER_ORG}/substrate-playground-backend-ui
@@ -21,9 +22,9 @@ TEMPLATE_THEIA_BASE=${DOCKER_ORG}/substrate-playground-template-theia-base
 
 # Derive NAMESPACE and CONTEXT from ENVIRONMENT
 ifeq ($(NAMESPACE), production)
-  CONTEXT=gke_substrateplayground-252112_${GKE_REGION}-a_substrate-playground
+  CONTEXT=${GKE_PROJECT}_${GKE_REGION}-a_substrate-playground
 else ifeq ($(ENVIRONMENT), staging)
-  CONTEXT=gke_substrateplayground-252112_${GKE_REGION}-a_susbtrate-playground-staging
+  CONTEXT=${GKE_PROJECT}_${GKE_REGION}-a_susbtrate-playground-staging
 else
   CONTEXT=docker-desktop
 endif
@@ -126,7 +127,6 @@ k8s-deploy-playground: k8s-setup ## Deploy playground on kubernetes
 	kustomize build conf/k8s/overlays/${ENVIRONMENT}/ | kubectl apply --record -f -
 
 k8s-undeploy-playground: k8s-setup ## Undeploy playground from kubernetes
-	# Do not delete `${ENVIRONMENT}` namespace as it would remove all ConfigMaps/Secrets too
 	kustomize build conf/k8s/overlays/${ENVIRONMENT}/ | kubectl delete -f -
 
 k8s-undeploy-theia: k8s-setup ## Undeploy all theia pods and services from kubernetes
