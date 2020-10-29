@@ -34,14 +34,14 @@ jobs:
         if: endsWith(github.ref, '/develop')
         run: |
           echo "::set-env name=ENVIRONMENT::staging"
-          echo "::set-env name=NAMESPACE::playground-staging"
+          echo "::set-env name=DOMAIN::playground-staging"
           echo "::set-env name=GKE_CLUSTER::susbtrate-playground-staging"
 
       - name: Set env to production
         if: endsWith(github.ref, '/master')
         run: |
           echo "::set-env name=ENVIRONMENT::production"
-          echo "::set-env name=NAMESPACE::playground"
+          echo "::set-env name=DOMAIN::playground"
           echo "::set-env name=GKE_CLUSTER::substrate-playground"
 
       - uses: actions/checkout@v2
@@ -164,7 +164,7 @@ jobs:
       - name: Audit URLs using Lighthouse
         uses: treosh/lighthouse-ci-action@v3
         with:
-          urls: https://$NAMESPACE.substrate.dev/
+          urls: https://$DOMAIN.substrate.dev/
           uploadArtifacts: true
 
       - uses: microsoft/playwright-github-action@v1
@@ -176,6 +176,10 @@ jobs:
         env:
           ENVIRONMENT: $ENVIRONMENT
 
+      # TODO
+      # if not ok, fails and rollback
+      # https://learnk8s.io/kubernetes-rollbacks
+      # https://medium.com/@copyconstruct/testing-in-production-the-safe-way-18ca102d0ef1
       - if: ${{ failure() }}
         uses: s3krit/matrix-message-action@v0.0.3
         with:
@@ -184,10 +188,6 @@ jobs:
           message: "Integration tests failed"
           server: "matrix.parity.io"
 
-      # TODO
-      # if not ok, fails and rollback
-      # https://learnk8s.io/kubernetes-rollbacks
-      # https://medium.com/@copyconstruct/testing-in-production-the-safe-way-18ca102d0ef1
       - if: ${{ success() }}
         name: Create Release
         uses: actions/create-release@v1
