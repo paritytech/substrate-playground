@@ -11,22 +11,20 @@ ifeq ($(filter $(ENVIRONMENT),$(ENVIRONMENTS)),)
     $(error ENVIRONMENT should be one of ($(ENVIRONMENTS)) but was $(ENVIRONMENT))
 endif
 
+NAMESPACE=playground
 GKE_REGION=us-central1
-DOCKER_USERNAME=paritytech
-PLAYGROUND_BACKEND_API_DOCKER_IMAGE_NAME=${DOCKER_USERNAME}/substrate-playground-backend-api
-PLAYGROUND_BACKEND_UI_DOCKER_IMAGE_NAME=${DOCKER_USERNAME}/substrate-playground-backend-ui
-TEMPLATE_BASE=${DOCKER_USERNAME}/substrate-playground-template-base
-TEMPLATE_THEIA_BASE=${DOCKER_USERNAME}/substrate-playground-template-theia-base
+DOCKER_ORG=paritytech
+PLAYGROUND_BACKEND_API_DOCKER_IMAGE_NAME=${DOCKER_ORG}/substrate-playground-backend-api
+PLAYGROUND_BACKEND_UI_DOCKER_IMAGE_NAME=${DOCKER_ORG}/substrate-playground-backend-ui
+TEMPLATE_BASE=${DOCKER_ORG}/substrate-playground-template-base
+TEMPLATE_THEIA_BASE=${DOCKER_ORG}/substrate-playground-template-theia-base
 
 # Derive NAMESPACE and CONTEXT from ENVIRONMENT
 ifeq ($(NAMESPACE), production)
-  NAMESPACE=playground
   CONTEXT=gke_substrateplayground-252112_${GKE_REGION}-a_substrate-playground
 else ifeq ($(ENVIRONMENT), staging)
-  NAMESPACE=playground-staging
   CONTEXT=gke_substrateplayground-252112_${GKE_REGION}-a_susbtrate-playground-staging
 else
-  NAMESPACE=default
   CONTEXT=docker-desktop
 endif
 
