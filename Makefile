@@ -12,7 +12,9 @@ ifeq ($(filter $(ENVIRONMENT),$(ENVIRONMENTS)),)
 endif
 
 include .env
+-include .env.${ENVIRONMENT}
 
+# Docker images names
 DOCKER_ORG=paritytech
 PLAYGROUND_BACKEND_API_DOCKER_IMAGE_NAME=${DOCKER_ORG}/substrate-playground-backend-api
 PLAYGROUND_BACKEND_UI_DOCKER_IMAGE_NAME=${DOCKER_ORG}/substrate-playground-backend-ui
@@ -20,12 +22,10 @@ TEMPLATE_BASE=${DOCKER_ORG}/substrate-playground-template-base
 TEMPLATE_THEIA_BASE=${DOCKER_ORG}/substrate-playground-template-theia-base
 
 # Derive CONTEXT from ENVIRONMENT
-ifeq ($(ENVIRONMENT), production)
-  CONTEXT=${GKE_PROJECT}_${GKE_ZONE}_substrate-playground
-else ifeq ($(ENVIRONMENT), staging)
-  CONTEXT=${GKE_PROJECT}_${GKE_ZONE}_susbtrate-playground-staging
-else
+ifeq ($(ENVIRONMENT), dev)
   CONTEXT=docker-desktop
+else ifeq ($(ENVIRONMENT), staging)
+  CONTEXT=${GKE_PROJECT}_${GKE_ZONE}_${GKE_CLUSTER}
 endif
 
 COLOR_BOLD:= $(shell tput bold)
