@@ -111,8 +111,7 @@ jobs:
       - run: echo ::set-output name=sha::sha-${GITHUB_SHA::7}
         id: env
 
-# TODO update .env
-      - name: Update event-template-updated.yml
+      - name: Update .env
         run: sed -i 's/BASE_TEMPLATE_VERSION=sha-[^. ]*/BASE_TEMPLATE_VERSION=${{ steps.env.outputs.sha }}/g' .github/workflows/.env
 
       - uses: EndBug/add-and-commit@v4
