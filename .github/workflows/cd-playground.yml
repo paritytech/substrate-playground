@@ -22,8 +22,6 @@ on:
       - 'templates/**'
 
 env:
-  GKE_PROJECT: gke_substrateplayground-252112
-  GKE_ZONE: us-central1-a
   DOCKER_BUILDKIT: 1
 
 jobs:
@@ -34,6 +32,10 @@ jobs:
         id: env
         run: |
           echo ::set-output name=sha::sha-${GITHUB_SHA::7}
+          PROJECT=`grep PROJECT .env | cut -d '=' -f2`
+          ZONE=`grep ZONE .env | cut -d '=' -f2`
+          echo ::set-output name=project::$( echo ${PROJECT} )
+          echo ::set-output name=zone::$( echo ${ZONE} )
           if [[ $GITHUB_REF == 'refs/heads/master' ]]; then
               echo ::set-output name=environment::production
               echo ::set-output name=domain::playground
@@ -49,9 +51,9 @@ jobs:
         with:
           service_account_key: ${{ secrets.GCLOUD_KEY }}
           export_default_credentials: true
-          project_id: ${{ env.GKE_PROJECT }}
+          project_id: ${{ steps.env.outputs.project }}
       - run: gcloud --quiet auth configure-docker
-      - run: gcloud container clusters get-credentials "$${{ steps.env.outputs.cluster }}" --zone "$GKE_ZONE"
+      - run: gcloud container clusters get-credentials "${{ steps.env.outputs.cluster }}" --zone "${{ steps.env.outputs.zone }}"
 
       - name: Prepare labels
         id: prep
