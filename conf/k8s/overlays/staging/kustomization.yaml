@@ -5,8 +5,6 @@ commonLabels:
   app.kubernetes.io/environment: staging
   app.kubernetes.io/version: "1.0"
 
-namespace: playground-staging
-
 resources:
 - ../../base
 

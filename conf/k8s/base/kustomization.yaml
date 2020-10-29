@@ -2,6 +2,8 @@ commonLabels:
     app.kubernetes.io/part-of: playground
     app.kubernetes.io/managed-by: kustomize
 
+namespace: playground
+
 bases:
     - prometheus
     - grafana
