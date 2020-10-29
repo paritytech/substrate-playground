@@ -30,19 +30,19 @@ jobs:
   build-and-push:
     runs-on: ubuntu-latest
     steps:
-      - name: Set env to staging
-        if: endsWith(github.ref, '/develop')
+      - name: Set environment
+        id: env
         run: |
-          echo "::set-env name=ENVIRONMENT::staging"
-          echo "::set-env name=DOMAIN::playground-staging"
-          echo "::set-env name=GKE_CLUSTER::susbtrate-playground-staging"
-
-      - name: Set env to production
-        if: endsWith(github.ref, '/master')
-        run: |
-          echo "::set-env name=ENVIRONMENT::production"
-          echo "::set-env name=DOMAIN::playground"
-          echo "::set-env name=GKE_CLUSTER::substrate-playground"
+          echo ::set-output name=sha::sha-${GITHUB_SHA::7}
+          if [[ $GITHUB_REF == 'refs/heads/master' ]]; then
+              echo ::set-output name=environment::production
+              echo ::set-output name=domain::playground
+              echo ::set-output name=cluster::substrate-playground
+          else if [[ $GITHUB_REF == 'refs/heads/develop' ]]; then
+              echo ::set-output name=environment::staging
+              echo ::set-output name=domain::playground-staging
+              echo ::set-output name=cluster::susbtrate-playground-staging
+          fi
 
       - uses: actions/checkout@v2
       - uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
@@ -51,11 +51,7 @@ jobs:
           export_default_credentials: true
           project_id: ${{ env.GKE_PROJECT }}
       - run: gcloud --quiet auth configure-docker
-      - run: gcloud container clusters get-credentials "$GKE_CLUSTER" --zone "$GKE_ZONE"
-      - run: echo "::set-env name=ACCESS_TOKEN::$(gcloud auth print-access-token)"
-
-      - run: echo ::set-output name=sha::sha-${GITHUB_SHA::7}
-        id: env
+      - run: gcloud container clusters get-credentials "$${{ steps.env.outputs.cluster }}" --zone "$GKE_ZONE"
 
       - name: Prepare labels
         id: prep
@@ -139,18 +135,18 @@ jobs:
           curl -sfLo kustomize https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv3.6.1/kustomize_v3.6.1_linux_amd64.tar.gz
           tar zxvf kustomize*
           chmod u+x ./kustomize  
-        working-directory: conf/k8s/overlays/${{ env.ENVIRONMENT }}
+        working-directory: conf/k8s/overlays/${{ steps.env.outputs.environment }}
 
       - name: Update version
         run: |-
           ./kustomize edit set image paritytech/substrate-playground-backend-api:${{ steps.env.outputs.sha }}
           ./kustomize edit set image paritytech/substrate-playground-backend-ui:${{ steps.env.outputs.sha }}
-        working-directory: conf/k8s/overlays/${{ env.ENVIRONMENT }}
+        working-directory: conf/k8s/overlays/${{ steps.env.outputs.environment }}
 
       - uses: EndBug/add-and-commit@v4
         with:
           message: ":bookmark: upon which, hails onto us a new release of Playground"
-          add: "conf/k8s/overlays/${{ env.ENVIRONMENT }}/kustomization.yaml"
+          add: "conf/k8s/overlays/${{ steps.env.outputs.environment }}/kustomization.yaml"
           tag: ${{ steps.env.outputs.sha }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -159,12 +155,12 @@ jobs:
         run:  |-
           ./kustomize build . | kubectl apply --record -f -
           kubectl get services -o wide
-        working-directory: conf/k8s/overlays/${{ env.ENVIRONMENT }}
+        working-directory: conf/k8s/overlays/${{ steps.env.outputs.environment }}
 
       - name: Audit URLs using Lighthouse
         uses: treosh/lighthouse-ci-action@v3
         with:
-          urls: https://$DOMAIN.substrate.dev/
+          urls: https://${{ steps.env.outputs.domain }}.substrate.dev/
           uploadArtifacts: true
 
       - uses: microsoft/playwright-github-action@v1
@@ -174,7 +170,7 @@ jobs:
         working-directory: ./e2e
         continue-on-error: true
         env:
-          ENVIRONMENT: $ENVIRONMENT
+          ENVIRONMENT: ${{ steps.env.outputs.environment }}
 
       # TODO
       # if not ok, fails and rollback
@@ -192,7 +188,7 @@ jobs:
         name: Create Release
         uses: actions/create-release@v1
         with:
-          tag_name: ${{ steps.env.outputs.sha }}-${{ env.ENVIRONMENT }}
+          tag_name: ${{ steps.env.outputs.sha }}-${{ steps.env.outputs.environment }}
           release_name: Release ${{ steps.env.outputs.sha }}
           body: |
             Backend release:

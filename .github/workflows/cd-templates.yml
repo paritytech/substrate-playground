@@ -20,15 +20,16 @@ jobs:
     steps:
       - name: Set env to staging
         if: endsWith(github.ref, '/develop')
+        id: env
         run: |
-          echo "::set-env name=ENVIRONMENT::staging"
-          echo "::set-env name=GKE_CLUSTER::susbtrate-playground-staging"
+          echo "::set-output name=environment::staging"
+          echo "::set-output name=cluster::susbtrate-playground-staging"
 
       - name: Set env to production
         if: endsWith(github.ref, '/master')
         run: |
-          echo "::set-env name=ENVIRONMENT::production"
-          echo "::set-env name=GKE_CLUSTER::substrate-playground"
+          echo "::set-output name=environment::production"
+          echo "::set-output name=cluster::substrate-playground"
 
       - uses: actions/checkout@v2
 
@@ -38,11 +39,10 @@ jobs:
           export_default_credentials: true
           project_id: ${{ env.GKE_PROJECT }}
       - run: gcloud --quiet auth configure-docker
-      - run: gcloud container clusters get-credentials "$GKE_CLUSTER" --zone "$GKE_ZONE"
-      - run: echo "::set-env name=ACCESS_TOKEN::$(gcloud auth print-access-token)"
+      - run: gcloud container clusters get-credentials "${{ steps.env.outputs.cluster }}" --zone "$GKE_ZONE"
 
       - name: Deploy templates
-        run: kubectl create configmap templates --namespace=${NAMESPACE} --from-file=conf/k8s/overlays/${ENVIRONMENT}/templates/ --dry-run=client -o yaml | kubectl apply -f -
+        run: kubectl create configmap templates --namespace=${NAMESPACE} --from-file=conf/k8s/overlays/${{ steps.env.outputs.environment }}/templates/ --dry-run=client -o yaml | kubectl apply -f -
 
 # TODO test image, rollback commit if fails
 # Do not rollback the rollback itself
