@@ -12,4 +12,4 @@ data:
       type: prometheus
       access: proxy
       orgId: 1
-      url: http://prometheus-service.default.svc.cluster.local:9090
+      url: http://prometheus-service.playground.svc.cluster.local:9090

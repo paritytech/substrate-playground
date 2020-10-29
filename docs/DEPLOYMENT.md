@@ -24,16 +24,16 @@ Make sure a Github OAuth App is [created](https://docs.github.com/en/developers/
 Set required ConfigMap and Secret as defined in the newly created OAuth app:
 
 ```shell
-kubectl create configmap config --namespace=playground-staging --from-literal=github.clientId=''
+kubectl create configmap config --namespace=playground --from-literal=github.clientId=''
 ROCKET_SECRET_KEY=`openssl rand -base64 32`
-kubectl create secret generic secrets --namespace=playground-staging --from-literal=github.clientSecret='' --from-literal=rocket.secretKey='ROCKET_SECRET_KEY'
+kubectl create secret generic secrets --namespace=playground --from-literal=github.clientSecret='' --from-literal=rocket.secretKey='ROCKET_SECRET_KEY'
 ```
 
 Deploy on GKE:
 
 ```
 kubectl config use-context gke_substrateplayground-252112_us-central1-a_substrate-playground
-kubectl config set-context --current --namespace=playground-staging
+kubectl config set-context --current --namespace=playground
 make k8s-deploy-playground
 ```
 
@@ -99,7 +99,7 @@ Then update the tls secret:
 ```
 gcloud container clusters get-credentials susbtrate-playground-staging --region us-central1-a
 ENVIRONMENT=staging make k8s-setup
-sudo kubectl create secret tls playground-tls --save-config --key /etc/letsencrypt/live/playground-staging.substrate.dev/privkey.pem --cert /etc/letsencrypt/live/playground-staging.substrate.dev/fullchain.pem --namespace=playground-staging --dry-run=true -o yaml | sudo kubectl apply -f -
+sudo kubectl create secret tls playground-tls --save-config --key /etc/letsencrypt/live/playground-staging.substrate.dev/privkey.pem --cert /etc/letsencrypt/live/playground-staging.substrate.dev/fullchain.pem --namespace=playground --dry-run=true -o yaml | sudo kubectl apply -f -
 ```
 
 The new secret will be auomatically picked up.

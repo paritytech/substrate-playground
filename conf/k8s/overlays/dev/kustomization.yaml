@@ -5,8 +5,6 @@ commonLabels:
   app.kubernetes.io/environment: dev
   app.kubernetes.io/version: "1.0"
 
-namespace: default
-
 resources:
 - ../../base
 - templates.yaml
