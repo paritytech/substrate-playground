@@ -15,15 +15,11 @@ jobs:
   build-and-push:
     runs-on: ubuntu-latest
     steps:
-      - name: Set env to staging
-        if: endsWith(github.ref, '/develop')
+      - name: Set env
+        id: env
         run: |
-          echo "::set-env name=ENVIRONMENT::staging"
-
-      - name: Set env to production
-        if: endsWith(github.ref, '/master')
-        run: |
-          echo "::set-env name=ENVIRONMENT::production"
+          echo ::set-output name=sha::sha-${GITHUB_SHA::7}
+          echo ::set-output name=environment::staging
 
       - uses: actions/checkout@v2
         with:
@@ -108,9 +104,6 @@ jobs:
           cache-from: type=registry,ref=paritytech/substrate-playground-template-theia-base:latest
           cache-to: type=inline
 
-      - run: echo ::set-output name=sha::sha-${GITHUB_SHA::7}
-        id: env
-
       - name: Update .env
         run: sed -i 's/BASE_TEMPLATE_VERSION=sha-[^. ]*/BASE_TEMPLATE_VERSION=${{ steps.env.outputs.sha }}/g' .github/workflows/.env
 
@@ -142,16 +135,6 @@ jobs:
     outputs:
       matrix: ${{ steps.set-templates.outputs.matrix }}
     steps:
-      - name: Set env to staging
-        if: endsWith(github.ref, '/develop')
-        run: |
-          echo "::set-env name=ENVIRONMENT::staging"
-
-      - name: Set env to production
-        if: endsWith(github.ref, '/master')
-        run: |
-          echo "::set-env name=ENVIRONMENT::production"
-
       - uses: actions/checkout@v2
 
       - name: Set up Python
@@ -167,7 +150,7 @@ jobs:
       - id: set-templates
         run: |
           JSON="{\"include\":["
-          for FILE in "conf/k8s/overlays/$ENVIRONMENT/templates"/*
+          for FILE in "conf/k8s/overlays/staging/templates"/*
           do
             ID=${FILE##*/}
             IMAGE=`cat $FILE | yq .base`
