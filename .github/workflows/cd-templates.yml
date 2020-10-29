@@ -9,11 +9,6 @@ on:
     paths:
       - 'conf/k8s/overlays/*/templates/*'
 
-env:
-  NAMESPACE: playground
-  GKE_PROJECT: gke_substrateplayground-252112
-  GKE_ZONE: us-central1-a
-
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
@@ -22,14 +17,19 @@ jobs:
         if: endsWith(github.ref, '/develop')
         id: env
         run: |
-          echo "::set-output name=environment::staging"
-          echo "::set-output name=cluster::susbtrate-playground-staging"
-
-      - name: Set env to production
-        if: endsWith(github.ref, '/master')
-        run: |
-          echo "::set-output name=environment::production"
-          echo "::set-output name=cluster::substrate-playground"
+          NAMESPACE=`grep NAMESPACE .env | cut -d '=' -f2`
+          PROJECT=`grep PROJECT .env | cut -d '=' -f2`
+          ZONE=`grep ZONE .env | cut -d '=' -f2`
+          echo ::set-output name=namespace::$( echo ${NAMESPACE} )
+          echo ::set-output name=project::$( echo ${PROJECT} )
+          echo ::set-output name=zone::$( echo ${ZONE} )
+          if [[ $GITHUB_REF == 'refs/heads/master' ]]; then
+              echo ::set-output name=environment::production
+              echo ::set-output name=cluster::substrate-playground
+          else if [[ $GITHUB_REF == 'refs/heads/develop' ]]; then
+              echo ::set-output name=environment::staging
+              echo ::set-output name=cluster::susbtrate-playground-staging
+          fi
 
       - uses: actions/checkout@v2
 
@@ -37,12 +37,12 @@ jobs:
         with:
           service_account_key: ${{ secrets.GCLOUD_KEY }}
           export_default_credentials: true
-          project_id: ${{ env.GKE_PROJECT }}
+          project_id: ${{ steps.env.outputs.project }}
       - run: gcloud --quiet auth configure-docker
-      - run: gcloud container clusters get-credentials "${{ steps.env.outputs.cluster }}" --zone "$GKE_ZONE"
+      - run: gcloud container clusters get-credentials "${{ steps.env.outputs.cluster }}" --zone "${{ steps.env.outputs.zone }}"
 
       - name: Deploy templates
-        run: kubectl create configmap templates --namespace=${NAMESPACE} --from-file=conf/k8s/overlays/${{ steps.env.outputs.environment }}/templates/ --dry-run=client -o yaml | kubectl apply -f -
+        run: kubectl create configmap templates --namespace=${{ steps.env.outputs.namespace }} --from-file=conf/k8s/overlays/${{ steps.env.outputs.environment }}/templates/ --dry-run=client -o yaml | kubectl apply -f -
 
 # TODO test image, rollback commit if fails
 # Do not rollback the rollback itself

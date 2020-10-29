@@ -50,10 +50,10 @@ jobs:
           echo ::set-output name=theia-image::paritytech/substrate-playground-template-${TEMPLATE_ID}-theia:sha-${GITHUB_SHA::7}
           FILE=conf/k8s/overlays/staging/templates/$TEMPLATE_ID
           REPOSITORY=`cat $FILE | yq -r .repository`
-          BASE_TEMPLATE_VERSION=`grep BASE_TEMPLATE_VERSION .github/workflows/.env | cut -d '=' -f2`
-          echo "::set-output name=repository::$( echo $REPOSITORY )"
-          echo "::set-output name=ref::$( echo ${TEMPLATE_REF:-master} )"
-          echo "::set-output name=base::$( echo ${BASE_TEMPLATE_VERSION} )"
+          BASE_TEMPLATE_VERSION=`grep BASE_TEMPLATE_VERSION .env | cut -d '=' -f2`
+          echo ::set-output name=repository::$( echo $REPOSITORY )
+          echo ::set-output name=ref::$( echo ${TEMPLATE_REF:-master} )
+          echo ::set-output name=base::$( echo ${BASE_TEMPLATE_VERSION} )
         id: env
 
       - name: Checkout remote repository
