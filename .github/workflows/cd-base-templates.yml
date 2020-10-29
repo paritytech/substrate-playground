@@ -17,9 +17,7 @@ jobs:
     steps:
       - name: Set env
         id: env
-        run: |
-          echo ::set-output name=sha::sha-${GITHUB_SHA::7}
-          echo ::set-output name=environment::staging
+        run: echo ::set-output name=sha::sha-${GITHUB_SHA::7}
 
       - uses: actions/checkout@v2
         with:
