@@ -25,7 +25,7 @@
         "@theia/monaco": "1.6.0",
         "@theia/navigator": "1.6.0",
         "@theia/outline-view": "1.6.0",
-        "@theia/output": "1.6.0",
+        "@theia/output": "1.7.0",
         "@theia/plugin": "1.6.0",
         "@theia/plugin-dev": "1.6.0",
         "@theia/plugin-ext": "1.6.0",
