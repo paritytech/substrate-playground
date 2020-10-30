@@ -2285,10 +2285,10 @@
     vscode-debugprotocol "^1.32.0"
     vscode-textmate "^4.0.1"
 
-"@theia/plugin@1.6.0", "@theia/plugin@^1.6.0":
-  version "1.6.0"
-  resolved "https://registry.yarnpkg.com/@theia/plugin/-/plugin-1.6.0.tgz#5438cfa5f2a9b33e67010fff8ac4ef00055b3156"
-  integrity sha512-Gnvcz5e7OZPt3rT6jN5Eeprs19wddeQgkYufeIC80griXQoIMB1Rx7vT5Esfwlh+WY+FAerTC0yc+810Z63UBQ==
+"@theia/plugin@1.7.0", "@theia/plugin@^1.6.0":
+  version "1.7.0"
+  resolved "https://registry.yarnpkg.com/@theia/plugin/-/plugin-1.7.0.tgz#19108d993341d5ad58c4a7f7e8897c1a46cf711e"
+  integrity sha512-K0obci25Y9M3zaKvtFJOMBSE3e0aq1AaZJq2ucM8wf82PCB2dF57BUwhMjusB31pt4z4tm6TTtBtScFWjf233A==
 
 "@theia/preferences@1.6.0", "@theia/preferences@^1.6.0":
   version "1.6.0"
