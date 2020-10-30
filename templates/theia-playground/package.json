@@ -16,7 +16,7 @@
         "@theia/debug": "1.6.0",
         "@theia/editor": "1.6.0",
         "@theia/editor-preview": "1.6.0",
-        "@theia/file-search": "1.6.0",
+        "@theia/file-search": "1.7.0",
         "@theia/keymaps": "1.6.0",
         "@theia/markers": "1.6.0",
         "@theia/messages": "1.6.0",
