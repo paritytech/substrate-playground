@@ -43,7 +43,7 @@
         "@parity/theia-playground-extension": "0.5.0"
     },
     "devDependencies": {
-        "@theia/cli": "1.6.0",
+        "@theia/cli": "1.7.0",
         "@theia/debug": "1.6.0"
     },
     "resolutions": {

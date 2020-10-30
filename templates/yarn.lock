@@ -1854,16 +1854,16 @@
   dependencies:
     cross-fetch "3.0.6"
 
-"@theia/application-manager@^1.6.0":
-  version "1.6.0"
-  resolved "https://registry.yarnpkg.com/@theia/application-manager/-/application-manager-1.6.0.tgz#f576da587716ef71ec4ea8f9dd0d48265024b21b"
-  integrity sha512-mw3/RoMR1WuyWO2aM/sAdOTPnTS7De34B+w0HssEIO7Vq0fpNytwNsOEGivwTxUkQPJbeh3q0q+r5fIIEBL7RA==
+"@theia/application-manager@^1.7.0":
+  version "1.7.0"
+  resolved "https://registry.yarnpkg.com/@theia/application-manager/-/application-manager-1.7.0.tgz#02dbba8b5ae30053ec02c598faf2ac374c059894"
+  integrity sha512-9fWg8NiGtZjHy+jmeaK/nWWrnEh6eI3bVJY1jt5RwJ+QC2+48ZoIupp73xxNzrAOqvV6CO38WUgdQh63Fcc9zg==
   dependencies:
     "@babel/core" "^7.10.0"
     "@babel/plugin-transform-classes" "^7.10.0"
     "@babel/plugin-transform-runtime" "^7.10.0"
     "@babel/preset-env" "^7.10.0"
-    "@theia/application-package" "^1.6.0"
+    "@theia/application-package" "^1.7.0"
     "@theia/compression-webpack-plugin" "^3.0.0"
     "@types/fs-extra" "^4.0.2"
     "@types/webpack" "^4.41.2"
@@ -1886,10 +1886,10 @@
     webpack-cli "2.0.12"
     worker-loader "^1.1.1"
 
-"@theia/application-package@^1.6.0":
-  version "1.6.0"
-  resolved "https://registry.yarnpkg.com/@theia/application-package/-/application-package-1.6.0.tgz#0f908c74922678d818a33643250f7bfedcb049af"
-  integrity sha512-2eZYNrqDZxTonkGyDeqxshxFYsi4sf7sltJrkUdJzsT77YFrYTswUszk9kdCvgXj5R1Stc0KSuod5V4y+glhQA==
+"@theia/application-package@^1.6.0", "@theia/application-package@^1.7.0":
+  version "1.7.0"
+  resolved "https://registry.yarnpkg.com/@theia/application-package/-/application-package-1.7.0.tgz#fa1b2a7c43f873a3d6e4f0f992fff23101013575"
+  integrity sha512-xRrS3Br6No+ho1azhwRV7iWGfjz7SJQ5id9hYUaZ2Bu59MYvB7J+CYAmigfYDayWYwkV5jUpT5rKAnxZbYr2FQ==
   dependencies:
     "@types/fs-extra" "^4.0.2"
     "@types/request" "^2.0.3"
@@ -1913,13 +1913,13 @@
     "@theia/monaco" "^1.6.0"
     ts-md5 "^1.2.2"
 
-"@theia/cli@1.6.0":
-  version "1.6.0"
-  resolved "https://registry.yarnpkg.com/@theia/cli/-/cli-1.6.0.tgz#50a560fce32fe506b7740e4dbeb21deeac4e5950"
-  integrity sha512-dq5z52F+dof6UCzcnrgWGeCnA92HiTrrVYIFdUTYfNoZOvnxrRlwpgK6ffkI+3TOzY6TUwPKNKHrmhBkhyLJVA==
+"@theia/cli@1.7.0":
+  version "1.7.0"
+  resolved "https://registry.yarnpkg.com/@theia/cli/-/cli-1.7.0.tgz#cf1251fdc65f48c38c1bdd49edc946e011cad5bf"
+  integrity sha512-qp1AZLYm3W20pSUM9PGy2jAv1GzTTbPdiNky5HV9bM1vC5UV+nzjIB/dURfMgQivcTXzBWNd/bX1EI/D62dwIw==
   dependencies:
-    "@theia/application-manager" "^1.6.0"
-    "@theia/application-package" "^1.6.0"
+    "@theia/application-manager" "^1.7.0"
+    "@theia/application-package" "^1.7.0"
     "@types/chai" "^4.2.7"
     "@types/mkdirp" "^0.5.2"
     "@types/mocha" "^5.2.7"
