@@ -27,7 +27,7 @@
         "@theia/outline-view": "1.6.0",
         "@theia/output": "1.6.0",
         "@theia/plugin": "1.6.0",
-        "@theia/plugin-dev": "1.6.0",
+        "@theia/plugin-dev": "1.7.0",
         "@theia/plugin-ext": "1.6.0",
         "@theia/plugin-ext-vscode": "1.6.0",
         "@theia/preview": "1.6.0",
