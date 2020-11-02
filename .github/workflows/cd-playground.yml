@@ -1,6 +1,7 @@
 name: Continuous Deployment Playground
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - develop
@@ -41,7 +42,7 @@ jobs:
               echo ::set-output name=domain::playground
               CLUSTER=`grep GKE_CLUSTER .env.production | cut -d '=' -f2`
               echo ::set-output name=cluster::$( echo ${CLUSTER} )
-          else if [[ $GITHUB_REF == 'refs/heads/develop' ]]; then
+          elif [[ $GITHUB_REF == 'refs/heads/develop' ]]; then
               echo ::set-output name=environment::staging
               echo ::set-output name=domain::playground-staging
               CLUSTER=`grep GKE_CLUSTER .env.staging | cut -d '=' -f2`
