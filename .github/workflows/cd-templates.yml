@@ -10,7 +10,7 @@ on:
       - 'conf/k8s/overlays/*/templates/*'
 
 jobs:
-  build-and-push:
+  build-and-push-templates:
     runs-on: ubuntu-latest
     steps:
       - name: Set env to staging
@@ -27,7 +27,7 @@ jobs:
               echo ::set-output name=environment::production
               CLUSTER=`grep GKE_CLUSTER .env.production | cut -d '=' -f2`
               echo ::set-output name=cluster::$( echo ${CLUSTER} )
-          else if [[ $GITHUB_REF == 'refs/heads/develop' ]]; then
+          elif [[ $GITHUB_REF == 'refs/heads/develop' ]]; then
               echo ::set-output name=environment::staging
               CLUSTER=`grep GKE_CLUSTER .env.staging | cut -d '=' -f2`
               echo ::set-output name=cluster::$( echo ${CLUSTER} )
