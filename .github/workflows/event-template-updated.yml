@@ -21,7 +21,7 @@ env:
   TEMPLATE_REF: ${{ github.event.client_payload.ref }}
 
 jobs:
-  build-and-push:
+  build-and-push-template:
     name: Building template
     runs-on: ubuntu-latest
     steps:
