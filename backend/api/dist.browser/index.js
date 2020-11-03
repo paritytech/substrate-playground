@@ -73,12 +73,7 @@ export class Client {
     }
     getDetails(opts = this.defaultOpts) {
         return __awaiter(this, void 0, void 0, function* () {
-            return fromResponse(yield fetchWithTimeout(this.base, Object.assign({ method: 'GET', headers: headers }, opts)));
-        });
-    }
-    getInstanceDetails(instanceUUID, opts = this.defaultOpts) {
-        return __awaiter(this, void 0, void 0, function* () {
-            return fromResponse(yield fetchWithTimeout(`${this.base}/${instanceUUID}`, Object.assign({ method: 'GET', headers: headers }, opts)));
+            return fromResponse(yield fetchWithTimeout(`${this.base}/`, Object.assign({ method: 'GET', headers: headers }, opts)));
         });
     }
     deployInstance(template, opts = this.defaultOpts) {
@@ -86,9 +81,9 @@ export class Client {
             return fromResponse(yield fetchWithTimeout(`${this.base}/?template=${template}`, Object.assign({ method: 'POST', headers: headers }, opts)));
         });
     }
-    stopInstance(instanceUUID, opts = this.defaultOpts) {
+    stopInstance(opts = this.defaultOpts) {
         return __awaiter(this, void 0, void 0, function* () {
-            return fromResponse(yield fetchWithTimeout(`${this.base}/${instanceUUID}`, Object.assign({ method: 'DELETE', headers: headers }, opts)));
+            return fromResponse(yield fetchWithTimeout(`${this.base}/`, Object.assign({ method: 'DELETE', headers: headers }, opts)));
         });
     }
     logout(opts = this.defaultOpts) {
