@@ -120,21 +120,6 @@ pub fn get_unlogged(state: State<'_, Context>) -> JsonValue {
     result_to_jsonrpc(manager.get_unlogged())
 }
 
-#[get("/<instance_uuid>")]
-pub fn get_user_instance(
-    state: State<'_, Context>,
-    user: User,
-    instance_uuid: String,
-) -> JsonValue {
-    let manager = state.manager.clone();
-    result_to_jsonrpc(manager.get_instance(&user.username, &instance_uuid))
-}
-
-#[get("/<_instance_uuid>", rank = 2)]
-pub fn get_user_instance_unlogged(_instance_uuid: String) -> status::Unauthorized<()> {
-    status::Unauthorized::<()>(None)
-}
-
 /// Deploy `template` Docker container for `user_id`.
 #[post("/?<template>")]
 pub fn deploy(state: State<'_, Context>, user: User, template: String) -> JsonValue {
@@ -147,11 +132,10 @@ pub fn deploy_unlogged() -> status::Unauthorized<()> {
     status::Unauthorized::<()>(None)
 }
 
-#[delete("/<instance_uuid>")]
-pub fn undeploy(state: State<'_, Context>, user: User, instance_uuid: String) -> JsonValue {
-    // TODO only delete your own instance
+#[delete("/")]
+pub fn undeploy(state: State<'_, Context>, user: User) -> JsonValue {
     let manager = state.manager.clone();
-    result_to_jsonrpc(manager.undeploy(&user.username, &instance_uuid))
+    result_to_jsonrpc(manager.undeploy(&user.username))
 }
 
 #[delete("/<_instance_uuid>", rank = 2)]

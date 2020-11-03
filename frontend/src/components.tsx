@@ -40,7 +40,7 @@ import { Client } from "@substrate/playground-api";
 import { Responder } from "./connect";
 import { useInterval, useLocalStorage } from './hooks';
 import { useLifecycle, deploy, deploying, failed, logged, restart, setup, stop, stopping } from './lifecycle';
-import { fetchWithTimeout, navigateToAdmin, navigateToInstance, navigateToHomepage } from "./utils";
+import { fetchWithTimeout, navigateToAdmin, navigateToStats, navigateToInstance, navigateToHomepage } from "./utils";
 
 import Menu from '@material-ui/core/Menu';
 import MenuItem from '@material-ui/core/MenuItem';
@@ -142,7 +142,7 @@ export function Loading({ phase, retry = 0 }: { phase?: string, retry?: number }
     );
 }
 
-export function TheiaInstance({ uuid, client }: { uuid: string, client: Client }) {
+export function TheiaInstance({ client }: { client: Client }) {
     const maxRetries = 5*60;
     const location = useLocation();
     const history = useHistory();
@@ -153,7 +153,7 @@ export function TheiaInstance({ uuid, client }: { uuid: string, client: Client }
     const [data, setData] = useState({ type: "LOADING", phase: "Preparing" });
 
     useEffect(() => {
-        const responder = new Responder(uuid, o => {
+        const responder = new Responder(user, o => {
             const el = ref.current;
             if (el) {
                 el.contentWindow.postMessage(o, "*")
@@ -203,16 +203,17 @@ export function TheiaInstance({ uuid, client }: { uuid: string, client: Client }
 
     useEffect(() => {
         async function fetchData() {
-            const { result, error } = await client.getInstanceDetails(uuid);
-            if (error) {
+            const { result } = await client.getDetails();
+            const instance = result.instance;
+            if (!instance) {
                 // This instance doesn't exist
                 setData({ type: "ERROR", value: "Couldn't locate the theia instance", action: () => navigateToHomepage(history) });
                 return;
             }
 
-            const phase = result?.pod?.details?.status?.phase;
+            const phase = instance.pod?.details?.status?.phase;
             if (phase == "Running" || phase == "Pending") {
-                const containerStatuses = result?.pod?.details?.status?.containerStatuses;
+                const containerStatuses = instance.pod?.details?.status?.containerStatuses;
                 if (containerStatuses?.length > 0) {
                     const state = containerStatuses[0].state;
                     const reason = state?.waiting?.reason;
@@ -222,7 +223,7 @@ export function TheiaInstance({ uuid, client }: { uuid: string, client: Client }
                     }
                 }
                 // Check URL is fine
-                const url = result.url;
+                const url = instance.url;
                 if ((await fetchWithTimeout(url)).ok) {
                     setData({ type: "SUCCESS", url: url });
                     return;
@@ -240,7 +241,7 @@ export function TheiaInstance({ uuid, client }: { uuid: string, client: Client }
         if (user && data.type != "ERROR" && data.type != "SUCCESS") {
             fetchData();
         }
-    }, [data, uuid, user]);
+    }, [data, user]);
 
     function Content({data}) {
         if (data.type == 'ERROR') {
@@ -265,12 +266,7 @@ export function TheiaInstance({ uuid, client }: { uuid: string, client: Client }
     }
 }
 
-interface ParamTypes {
-    uuid: string
-}
-
 export function TheiaPanel({ client }) {
-    const { uuid } = useParams<ParamTypes>();
     const location = useLocation();
     const history = useHistory();
     const [state, send] = useLifecycle(history, location, client);
@@ -279,7 +275,7 @@ export function TheiaPanel({ client }) {
     return (
     <div style={{display: "flex", width: "100vw", height: "100vh"}}>
         <Wrapper client={client} send={send} details={details} light={true}>
-            <TheiaInstance client={client} uuid={uuid} />
+            <TheiaInstance client={client} />
         </Wrapper>
     </div>
     );
@@ -376,6 +372,7 @@ function Nav({ client, send, details, toggleDetails }) {
                                 open={open}
                                 onClose={handleClose}
                             >
+                                <MenuItem onClick={async () => {handleClose(); await navigateToStats(history)}}>STATS</MenuItem>
                                 <MenuItem onClick={async () => {handleClose(); await navigateToAdmin(history)}}>ADMIN</MenuItem>
                                 <MenuItem onClick={async () => {handleClose(); await client.logout(); await navigateToHomepage(history); send(restart)}}>LOGOUT</MenuItem>
                             </Menu>
@@ -506,7 +503,7 @@ function PortsTable({ ports }) {
 }
 
 function InstanceDetails({ instance }) {
-    const { instance_uuid, pod, template } = instance;
+    const { pod, template } = instance;
     const { name, runtime } = template;
     const { env, ports } = runtime;
     const status = pod?.details?.status;
@@ -521,7 +518,7 @@ function InstanceDetails({ instance }) {
         <Card style={{ margin: 20 }} variant="outlined">
             <CardContent>
                 <Typography>
-                    {name} ({instance_uuid})
+                    {name}
                 </Typography>
                 {status?.startTime &&
                 <Typography color="textSecondary" gutterBottom>
@@ -550,10 +547,7 @@ function InstanceDetails({ instance }) {
     );
 }
 
-function ExistingInstances({instances, onStopClick, onConnectClick}) {
-     // A single instance per user is supported for now
-     //    const runningInstances = instances?.filter(instance => instance?.pod?.details?.status?.phase === "Running");
-    const instance = instances[0];
+function ExistingInstance({instance, onStopClick, onConnectClick}) {
     const status = instance?.pod?.details?.status;
     return (
     <React.Fragment>
@@ -565,7 +559,7 @@ function ExistingInstances({instances, onStopClick, onConnectClick}) {
         <Divider orientation="horizontal" />
         <Container style={{display: "flex", flexDirection: "column", alignItems: "flex-end", paddingTop: 10, paddingBottom: 10}}>
             <div>
-                <Button style={{marginRight: 10}} onClick={() => onStopClick(instance)} color="secondary" variant="outlined" disableElevation>
+                <Button style={{marginRight: 10}} onClick={onStopClick} color="secondary" variant="outlined" disableElevation>
                     Stop
                 </Button>
                 <Button onClick={() => onConnectClick(instance)} disabled={status?.phase != "Running"} color="primary" variant="contained" disableElevation>
@@ -586,8 +580,8 @@ export function MainPanel({ client }) {
 
     function Content() {
         if (state.matches(logged)) {
-            if (details?.instances?.length > 0) {
-                return <ExistingInstances onConnectClick={(instance) => navigateToInstance(history, instance.instance_uuid)} onStopClick={(instance) => send(stop, {instance: instance})} instances={details.instances} />;
+            if (details?.instance) {
+                return <ExistingInstance onConnectClick={(instance) => navigateToInstance(history)} onStopClick={() => send(stop)} instance={details.instance} />;
             } else if (details?.user) {
                 return <TemplateSelector state={state} user={details.user} templates={details.templates} onRetryClick={() => send(restart)} onSelect={(template) => send(deploy, { template: template })} onErrorClick={() => send(restart)} />;
             } else {
@@ -596,13 +590,13 @@ export function MainPanel({ client }) {
         } else if (state.matches(setup) || state.matches(stopping) || state.matches(deploying)) {
             return <Loading />;
         } else if (state.matches(failed)) {
-            if (state.context?.data?.instances) {
-                const instance = state.context?.data?.instances[0];
+            const instance = state.context?.data?.instance;
+            if (instance) {
                 return <ErrorMessage title="Quota reached" actionTitle="Shoot it" reason="Your maximum number of instances concurrently running has been reached" action={() => send(stop, {instance: instance})} />;
             } else {
                 return <ErrorMessage reason={state.context.error?.toString() || "Unknown error"} action={() => send(restart)} />;
             }
-        } else if (details?.instances?.length + details?.templates?.length == 0) {
+        } else if (!details?.instance || details?.templates?.length == 0) {
             return <ErrorMessage reason={"No templates"} action={() => send(restart)} />;
         } else {
             return <div>Unknown state: ${state.value}</div>;

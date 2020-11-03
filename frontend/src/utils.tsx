@@ -21,9 +21,13 @@ export function navigateToAdmin(history: History): void {
   history.push("/admin");
 }
 
-export function navigateToInstance(history: History, instanceUUID: string): void {
+export function navigateToStats(history: History): void {
+  history.push("/stats");
+}
+
+export function navigateToInstance(history: History): void {
   const params = new URLSearchParams(location.search);
   params.delete("deploy");
   const query = params.toString();
-  history.push(`/${instanceUUID}${query !== "" ? "?"+query  : ""}`);
+  history.push(`/instance${query !== "" ? "?"+query  : ""}`);
 }

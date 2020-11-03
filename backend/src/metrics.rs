@@ -12,34 +12,33 @@ pub struct Metrics {
 }
 
 impl Metrics {
-    const USER_UUID_LABEL: &'static str = "user_uuid";
-    const INSTANCE_UUID_LABEL: &'static str = "instance_uuid";
+    const USERNAME_LABEL: &'static str = "username";
     const TEMPLATE_LABEL: &'static str = "template";
 
     pub fn new() -> Result<Self, Box<dyn Error>> {
         Ok(Metrics {
             deploy_counter: IntCounterVec::new(
                 opts!("deploy_counter", "Count of deployments"),
-                &[Self::USER_UUID_LABEL, Self::TEMPLATE_LABEL],
+                &[Self::USERNAME_LABEL, Self::TEMPLATE_LABEL],
             )?,
             deploy_failures_counter: IntCounterVec::new(
                 opts!("deploy_failures_counter", "Count of deployment failures"),
-                &[Self::TEMPLATE_LABEL],
+                &[Self::USERNAME_LABEL, Self::TEMPLATE_LABEL],
             )?,
             undeploy_counter: IntCounterVec::new(
                 opts!("undeploy_counter", "Count of undeployment"),
-                &[Self::INSTANCE_UUID_LABEL],
+                &[Self::USERNAME_LABEL],
             )?,
             undeploy_failures_counter: IntCounterVec::new(
                 opts!(
                     "undeploy_failures_counter",
                     "Count of undeployment failures"
                 ),
-                &[Self::INSTANCE_UUID_LABEL],
+                &[Self::USERNAME_LABEL],
             )?,
             deploy_duration: HistogramVec::new(
                 opts!("deploy_duration", "Deployment duration in seconds").into(),
-                &[Self::INSTANCE_UUID_LABEL],
+                &[Self::USERNAME_LABEL],
             )?,
         })
     }
@@ -58,33 +57,33 @@ impl Metrics {
 
 // Helper functions
 impl Metrics {
-    pub fn inc_deploy_counter(self, template: &str, user_uuid: &str) {
+    pub fn inc_deploy_counter(self, username: &str, template: &str,) {
         self.deploy_counter
-            .with_label_values(&[template, user_uuid])
+            .with_label_values(&[username, template])
             .inc();
     }
 
-    pub fn inc_deploy_failures_counter(self, template: &str) {
+    pub fn inc_deploy_failures_counter(self, username: &str, template: &str) {
         self.deploy_failures_counter
-            .with_label_values(&[template])
+            .with_label_values(&[username, template])
             .inc();
     }
 
-    pub fn inc_undeploy_counter(self, instance_uuid: &str) {
+    pub fn inc_undeploy_counter(self, username: &str) {
         self.undeploy_counter
-            .with_label_values(&[&instance_uuid])
+            .with_label_values(&[username])
             .inc();
     }
 
-    pub fn inc_undeploy_failures_counter(self, instance_uuid: &str) {
+    pub fn inc_undeploy_failures_counter(self, username: &str) {
         self.undeploy_failures_counter
-            .with_label_values(&[&instance_uuid])
+            .with_label_values(&[username])
             .inc();
     }
 
-    pub fn observe_deploy_duration(self, instance_uuid: &str, duration: f64) {
+    pub fn observe_deploy_duration(self, username: &str, duration: f64) {
         self.deploy_duration
-            .with_label_values(&[&instance_uuid])
+            .with_label_values(&[username])
             .observe(duration);
     }
 }
