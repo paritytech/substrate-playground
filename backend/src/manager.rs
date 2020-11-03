@@ -55,7 +55,8 @@ pub struct Manager {
 pub struct PlaygroundDetails {
     pub pod: PodDetails,
     pub templates: BTreeMap<String, Template>,
-    pub instances: Vec<InstanceDetails>,
+    pub instance: Option<InstanceDetails>,
+    pub all_instances: Option<BTreeMap<String, InstanceDetails>>,
     pub user: Option<User>,
 }
 
@@ -74,7 +75,7 @@ impl Manager {
                     .patch_ingress(
                         running_instances(all_instances)
                             .iter()
-                            .map(|i| (i.1.instance_uuid.clone(), &i.1.template))
+                            .map(|i| (i.1.user_uuid.clone(), &i.1.template))
                             .collect(),
                     )
                     .await?;
@@ -100,8 +101,8 @@ impl Manager {
             let instances_thread = self.clone().instances.clone();
             if let Ok(mut instances2) = instances_thread.lock() {
                 let instances3 = &mut instances2.clone();
-                for (id, instance_uuid) in instances3 {
-                    match self.clone().get_instance(&id, &instance_uuid) {
+                for id in instances3 {
+                    match self.clone().get_instance(&id.0) {
                         Ok(details) => {
                             let phase =
                                 phase(&details.pod).unwrap_or_else(|| "Unknown".to_string());
@@ -113,7 +114,7 @@ impl Manager {
                                     // TODO track success / failure
                                     if let Some(duration) = elapsed(&details.pod) {
                                         self.clone().metrics.observe_deploy_duration(
-                                            &instance_uuid,
+                                            &id.0,
                                             duration.as_secs_f64(),
                                         );
                                     } else {
@@ -135,14 +136,13 @@ impl Manager {
             // Go through all Running pods and figure out if they have to be undeployed
             match self.clone().list_all() {
                 Ok(all_instances) => {
-                    for (user_id, instance) in running_instances(all_instances) {
-                        let instance_uuid = &instance.instance_uuid;
+                    for (username, instance) in running_instances(all_instances) {
                         if let Some(duration) = elapsed(&instance.pod) {
                             if duration > Manager::THREE_HOURS {
-                                match self.clone().undeploy(&user_id, &instance_uuid) {
+                                match self.clone().undeploy(&username) {
                                     Ok(()) => (),
                                     Err(err) => {
-                                        warn!("Error while undeploying {}: {}", instance_uuid, err)
+                                        warn!("Error while undeploying {}: {}", username, err)
                                     }
                                 }
                             }
@@ -165,11 +165,16 @@ impl Manager {
     pub fn get(self, user: User) -> Result<PlaygroundDetails, String> {
         let pod = new_runtime()?.block_on(self.clone().engine.get())?;
         let templates = new_runtime()?.block_on(self.clone().engine.get_templates())?;
-        let instances = new_runtime()?.block_on(self.engine.list(user.username.as_str()))?;
+        let all_instances = if user.admin {
+            Some(new_runtime()?.block_on( self.engine.list_all())?)
+        } else {
+            None
+        };
         Ok(PlaygroundDetails {
             pod,
             templates,
-            instances,
+            instance: new_runtime()?.block_on(self.engine.get_instance(user.username.as_str())).ok(),
+            all_instances,
             user: Some(user),
         })
     }
@@ -180,14 +185,14 @@ impl Manager {
         Ok(PlaygroundDetails {
             pod,
             templates,
-            instances: vec![],
+            instance: None,
+            all_instances: None,
             user: None,
         })
     }
 
     pub fn get_instance(
         self,
-        _user_uuid: &str,
         instance_uuid: &str,
     ) -> Result<InstanceDetails, String> {
         new_runtime()?.block_on(self.engine.get_instance(&instance_uuid))
@@ -197,27 +202,27 @@ impl Manager {
         new_runtime()?.block_on(self.clone().engine.list_all())
     }
 
-    pub fn deploy(self, id: &str, template: &str) -> Result<String, String> {
-        let result = new_runtime()?.block_on(self.engine.deploy(&id, &template));
+    pub fn deploy(self, username: &str, template: &str) -> Result<String, String> {
+        let result = new_runtime()?.block_on(self.engine.deploy(&username, &template));
         match result.clone() {
             Ok(instance_uuid) => {
                 if let Ok(mut instances) = self.instances.lock() {
-                    instances.insert(id.into(), instance_uuid);
+                    instances.insert(username.into(), instance_uuid);
                 } else {
                     error!("Failed to acquire instances lock");
                 }
-                self.metrics.inc_deploy_counter(&id, &template);
+                self.metrics.inc_deploy_counter(&username, &template);
             }
-            Err(_) => self.metrics.inc_deploy_failures_counter(&template),
+            Err(_) => self.metrics.inc_deploy_failures_counter(&username, &template),
         }
         result
     }
 
-    pub fn undeploy(self, _user_id: &str, instance_uuid: &str) -> Result<(), String> {
-        let result = new_runtime()?.block_on(self.engine.undeploy(&instance_uuid));
+    pub fn undeploy(self, username: &str) -> Result<(), String> {
+        let result = new_runtime()?.block_on(self.engine.undeploy(&username));
         match result {
-            Ok(_) => self.metrics.inc_undeploy_counter(&instance_uuid),
-            Err(_) => self.metrics.inc_undeploy_failures_counter(&instance_uuid),
+            Ok(_) => self.metrics.inc_undeploy_counter(&username),
+            Err(_) => self.metrics.inc_undeploy_failures_counter(&username),
         }
         result
     }

@@ -52,7 +52,6 @@ export function intercept({logged = false, noInstance = true, delay = 100}: {log
   server.get('/api/').intercept(async (req, res) => {
     await server.timeout(delay);
     let templates = {workshop: template_private, workshop2: template, workshop3: template, workshop4: template, workshop5: template, workshop6: template, workshop7: template};
-    let instances = noInstance ? [] : [instance];
     let user = logged ?
       {
         user: {
@@ -63,7 +62,7 @@ export function intercept({logged = false, noInstance = true, delay = 100}: {log
       } : null;
     res.status(200).json({result: {
       templates: templates,
-      instances: instances,
+      instance: instance,
       user: user
     }});
   });

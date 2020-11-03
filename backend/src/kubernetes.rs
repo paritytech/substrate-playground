@@ -22,7 +22,6 @@ const APP_VALUE: &str = "playground";
 const COMPONENT_LABEL: &str = "app.kubernetes.io/component";
 const COMPONENT_VALUE: &str = "theia";
 const OWNER_LABEL: &str = "app.kubernetes.io/owner";
-const INSTANCE_LABEL: &str = "app.kubernetes.io/instance";
 const INGRESS_NAME: &str = "ingress";
 const TEMPLATE_ANNOTATION: &str = "playground.substrate.io/template";
 const THEIA_WEB_PORT: i32 = 3000;
@@ -45,12 +44,12 @@ async fn list_by_selector<K: Clone + DeserializeOwned + Meta>(
         .map_err(|s| format!("Error {}", s))
 }
 
-pub fn pod_name(instance_uuid: &str) -> String {
-    format!("{}-{}", COMPONENT_VALUE, instance_uuid)
+pub fn pod_name(user: &str) -> String {
+    format!("{}-{}", COMPONENT_VALUE, user)
 }
 
-pub fn service_name(instance_uuid: &str) -> String {
-    format!("{}-service-{}", COMPONENT_VALUE, instance_uuid)
+pub fn service_name(user: &str) -> String {
+    format!("{}-service-{}", COMPONENT_VALUE, user)
 }
 
 fn create_env_var(name: &str, value: &str) -> EnvVar {
@@ -65,12 +64,10 @@ fn pod_env_variables(
     template: &Template,
     host: &str,
     user_uuid: &str,
-    instance_uuid: &str,
 ) -> Vec<EnvVar> {
     let mut envs = vec![
         create_env_var("SUBSTRATE_PLAYGROUND", ""),
-        create_env_var("SUBSTRATE_PLAYGROUND_USER", user_uuid),
-        create_env_var("SUBSTRATE_PLAYGROUND_INSTANCE", instance_uuid),
+        create_env_var("SUBSTRATE_PLAYGROUND_INSTANCE", user_uuid),
         create_env_var("SUBSTRATE_PLAYGROUND_HOSTNAME", host),
     ];
     if let Some(mut template_envs) = template.runtime.as_ref().and_then(|r| {
@@ -90,7 +87,6 @@ fn pod_env_variables(
 fn create_pod(
     host: &str,
     user_uuid: &str,
-    instance_uuid: &str,
     template: &Template,
 ) -> Result<Pod, String> {
     let mut labels = BTreeMap::new();
@@ -99,13 +95,12 @@ fn create_pod(
     labels.insert(APP_LABEL.to_string(), APP_VALUE.to_string());
     labels.insert(COMPONENT_LABEL.to_string(), COMPONENT_VALUE.to_string());
     labels.insert(OWNER_LABEL.to_string(), user_uuid.to_string());
-    labels.insert(INSTANCE_LABEL.to_string(), instance_uuid.to_string());
     let mut annotations = BTreeMap::new();
     annotations.insert(TEMPLATE_ANNOTATION.to_string(), template.to_string());
 
     Ok(Pod {
         metadata: ObjectMeta {
-            name: Some(pod_name(instance_uuid)),
+            name: Some(pod_name(user_uuid)),
             labels: Some(labels),
             annotations: Some(annotations),
             ..Default::default()
@@ -114,7 +109,7 @@ fn create_pod(
             containers: vec![Container {
                 name: format!("{}-container", COMPONENT_VALUE),
                 image: Some(template.image.to_string()),
-                env: Some(pod_env_variables(template, host, user_uuid, instance_uuid)),
+                env: Some(pod_env_variables(template, host, user_uuid)),
                 ..Default::default()
             }],
             ..Default::default()
@@ -123,13 +118,13 @@ fn create_pod(
     })
 }
 
-fn create_service(instance_uuid: &str, template: &Template) -> Service {
+fn create_service(user_uuid: &str, template: &Template) -> Service {
     let mut labels = BTreeMap::new();
     labels.insert(APP_LABEL.to_string(), APP_VALUE.to_string());
     labels.insert(COMPONENT_LABEL.to_string(), COMPONENT_VALUE.to_string());
-    labels.insert(INSTANCE_LABEL.to_string(), instance_uuid.to_string());
+    labels.insert(OWNER_LABEL.to_string(), user_uuid.to_string());
     let mut selectors = BTreeMap::new();
-    selectors.insert(INSTANCE_LABEL.to_string(), instance_uuid.to_string());
+    selectors.insert(OWNER_LABEL.to_string(), user_uuid.to_string());
 
     // The theia port itself is mandatory
     let mut ports = vec![ServicePort {
@@ -157,7 +152,7 @@ fn create_service(instance_uuid: &str, template: &Template) -> Service {
 
     Service {
         metadata: ObjectMeta {
-            name: Some(service_name(instance_uuid)),
+            name: Some(service_name(user_uuid)),
             labels: Some(labels),
             ..Default::default()
         },
@@ -238,7 +233,6 @@ pub struct Engine {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct InstanceDetails {
     pub user_uuid: String,
-    pub instance_uuid: String,
     pub template: Template,
     pub url: String,
     pub pod: PodDetails,
@@ -248,21 +242,19 @@ impl InstanceDetails {
     pub fn new(
         engine: Engine,
         user_uuid: String,
-        instance_uuid: String,
         template: &Template,
         pod: PodDetails,
     ) -> Self {
         InstanceDetails {
-            user_uuid,
-            instance_uuid: instance_uuid.clone(),
+            user_uuid: user_uuid.clone(),
             template: template.clone(),
-            url: InstanceDetails::url(engine, instance_uuid),
+            url: InstanceDetails::url(engine, user_uuid),
             pod,
         }
     }
 
-    fn url(engine: Engine, instance_uuid: String) -> String {
-        format!("//{}.{}", instance_uuid, engine.host)
+    fn url(engine: Engine, user_uuid: String) -> String {
+        format!("//{}.{}", user_uuid, engine.host)
     }
 }
 
@@ -319,19 +311,11 @@ impl Engine {
         Ok(Engine { host, namespace })
     }
 
-    fn owner_selector(user_uuid: &str) -> String {
-        format!("{}={}", OWNER_LABEL, user_uuid)
-    }
-
     fn pod_to_instance(self, pod: &Pod) -> Result<InstanceDetails, String> {
         let labels = pod.metadata.labels.clone().ok_or("no labels")?;
         Ok(InstanceDetails::new(
             self.clone(),
             labels.get(OWNER_LABEL).ok_or("no owner label")?.to_string(),
-            labels
-                .get(INSTANCE_LABEL)
-                .ok_or("no instance label")?
-                .to_string(),
             &Template::parse(
                 &pod.metadata
                     .annotations
@@ -366,12 +350,12 @@ impl Engine {
         Ok(self.pod_to_details(&pod)?)
     }
 
-    pub async fn get_instance(self, instance_uuid: &str) -> Result<InstanceDetails, String> {
+    pub async fn get_instance(self, user: &str) -> Result<InstanceDetails, String> {
         let config = config().await?;
         let client = Client::new(config);
         let pod_api: Api<Pod> = Api::namespaced(client, &self.namespace);
         let pod = pod_api
-            .get(&pod_name(instance_uuid))
+            .get(&pod_name(user))
             .await
             .map_err(error_to_string)?;
 
@@ -389,20 +373,7 @@ impl Engine {
             .collect::<Result<BTreeMap<String, Template>, String>>()?)
     }
 
-    /// Lists all currently running instances for an identified user
-    pub async fn list(self, user_uuid: &str) -> Result<Vec<InstanceDetails>, String> {
-        let config = config().await?;
-        let client = Client::new(config);
-        let pod_api: Api<Pod> = Api::namespaced(client, &self.namespace);
-        // TODO should err if non existing user?
-        let pods = list_by_selector(&pod_api, Engine::owner_selector(user_uuid)).await?;
-
-        Ok(pods
-            .iter()
-            .flat_map(|pod| self.clone().pod_to_instance(pod).ok())
-            .collect::<Vec<_>>())
-    }
-
+    /// Lists all currently running instances
     pub async fn list_all(&self) -> Result<BTreeMap<String, InstanceDetails>, String> {
         let config = config().await?;
         let client = Client::new(config);
@@ -459,7 +430,7 @@ impl Engine {
     }
 
     pub async fn deploy(self, user_uuid: &str, template_id: &str) -> Result<String, String> {
-        if !self.clone().list(&user_uuid).await?.is_empty() {
+        if self.clone().get_instance(&user_uuid).await.is_ok() {
             return Err("One instance is already running".to_string());
         }
 
@@ -490,7 +461,6 @@ impl Engine {
                 &create_pod(
                     &self.host,
                     &user_uuid,
-                    &instance_uuid.clone(),
                     instance_template,
                 )?,
             )

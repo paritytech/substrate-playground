@@ -5,7 +5,7 @@ import { navigateToInstance } from './utils';
 
 export interface Context {
   details?: object,
-  instances?: Array<string>;
+  instance?: string;
   template?: string;
   templates?: Array<string>;
   phase?: string;
@@ -69,9 +69,9 @@ function lifecycle(history, location, client: Client) {
               const data = {details: { ...res, ...{templates: indexedTemplates } }};
               if (user && template) {
                 if (templates[template]) {
-                  const instances = res.instances;
-                  if (instances?.length > 0) {
-                    throw {error: `Instance running`, data: {instances: instances}};
+                  const instance = res.instance;
+                  if (instance) {
+                    throw {error: `Instance running`, data: {instance: instance}};
                   } else {
                     callback({type: deploy, template: template, data: data});
                   }
@@ -106,21 +106,23 @@ function lifecycle(history, location, client: Client) {
       [stopping]: {
         invoke: {
           src: (context, event) => async (callback) => {
-            const instanceUUID = event.instance.instance_uuid;
-            await client.stopInstance(instanceUUID);
+            await client.stopInstance();
             // Ignore failures, consider that this call is idempotent
 
             async function waitForRemoval(count: number) {
-              if (count > 30) {
-                callback({type: failure, error: "Failed to stop instance in time"});
-              }
-
-              const { error } = await client.getInstanceDetails(instanceUUID);
-              if (error) {
-                // The instance doesn't exist anymore, stopping is done
+              const { result } = await client.getDetails();
+              if (!result.instance) {
+                // The instance doesn't exist anymore
                 callback({type: success});
               } else {
-                setTimeout(() => waitForRemoval(count + 1), 1000);
+                // Instance is still running
+                if (count > 30) {
+                  // Too long, don't check anymore
+                  callback({type: failure, error: "Failed to stop instance in time"});
+                } else {
+                  // Check once more
+                  setTimeout(() => waitForRemoval(count + 1), 1000);
+                }
               }
             }
 

@@ -4,7 +4,7 @@ import { Client } from '@substrate/playground-api';
 import { createMuiTheme, ThemeProvider } from '@material-ui/core/styles';
 import { Redirect, Route, Router, Switch } from "react-router-dom";
 import { createBrowserHistory } from "history";
-import { AdminPanel } from './admin';
+import { AdminPanel, StatsPanel } from './admin';
 import { MainPanel, TheiaPanel } from './components';
 import { ControllerPanel } from './controller';
 import { TutorialPanel } from './tutorial';
@@ -52,8 +52,9 @@ function App({ client }) {
           </Route>
           <Route exact path={"/tutorial"} component={() => <TutorialPanel client={client} />} />
           <Route exact path={"/controller"} component={ControllerPanel} />
+          <Route exact path={"/stats"} component={() => <StatsPanel client={client} />} />
           <Route exact path={"/admin"} component={() => <AdminPanel client={client} />} />
-          <Route path={"/:uuid"} component={() => <TheiaPanel client={client} />} />
+          <Route path={"/instance"} component={() => <TheiaPanel client={client} />} />
         </Switch>
       </Router>
     </ThemeProvider>
