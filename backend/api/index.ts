@@ -48,11 +48,6 @@ export interface Details {
     name: string,
 }
 
-export interface UserDetails {
-    id: string,
-    instances: Map<String, String>,
-}
-
 // See https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#pod-phase
 export type Phase = "Pending" | "Running" | "Succeeded" | "Failed" | "Unknown";
 
@@ -105,8 +100,8 @@ export class Client {
         }));
     }
     
-    async stopInstance(instanceUUID: string, opts: Object = this.defaultOpts) {
-        return fromResponse(await fetchWithTimeout(`${this.base}/${instanceUUID}`, {
+    async stopInstance(opts: Object = this.defaultOpts) {
+        return fromResponse(await fetchWithTimeout(`${this.base}/`, {
             method: 'DELETE',
             headers: headers,
             ...opts
