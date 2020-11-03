@@ -32,11 +32,13 @@ generatorOptions:
 configMapGenerator:
   - name: config
     literals:
+    # Github client ID can be safely shared publicly.
+    # Also it is specific to this dev env whose TLD can't be registered (.test).
     - github.clientId=dd81163290c118582a1a
 
 secretGenerator:
   - name: secrets
     literals:
-    # Safe to be stored in repository as it is used for a .test TLD (can't be registered)
+    # Both secrets are safe to be stored in repository as they are specific to this dev env whose TLD can't be registered (.test).
     - github.clientSecret=abdcf38dd290429b98f43074d010b989cf970461
     - rocket.secretKey=tNxYqkQ5o9KiT8mQPVxqxu+H2Sl+Jd4CxkpFZmkw6Kw=
