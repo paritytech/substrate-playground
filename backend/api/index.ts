@@ -90,15 +90,7 @@ export class Client {
     }
 
     async getDetails(opts: Object = this.defaultOpts): Promise<RPCResponse<Details>> {
-        return fromResponse(await fetchWithTimeout(this.base, {
-            method: 'GET',
-            headers: headers,
-            ...opts
-        }));
-    }
-    
-    async getInstanceDetails(instanceUUID: string, opts: Object = this.defaultOpts): Promise<JSONRPCResponse<Phase>> {
-        return fromResponse(await fetchWithTimeout(`${this.base}/${instanceUUID}`, {
+        return fromResponse(await fetchWithTimeout(`this.base`, {
             method: 'GET',
             headers: headers,
             ...opts
