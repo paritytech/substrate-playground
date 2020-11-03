@@ -142,7 +142,7 @@ export function Loading({ phase, retry = 0 }: { phase?: string, retry?: number }
     );
 }
 
-export function TheiaInstance({ uuid, embedded = false, client }: { uuid: string, embedded: boolean, client: Client }) {
+export function TheiaInstance({ uuid, client }: { uuid: string, client: Client }) {
     const maxRetries = 5*60;
     const location = useLocation();
     const history = useHistory();
@@ -254,25 +254,33 @@ export function TheiaInstance({ uuid, embedded = false, client }: { uuid: string
         return <iframe ref={ref} src={data.url} frameBorder="0" width="100%" height="100%"></iframe>
     } else {
         return (
-        <Wrapper client={client} send={send} details={details} embedded={embedded}>
-            <Container style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-                <Paper style={{ display: "flex", flexDirection: "column", height: "60vh", width: "60vw", justifyContent: "center"}} elevation={3}>
-                    {(details == null || user)
-                    ? <Content data={data} />
-                    : <LoginPanel />}
-                </Paper>
-            </Container>
-        </Wrapper>
+        <Container style={{ display: "flex", flex: 1, justifyContent: "center", alignItems: "center" }}>
+            <Paper style={{ display: "flex", flexDirection: "column", height: "60vh", width: "60vw", justifyContent: "center"}} elevation={3}>
+                {(details == null || user)
+                ? <Content data={data} />
+                : <LoginPanel />}
+            </Paper>
+        </Container>
         );
     }
 }
 
+interface ParamTypes {
+    uuid: string
+}
+
 export function TheiaPanel({ client }) {
-    const { uuid } = useParams();
+    const { uuid } = useParams<ParamTypes>();
+    const location = useLocation();
+    const history = useHistory();
+    const [state, send] = useLifecycle(history, location, client);
+    const details = state.context.details;
 
     return (
     <div style={{display: "flex", width: "100vw", height: "100vh"}}>
-        <TheiaInstance client={client} uuid={uuid} />
+        <Wrapper client={client} send={send} details={details} light={true}>
+            <TheiaInstance client={client} uuid={uuid} />
+        </Wrapper>
     </div>
     );
 }
@@ -328,12 +336,13 @@ function Nav({ client, send, details, toggleDetails }) {
     const logged = details != null && user;
     return (
         <AppBar position="sticky">
-            <Toolbar style={{ justifyContent: "space-between" }}>
+            <Toolbar style={{ justifyContent: "space-between" }} variant="dense">
                 <Typography variant="h6">
                     <Button onClick={() => navigateToHomepage(history)}>Playground</Button>
                 </Typography>
                 <div style={{display: "flex", alignItems: "center"}}>
                     <IconButton
+                        size="small"
                         onClick={() => window.open("https://docs.google.com/forms/d/e/1FAIpQLSdXpq_fHqS_ow4nC7EpGmrC_XGX_JCIRzAqB1vaBtoZrDW-ZQ/viewform?edit_requested=true")}
                     >
                         <FeedbackIcon />
@@ -346,6 +355,7 @@ function Nav({ client, send, details, toggleDetails }) {
                                 aria-haspopup="true"
                                 onClick={handleMenu}
                                 color="inherit"
+                                size="small"
                             >
                                 <Badge color="secondary" variant={user.admin ? "standard" : "dot"} invisible={!user.parity}>
                                     <Avatar alt={user.username} src={user.avatar} />
@@ -602,7 +612,7 @@ export function MainPanel({ client }) {
     return (
         <div style={{ display: "flex", width: "100vw", height: "100vh" }}>
             <Wrapper client={client} send={send} details={details}>
-                <Container style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+                <Container style={{ display: "flex", flex: 1, justifyContent: "center", alignItems: "center" }}>
                     <Paper style={{ display: "flex", flexDirection: "column", height: "60vh", width: "60vw", justifyContent: "center"}} elevation={3}>
                         <Content />
                     </Paper>
@@ -612,11 +622,11 @@ export function MainPanel({ client }) {
     );
 }
 
-export function Wrapper({ client, send, details, embedded = false, children}) {
+export function Wrapper({ client, send, details, light = false, children}) {
     const [showDetails, setDetails] = useState(false);
     function toggleDetails() { setDetails(!showDetails); }
     return (
-        <div style={{display: "flex", flexDirection: "column", width: "inherit"}}>
+        <div style={{display: "flex", flexDirection: "column", width: "inherit", height: "inherit"}}>
             <Dialog open={showDetails} onClose={toggleDetails}>
                 <DialogTitle>Playground</DialogTitle>
                 <DialogContent>
@@ -629,16 +639,13 @@ export function Wrapper({ client, send, details, embedded = false, children}) {
                 </DialogContent>
             </Dialog>
 
-            {!embedded &&
-            <Nav client={client} send={send} details={details} toggleDetails={toggleDetails} />}
+            <Nav client={client} send={send} details={details} toggleDetails={toggleDetails} />
 
             <Fade in appear>
-                <Container style={{ display: "flex", flex: "1", alignItems: "center" }}>
-                    {children}
-                </Container>
+                {children}
             </Fade>
 
-            {!embedded &&
+            {!light &&
             <Container style={{display: "flex", justifyContent: "center"}} component="footer" maxWidth={false}>
                 <Link
                     href="https://www.parity.io/privacy/"

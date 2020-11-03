@@ -162,7 +162,7 @@ function TutorialController({steps, uuid}) {
             <VerticalLinearStepper steps={steps} />
         </div>
         <div style={{display: "flex", flex: 2, height: "50vh", padding: 20}}>
-            <TheiaInstance uuid={uuid} embedded={true} />
+            <TheiaInstance uuid={uuid} />
         </div>
       </div>
     );
