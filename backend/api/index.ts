@@ -90,7 +90,7 @@ export class Client {
     }
 
     async getDetails(opts: Object = this.defaultOpts): Promise<RPCResponse<Details>> {
-        return fromResponse(await fetchWithTimeout(`this.base`, {
+        return fromResponse(await fetchWithTimeout(`${this.base}/`, {
             method: 'GET',
             headers: headers,
             ...opts
