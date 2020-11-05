@@ -43,12 +43,6 @@ export function intercept({logged = false, noInstance = true, delay = 100}: {log
     await server.timeout(delay);
     res.status(200);
   });
-  server.get('/api/:iuuid').intercept(async (req, res) => {
-    await server.timeout(delay);
-    res.status(200).json({
-      result: instance,
-    });
-  });
   server.get('/api/').intercept(async (req, res) => {
     await server.timeout(delay);
     let templates = {workshop: template_private, workshop2: template, workshop3: template, workshop4: template, workshop5: template, workshop6: template, workshop7: template};
@@ -63,10 +57,15 @@ export function intercept({logged = false, noInstance = true, delay = 100}: {log
     res.status(200).json({result: {
       templates: templates,
       instance: instance,
+      "all_instances": {"instance1": instance,
+                        "instance2": instance,
+                        "instance3": instance,
+                        "instance4": instance,
+                        "instance5": instance},
       user: user
     }});
   });
-  server.delete('/api/:iuuid').intercept(async (req, res) => {
+  server.delete('/api/').intercept(async (req, res) => {
     await server.timeout(delay);
     res.status(200).json({
       result: null,
