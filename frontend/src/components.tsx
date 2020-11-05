@@ -89,7 +89,7 @@ export function ErrorMessage({ title = "Oops! Looks like something went wrong :(
     return (
         <Alert severity="error" style={{ margin: 20, alignItems: "center" }}
             action={<ErrorMessageAction action={action} actionTitle={actionTitle} />}>
-            <AlertTitle>{title}</AlertTitle>
+            <AlertTitle style={{margin: "unset"}}>{title}</AlertTitle>
             {reason &&
             <Box component="span" display="block">{reason}</Box>}
         </Alert>
@@ -266,7 +266,7 @@ export function TheiaInstance({ client }: { client: Client }) {
     }
 }
 
-export function NotFoundPanel({client, message}: {message?: string}) {
+export function Panel({ client, children }) {
     const location = useLocation();
     const history = useHistory();
     const [state, send] = useLifecycle(history, location, client);
@@ -274,13 +274,22 @@ export function NotFoundPanel({client, message}: {message?: string}) {
     return (
         <div style={{ display: "flex", width: "100vw", height: "100vh" }}>
             <Wrapper client={client} send={send} details={details}>
-                <Container style={{ display: "flex", flex: 1, justifyContent: "center", alignItems: "center" }}>
-                    <Paper style={{ display: "flex", flexDirection: "column", height: "60vh", width: "60vw", justifyContent: "center"}} elevation={3}>
-                        <ErrorMessage title={message || "Oups"} action={() => navigateToHomepage(history)} actionTitle="GO HOME" />
-                    </Paper>
-                </Container>
+                {children}
             </Wrapper>
         </div>
+        );
+  }
+
+export function NotFoundPanel({client, message}: {message?: string, client: Client}) {
+    const history = useHistory();
+    return (
+        <Panel client={client}>
+            <Container style={{ display: "flex", flex: 1, justifyContent: "center", alignItems: "center" }}>
+                <Paper style={{ display: "flex", flexDirection: "column", height: "60vh", width: "60vw", justifyContent: "center"}} elevation={3}>
+                    <ErrorMessage title={message || "Oups"} action={() => navigateToHomepage(history)} actionTitle="GO HOME" />
+                </Paper>
+            </Container>
+        </Panel>
         );
 }
 
