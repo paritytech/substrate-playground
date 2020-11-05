@@ -85,7 +85,7 @@ function ErrorMessageAction({action, actionTitle = "TRY AGAIN"}: {action: (() =>
     }
 }
 
-export function ErrorMessage({ title = "Oops! Looks like something went wrong :(", reason, action, actionTitle }:{ title?: string, reason?: string, action: (() => void) | Promise<void> , actionTitle?: string}) {
+export function ErrorMessage({ title = "Oops! Looks like something went wrong :(", reason, action, actionTitle }:{ title?: string, reason?: string, action?: (() => void) | Promise<void> , actionTitle?: string}) {
     return (
         <Alert severity="error" style={{ margin: 20, alignItems: "center" }}
             action={<ErrorMessageAction action={action} actionTitle={actionTitle} />}>
@@ -264,6 +264,24 @@ export function TheiaInstance({ client }: { client: Client }) {
         </Container>
         );
     }
+}
+
+export function NotFoundPanel({client, message}: {message?: string}) {
+    const location = useLocation();
+    const history = useHistory();
+    const [state, send] = useLifecycle(history, location, client);
+    const details = state.context.details;
+    return (
+        <div style={{ display: "flex", width: "100vw", height: "100vh" }}>
+            <Wrapper client={client} send={send} details={details}>
+                <Container style={{ display: "flex", flex: 1, justifyContent: "center", alignItems: "center" }}>
+                    <Paper style={{ display: "flex", flexDirection: "column", height: "60vh", width: "60vw", justifyContent: "center"}} elevation={3}>
+                        <ErrorMessage title={message || "Oups"} action={() => navigateToHomepage(history)} actionTitle="GO HOME" />
+                    </Paper>
+                </Container>
+            </Wrapper>
+        </div>
+        );
 }
 
 export function TheiaPanel({ client }) {
@@ -502,7 +520,7 @@ function PortsTable({ ports }) {
     );
 }
 
-function InstanceDetails({ instance }) {
+export function InstanceDetails({ instance }) {
     const { pod, template } = instance;
     const { name, runtime } = template;
     const { env, ports } = runtime;

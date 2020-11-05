@@ -5,7 +5,7 @@ import { createMuiTheme, ThemeProvider } from '@material-ui/core/styles';
 import { Redirect, Route, Router, Switch } from "react-router-dom";
 import { createBrowserHistory } from "history";
 import { AdminPanel, StatsPanel } from './admin';
-import { MainPanel, TheiaPanel } from './components';
+import { MainPanel, NotFoundPanel, TheiaPanel } from './components';
 import { ControllerPanel } from './controller';
 import { TutorialPanel } from './tutorial';
 import { intercept } from './server';
@@ -55,6 +55,7 @@ function App({ client }) {
           <Route exact path={"/stats"} component={() => <StatsPanel client={client} />} />
           <Route exact path={"/admin"} component={() => <AdminPanel client={client} />} />
           <Route path={"/instance"} component={() => <TheiaPanel client={client} />} />
+          <Route component={() => <NotFoundPanel client={client} message="Unknown page" />} />
         </Switch>
       </Router>
     </ThemeProvider>
