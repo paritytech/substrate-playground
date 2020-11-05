@@ -390,8 +390,8 @@ function Nav({ client, send, details, toggleDetails }) {
                                 open={open}
                                 onClose={handleClose}
                             >
-                                <MenuItem onClick={async () => {handleClose(); await navigateToStats(history)}}>STATS</MenuItem>
-                                <MenuItem onClick={async () => {handleClose(); await navigateToAdmin(history)}}>ADMIN</MenuItem>
+                                {user.admin && <MenuItem onClick={async () => {handleClose(); await navigateToStats(history)}}>STATS</MenuItem>}
+                                {user.admin && <MenuItem onClick={async () => {handleClose(); await navigateToAdmin(history)}}>ADMIN</MenuItem>}
                                 <MenuItem onClick={async () => {handleClose(); await client.logout(); await navigateToHomepage(history); send(restart)}}>LOGOUT</MenuItem>
                             </Menu>
                         </div>
