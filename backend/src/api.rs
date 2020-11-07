@@ -18,28 +18,37 @@ use rocket::{
 use rocket_contrib::{json, json::JsonValue};
 use rocket_oauth2::{OAuth2, TokenResponse};
 use serde::{Deserialize, Serialize};
-use std::{env, io::Read};
+use std::io::Read;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct User {
     pub username: String,
     pub avatar: String,
-    pub token: String,
-    pub parity: bool,
     pub admin: bool,
 }
 
-const COOKIE_USERNAME: &str = "username";
-const COOKIE_AVATAR: &str = "avatar";
 const COOKIE_TOKEN: &str = "token";
-const COOKIE_PARITY: &str = "parity";
-const COOKIE_ADMIN: &str = "admin";
 
-fn token_valid(token: &str, client_id: &str, client_secret: &str) -> Result<bool, String> {
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+pub struct GitHubTokenValidity {
+    #[serde(default)]
+    user: GitHubUser,
+}
+
+/// User information to be retrieved from the GitHub API.
+#[derive(Clone, Default, Debug, serde::Serialize, serde::Deserialize)]
+pub struct GitHubUser {
+    #[serde(default)]
+    login: String,
+    #[serde(default)]
+    avatar_url: String,
+}
+
+fn token_validity(token: &str, client_id: &str, client_secret: &str) -> Result<GitHubUser, String> {
     let https = HttpsConnector::new(hyper_sync_rustls::TlsClient::new());
     let client = Client::with_connector(https);
 
-    let mime: Mime = "application/vnd.github.v3+json"
+    let mime = "application/vnd.github.v3+json"
         .parse()
         .expect("parse GitHub MIME type");
 
@@ -61,7 +70,15 @@ fn token_valid(token: &str, client_id: &str, client_secret: &str) -> Result<bool
             )
         })?;
 
-    Ok(response.status == StatusCode::Ok)
+    if response.status == StatusCode::Ok {
+        let token_validity: GitHubTokenValidity =
+            serde_json::from_reader(response.take(2 * 1024 * 1024)).map_err(|error| {
+                format!("Failed to read GitHubTokenValidity: {}", error.to_string())
+            })?;
+        Ok(token_validity.user)
+    } else {
+        Err("Invalid token".to_string())
+    }
 }
 
 // Extract a User from private cookies
@@ -69,35 +86,28 @@ impl<'a, 'r> FromRequest<'a, 'r> for User {
     type Error = ();
 
     fn from_request(request: &'a Request<'r>) -> request::Outcome<User, ()> {
-        let mut cookies = request.guard::<Cookies<'_>>().expect("request cookies");
-        if let (Some(username), Some(avatar), Some(token), Some(parity), Some(admin)) = (
-            cookies.get_private(COOKIE_USERNAME),
-            cookies.get_private(COOKIE_AVATAR),
-            cookies.get_private(COOKIE_TOKEN),
-            cookies.get_private(COOKIE_PARITY),
-            cookies.get_private(COOKIE_ADMIN),
-        ) {
+        let configuration = &request.guard::<State<Context>>()?.manager.engine.configuration;
+        let mut cookies = request.cookies();
+        if let Some(token) = cookies.get_private(COOKIE_TOKEN) {
             let token_value = token.value();
-            if token_valid(
+            if let Ok(user) = token_validity(
                 token_value,
-                &env::var("GITHUB_CLIENT_ID").map_err(|_| Err((Status::BadRequest, ())))?,
-                &env::var("GITHUB_CLIENT_SECRET").map_err(|_| Err((Status::BadRequest, ())))?,
-            )
-            .map_err(|_| Err((Status::BadRequest, ())))?
-            {
-                return Outcome::Success(User {
-                    username: username.value().to_string(),
-                    avatar: avatar.value().to_string(),
-                    token: token_value.to_string(),
-                    parity: parity.value().to_string().parse().unwrap_or(false),
-                    admin: admin.value().to_string().parse().unwrap_or(false),
-                });
+                configuration.client_id.as_str(),
+                configuration.client_secret.as_str(),
+            ) {
+                let login = user.login;
+                Outcome::Success(User {
+                    username: login.clone(),
+                    avatar: user.avatar_url,
+                    admin: configuration.admins.clone().contains(&login)
+                })
             } else {
                 clear(cookies);
+                Outcome::Failure((Status::BadRequest, ()))
             }
+        } else {
+            Outcome::Forward(())
         }
-
-        Outcome::Forward(())
     }
 }
 
@@ -145,23 +155,8 @@ pub fn undeploy_unlogged(_instance_uuid: String) -> status::Unauthorized<()> {
 
 // GitHub login logic
 
-/// User information to be retrieved from the GitHub API.
-#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
-pub struct GitHubUserInfo {
-    #[serde(default)]
-    login: String,
-    #[serde(default)]
-    avatar_url: String,
-}
-
-#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
-pub struct GitHubOrg {
-    #[serde(default)]
-    login: String,
-}
-
 #[get("/login/github")]
-pub fn github_login(oauth2: OAuth2<GitHubUserInfo>, mut cookies: Cookies<'_>) -> Redirect {
+pub fn github_login(oauth2: OAuth2<GitHubUser>, mut cookies: Cookies<'_>) -> Redirect {
     oauth2.get_redirect(&mut cookies, &["user:read"]).unwrap()
 }
 
@@ -169,7 +164,7 @@ pub fn github_login(oauth2: OAuth2<GitHubUserInfo>, mut cookies: Cookies<'_>) ->
 /// and store it as a private cookie
 #[get("/auth/github")]
 pub fn post_install_callback(
-    token: TokenResponse<GitHubUserInfo>,
+    token: TokenResponse<GitHubUser>,
     mut cookies: Cookies<'_>,
 ) -> Result<Redirect, String> {
     let https = HttpsConnector::new(hyper_sync_rustls::TlsClient::new());
@@ -194,67 +189,17 @@ pub fn post_install_callback(
 
     if !response.status.is_success() {
         return Err(format!(
-            "Errorwhen accessing GitHub user profile:  {}",
+            "Error when accessing GitHub user profile:  {}",
             response.status
         ));
     }
 
-    let user_info: GitHubUserInfo = serde_json::from_reader(response.take(2 * 1024 * 1024))
-        .map_err(|error| format!("Failed to read GitHubUserInfo: {}", error.to_string()))?;
-
-    let response2: hyper::client::response::Response = client
-        .get(format!("https://api.github.com/users/{}/orgs", user_info.login).as_str())
-        .header(Authorization(format!("token {}", token.access_token())))
-        .header(Accept(vec![qitem(mime)]))
-        .header(UserAgent("Substrate Playground".into()))
-        .send()
-        .map_err(|error| {
-            format!(
-                "Failed to access GitHub organizations: {}",
-                error.to_string()
-            )
-        })?;
-
-    if !response2.status.is_success() {
-        return Err(format!(
-            "Error when accessing GitHub organizations: {}",
-            response2.status
-        ));
-    }
-
-    let orgs: Vec<GitHubOrg> = serde_json::from_reader(response2.take(2 * 1024 * 1024))
-        .map_err(|error| format!("Failed to read Vec<GitHubOrg>: {}", error.to_string()))?;
-
-    cookies.add_private(
-        Cookie::build(COOKIE_USERNAME, user_info.clone().login)
-            .same_site(SameSite::Lax)
-            .finish(),
-    );
-    cookies.add_private(
-        Cookie::build(COOKIE_AVATAR, user_info.avatar_url)
-            .same_site(SameSite::Lax)
-            .finish(),
-    );
     cookies.add_private(
         Cookie::build(COOKIE_TOKEN, token.access_token().to_string())
             .same_site(SameSite::Lax)
             .finish(),
     );
-    cookies.add_private(
-        Cookie::build(
-            COOKIE_PARITY,
-            orgs.into_iter()
-                .any(|org| org.login == "paritytech")
-                .to_string(),
-        )
-        .same_site(SameSite::Lax)
-        .finish(),
-    );
-    cookies.add_private(
-        Cookie::build(COOKIE_ADMIN, (user_info.login == "jeluard").to_string())
-            .same_site(SameSite::Lax)
-            .finish(),
-    );
+
     Ok(Redirect::to("/logged"))
 }
 
@@ -265,11 +210,7 @@ pub fn logout(cookies: Cookies<'_>) -> Redirect {
 }
 
 fn clear(mut cookies: Cookies<'_>) {
-    cookies.remove_private(Cookie::named(COOKIE_USERNAME));
-    cookies.remove_private(Cookie::named(COOKIE_AVATAR));
     cookies.remove_private(Cookie::named(COOKIE_TOKEN));
-    cookies.remove_private(Cookie::named(COOKIE_PARITY));
-    cookies.remove_private(Cookie::named(COOKIE_ADMIN));
 }
 
 #[allow(dead_code)]
