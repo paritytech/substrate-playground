@@ -16,6 +16,7 @@ use kube::{
 };
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::{collections::BTreeMap, error::Error};
+use std::env;
 
 const APP_LABEL: &str = "app.kubernetes.io/part-of";
 const APP_VALUE: &str = "playground";
@@ -60,11 +61,7 @@ fn create_env_var(name: &str, value: &str) -> EnvVar {
     }
 }
 
-fn pod_env_variables(
-    template: &Template,
-    host: &str,
-    user_uuid: &str,
-) -> Vec<EnvVar> {
+fn pod_env_variables(template: &Template, host: &str, user_uuid: &str) -> Vec<EnvVar> {
     let mut envs = vec![
         create_env_var("SUBSTRATE_PLAYGROUND", ""),
         create_env_var("SUBSTRATE_PLAYGROUND_INSTANCE", user_uuid),
@@ -84,11 +81,7 @@ fn pod_env_variables(
 
 // TODO detect when ingress is restarted, then re-sync theia instances
 
-fn create_pod(
-    host: &str,
-    user_uuid: &str,
-    template: &Template,
-) -> Result<Pod, String> {
+fn create_pod(host: &str, user_uuid: &str, template: &Template) -> Result<Pod, String> {
     let mut labels = BTreeMap::new();
     // TODO fetch docker image labels and add them to the pod.
     // Can be done by querying dockerhub (https://docs.docker.com/registry/spec/api/)
@@ -204,7 +197,7 @@ async fn config() -> Result<Config, String> {
         .map_err(error_to_string)
 }
 
-pub async fn get_config_map(
+async fn get_config_map(
     client: Client,
     namespace: &str,
     name: &str,
@@ -225,9 +218,17 @@ pub async fn get_templates(
 }
 
 #[derive(Clone)]
-pub struct Engine {
+pub struct Configuration {
     pub host: String,
     pub namespace: String,
+    pub client_id: String,
+    pub client_secret: String,
+    pub admins: Vec<String>,
+}
+
+#[derive(Clone)]
+pub struct Engine {
+    pub configuration: Configuration,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -239,12 +240,7 @@ pub struct InstanceDetails {
 }
 
 impl InstanceDetails {
-    pub fn new(
-        engine: Engine,
-        user_uuid: String,
-        template: &Template,
-        pod: PodDetails,
-    ) -> Self {
+    pub fn new(engine: Engine, user_uuid: String, template: &Template, pod: PodDetails) -> Self {
         InstanceDetails {
             user_uuid: user_uuid.clone(),
             template: template.clone(),
@@ -254,7 +250,7 @@ impl InstanceDetails {
     }
 
     fn url(engine: Engine, user_uuid: String) -> String {
-        format!("//{}.{}", user_uuid, engine.host)
+        format!("//{}.{}", user_uuid, engine.configuration.host)
     }
 }
 
@@ -308,7 +304,13 @@ impl Engine {
             "localhost".to_string()
         };
 
-        Ok(Engine { host, namespace })
+        let admins_config = env::var("ADMINS").map_err(|_| "ADMINS must be set")?;
+        let admins = admins_config.split(",").map(|s| s.to_string()).collect();
+        let client_id = env::var("GITHUB_CLIENT_ID").map_err(|_| "GITHUB_CLIENT_ID must be set")?;
+        let client_secret =
+            env::var("GITHUB_CLIENT_SECRET").map_err(|_| "GITHUB_CLIENT_SECRET must be set")?;
+
+        Ok(Engine { configuration: Configuration { host, namespace, client_id, client_secret, admins } })
     }
 
     fn pod_to_instance(self, pod: &Pod) -> Result<InstanceDetails, String> {
@@ -339,7 +341,7 @@ impl Engine {
     pub async fn get(self) -> Result<PodDetails, String> {
         let config = config().await?;
         let client = Client::new(config);
-        let pod_api: Api<Pod> = Api::namespaced(client, &self.namespace);
+        let pod_api: Api<Pod> = Api::namespaced(client, &self.configuration.namespace);
         let pods = list_by_selector(
             &pod_api,
             format!("{}={}", COMPONENT_LABEL, "backend-api").to_string(),
@@ -353,7 +355,7 @@ impl Engine {
     pub async fn get_instance(self, user: &str) -> Result<InstanceDetails, String> {
         let config = config().await?;
         let client = Client::new(config);
-        let pod_api: Api<Pod> = Api::namespaced(client, &self.namespace);
+        let pod_api: Api<Pod> = Api::namespaced(client, &self.configuration.namespace);
         let pod = pod_api
             .get(&pod_name(user))
             .await
@@ -366,7 +368,7 @@ impl Engine {
         let config = config().await?;
         let client = Client::new(config);
 
-        Ok(get_templates(client, &self.namespace)
+        Ok(get_templates(client, &self.configuration.namespace)
             .await?
             .into_iter()
             .map(|(k, v)| Template::parse(&v).map(|v2| (k, v2)))
@@ -377,7 +379,7 @@ impl Engine {
     pub async fn list_all(&self) -> Result<BTreeMap<String, InstanceDetails>, String> {
         let config = config().await?;
         let client = Client::new(config);
-        let pod_api: Api<Pod> = Api::namespaced(client, &self.namespace);
+        let pod_api: Api<Pod> = Api::namespaced(client, &self.configuration.namespace);
         let pods = list_by_selector(
             &pod_api,
             format!("{}={}", COMPONENT_LABEL, COMPONENT_VALUE).to_string(),
@@ -401,7 +403,7 @@ impl Engine {
     ) -> Result<(), String> {
         let config = config().await?;
         let client = Client::new(config);
-        let ingress_api: Api<Ingress> = Api::namespaced(client, &self.namespace);
+        let ingress_api: Api<Ingress> = Api::namespaced(client, &self.configuration.namespace);
         let mut ingress: Ingress = ingress_api
             .get(INGRESS_NAME)
             .await
@@ -410,7 +412,7 @@ impl Engine {
         let mut spec = ingress.clone().spec.ok_or("No spec")?.clone();
         let mut rules: Vec<IngressRule> = spec.clone().rules.ok_or("No rules")?;
         for (uuid, template) in instances {
-            let subdomain = subdomain(&self.host, &uuid);
+            let subdomain = subdomain(&self.configuration.host, &uuid);
             rules.push(IngressRule {
                 host: Some(subdomain.clone()),
                 http: Some(HTTPIngressRuleValue {
@@ -437,7 +439,7 @@ impl Engine {
         let config = config().await?;
         let client = Client::new(config);
         // Access the right image id
-        let templates = get_templates(client.clone(), &self.namespace).await?;
+        let templates = get_templates(client.clone(), &self.configuration.namespace).await?;
         let template = templates
             .get(&template_id.to_string())
             .ok_or_else(|| format!("Unknow image {}", template_id))?;
@@ -445,7 +447,7 @@ impl Engine {
 
         // Create a unique ID for this instance. Use lowercase to make sure the result can be used as part of a DNS
         let instance_uuid = user_uuid.to_string().to_lowercase();
-        let namespace = &self.namespace;
+        let namespace = &self.configuration.namespace;
 
         let pod_api: Api<Pod> = Api::namespaced(client.clone(), namespace);
 
@@ -458,11 +460,7 @@ impl Engine {
         pod_api
             .create(
                 &PostParams::default(),
-                &create_pod(
-                    &self.host,
-                    &user_uuid,
-                    instance_template,
-                )?,
+                &create_pod(&self.configuration.host, &user_uuid, instance_template)?,
             )
             .await
             .map_err(error_to_string)?;
@@ -482,20 +480,20 @@ impl Engine {
         // Undeploy the service by its id
         let config = config().await?;
         let client = Client::new(config);
-        let service_api: Api<Service> = Api::namespaced(client.clone(), &self.namespace);
+        let service_api: Api<Service> = Api::namespaced(client.clone(), &self.configuration.namespace);
         service_api
             .delete(&service_name(instance_uuid), &DeleteParams::default())
             .await
             .map_err(|s| format!("Error {}", s))?;
 
-        let pod_api: Api<Pod> = Api::namespaced(client.clone(), &self.namespace);
+        let pod_api: Api<Pod> = Api::namespaced(client.clone(), &self.configuration.namespace);
         pod_api
             .delete(&pod_name(instance_uuid), &DeleteParams::default())
             .await
             .map_err(|s| format!("Error {}", s))?;
 
-        let subdomain = subdomain(&self.host, instance_uuid);
-        let ingress_api: Api<Ingress> = Api::namespaced(client, &self.namespace);
+        let subdomain = subdomain(&self.configuration.host, instance_uuid);
+        let ingress_api: Api<Ingress> = Api::namespaced(client, &self.configuration.namespace);
         let mut ingress: Ingress = ingress_api
             .get(INGRESS_NAME)
             .await

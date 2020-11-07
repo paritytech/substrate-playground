@@ -57,7 +57,7 @@ impl Metrics {
 
 // Helper functions
 impl Metrics {
-    pub fn inc_deploy_counter(self, username: &str, template: &str,) {
+    pub fn inc_deploy_counter(self, username: &str, template: &str) {
         self.deploy_counter
             .with_label_values(&[username, template])
             .inc();
@@ -70,9 +70,7 @@ impl Metrics {
     }
 
     pub fn inc_undeploy_counter(self, username: &str) {
-        self.undeploy_counter
-            .with_label_values(&[username])
-            .inc();
+        self.undeploy_counter.with_label_values(&[username]).inc();
     }
 
     pub fn inc_undeploy_failures_counter(self, username: &str) {

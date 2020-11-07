@@ -34,6 +34,7 @@ configMapGenerator:
     literals:
     # Github client ID can be safely shared publicly.
     # Also it is specific to this dev env whose TLD can't be registered (.test).
+    - admins=jeluard
     - github.clientId=dd81163290c118582a1a
 
 secretGenerator:

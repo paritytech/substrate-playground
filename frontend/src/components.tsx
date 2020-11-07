@@ -380,7 +380,7 @@ function Nav({ client, send, details, toggleDetails }) {
                                 color="inherit"
                                 size="small"
                             >
-                                <Badge color="secondary" variant={user.admin ? "standard" : "dot"} invisible={!user.parity}>
+                                <Badge color="secondary" variant="dot" invisible={!user.admin}>
                                     <Avatar alt={user.username} src={user.avatar} />
                                 </Badge>
                             </IconButton>

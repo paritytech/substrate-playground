@@ -7,7 +7,7 @@ mod manager;
 mod metrics;
 mod template;
 
-use crate::api::GitHubUserInfo;
+use crate::api::GitHubUser;
 use crate::manager::Manager;
 use rocket::fairing::AdHoc;
 use rocket::{catchers, config::Environment, http::Method, routes};
@@ -39,23 +39,15 @@ async fn main() -> Result<(), Box<dyn Error>> {
         Err(_) => log::warn!("Unknown version"),
     }
 
-    let client_id = env::var("GITHUB_CLIENT_ID").map_err(|_| "GITHUB_CLIENT_ID must be set")?;
-    let client_secret =
-        env::var("GITHUB_CLIENT_SECRET").map_err(|_| "GITHUB_CLIENT_SECRET must be set")?;
-
     let manager = Manager::new().await?;
-    let engine = manager.clone().engine;
-    let host = engine.host;
-    let namespace = engine.namespace;
+    let configuration = manager.clone().engine.configuration;
     manager.clone().spawn_background_thread();
-
-    log::info!("Host {} {}", host, namespace);
 
     // Configure CORS
     let cors = CorsOptions {
         allowed_origins: AllowedOrigins::some_regex(&[
-            format!("https?://{}", host),
-            format!("^https?://(.+).{}$", host),
+            format!("https?://{}", configuration.host),
+            format!("^https?://(.+).{}$", configuration.host),
         ]),
         allowed_methods: vec![Method::Get, Method::Delete]
             .into_iter()
@@ -69,6 +61,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let prometheus = PrometheusMetrics::with_registry(manager.clone().metrics.create_registry()?);
     let error = rocket::ignite()
         .register(catchers![api::bad_request_catcher])
+        .manage(configuration.clone())
         .attach(prometheus.clone())
         .attach(cors)
         .attach(AdHoc::on_attach("github", |rocket| {
@@ -77,11 +70,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     auth_uri: "https://github.com/login/oauth/authorize".into(),
                     token_uri: "https://github.com/login/oauth/access_token".into(),
                 },
-                client_id,
-                client_secret,
+                configuration.client_id,
+                configuration.client_secret,
                 None,
             );
-            Ok(rocket.attach(OAuth2::<GitHubUserInfo>::custom(
+            Ok(rocket.attach(OAuth2::<GitHubUser>::custom(
                 HyperSyncRustlsAdapter::default().basic_auth(false),
                 config,
             )))

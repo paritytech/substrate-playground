@@ -113,10 +113,9 @@ impl Manager {
                                     instances2.remove(&details.user_uuid);
                                     // TODO track success / failure
                                     if let Some(duration) = elapsed(&details.pod) {
-                                        self.clone().metrics.observe_deploy_duration(
-                                            &id.0,
-                                            duration.as_secs_f64(),
-                                        );
+                                        self.clone()
+                                            .metrics
+                                            .observe_deploy_duration(&id.0, duration.as_secs_f64());
                                     } else {
                                         error!("Failed to compute this instance lifetime");
                                     }
@@ -166,14 +165,16 @@ impl Manager {
         let pod = new_runtime()?.block_on(self.clone().engine.get())?;
         let templates = new_runtime()?.block_on(self.clone().engine.get_templates())?;
         let all_instances = if user.admin {
-            Some(new_runtime()?.block_on( self.engine.list_all())?)
+            Some(new_runtime()?.block_on(self.engine.list_all())?)
         } else {
             None
         };
         Ok(PlaygroundDetails {
             pod,
             templates,
-            instance: new_runtime()?.block_on(self.engine.get_instance(user.username.as_str())).ok(),
+            instance: new_runtime()?
+                .block_on(self.engine.get_instance(user.username.as_str()))
+                .ok(),
             all_instances,
             user: Some(user),
         })
@@ -191,10 +192,7 @@ impl Manager {
         })
     }
 
-    pub fn get_instance(
-        self,
-        instance_uuid: &str,
-    ) -> Result<InstanceDetails, String> {
+    pub fn get_instance(self, instance_uuid: &str) -> Result<InstanceDetails, String> {
         new_runtime()?.block_on(self.engine.get_instance(&instance_uuid))
     }
 
@@ -213,7 +211,9 @@ impl Manager {
                 }
                 self.metrics.inc_deploy_counter(&username, &template);
             }
-            Err(_) => self.metrics.inc_deploy_failures_counter(&username, &template),
+            Err(_) => self
+                .metrics
+                .inc_deploy_failures_counter(&username, &template),
         }
         result
     }
