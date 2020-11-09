@@ -15,8 +15,8 @@ use kube::{
     Client, Config,
 };
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
-use std::{collections::BTreeMap, error::Error};
 use std::env;
+use std::{collections::BTreeMap, error::Error};
 
 const APP_LABEL: &str = "app.kubernetes.io/part-of";
 const APP_VALUE: &str = "playground";
@@ -310,7 +310,15 @@ impl Engine {
         let client_secret =
             env::var("GITHUB_CLIENT_SECRET").map_err(|_| "GITHUB_CLIENT_SECRET must be set")?;
 
-        Ok(Engine { configuration: Configuration { host, namespace, client_id, client_secret, admins } })
+        Ok(Engine {
+            configuration: Configuration {
+                host,
+                namespace,
+                client_id,
+                client_secret,
+                admins,
+            },
+        })
     }
 
     fn pod_to_instance(self, pod: &Pod) -> Result<InstanceDetails, String> {
@@ -480,7 +488,8 @@ impl Engine {
         // Undeploy the service by its id
         let config = config().await?;
         let client = Client::new(config);
-        let service_api: Api<Service> = Api::namespaced(client.clone(), &self.configuration.namespace);
+        let service_api: Api<Service> =
+            Api::namespaced(client.clone(), &self.configuration.namespace);
         service_api
             .delete(&service_name(instance_uuid), &DeleteParams::default())
             .await

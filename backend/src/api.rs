@@ -86,7 +86,11 @@ impl<'a, 'r> FromRequest<'a, 'r> for User {
     type Error = ();
 
     fn from_request(request: &'a Request<'r>) -> request::Outcome<User, ()> {
-        let configuration = &request.guard::<State<Context>>()?.manager.engine.configuration;
+        let configuration = &request
+            .guard::<State<Context>>()?
+            .manager
+            .engine
+            .configuration;
         let mut cookies = request.cookies();
         if let Some(token) = cookies.get_private(COOKIE_TOKEN) {
             let token_value = token.value();
@@ -99,7 +103,7 @@ impl<'a, 'r> FromRequest<'a, 'r> for User {
                 Outcome::Success(User {
                     username: login.clone(),
                     avatar: user.avatar_url,
-                    admin: configuration.admins.clone().contains(&login)
+                    admin: configuration.admins.clone().contains(&login),
                 })
             } else {
                 clear(cookies);
