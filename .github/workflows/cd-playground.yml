@@ -29,6 +29,9 @@ jobs:
   build-and-push:
     runs-on: ubuntu-latest
     steps:
+
+      - uses: actions/checkout@v2
+
       - name: Set environment
         id: env
         run: |
@@ -49,7 +52,6 @@ jobs:
               echo ::set-output name=cluster::$( echo ${CLUSTER} )
           fi
 
-      - uses: actions/checkout@v2
       - uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
         with:
           service_account_key: ${{ secrets.GCLOUD_KEY }}

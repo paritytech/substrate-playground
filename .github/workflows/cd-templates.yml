@@ -13,6 +13,9 @@ jobs:
   build-and-push-templates:
     runs-on: ubuntu-latest
     steps:
+
+      - uses: actions/checkout@v2
+
       - name: Set env to staging
         if: endsWith(github.ref, '/develop')
         id: env
@@ -32,8 +35,6 @@ jobs:
               CLUSTER=`grep GKE_CLUSTER .env.staging | cut -d '=' -f2`
               echo ::set-output name=cluster::$( echo ${CLUSTER} )
           fi
-
-      - uses: actions/checkout@v2
 
       - uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
         with:
