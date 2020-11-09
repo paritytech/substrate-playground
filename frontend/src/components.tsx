@@ -351,11 +351,12 @@ function Nav({ client, send, details, toggleDetails }) {
     const open = Boolean(anchorEl);
     const handleMenu = (event) => {
         setAnchorEl(event.currentTarget);
-      };
-    
-      const handleClose = () => {
+    };
+
+    const handleClose = () => {
         setAnchorEl(null);
-      };
+    };
+
     const logged = details != null && user;
     return (
         <AppBar position="sticky">
@@ -404,7 +405,23 @@ function Nav({ client, send, details, toggleDetails }) {
                                 <MenuItem onClick={async () => {handleClose(); await client.logout(); await navigateToHomepage(history); send(restart)}}>LOGOUT</MenuItem>
                             </Menu>
                         </div>
-                        : <Button onClick={login} startIcon={<GitHubIcon />}>LOGIN</Button>}
+                        : (user === null
+                            ? <Button onClick={login} startIcon={<GitHubIcon />}>LOGIN</Button>
+                            : <div style={{paddingLeft: 12}}>
+                                <IconButton
+                                    aria-label="account of current user"
+                                    aria-controls="menu-appbar"
+                                    aria-haspopup="true"
+                                    color="inherit"
+                                    size="small"
+                                >
+                                    <Badge color="secondary" variant="dot" invisible={true}>
+                                        <Avatar alt="Not logged">
+                                            <GitHubIcon />
+                                        </Avatar>
+                                    </Badge>
+                                </IconButton>
+                              </div>)}
                 </div>
             </Toolbar>
         </AppBar>
