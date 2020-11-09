@@ -305,7 +305,7 @@ impl Engine {
         };
 
         let admins_config = env::var("ADMINS").map_err(|_| "ADMINS must be set")?;
-        let admins = admins_config.split(",").map(|s| s.to_string()).collect();
+        let admins = admins_config.split(',').map(|s| s.to_string()).collect();
         let client_id = env::var("GITHUB_CLIENT_ID").map_err(|_| "GITHUB_CLIENT_ID must be set")?;
         let client_secret =
             env::var("GITHUB_CLIENT_SECRET").map_err(|_| "GITHUB_CLIENT_SECRET must be set")?;

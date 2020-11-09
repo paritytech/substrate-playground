@@ -181,7 +181,7 @@ pub fn post_install_callback(
     let response: hyper::client::response::Response = client
         .get("https://api.github.com/user")
         .header(Authorization(format!("token {}", token.access_token())))
-        .header(Accept(vec![qitem(mime.clone())]))
+        .header(Accept(vec![qitem(mime)]))
         .header(UserAgent("Substrate Playground".into()))
         .send()
         .map_err(|error| {
