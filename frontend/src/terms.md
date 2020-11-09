@@ -1,15 +1,15 @@
 # SUBSTRATE PLAYGROUND – USER T&CS
 
-_Please read these terms and conditions carefully before clicking 'Log-in with Github'._
+_Please read these terms and conditions carefully before clicking 'ACCEPT'._
 
 
 These user terms and conditions (these __"Terms"__) form a legal agreement between: (a) you (being the person accessing and using the Playground Site (as defined below)) (the __"User"__); and (b) Parity Technologies Limited, a company registered in England and Wales under company number 09760015 with its registered office at Ignition Law, Moray House, Floor 1, Moray House, 23-31 Great Titchfield Street, London, United Kingdom, WC1W 7PA (__"Parity"__).
 
 In these Terms, when we refer to __"we"__, __"us"__ or __"our"__, we mean Parity, and when we refer to __"you"__ or __"your"__ we mean the User. The User and Parity are each a __"party"__ and are together the __"parties"__.
 
-By clicking 'LOGIN' next to the Github icon you acknowledge and agree that: 
+By clicking 'ACCEPT' at the bottom of these Terms you acknowledge and agree that: 
 
-* you have read, understood and agree to comply with these Terms when accessing and using the Playground Site. You further acknowledge and agree that clauses 5, 7 and 8 have been specifically brought to your attention, and clicking “LOGIN” next to the Github icon represents acceptance of these Terms including those clauses. _If you do not agree to any part of these Terms, you must not click 'LOGIN’'_; and
+* you have read, understood and agree to comply with these Terms when accessing and using the Playground Site. You further acknowledge and agree that clauses 5, 7 and 8 have been specifically brought to your attention, and clicking “ACCEPT” at the bottom of these Terms represents acceptance of these Terms including those clauses. _If you do not agree to any part of these Terms, you must not click 'ACCEPT’ and must click 'CLOSE' at the bottom of these Terms_; and
 
 * you have accessed the Playground Site by logging-in using your Github log-in credentials (__"Log-in Credentials"__), and we shall have the right to receive your user profile data from Github in accordance with Github's terms and conditions. We will hold and use your personal information in accordance with our privacy policy (available [here](https://www.parity.io/privacy/)).
 
@@ -233,4 +233,4 @@ Statutory information about Parity Technologies Limited:
 
 Thank you for visiting the Site.
 
-Terms last updated: September 15 2020
+Terms last updated: 9 November 2020
