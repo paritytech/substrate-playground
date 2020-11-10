@@ -24,7 +24,7 @@ patches:
     group: networking.k8s.io
     kind: Ingress
     name: ingress
-    version: v1beta1
+    version: v1
 
 generatorOptions:
   disableNameSuffixHash: true
