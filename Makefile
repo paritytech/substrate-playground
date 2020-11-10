@@ -25,7 +25,7 @@ TEMPLATE_THEIA_BASE=${DOCKER_ORG}/substrate-playground-template-theia-base
 ifeq ($(ENVIRONMENT), dev)
   CONTEXT=docker-desktop
 else ifeq ($(ENVIRONMENT), staging)
-  CONTEXT=${GKE_PROJECT}_${GKE_ZONE}_${GKE_CLUSTER}
+  CONTEXT=gke_${GKE_PROJECT}_${GKE_ZONE}_${GKE_CLUSTER}
 endif
 
 COLOR_BOLD:= $(shell tput bold)
