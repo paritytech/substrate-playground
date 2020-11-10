@@ -24,9 +24,13 @@ Make sure a Github OAuth App is [created](https://docs.github.com/en/developers/
 Set required ConfigMap and Secret as defined in the newly created OAuth app:
 
 ```shell
-kubectl create configmap config --namespace=playground --from-literal=github.clientId=''
+# WARNING Make sure all needed info are set before running those commands
+ADMINS="id1,id2"
+GH_CLIENT_ID="???"
+kubectl create configmap config --namespace=playground --from-literal=admins=$ADMINS --from-literal=github.clientId=$GH_CLIENT_ID
+GH_CLIENT_SECRET="???"
 ROCKET_SECRET_KEY=`openssl rand -base64 32`
-kubectl create secret generic secrets --namespace=playground --from-literal=github.clientSecret='' --from-literal=rocket.secretKey='ROCKET_SECRET_KEY'
+kubectl create secret generic secrets --namespace=playground --from-literal=github.clientSecret=$GH_CLIENT_SECRET --from-literal=rocket.secretKey=$ROCKET_SECRET_KEY
 ```
 
 Deploy on GKE:
