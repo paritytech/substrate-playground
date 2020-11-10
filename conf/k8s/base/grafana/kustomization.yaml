@@ -12,4 +12,3 @@ configMapGenerator:
 - name: grafana-dashboards
   files:
   - dashboards/home.json
-  - dashboards/deployments.json
