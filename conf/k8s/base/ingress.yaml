@@ -1,4 +1,4 @@
-apiVersion: networking.k8s.io/v1
+apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
 metadata:
   name: ingress
@@ -13,23 +13,14 @@ spec:
   - http:
       paths:
       - path: /
-        pathType: ImplementationSpecific
         backend:
-          service:
-            name: backend-ui-service
-            port:
-              name: ui-port
+          serviceName: backend-ui-service
+          servicePort: ui-port
       - path: /api/
-        pathType: ImplementationSpecific
         backend:
-          service:
-            name: backend-api-service
-            port:
-              name: api-port
+          serviceName: backend-api-service
+          servicePort: api-port
       - path: /grafana/
-        pathType: ImplementationSpecific
         backend:
-          service:
-            name: grafana-service
-            port:
-              number: 3000
+          serviceName: grafana-service
+          servicePort: 3000
