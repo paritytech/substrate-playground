@@ -10,6 +10,9 @@ spec:
       maxSurge: 1
       maxUnavailable: 1
     type: RollingUpdate
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: grafana
   template:
     metadata:
       labels:
