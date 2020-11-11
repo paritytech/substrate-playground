@@ -25,12 +25,8 @@ Set required ConfigMap and Secret as defined in the newly created OAuth app:
 
 ```shell
 # WARNING Make sure all needed info are set before running those commands
-ADMINS="id1,id2"
-GH_CLIENT_ID="???"
-kubectl create configmap config --namespace=playground --from-literal=admins=$ADMINS --from-literal=github.clientId=$GH_CLIENT_ID
-GH_CLIENT_SECRET="???"
-ROCKET_SECRET_KEY=`openssl rand -base64 32`
-kubectl create secret generic secrets --namespace=playground --from-literal=github.clientSecret=$GH_CLIENT_SECRET --from-literal=rocket.secretKey=$ROCKET_SECRET_KEY
+ADMINS="id1,id2" GH_CLIENT_ID="???" kubectl create configmap config --namespace=playground --from-literal=admins=$ADMINS --from-literal=github.clientId=$GH_CLIENT_ID
+GH_CLIENT_SECRET="???" ROCKET_SECRET_KEY=`openssl rand -base64 32` kubectl create secret generic secrets --namespace=playground --from-literal=github.clientSecret=$GH_CLIENT_SECRET --from-literal=rocket.secretKey=$ROCKET_SECRET_KEY
 ```
 
 Deploy on GKE:
