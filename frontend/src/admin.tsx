@@ -49,7 +49,7 @@ export function StatsPanel({ client }) {
     return (
         <div style={{ display: "flex", width: "100vw", height: "100vh", alignItems: "center", justifyContent: "center"}}>
             <Wrapper client={client} send={send} details={details}>
-                <iframe src="http://playground-dev.substrate.test/grafana/" width="100%" height="100%" frameBorder="0"></iframe>
+                <iframe src="/grafana/" width="100%" height="100%" frameBorder="0"></iframe>
             </Wrapper>
         </div>
     );
