@@ -188,7 +188,7 @@ jobs:
         with:
           room_id: ${{ secrets.MATRIX_ROOM_ID }}
           access_token: ${{ secrets.MATRIX_ACCESS_TOKEN }}
-          message: "Integration tests failed"
+          message: "Deployment tests failed"
           server: "matrix.parity.io"
 
       - if: ${{ success() }}
