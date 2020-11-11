@@ -1,5 +1,26 @@
 .DEFAULT_GOAL=help
 
+# Check if required tools are installed
+ifeq (, $(shell which jq))
+    $(error "jq not installed, see https://stedolan.github.io/jq/")
+endif
+
+ifeq (, $(shell which docker))
+    $(error "docker not installed, see https://docs.docker.com/get-docker/")
+endif
+
+ifeq (, $(shell which kubectl))
+    $(error "kubectl not installed, see https://kubernetes.io/docs/tasks/tools/install-kubectl/")
+endif
+
+ifeq (, $(shell which gcloud))
+    $(error "gcloud not installed, see https://cloud.google.com/sdk/docs/install")
+endif
+
+ifeq (, $(shell which kustomize))
+    $(error "kustomize not installed, see https://github.com/kubernetes-sigs/kustomize")
+endif
+
 # ENVIRONMENT defaults to dev
 ifeq ($(ENVIRONMENT),)
   ENVIRONMENT=dev
@@ -115,6 +136,13 @@ k8s-setup:
 ifeq ($(SKIP_ACK), )
 	@read -p $$'Ok to proceed? [yN]' answer; if [ "$${answer}" != "Y" ] ;then exit 1; fi
 endif
+
+k8s-status: k8s-setup
+	@kubectl get configmap config &> /dev/null && [ $$? -eq 0 ] || (echo "Missing config 'config'"; exit 1)
+	@#TODO check proper content: @kubectl get configmap config -o json | jq -r '.data'
+	@kubectl get configmap templates &> /dev/null && [ $$? -eq 0 ] || (echo "Missing config 'templates'"; exit 1)
+	@kubectl get secrets secrets &> /dev/null && [ $$? -eq 0 ] || (echo "Missing secrets 'secrets'"; exit 1)
+	@#TODO check deployment is correctly running
 
 k8s-gke-static-ip: k8s-setup
 	gcloud compute addresses describe ${NAMESPACE} --region=${GKE_REGION} --format="value(address)"
