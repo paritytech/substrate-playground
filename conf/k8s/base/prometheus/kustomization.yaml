@@ -4,9 +4,6 @@ kind: Kustomization
 commonLabels:
   app.kubernetes.io/component: prometheus
 resources:
-#- role.yaml
-#- service-account.yaml
-#- role-binding.yaml
 - deployment.yaml
 - rbac.yaml
 - service.yaml
