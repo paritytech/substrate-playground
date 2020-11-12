@@ -9,7 +9,7 @@ spec:
       labels:
         app.kubernetes.io/component: prometheus
     spec:
-      serviceAccountName: prometheus-server
+      serviceAccountName: prometheus
       containers:
         - name: prometheus
           image: prom/prometheus
