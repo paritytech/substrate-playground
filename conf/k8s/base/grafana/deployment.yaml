@@ -46,7 +46,7 @@ spec:
             #- name: GF_AUTH_ANONYMOUS_ENABLED
             #  value: "true"
           volumeMounts:
-          - name: grafana
+          - name: grafana-store
             mountPath: /var/lib/grafana
           - name: dashboards
             mountPath: /etc/grafana/dashboards
@@ -55,8 +55,9 @@ spec:
           - name: providers
             mountPath: /etc/grafana/provisioning/dashboards
       volumes:
-      - name: grafana
-        emptyDir: {}
+      - name: grafana-store
+        persistentVolumeClaim:
+          claimName: grafana-volume
       - name: dashboards
         configMap:
           name: grafana-dashboards

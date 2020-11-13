@@ -5,9 +5,10 @@ resources:
 - deployment.yaml
 - providers.yaml
 - service.yaml
+- volume.yaml
 images:
 - name: grafana/grafana
-  newTag: 7.1.5
+  newTag: 7.3.2
 configMapGenerator:
 - name: grafana-dashboards
   files:
