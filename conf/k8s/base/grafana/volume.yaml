@@ -3,10 +3,7 @@ kind: PersistentVolumeClaim
 metadata:
   name: grafana-volume
   labels:
-    vol: grafana-volume
+    type: local
 spec:
-  accessModes:
-    - ReadWriteMany
-  resources:
-    requests:
-      storage: 10Gi
+  capacity:
+    storage: 100Mi
