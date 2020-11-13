@@ -57,7 +57,7 @@ spec:
       volumes:
       - name: grafana-store
         persistentVolumeClaim:
-          claimName: grafana-volume
+          claimName: grafana-volume-claim
       - name: dashboards
         configMap:
           name: grafana-dashboards
