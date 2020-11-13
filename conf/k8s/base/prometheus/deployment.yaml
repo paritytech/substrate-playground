@@ -9,6 +9,10 @@ spec:
       labels:
         app.kubernetes.io/component: prometheus
     spec:
+      securityContext:
+        # prometheus uid
+        runAsUser: 65534
+        fsGroup: 65534
       serviceAccountName: prometheus
       containers:
         - name: prometheus

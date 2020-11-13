@@ -18,6 +18,10 @@ spec:
       labels:
         app.kubernetes.io/component: grafana
     spec:
+      securityContext:
+        # grafana uid
+        runAsUser: 472
+        fsGroup: 472
       containers:
         - image: grafana/grafana
           name: grafana
