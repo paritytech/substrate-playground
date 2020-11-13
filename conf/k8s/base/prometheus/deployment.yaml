@@ -29,4 +29,4 @@ spec:
             name: prometheus-configuration
         - name: prometheus-storage-volume
           persistentVolumeClaim:
-            claimName: prometheus-volume
+            claimName: prometheus-volume-claim
