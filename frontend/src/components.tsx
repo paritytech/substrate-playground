@@ -14,8 +14,7 @@ import DialogContent from '@material-ui/core/DialogContent';
 import DialogContentText from '@material-ui/core/DialogContentText';
 import DialogTitle from '@material-ui/core/DialogTitle';
 import Divider from '@material-ui/core/Divider';
-import FeedbackIcon from '@material-ui/icons/Feedback';
-import HelpIcon from '@material-ui/icons/Help';
+import MoreVertIcon from '@material-ui/icons/MoreVert';
 import IconButton from '@material-ui/core/IconButton';
 import GitHubIcon from '@material-ui/icons/GitHub';
 import Link from '@material-ui/core/Link';
@@ -349,13 +348,12 @@ function Nav({ client, send, details, toggleDetails }) {
     const history = useHistory();
     const [anchorEl, setAnchorEl] = React.useState(null);
     const open = Boolean(anchorEl);
-    const handleMenu = (event) => {
-        setAnchorEl(event.currentTarget);
-    };
-
-    const handleClose = () => {
-        setAnchorEl(null);
-    };
+    const handleMenu = (event) => setAnchorEl(event.currentTarget);
+    const handleClose = () => setAnchorEl(null);
+    const [anchorElAdmin, setAnchorElAdmin] = React.useState(null);
+    const openAdmin = Boolean(anchorElAdmin);
+    const handleMenuAdmin = (event) => setAnchorElAdmin(event.currentTarget);
+    const handleCloseAdmin = () => setAnchorElAdmin(null);
 
     const logged = details != null && user;
     return (
@@ -365,12 +363,37 @@ function Nav({ client, send, details, toggleDetails }) {
                     <Button onClick={() => navigateToHomepage(history)}>Playground</Button>
                 </Typography>
                 <div style={{display: "flex", alignItems: "center"}}>
-                    <IconButton
-                        size="small"
-                        onClick={() => window.open("https://docs.google.com/forms/d/e/1FAIpQLSdXpq_fHqS_ow4nC7EpGmrC_XGX_JCIRzAqB1vaBtoZrDW-ZQ/viewform?edit_requested=true")}
-                    >
-                        <FeedbackIcon />
-                    </IconButton>
+                    {user?.admin &&
+                    <div style={{paddingLeft: 12}}>
+                        <IconButton
+                            aria-label="account of current user"
+                            aria-controls="menu-admin"
+                            aria-haspopup="true"
+                            onClick={handleMenuAdmin}
+                            color="inherit"
+                            size="small"
+                        >
+                            <MoreVertIcon />
+                        </IconButton>
+                        <Menu
+                            id="menu-admin"
+                            anchorEl={anchorElAdmin}
+                            anchorOrigin={{
+                            vertical: 'top',
+                            horizontal: 'right',
+                            }}
+                            keepMounted
+                            transformOrigin={{
+                            vertical: 'top',
+                            horizontal: 'right',
+                            }}
+                            open={openAdmin}
+                            onClose={handleCloseAdmin}
+                        >
+                            <MenuItem onClick={async () => {handleCloseAdmin(); await navigateToStats(history)}}>STATS</MenuItem>
+                            <MenuItem onClick={async () => {handleCloseAdmin(); await navigateToAdmin(history)}}>ADMIN</MenuItem>
+                        </Menu>
+                    </div>}
                     {logged
                         ? <div style={{paddingLeft: 12}}>
                             <IconButton
@@ -400,8 +423,7 @@ function Nav({ client, send, details, toggleDetails }) {
                                 open={open}
                                 onClose={handleClose}
                             >
-                                {user.admin && <MenuItem onClick={async () => {handleClose(); await navigateToStats(history)}}>STATS</MenuItem>}
-                                {user.admin && <MenuItem onClick={async () => {handleClose(); await navigateToAdmin(history)}}>ADMIN</MenuItem>}
+                                <MenuItem onClick={() => window.open("https://docs.google.com/forms/d/e/1FAIpQLSdXpq_fHqS_ow4nC7EpGmrC_XGX_JCIRzAqB1vaBtoZrDW-ZQ/viewform?edit_requested=true")}>FEEDBACK</MenuItem>
                                 <MenuItem onClick={async () => {handleClose(); await client.logout(); await navigateToHomepage(history); send(restart)}}>LOGOUT</MenuItem>
                             </Menu>
                         </div>
