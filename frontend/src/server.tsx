@@ -25,7 +25,7 @@ const template_private = {image: "paritytech/substrate-playground-template-base@
 const url = "http://www.google.fr";
 const pod = {version: "1.23", details: {status: {phase: "Running", startTime: "2020-05-15T14:06:18Z"}}};
 const uuid = "1234";
-const instance = {user_uuid: "", instance_uuid: uuid, template: template, pod: pod, url: url};
+const instance = {user_uuid: uuid, template: template, pod: pod, url: url};
 
 export function intercept({logged = false, noInstance = true, delay = 100}: {logged?: boolean, noInstance?: boolean, delay?: number}) {
   Polly.register(FetchAdapter);

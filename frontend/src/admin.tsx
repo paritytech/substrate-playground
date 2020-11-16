@@ -1,11 +1,51 @@
 import React from "react";
 import { useHistory, useLocation } from "react-router-dom";
 import { useLifecycle } from './lifecycle';
-import { InstanceDetails, Wrapper } from './components';
+import { Wrapper } from './components';
+import { makeStyles } from '@material-ui/core/styles';
 import { Container } from "@material-ui/core";
-import Grid from '@material-ui/core/Grid';
+import Table from '@material-ui/core/Table';
+import TableBody from '@material-ui/core/TableBody';
+import TableCell from '@material-ui/core/TableCell';
+import TableContainer from '@material-ui/core/TableContainer';
+import TableHead from '@material-ui/core/TableHead';
+import TableRow from '@material-ui/core/TableRow';
 import Paper from '@material-ui/core/Paper';
 import Typography from '@material-ui/core/Typography';
+
+const useStyles = makeStyles({
+    table: {
+      minWidth: 650,
+    },
+});
+
+export default function BasicTable({instances}) {
+    const classes = useStyles();
+    return (
+        <TableContainer component={Paper}>
+        <Table className={classes.table} aria-label="simple table">
+            <TableHead>
+            <TableRow>
+                <TableCell>ID</TableCell>
+                <TableCell align="right">Template</TableCell>
+                <TableCell align="right">URL</TableCell>
+            </TableRow>
+            </TableHead>
+            <TableBody>
+            {instances.map((instance) => (
+                <TableRow key={instance[0]}>
+                <TableCell component="th" scope="row">
+                    {instance[0]}
+                </TableCell>
+                <TableCell align="right">{instance[1].template.name}</TableCell>
+                <TableCell align="right"><a href={instance[1].url}>{instance[1].url}</a></TableCell>
+                </TableRow>
+            ))}
+            </TableBody>
+        </Table>
+        </TableContainer>
+    );
+}
 
 export function AdminPanel({ client }) {
     const location = useLocation();
@@ -17,20 +57,12 @@ export function AdminPanel({ client }) {
         <div style={{ display: "flex", width: "100vw", height: "100vh", alignItems: "center", justifyContent: "center"}}>
             <Wrapper client={client} send={send} details={details}>
                 <Container style={{ display: "flex", flex: 1, justifyContent: "center", alignItems: "center" }}>
-                    <Paper style={{ display: "flex", flexDirection: "column", marginTop: 20, justifyContent: "center", width: "80vw", height: "80vh"}} elevation={3}>
+                    <Paper style={{ display: "flex", overflowY: "auto", flexDirection: "column", marginTop: 20, justifyContent: "center", width: "80vw", height: "80vh"}} elevation={3}>
                         {instances.length > 0
-                        ? <Grid container justify="center" spacing={1} style={{margin: 10}}>
-                        {instances.map((entry, index) => {
-                            return (
-                                <Grid key={index} item>
-                                    <Container style={{display: "flex", flex: 1, flexDirection: "column", padding: 0, justifyContent: "center", alignItems: "center", overflowY: "auto"}}>
-                                        <Typography variant="h5">{entry[0]}</Typography>
-                                        <InstanceDetails instance={entry[1]} />
-                                    </Container>
-                                </Grid>
-                            );
-                        })}
-                        </Grid>
+                        ? <div style={{margin: 20}}>
+                            <Typography variant="h5">Instances</Typography>
+                            <BasicTable instances={instances} />
+                          </div>
                         : <Container style={{display: "flex", flex: 1, flexDirection: "column", padding: 0, justifyContent: "center", alignItems: "center", overflowY: "auto"}}>
                             <Typography variant="h5">No instance currently running</Typography>
                         </Container>}
