@@ -8,6 +8,8 @@ A hosted website that enables the user to navigate [Substrate](https://github.co
   <img width="600" src="docs/assets/demo.gif" alt="Playground demo">
 </p>
 
+More comprehensive documentation is accessible [here](https://paritytech.github.io/substrate-playground/).
+
 Playground allows end-user to spin up a substrate based development environment in seconds. A full machine with terminal is then available from a web browser, ready to launch a chain and remotely access it.
 Playground templates can be [created and maintained](https://paritytech.github.io/substrate-playground/CUSTOM_TEMPLATE.html) by 3rd parties. Playground instances can be [integrated and manipulated](https://paritytech.github.io/substrate-playground/INTEGRATION.html) via a JavaScript API.
 
