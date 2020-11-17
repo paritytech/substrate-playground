@@ -16,7 +16,7 @@ on:
       - '.github/workflows/event-*'
       - '.github/workflows/templates/*'
       - '.github/workflow-templates/*'
-      - 'docs/**'
+      - 'website/**'
       - 'conf/k8s/overlays/**/templates/**'
       - 'conf/k8s/overlays/production'
       - 'conf/k8s/overlays/dev'

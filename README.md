@@ -5,7 +5,7 @@
 A hosted website that enables the user to navigate [Substrate](https://github.com/paritytech/substrate) runtimes, modify them and run remotely accessible chain. In a couple seconds!
 
 <p align="center">
-  <img width="600" src="docs/assets/demo.gif" alt="Playground demo">
+  <img width="600" src="website/static/demo.gif" alt="Playground demo">
 </p>
 
 More comprehensive documentation is accessible [here](https://paritytech.github.io/substrate-playground/).
@@ -40,7 +40,7 @@ Find more details [here](cli/README.md)
 
 ## Support
 
-Documentation can be found at [paritytech.github.io/substrate-playground/](https://paritytech.github.io/substrate-playground/) (and its source [here](./docs/))
+Documentation can be found at [paritytech.github.io/substrate-playground/](https://paritytech.github.io/substrate-playground/) (and its source [here](website/docs/))
 
 ### Integrate
 
@@ -56,7 +56,7 @@ Track progress [here](https://github.com/paritytech/substrate-playground/project
 
 ## Deployment
 
-Playground is a set of containerized apps deployed on a kubernetes cluster. Fear not, it's quite simple to [deploy](docs/DEPLOYMENT.md) it!
+Playground is a set of containerized apps deployed on a kubernetes cluster. Fear not, it's quite simple to [deploy](website/docs/operating/deployment.md) it!
 
 ## License
 
