@@ -6,17 +6,17 @@ on:
     - master
     - develop
     paths:
-    - '.github/workflows/cd-documentation.yml'
+    - '.github/workflows/cd-website.yml'
     - 'website/**'
 
 jobs:
-  build-and-publish-book:
+  build-and-publish-website:
     runs-on: ubuntu-18.04
     steps:
     - uses: actions/checkout@v2
 
     - name: Build website
-      run: yarn build
+      run: yarn && yarn build
       working-directory: ./website
 
     - name: Deploy
