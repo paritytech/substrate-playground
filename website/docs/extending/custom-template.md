@@ -1,3 +1,8 @@
+---
+id: custom-template
+title: Custom Template
+---
+
 External users can provide and maintain templates used by the playground.
 
 To create a template the following steps are mandatory:
@@ -14,7 +19,7 @@ Additionally there are a number of standard VSCode configuration files that will
 
 After the associated Github [workflow](https://github.com/paritytech/substrate-playground/blob/develop/.github/workflows/event-template-updated.yml) in substrate-playground is triggered, playground will use the newly built image. 
 
-# Github workflow
+## Github workflow
 
 A template workflow can be found [here](https://github.com/paritytech/substrate-playground/blob/develop/.github/workflow-templates/cd-template.yml).
 
@@ -41,7 +46,7 @@ sequenceDiagram
     PLAYGROUND-->>PLAYGROUND: Test new image
 ```
 
-## Github secrets
+### Github secrets
 
 The following secrets must be defined:
 

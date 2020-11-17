@@ -1,14 +1,19 @@
-# Update playground image
+---
+id: deployment
+title: Deployment
+---
+
+## Update playground image
 
 * build and push new image (`make push-playground-docker-image`)
 * deploy on GKE (`ENVIRONMENT=staging make k8s-deploy-playground`)
 
-# Kubernetes
+## Kubernetes
 
 Kubernetes is used as a deployment platform for the playground. It can be deployed on GCE or locally via minikube.
 (Make sure that k8s 1.14 is used)
 
-## Setup
+### Setup
 
 For OSX
 
@@ -37,7 +42,7 @@ kubectl config set-context --current --namespace=playground
 make k8s-deploy-playground
 ```
 
-## Clusters
+### Clusters
 
 When switching / recreating clusters it might be necessary to refresh credentials:
 
@@ -75,7 +80,7 @@ kubectl get services playground-http
 
 Ensure that `playground-http` is correctly deployed by browsing its [events](https://console.cloud.google.com/kubernetes/service/us-central1-a/substrate-playground/default/playground-http?project=substrateplayground-252112&organizationId=939403632241&tab=events&duration=PT1H&pod_summary_list_tablesize=20&playground-http_events_tablesize=50)
 
-## TLS certificate
+### TLS certificate
 
 To get a wildcard certificate from let's encrypt (this applies to staging, replace `playground-staging` with `playground` for production env):
 
@@ -85,7 +90,7 @@ First make sure that certbot is installed: `brew install certbot`
 
 Then request new challenges. Two DNS entries will have to be updated.
 
-### Staging
+#### Staging
 
 ```
 sudo certbot certonly --manual --preferred-challenges dns --server https://acme-v02.api.letsencrypt.org/directory --manual-public-ip-logging-ok --agree-tos -m admin@parity.io -d *.playground-staging.substrate.dev -d playground-staging.substrate.dev
@@ -104,7 +109,7 @@ sudo kubectl create secret tls playground-tls --save-config --key /etc/letsencry
 
 The new secret will be auomatically picked up.
 
-### Production
+#### Production
 
 ```
 sudo certbot certonly --manual --preferred-challenges dns --server https://acme-v02.api.letsencrypt.org/directory --manual-public-ip-logging-ok --agree-tos -m admin@parity.io -d *.playground.substrate.dev -d playground.substrate.dev
@@ -131,7 +136,7 @@ openssl s_client -connect playground.substrate.dev:443 -servername playground.su
 openssl s_client -connect  playground.substrate.dev:443 -showcerts
 ```
 
-## Update fixed IP
+### Update fixed IP
 
 Make sure to use regional addresses, matching your cluster region. Global addresses won't work.
 

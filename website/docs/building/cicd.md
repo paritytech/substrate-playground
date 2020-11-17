@@ -1,21 +1,26 @@
+---
+id: cicd
+title: CI/CD
+---
+
 `substrate-playground` follows a Continuous Integration/Continuous Delivery approach
 
-# Deployments
+## Deployments
 
-## Playground
+### Playground
 
 The main branch is [develop](https://github.com/paritytech/substrate-playground/tree/develop). Changes can be merged only via PR.
 [develop](https://github.com/paritytech/substrate-playground/tree/develop) (reflected by [staging](http://playground-staging.substrate.dev/)) and [master](https://github.com/paritytech/substrate-playground/tree/master) (reflected by [production](http://playground.substrate.dev/)) are continuously deployed on their respective environment.
 
 Once manually approved on the staging environment, changes are promoted to master.
 
-## Base template images
+### Base template images
 
-## Template images
+### Template images
 
-# Github configuration
+## Github configuration
 
-## Secrets
+### Secrets
 
 A number of `secrets` must be defined:
 
@@ -31,9 +36,9 @@ A number of `secrets` must be defined:
 
 `PAT_TOKEN` a [token](https://help.github.com/en/actions/reference/events-that-trigger-workflows#triggering-new-workflows-using-a-personal-access-token) with `repo` access
 
-## Matrix messages
+### Matrix messages
 
-### Create a new user
+#### Create a new user
 
 Go to https://riot.im/app/#/register (advanced, https://matrix.parity.io)
 Username: `playground-bot`

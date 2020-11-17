@@ -1,8 +1,13 @@
-# URL based deployment
+---
+id: integration
+title: Integration
+---
+
+## URL based deployment
 
 Use a URL that once accessed trigger an instance deployment and redirects to the newly created theia instance.
 
-## Query parameters
+### Query parameters
 
 * deploy=`id` where id is a recoiognized template id
 * files=%2Fsome%2FfileA,%2Fsome%2FfileB opens some files
@@ -10,7 +15,7 @@ Use a URL that once accessed trigger an instance deployment and redirects to the
 
 e.g. `https://playground-staging.substrate.dev/?deploy=recipes&files=%2Fhome%2Fsubstrate%2Fworkspace%2Fpallets%2Fadding-machine%2Fsrc%2Flib.rs`
 
-# API
+## API
 
 Instances can be created and destroyed using an HTTP API.
 
