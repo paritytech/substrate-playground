@@ -1,7 +1,7 @@
 import { useMachine } from '@xstate/react';
 import { assign, Machine } from 'xstate';
 import { Client } from '@substrate/playground-api';
-import { navigateToInstance } from './utils';
+import { navigateToHomepage, navigateToInstance } from './utils';
 
 export interface Context {
   details?: object,
@@ -14,6 +14,7 @@ export interface Context {
 
 export const setup = "@state/SETUP";
 export const logged = "@state/LOGGED";
+export const unlogged = "@state/UNLOGGED";
 export const deploying = "@state/DEPLOYING";
 export const stopping = "@state/STOPPING";
 export const failed = "@state/FAILED";
@@ -25,6 +26,7 @@ export const check = "@action/CHECK";
 export const deploy = "@action/DEPLOY";
 export const stop = "@action/STOP";
 export const restart = "@action/RESTART";
+export const logout = "@action/LOGOUT";
 
 function lifecycle(history, location, client: Client) {
   const pathParam = 'path';
@@ -49,6 +51,7 @@ function lifecycle(history, location, client: Client) {
       [setup]: {
         invoke: {
           src: (context, _event) => async (callback) =>  {
+            // Retrieve initial data
             const response = (await client.getDetails());
             if (response.error) {
               throw response;
@@ -61,6 +64,8 @@ function lifecycle(history, location, client: Client) {
               localStorage.setItem(pathParam, query);
             }
 
+            // If an existing template is provided as part of the URL, directly deploy it
+            // Otherwise advance to `logged` state
             if (res) {
               const templates = res.templates;
               const user = res.user;
@@ -99,9 +104,19 @@ function lifecycle(history, location, client: Client) {
       },
       [logged]: {
         on: {[restart]: setup,
+             [logout]: unlogged,
              [stop]: {target: stopping},
              [deploy]: {target: deploying,
                         actions: assign({ template: (_, event) => event.template})}}
+      },
+      [unlogged]: {
+        invoke: {
+          src: async (ctx, event) => {
+            await client.logout();
+            navigateToHomepage(history);
+          },
+          onDone: {target: setup}
+        }
       },
       [stopping]: {
         invoke: {
@@ -143,11 +158,11 @@ function lifecycle(history, location, client: Client) {
       [deploying]: {
         invoke: {
           src: (context, _) => async (callback) => {
-            const {result, error} = await client.deployInstance(context.template);
+            const { error } = await client.deployInstance(context.template);
             if (error != undefined) {
               callback({type: failure, error: error});
             } else {
-              navigateToInstance(history, result);
+              navigateToInstance(history);
             }
           },
           onError: {

@@ -1,5 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
+import marked from 'marked';
+import { useHistory, useLocation } from "react-router-dom";
 import { useSpring, animated } from 'react-spring'
+import { Client } from "@substrate/playground-api";
 import { Alert, AlertTitle } from '@material-ui/lab';
 import AppBar from '@material-ui/core/AppBar';
 import Avatar from '@material-ui/core/Avatar';
@@ -9,11 +12,13 @@ import Box from '@material-ui/core/Box';
 import Card from '@material-ui/core/Card';
 import CardContent from '@material-ui/core/CardContent';
 import CircularProgress from '@material-ui/core/CircularProgress';
+import Container from "@material-ui/core/Container";
 import Dialog from '@material-ui/core/Dialog';
 import DialogContent from '@material-ui/core/DialogContent';
 import DialogContentText from '@material-ui/core/DialogContentText';
 import DialogTitle from '@material-ui/core/DialogTitle';
 import Divider from '@material-ui/core/Divider';
+import Fade from '@material-ui/core/Fade';
 import MoreVertIcon from '@material-ui/icons/MoreVert';
 import IconButton from '@material-ui/core/IconButton';
 import GitHubIcon from '@material-ui/icons/GitHub';
@@ -31,14 +36,9 @@ import Toolbar from '@material-ui/core/Toolbar';
 import Paper from '@material-ui/core/Paper';
 import Typography from '@material-ui/core/Typography';
 import { makeStyles, createStyles, Theme } from '@material-ui/core/styles';
-import marked from 'marked';
-import { useHistory, useLocation, useParams } from "react-router-dom";
-import Fade from '@material-ui/core/Fade';
-import { Container } from "@material-ui/core";
-import { Client } from "@substrate/playground-api";
 import { Responder } from "./connect";
 import { useInterval, useLocalStorage } from './hooks';
-import { useLifecycle, deploy, deploying, failed, logged, restart, setup, stop, stopping } from './lifecycle';
+import { useLifecycle, deploy, deploying, failed, logged, logout, restart, setup, stop, stopping } from './lifecycle';
 import { fetchWithTimeout, navigateToAdmin, navigateToStats, navigateToInstance, navigateToHomepage } from "./utils";
 
 import Menu from '@material-ui/core/Menu';
@@ -206,7 +206,7 @@ export function TheiaInstance({ client }: { client: Client }) {
             const instance = result.instance;
             if (!instance) {
                 // This instance doesn't exist
-                setData({ type: "ERROR", value: "Couldn't locate the theia instance", action: () => navigateToHomepage(history) });
+                setData({ type: "ERROR", value: "Couldn't locate the theia instance", action: () => send(restart) });
                 return;
             }
 
@@ -217,7 +217,7 @@ export function TheiaInstance({ client }: { client: Client }) {
                     const state = containerStatuses[0].state;
                     const reason = state?.waiting?.reason;
                     if (reason === "CrashLoopBackOff" || reason === "ErrImagePull" || reason === "ImagePullBackOff" || reason === "InvalidImageName") {
-                        setData({ type: "ERROR", value: state?.waiting?.message, action: () => navigateToHomepage(history) });
+                        setData({ type: "ERROR", value: state?.waiting?.message, action: () => send(restart) });
                         return;
                     }
                 }
@@ -233,7 +233,7 @@ export function TheiaInstance({ client }: { client: Client }) {
             if (retry < maxRetries) {
                 setTimeout(() => setData({ type: "LOADING", phase: phase, retry: retry + 1 }), 1000);
             } else if (retry == maxRetries) {
-                setData({ type: "ERROR", value: "Couldn't access the theia instance in time", action: () => navigateToHomepage(history) });
+                setData({ type: "ERROR", value: "Couldn't access the theia instance in time", action: () => send(restart) });
             }
         }
 
@@ -272,7 +272,7 @@ export function Panel({ client, children }) {
     const details = state.context.details;
     return (
         <div style={{ display: "flex", width: "100vw", height: "100vh" }}>
-            <Wrapper client={client} send={send} details={details}>
+            <Wrapper send={send} details={details}>
                 {children}
             </Wrapper>
         </div>
@@ -280,12 +280,14 @@ export function Panel({ client, children }) {
   }
 
 export function NotFoundPanel({client, message}: {message?: string, client: Client}) {
+    const location = useLocation();
     const history = useHistory();
+    const [state, send] = useLifecycle(history, location, client);
     return (
         <Panel client={client}>
             <Container style={{ display: "flex", flex: 1, justifyContent: "center", alignItems: "center" }}>
                 <Paper style={{ display: "flex", flexDirection: "column", height: "60vh", width: "60vw", justifyContent: "center"}} elevation={3}>
-                    <ErrorMessage title={message || "Oups"} action={() => navigateToHomepage(history)} actionTitle="GO HOME" />
+                    <ErrorMessage title={message || "Oups"} action={() => send(restart)} actionTitle="GO HOME" />
                 </Paper>
             </Container>
         </Panel>
@@ -300,7 +302,7 @@ export function TheiaPanel({ client }) {
 
     return (
     <div style={{display: "flex", width: "100vw", height: "100vh"}}>
-        <Wrapper client={client} send={send} details={details} light={true}>
+        <Wrapper send={send} details={details} light={true}>
             <TheiaInstance client={client} />
         </Wrapper>
     </div>
@@ -343,7 +345,7 @@ function LoginPanel() {
         </Container>);
 }
 
-function Nav({ client, send, details }) {
+function Nav({ send, details }) {
     const user = details?.user;
     const history = useHistory();
     const [anchorEl, setAnchorEl] = React.useState(null);
@@ -360,7 +362,7 @@ function Nav({ client, send, details }) {
         <AppBar position="sticky">
             <Toolbar style={{ justifyContent: "space-between" }} variant="dense">
                 <Typography variant="h6">
-                    <Button onClick={() => navigateToHomepage(history)}>Playground</Button>
+                    <Button onClick={() => send(restart)}>Playground</Button>
                 </Typography>
                 <div style={{display: "flex", alignItems: "center"}}>
                     {user?.admin &&
@@ -424,7 +426,7 @@ function Nav({ client, send, details }) {
                                 onClose={handleClose}
                             >
                                 <MenuItem onClick={() => window.open("https://docs.google.com/forms/d/e/1FAIpQLSdXpq_fHqS_ow4nC7EpGmrC_XGX_JCIRzAqB1vaBtoZrDW-ZQ/viewform?edit_requested=true")}>FEEDBACK</MenuItem>
-                                <MenuItem onClick={async () => {handleClose(); await client.logout(); await navigateToHomepage(history); send(restart)}}>LOGOUT</MenuItem>
+                                <MenuItem onClick={async () => {handleClose(); send(logout)}}>LOGOUT</MenuItem>
                             </Menu>
                         </div>
                         : (user === null
@@ -649,7 +651,7 @@ export function MainPanel({ client }) {
             if (details?.instance) {
                 return <ExistingInstance onConnectClick={(instance) => navigateToInstance(history)} onStopClick={() => send(stop)} instance={details.instance} />;
             } else if (details?.user) {
-                return <TemplateSelector state={state} user={details.user} templates={details.templates} onRetryClick={() => send(restart)} onSelect={(template) => send(deploy, { template: template })} onErrorClick={() => send(restart)} />;
+                return <TemplateSelector state={state} user={details.user} templates={details.templates} onRetryClick={() => send(restart)} onSelect={(template) => send(deploy, { template: template })} />;
             } else {
                 return <LoginPanel />;
             }
@@ -671,7 +673,7 @@ export function MainPanel({ client }) {
 
     return (
         <div style={{ display: "flex", width: "100vw", height: "100vh" }}>
-            <Wrapper client={client} send={send} details={details}>
+            <Wrapper send={send} details={details}>
                 <Container style={{ display: "flex", flex: 1, justifyContent: "center", alignItems: "center" }}>
                     <Paper style={{ display: "flex", flexDirection: "column", height: "60vh", width: "60vw", justifyContent: "center"}} elevation={3}>
                         <Content />
@@ -682,11 +684,11 @@ export function MainPanel({ client }) {
     );
 }
 
-export function Wrapper({ client, send, details, light = false, children}) {
+export function Wrapper({ send, details, light = false, children}) {
     return (
         <div style={{display: "flex", flexDirection: "column", width: "inherit", height: "inherit"}}>
 
-            <Nav client={client} send={send} details={details} />
+            <Nav send={send} details={details} />
 
             <Fade in appear>
                 {children}
