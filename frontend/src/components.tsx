@@ -343,7 +343,7 @@ function LoginPanel() {
         </Container>);
 }
 
-function Nav({ client, send, details, toggleDetails }) {
+function Nav({ client, send, details }) {
     const user = details?.user;
     const history = useHistory();
     const [anchorEl, setAnchorEl] = React.useState(null);
@@ -683,23 +683,10 @@ export function MainPanel({ client }) {
 }
 
 export function Wrapper({ client, send, details, light = false, children}) {
-    const [showDetails, setDetails] = useState(false);
-    function toggleDetails() { setDetails(!showDetails); }
     return (
         <div style={{display: "flex", flexDirection: "column", width: "inherit", height: "inherit"}}>
-            <Dialog open={showDetails} onClose={toggleDetails}>
-                <DialogTitle>Playground</DialogTitle>
-                <DialogContent>
-                    <DialogContentText id="alert-dialog-description">
-                        Version: {details?.version}
-                    </DialogContentText>
-                    <DialogContentText id="alert-dialog-description">
-                        Started at: {details?.details?.status?.startTime}
-                    </DialogContentText>
-                </DialogContent>
-            </Dialog>
 
-            <Nav client={client} send={send} details={details} toggleDetails={toggleDetails} />
+            <Nav client={client} send={send} details={details} />
 
             <Fade in appear>
                 {children}
