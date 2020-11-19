@@ -192,6 +192,23 @@
       }
     },
     {
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 9
+      },
+      "id": 123123,
+      "type": "gettingstarted"
+    },
+    {
       "datasource": "prometheus",
       "fieldConfig": {
         "defaults": {
@@ -217,7 +234,7 @@
         "h": 9,
         "w": 7,
         "x": 0,
-        "y": 9
+        "y": 18
       },
       "id": 11,
       "options": {
@@ -275,7 +292,7 @@
         "h": 9,
         "w": 7,
         "x": 7,
-        "y": 9
+        "y": 18
       },
       "id": 12,
       "options": {
@@ -348,7 +365,7 @@
         "h": 9,
         "w": 10,
         "x": 14,
-        "y": 9
+        "y": 18
       },
       "heatmap": {},
       "hideZeroBuckets": false,
@@ -362,9 +379,10 @@
       "targets": [
         {
           "expr": "sum(playground_deploy_duration_bucket)",
-          "format": "time_series",
-          "interval": "",
-          "legendFormat": "",
+          "format": "heatmap",
+          "instant": false,
+          "interval": "0",
+          "legendFormat": "{{ le }}",
           "queryType": "randomWalk",
           "refId": "A"
         }
@@ -383,16 +401,16 @@
       "xBucketNumber": null,
       "xBucketSize": null,
       "yAxis": {
-        "decimals": 1,
+        "decimals": 0,
         "format": "short",
         "logBase": 1,
         "max": null,
-        "min": null,
+        "min": "0",
         "show": true,
         "splitFactor": null
       },
       "yBucketBound": "auto",
-      "yBucketNumber": null,
+      "yBucketNumber": 8,
       "yBucketSize": null
     }
   ],
