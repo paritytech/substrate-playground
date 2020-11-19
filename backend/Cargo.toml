@@ -9,7 +9,7 @@ edition = "2018"
 
 [dependencies]
 log = "0.4.11"
-env_logger = "0.8.1"
+env_logger = "0.8.2"
 prometheus = "0.10.0"
 hyper = "0.10" #Do not update
 hyper-sync-rustls = "=0.3.0-rc.17"
