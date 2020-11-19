@@ -20,7 +20,7 @@ ARG THEIA_HOME=$HOME/theia
 ARG THEIA_PLAYGROUND_HOME=$THEIA_HOME/theia-playground 
 
 # Copy VSCode user settings
-COPY --chown=$USER:$USER .vscode/* $HOME/.theia/
+COPY --chown=$USER:$USER conf/.vscode/* $HOME/.theia/
 
 # Copy the whole theia folder, including node_modules
 # This is the recommended approach: https://spectrum.chat/theia/dev/theia-packaging~6c10127c-a316-4e87-9a27-e4b70fb647c1
