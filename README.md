@@ -8,7 +8,7 @@ A hosted website that enables the user to navigate [Substrate](https://github.co
   <img width="600" src="website/static/demo.gif" alt="Playground demo">
 </p>
 
-More comprehensive documentation is accessible [here](https://paritytech.github.io/substrate-playground/).
+More comprehensive documentation is accessible [here](https://paritytech.github.io/substrate-playground/docs/).
 
 Playground allows end-user to spin up a substrate based development environment in seconds. A full machine with terminal is then available from a web browser, ready to launch a chain and remotely access it.
 Playground templates can be [created and maintained](https://paritytech.github.io/substrate-playground/CUSTOM_TEMPLATE.html) by 3rd parties. Playground instances can be [integrated and manipulated](https://paritytech.github.io/substrate-playground/INTEGRATION.html) via a JavaScript API.
@@ -40,15 +40,15 @@ Find more details [here](cli/README.md)
 
 ## Support
 
-Documentation can be found at [paritytech.github.io/substrate-playground/](https://paritytech.github.io/substrate-playground/) (and its source [here](website/docs/))
+Documentation can be found at [paritytech.github.io/substrate-playground/](https://paritytech.github.io/substrate-playground/docs/) (and its source [here](website/docs/))
 
 ### Integrate
 
-Playground can be [integrated](https://paritytech.github.io/substrate-playground/INTEGRATION.html) in external pages. This opens the door for more advanced usage e.g. interactive tutorials.
+Playground can be [integrated](https://paritytech.github.io/substrate-playground/docs/extending/integration) in external pages. This opens the door for more advanced usage e.g. interactive tutorials.
 
 ### Contribute a template
 
-Extra `template` (custom docker images) can be [created](https://paritytech.github.io/substrate-playground/CUSTOM_TEMPLATE.html) and made available on playground.
+Extra `template` (custom docker images) can be [created](https://paritytech.github.io/substrate-playground/docs/extending/custom-template) and made available on playground.
 
 ## Roadmap
 
@@ -56,7 +56,7 @@ Track progress [here](https://github.com/paritytech/substrate-playground/project
 
 ## Deployment
 
-Playground is a set of containerized apps deployed on a kubernetes cluster. Fear not, it's quite simple to [deploy](website/docs/operating/deployment.md) it!
+Playground is a set of containerized apps deployed on a kubernetes cluster. Fear not, it's quite simple to [deploy](https://paritytech.github.io/substrate-playground/docs/operating/deployment.md) it!
 
 ## License
 
