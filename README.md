@@ -11,7 +11,7 @@ A hosted website that enables the user to navigate [Substrate](https://github.co
 More comprehensive documentation is accessible [here](https://paritytech.github.io/substrate-playground/docs/).
 
 Playground allows end-user to spin up a substrate based development environment in seconds. A full machine with terminal is then available from a web browser, ready to launch a chain and remotely access it.
-Playground templates can be [created and maintained](https://paritytech.github.io/substrate-playground/CUSTOM_TEMPLATE.html) by 3rd parties. Playground instances can be [integrated and manipulated](https://paritytech.github.io/substrate-playground/INTEGRATION.html) via a JavaScript API.
+Playground templates can be [created and maintained](https://paritytech.github.io/substrate-playground/docs/extending/custom-template) by 3rd parties. Playground instances can be [integrated and manipulated](https://paritytech.github.io/substrate-playground/docs/extending/integration) via a JavaScript API.
 
 ## Trying it out
 
@@ -30,7 +30,7 @@ substrate-playground
 npx @substrate/playground-cli
 ```
 
-Then [browse](http://localhost) a locally accessible web IDE.
+Then browse a locally accessible web IDE at http://localhost.
 
 <p align="center">
   <img width="600" src="https://cdn.rawgit.com/paritytech/substrate-playground/develop/cli/assets/web.svg" alt="CLI demo">
@@ -52,11 +52,11 @@ Extra `template` (custom docker images) can be [created](https://paritytech.gith
 
 ## Roadmap
 
-Track progress [here](https://github.com/paritytech/substrate-playground/projects/1)
+Track progress [here](https://github.com/paritytech/substrate-playground/projects)
 
 ## Deployment
 
-Playground is a set of containerized apps deployed on a kubernetes cluster. Fear not, it's quite simple to [deploy](https://paritytech.github.io/substrate-playground/docs/operating/deployment.md) it!
+Playground is a set of containerized apps deployed on a kubernetes cluster. Fear not, it's quite simple to [deploy](https://paritytech.github.io/substrate-playground/docs/operating/deployment) it!
 
 ## License
 
