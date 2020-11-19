@@ -1,14 +1,13 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import Button from '@material-ui/core/Button';
 import Checkbox from '@material-ui/core/Checkbox';
-import Typography from '@material-ui/core/Typography';
-import { startNode, gotoLine, cursorMove } from "./commands";
-import { Discoverer, Instance, Responder } from "./connect";
-
+import FormControl from '@material-ui/core/FormControl';
 import InputLabel from '@material-ui/core/InputLabel';
 import MenuItem from '@material-ui/core/MenuItem';
-import FormControl from '@material-ui/core/FormControl';
 import Select from '@material-ui/core/Select';
+import Typography from '@material-ui/core/Typography';
+import { startNode, gotoLine, cursorMove } from "../commands";
+import { Discoverer, Instance } from "../connect";
 
 function useDiscovery() {
     const [instances, setInstances] = useState([]);

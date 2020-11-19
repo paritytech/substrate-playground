@@ -4,8 +4,10 @@ import { Client } from '@substrate/playground-api';
 import { createMuiTheme, ThemeProvider } from '@material-ui/core/styles';
 import { Redirect, Route, Router, Switch } from "react-router-dom";
 import { createBrowserHistory } from "history";
-import { AdminPanel, StatsPanel } from './admin';
-import { MainPanel, NotFoundPanel, TheiaPanel } from './components';
+import { AdminPanel, StatsPanel } from './panels/admin';
+import { MainPanel } from './panels/main';
+import { TheiaPanel } from './panels/theia';
+import { NotFoundPanel } from './components';
 import { intercept } from './server';
 
 const base = process.env.BASE_URL;

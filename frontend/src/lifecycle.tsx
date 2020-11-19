@@ -1,5 +1,5 @@
-import { useMachine } from '@xstate/react';
 import { assign, Machine } from 'xstate';
+import { useMachine } from '@xstate/react';
 import { Client } from '@substrate/playground-api';
 import { navigateToHomepage, navigateToInstance } from './utils';
 

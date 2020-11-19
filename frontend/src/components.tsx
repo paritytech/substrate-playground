@@ -13,19 +13,16 @@ import Card from '@material-ui/core/Card';
 import CardContent from '@material-ui/core/CardContent';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import Container from "@material-ui/core/Container";
-import Dialog from '@material-ui/core/Dialog';
-import DialogContent from '@material-ui/core/DialogContent';
-import DialogContentText from '@material-ui/core/DialogContentText';
-import DialogTitle from '@material-ui/core/DialogTitle';
 import Divider from '@material-ui/core/Divider';
 import Fade from '@material-ui/core/Fade';
-import MoreVertIcon from '@material-ui/icons/MoreVert';
 import IconButton from '@material-ui/core/IconButton';
-import GitHubIcon from '@material-ui/icons/GitHub';
 import Link from '@material-ui/core/Link';
 import List from '@material-ui/core/List';
 import ListItem from '@material-ui/core/ListItem';
 import ListItemText from '@material-ui/core/ListItemText';
+import Menu from '@material-ui/core/Menu';
+import MenuItem from '@material-ui/core/MenuItem';
+import Paper from '@material-ui/core/Paper';
 import Table from '@material-ui/core/Table';
 import TableBody from '@material-ui/core/TableBody';
 import TableCell from '@material-ui/core/TableCell';
@@ -33,21 +30,14 @@ import TableContainer from '@material-ui/core/TableContainer';
 import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
 import Toolbar from '@material-ui/core/Toolbar';
-import Paper from '@material-ui/core/Paper';
 import Typography from '@material-ui/core/Typography';
 import { makeStyles, createStyles, Theme } from '@material-ui/core/styles';
+import GitHubIcon from '@material-ui/icons/GitHub';
+import MoreVertIcon from '@material-ui/icons/MoreVert';
 import { Responder } from "./connect";
-import { useInterval, useLocalStorage } from './hooks';
+import { useInterval } from './hooks';
 import { useLifecycle, deploy, deploying, failed, logged, logout, restart, setup, stop, stopping } from './lifecycle';
-import { fetchWithTimeout, navigateToAdmin, navigateToStats, navigateToInstance, navigateToHomepage } from "./utils";
-
-import Menu from '@material-ui/core/Menu';
-import MenuItem from '@material-ui/core/MenuItem';
-import crypto from 'crypto';
-
-import terms from 'bundle-text:./terms.md';
-
-const termsHash = crypto.createHash('md5').update(terms).digest('hex');
+import { fetchWithTimeout, navigateToAdmin, navigateToStats, navigateToInstance } from "./utils";
 
 function wrapAction(action: (() => void) | Promise<void>, call: (boolean) => void):(() => void) | Promise<void> {
     if (action instanceof Promise) {
@@ -141,130 +131,6 @@ export function Loading({ phase, retry = 0 }: { phase?: string, retry?: number }
     );
 }
 
-export function TheiaInstance({ client }: { client: Client }) {
-    const maxRetries = 5*60;
-    const location = useLocation();
-    const history = useHistory();
-    const [state, send] = useLifecycle(history, location, client);
-    const details = state.context.details;
-    const ref = useRef();
-    const user = details?.user;
-    const [data, setData] = useState({ type: "LOADING", phase: "Preparing" });
-
-    useEffect(() => {
-        const responder = new Responder(user, o => {
-            const el = ref.current;
-            if (el) {
-                el.contentWindow.postMessage(o, "*")
-            } else {
-                console.error("No accessible iframe instance");
-            }
-        });
-
-        const processMessage = o => {
-            const {type, data} = o.data;
-            switch (type) {
-                case "extension-advertise":
-                    if (data.online) {
-                        responder.announce();
-                    } else {
-                        responder.unannounce();
-                    }
-                    break;
-                case "extension-online":
-                    responder.announce();
-                    responder.setStatus(true);
-                    break;
-                case "extension-offline":
-                    responder.setStatus(false);
-                    /* TODO ignore offline for now, too trigger happy
-                    setData({type: "ERROR", value: "Instance went offline", action: () => navigateToHomepage(history)});
-                    responder.unannounce();*/
-                    break;
-                case "extension-answer-offline":
-                case "extension-answer-error":
-                    console.error("Error while processing message", o);
-                case "extension-answer":
-                    // Got an answer from the instance, respond back
-                    responder.respond(o.data);
-                    break;
-                default:
-                    console.error(`Unknown instance message type ${type}`, o);
-                    break;
-            }
-        };
-        window.addEventListener('message', processMessage, false);
-        return () => {
-            window.removeEventListener('message', processMessage, false);
-            responder.close();
-        }
-    }, []);
-
-    useEffect(() => {
-        async function fetchData() {
-            const { result } = await client.getDetails();
-            const instance = result.instance;
-            if (!instance) {
-                // This instance doesn't exist
-                setData({ type: "ERROR", value: "Couldn't locate the theia instance", action: () => send(restart) });
-                return;
-            }
-
-            const phase = instance.pod?.details?.status?.phase;
-            if (phase == "Running" || phase == "Pending") {
-                const containerStatuses = instance.pod?.details?.status?.containerStatuses;
-                if (containerStatuses?.length > 0) {
-                    const state = containerStatuses[0].state;
-                    const reason = state?.waiting?.reason;
-                    if (reason === "CrashLoopBackOff" || reason === "ErrImagePull" || reason === "ImagePullBackOff" || reason === "InvalidImageName") {
-                        setData({ type: "ERROR", value: state?.waiting?.message, action: () => send(restart) });
-                        return;
-                    }
-                }
-                // Check URL is fine
-                const url = instance.url;
-                if ((await fetchWithTimeout(url)).ok) {
-                    setData({ type: "SUCCESS", url: url });
-                    return;
-                }
-            }
-
-            const retry = data.retry ?? 0;
-            if (retry < maxRetries) {
-                setTimeout(() => setData({ type: "LOADING", phase: phase, retry: retry + 1 }), 1000);
-            } else if (retry == maxRetries) {
-                setData({ type: "ERROR", value: "Couldn't access the theia instance in time", action: () => send(restart) });
-            }
-        }
-
-        if (user && data.type != "ERROR" && data.type != "SUCCESS") {
-            fetchData();
-        }
-    }, [data, user]);
-
-    function Content({data}) {
-        if (data.type == 'ERROR') {
-            return <ErrorMessage reason={data.value} action={data.action} />;
-        } else {
-            return <Loading phase={data.phase} retry={data.retry} />;
-        }
-    }
-
-    if (data.type == "SUCCESS") {
-        return <iframe ref={ref} src={data.url} frameBorder="0" width="100%" height="100%"></iframe>
-    } else {
-        return (
-        <Container style={{ display: "flex", flex: 1, justifyContent: "center", alignItems: "center" }}>
-            <Paper style={{ display: "flex", flexDirection: "column", height: "60vh", width: "60vw", justifyContent: "center"}} elevation={3}>
-                {(details == null || user)
-                ? <Content data={data} />
-                : <LoginPanel />}
-            </Paper>
-        </Container>
-        );
-    }
-}
-
 export function Panel({ client, children }) {
     const location = useLocation();
     const history = useHistory();
@@ -292,57 +158,6 @@ export function NotFoundPanel({client, message}: {message?: string, client: Clie
             </Container>
         </Panel>
         );
-}
-
-export function TheiaPanel({ client }) {
-    const location = useLocation();
-    const history = useHistory();
-    const [state, send] = useLifecycle(history, location, client);
-    const details = state.context.details;
-
-    return (
-    <div style={{display: "flex", width: "100vw", height: "100vh"}}>
-        <Wrapper send={send} details={details} light={true}>
-            <TheiaInstance client={client} />
-        </Wrapper>
-    </div>
-    );
-}
-
-function login(): void {
-    localStorage.setItem('login', "true");
-    window.location.href = "/api/login/github";
-}
-
-function Terms({ show, set, hide }) {
-    return (
-    <Dialog open={show} maxWidth="md">
-        <DialogTitle>Terms</DialogTitle>
-        <DialogContent>
-            <DialogContentText id="alert-dialog-description">
-                <span dangerouslySetInnerHTML={{__html:marked(terms)}}></span>
-            </DialogContentText>
-            <Button onClick={() => {set(); hide();}}>ACCEPT</Button>
-            <Button onClick={hide}>CLOSE</Button>
-        </DialogContent>
-    </Dialog>
-    );
-}
-
-function LoginPanel() {
-    const [previousTermsHash, setTermsHash] = useLocalStorage('termsApproved', "");
-    const [showTerms, setVisibleTerms] = useState(false);
-    const termsApproved = previousTermsHash == termsHash;
-    return (
-        <Container style={{display: "flex", flex: 1, padding: 0, alignItems: "center", justifyContent: "center", flexDirection: "column"}}>
-            <Typography variant="h3" style= {{ textAlign: "center" }}>
-                You must log in to use Playground
-            </Typography>
-            <Terms show={showTerms} set={() => setTermsHash(termsHash)} hide={() => setVisibleTerms(false)} />
-            {termsApproved
-            ?<Button style={{ marginTop: 40 }} startIcon={<GitHubIcon />} onClick={login} color="primary" variant="contained" disableElevation disabled={!termsApproved}>LOGIN</Button>
-            :<Button onClick={() => setVisibleTerms(true)}>Show terms</Button>}
-        </Container>);
 }
 
 function Nav({ send, details }) {
@@ -449,238 +264,6 @@ function Nav({ send, details }) {
                 </div>
             </Toolbar>
         </AppBar>
-    );
-}
-
-const useStyles = makeStyles((theme: Theme) =>
-    createStyles({
-        root: {
-            '& > * + *': {
-                marginLeft: theme.spacing(2),
-            },
-        },
-    }),
-);
-
-function TemplateSelector({templates, onSelect, onRetryClick, state, user}) {
-    const publicTemplates = templates.filter(t => t.public);
-    const [selection, select] = useState(publicTemplates[0]);
-    const templatesAvailable = templates?.length > 0;
-    const classes = useStyles();
-    const imageName = selection.image.split(":")[0];
-    return (
-    <React.Fragment>
-        <Typography variant="h5" style={{padding: 20}}>Select a template</Typography>
-        <Divider orientation="horizontal" />
-        <Container style={{display: "flex", flex: 1, padding: 0, alignItems: "center", overflowY: "auto"}}>
-            {(!state.matches(failed) && templatesAvailable)
-                ? <div style={{display: "flex", flex: 1, flexDirection: "row", minHeight: 0, height: "100%"}}>
-                    <List style={{paddingTop: 0, paddingBottom: 0, overflowY: "auto"}}>
-                        {publicTemplates.map((template, index: number) => (
-                        <ListItem button key={index} selected={selection.id === template.id} onClick={() => select(template)}>
-                            <ListItemText primary={template.name} />
-                        </ListItem>
-                        ))}
-                    </List>
-                    <Divider flexItem={true} orientation={"vertical"} light={true} />
-                    {selection &&
-                    <div style={{flex: 1, marginLeft: 20, paddingRight: 20, overflow: "auto", textAlign: "left"}}>
-                        <Typography>
-                            <span dangerouslySetInnerHTML={{__html:marked(selection.description)}}></span>
-                        </Typography>
-                        <Divider orientation={"horizontal"} light={true} />
-                        <Typography className={classes.root} variant="overline">
-                            Built using the following
-                            <Link
-                                        href={`https://hub.docker.com/r/${imageName}/tags`}
-                                        rel="noreferrer"
-                                        variant="inherit"
-                                        style={{ margin: 5 }}>
-                                        image
-                            </Link>
-                                </Typography>
-                            </div>}
-                    </div>
-                    : <ErrorMessage reason="Can't find any template. Is the templates configuration incorrect." action={onRetryClick} />
-                }
-            </Container>
-            <Divider orientation="horizontal" />
-            <Container style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", paddingTop: 10, paddingBottom: 10 }}>
-                <Button onClick={() => onSelect(selection.id)} color="primary" variant="contained" disableElevation disabled={user == null || (!templatesAvailable || state.matches(failed))}>
-                    Create
-                </Button>
-            </Container>
-        </React.Fragment>
-    );
-}
-
-function EnvTable({ envs }) {
-    return (
-        <TableContainer component={Paper}>
-            <Table size="small" aria-label="a dense table">
-                <TableHead>
-                    <TableRow>
-                        <TableCell>Name</TableCell>
-                        <TableCell align="right">Value</TableCell>
-                    </TableRow>
-                </TableHead>
-                {envs &&
-                    <TableBody>
-                        {envs.map((env) => (
-                            <TableRow key={env.name}>
-                                <TableCell component="th" scope="row">
-                                    {env.name}
-                                </TableCell>
-                                <TableCell align="right">{env.value}</TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                }
-            </Table>
-        </TableContainer>
-    );
-}
-
-function PortsTable({ ports }) {
-    return (
-        <TableContainer component={Paper}>
-            <Table size="small" aria-label="a dense table">
-                <TableHead>
-                    <TableRow>
-                        <TableCell>Name</TableCell>
-                        <TableCell>Path</TableCell>
-                        <TableCell>Value</TableCell>
-                    </TableRow>
-                </TableHead>
-                {ports &&
-                    <TableBody>
-                        {ports.map((port) => (
-                            <TableRow key={port.name}>
-                                <TableCell component="th" scope="row">
-                                    {port.name}
-                                </TableCell>
-                                <TableCell>{port.path}</TableCell>
-                                <TableCell>{port.port}</TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                }
-            </Table>
-        </TableContainer>
-    );
-}
-
-export function InstanceDetails({ instance }) {
-    const { pod, template } = instance;
-    const { name, runtime } = template;
-    const { env, ports } = runtime;
-    const status = pod?.details?.status;
-    const containerStatuses = status?.containerStatuses;
-    let reason;
-    if (containerStatuses?.length > 0) {
-        const state = containerStatuses[0].state;
-        reason = state?.waiting?.reason;
-    }
-
-    return (
-        <Card style={{ margin: 20 }} variant="outlined">
-            <CardContent>
-                <Typography>
-                    {name}
-                </Typography>
-                {status?.startTime &&
-                <Typography color="textSecondary" gutterBottom>
-                Started at {status?.startTime}
-                </Typography>
-                }
-                <Typography color="textSecondary" gutterBottom>
-                Phase: <em>{status?.phase}</em> {reason && `(${reason})`}
-                </Typography>
-                <div style={{display: "flex", paddingTop: 20}}>
-                    <div style={{flex: 1, paddingRight: 10}}>
-                        <Typography variant="h6" id="tableTitle" component="div">
-                        Environment
-                        </Typography>
-                        <EnvTable envs={env} />
-                    </div>
-                    <div style={{ flex: 1 }}>
-                        <Typography variant="h6" id="tableTitle" component="div">
-                            Ports
-                        </Typography>
-                        <PortsTable ports={ports} />
-                    </div>
-                </div>
-            </CardContent>
-        </Card>
-    );
-}
-
-function ExistingInstance({instance, onStopClick, onConnectClick}) {
-    const status = instance?.pod?.details?.status;
-    return (
-    <React.Fragment>
-        <Typography variant="h5" style={{padding: 20}}>Existing instance</Typography>
-        <Divider orientation="horizontal" />
-        <Container style={{display: "flex", flex: 1, padding: 0, justifyContent: "center", alignItems: "center", overflowY: "auto"}}>
-            <InstanceDetails instance={instance} />
-        </Container>
-        <Divider orientation="horizontal" />
-        <Container style={{display: "flex", flexDirection: "column", alignItems: "flex-end", paddingTop: 10, paddingBottom: 10}}>
-            <div>
-                <Button style={{marginRight: 10}} onClick={onStopClick} color="secondary" variant="outlined" disableElevation>
-                    Stop
-                </Button>
-                <Button onClick={() => onConnectClick(instance)} disabled={status?.phase != "Running"} color="primary" variant="contained" disableElevation>
-                    Connect
-                </Button>
-                </div>
-            </Container>
-        </React.Fragment>
-    );
-}
-
-export function MainPanel({ client }) {
-    const location = useLocation();
-    const history = useHistory();
-    const [state, send] = useLifecycle(history, location, client);
-
-    const details = state.context.details;
-
-    function Content() {
-        if (state.matches(logged)) {
-            if (details?.instance) {
-                return <ExistingInstance onConnectClick={(instance) => navigateToInstance(history)} onStopClick={() => send(stop)} instance={details.instance} />;
-            } else if (details?.user) {
-                return <TemplateSelector state={state} user={details.user} templates={details.templates} onRetryClick={() => send(restart)} onSelect={(template) => send(deploy, { template: template })} />;
-            } else {
-                return <LoginPanel />;
-            }
-        } else if (state.matches(setup) || state.matches(stopping) || state.matches(deploying)) {
-            return <Loading />;
-        } else if (state.matches(failed)) {
-            const instance = state.context?.data?.instance;
-            if (instance) {
-                return <ErrorMessage title="Quota reached" actionTitle="Shoot it" reason="Your maximum number of instances concurrently running has been reached" action={() => send(stop, {instance: instance})} />;
-            } else {
-                return <ErrorMessage reason={state.context.error?.toString() || "Unknown error"} action={() => send(restart)} />;
-            }
-        } else if (!details?.instance || details?.templates?.length == 0) {
-            return <ErrorMessage reason={"No templates"} action={() => send(restart)} />;
-        } else {
-            return <div>Unknown state: ${state.value}</div>;
-        }
-    }
-
-    return (
-        <div style={{ display: "flex", width: "100vw", height: "100vh" }}>
-            <Wrapper send={send} details={details}>
-                <Container style={{ display: "flex", flex: 1, justifyContent: "center", alignItems: "center" }}>
-                    <Paper style={{ display: "flex", flexDirection: "column", height: "60vh", width: "60vw", justifyContent: "center"}} elevation={3}>
-                        <Content />
-                    </Paper>
-                </Container>
-            </Wrapper>
-        </div>
     );
 }
 

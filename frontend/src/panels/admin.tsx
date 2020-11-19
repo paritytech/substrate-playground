@@ -1,16 +1,16 @@
 import React from "react";
 import { useHistory, useLocation } from "react-router-dom";
-import { useLifecycle } from './lifecycle';
-import { Wrapper } from './components';
+import { Wrapper } from '../components';
+import { useLifecycle } from '../lifecycle';
 import { makeStyles } from '@material-ui/core/styles';
 import { Container } from "@material-ui/core";
+import Paper from '@material-ui/core/Paper';
 import Table from '@material-ui/core/Table';
 import TableBody from '@material-ui/core/TableBody';
 import TableCell from '@material-ui/core/TableCell';
 import TableContainer from '@material-ui/core/TableContainer';
 import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
-import Paper from '@material-ui/core/Paper';
 import Typography from '@material-ui/core/Typography';
 
 const useStyles = makeStyles({
@@ -83,7 +83,7 @@ export function AdminPanel({ client }) {
     const instances = Object.entries(details ? details["all_instances"] : {});
     return (
         <div style={{ display: "flex", width: "100vw", height: "100vh", alignItems: "center", justifyContent: "center"}}>
-            <Wrapper client={client} send={send} details={details}>
+            <Wrapper send={send} details={details}>
                 <Container style={{ display: "flex", flex: 1, justifyContent: "center", alignItems: "center" }}>
                     <Paper style={{ display: "flex", overflowY: "auto", flexDirection: "column", marginTop: 20, justifyContent: "center", width: "80vw", height: "80vh"}} elevation={3}>
                         {details?.templates.length > 0
@@ -116,7 +116,7 @@ export function StatsPanel({ client }) {
     const details = state.context.details;
     return (
         <div style={{ display: "flex", width: "100vw", height: "100vh", alignItems: "center", justifyContent: "center"}}>
-            <Wrapper client={client} send={send} details={details}>
+            <Wrapper send={send} details={details}>
                 <iframe src="/grafana/" width="100%" height="100%" frameBorder="0"></iframe>
             </Wrapper>
         </div>

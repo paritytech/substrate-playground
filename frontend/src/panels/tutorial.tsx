@@ -1,27 +1,25 @@
+import marked from 'marked';
 import React, { useEffect, useState } from "react";
+import { useHistory, useLocation } from "react-router-dom";
 import Button from '@material-ui/core/Button';
 import Card from '@material-ui/core/Card';
 import CardContent from '@material-ui/core/CardContent';
 import CardHeader from '@material-ui/core/CardHeader';
 import CircularProgress from '@material-ui/core/CircularProgress';
+import Container from "@material-ui/core/Container";
 import Paper from '@material-ui/core/Paper';
-import Typography from '@material-ui/core/Typography';
-import marked from 'marked';
-import { useHistory, useLocation } from "react-router-dom";
-import { useLifecycle } from './lifecycle';
-import { Container } from "@material-ui/core";
-import { Client } from "@substrate/playground-api";
-import { startNode } from "./commands";
-import { TheiaInstance } from "./components";
-import { Instance } from "./connect";
-
-import { makeStyles, Theme, createStyles } from '@material-ui/core/styles';
-import Stepper from '@material-ui/core/Stepper';
 import Step from '@material-ui/core/Step';
-import StepLabel from '@material-ui/core/StepLabel';
 import StepContent from '@material-ui/core/StepContent';
-
+import Stepper from '@material-ui/core/Stepper';
+import StepLabel from '@material-ui/core/StepLabel';
 import Skeleton from '@material-ui/lab/Skeleton';
+import Typography from '@material-ui/core/Typography';
+import { makeStyles, Theme, createStyles } from '@material-ui/core/styles';
+import { Client } from "@substrate/playground-api";
+import { startNode } from "../commands";
+import { Instance } from "../connect";
+import { useLifecycle } from '../lifecycle';
+import { TheiaInstance } from "../theia";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
