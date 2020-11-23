@@ -61,10 +61,10 @@ fn create_env_var(name: &str, value: &str) -> EnvVar {
     }
 }
 
-fn pod_env_variables(template: &Template, host: &str, user_uuid: &str) -> Vec<EnvVar> {
+fn pod_env_variables(template: &Template, host: &str, instance_uuid: &str) -> Vec<EnvVar> {
     let mut envs = vec![
         create_env_var("SUBSTRATE_PLAYGROUND", ""),
-        create_env_var("SUBSTRATE_PLAYGROUND_INSTANCE", user_uuid),
+        create_env_var("SUBSTRATE_PLAYGROUND_INSTANCE", instance_uuid),
         create_env_var("SUBSTRATE_PLAYGROUND_HOSTNAME", host),
     ];
     if let Some(mut template_envs) = template.runtime.as_ref().and_then(|r| {
@@ -81,19 +81,19 @@ fn pod_env_variables(template: &Template, host: &str, user_uuid: &str) -> Vec<En
 
 // TODO detect when ingress is restarted, then re-sync theia instances
 
-fn create_pod(host: &str, user_uuid: &str, template: &Template) -> Result<Pod, String> {
+fn create_pod(host: &str, instance_uuid: &str, template: &Template) -> Result<Pod, String> {
     let mut labels = BTreeMap::new();
     // TODO fetch docker image labels and add them to the pod.
     // Can be done by querying dockerhub (https://docs.docker.com/registry/spec/api/)
     labels.insert(APP_LABEL.to_string(), APP_VALUE.to_string());
     labels.insert(COMPONENT_LABEL.to_string(), COMPONENT_VALUE.to_string());
-    labels.insert(OWNER_LABEL.to_string(), user_uuid.to_string());
+    labels.insert(OWNER_LABEL.to_string(), instance_uuid.to_string());
     let mut annotations = BTreeMap::new();
     annotations.insert(TEMPLATE_ANNOTATION.to_string(), template.to_string());
 
     Ok(Pod {
         metadata: ObjectMeta {
-            name: Some(pod_name(user_uuid)),
+            name: Some(pod_name(instance_uuid)),
             labels: Some(labels),
             annotations: Some(annotations),
             ..Default::default()
@@ -102,7 +102,7 @@ fn create_pod(host: &str, user_uuid: &str, template: &Template) -> Result<Pod, S
             containers: vec![Container {
                 name: format!("{}-container", COMPONENT_VALUE),
                 image: Some(template.image.to_string()),
-                env: Some(pod_env_variables(template, host, user_uuid)),
+                env: Some(pod_env_variables(template, host, instance_uuid)),
                 ..Default::default()
             }],
             ..Default::default()
@@ -111,13 +111,13 @@ fn create_pod(host: &str, user_uuid: &str, template: &Template) -> Result<Pod, S
     })
 }
 
-fn create_service(user_uuid: &str, template: &Template) -> Service {
+fn create_service(instance_uuid: &str, template: &Template) -> Service {
     let mut labels = BTreeMap::new();
     labels.insert(APP_LABEL.to_string(), APP_VALUE.to_string());
     labels.insert(COMPONENT_LABEL.to_string(), COMPONENT_VALUE.to_string());
-    labels.insert(OWNER_LABEL.to_string(), user_uuid.to_string());
+    labels.insert(OWNER_LABEL.to_string(), instance_uuid.to_string());
     let mut selectors = BTreeMap::new();
-    selectors.insert(OWNER_LABEL.to_string(), user_uuid.to_string());
+    selectors.insert(OWNER_LABEL.to_string(), instance_uuid.to_string());
 
     // The theia port itself is mandatory
     let mut ports = vec![ServicePort {
@@ -145,7 +145,7 @@ fn create_service(user_uuid: &str, template: &Template) -> Service {
 
     Service {
         metadata: ObjectMeta {
-            name: Some(service_name(user_uuid)),
+            name: Some(service_name(instance_uuid)),
             labels: Some(labels),
             ..Default::default()
         },
@@ -240,17 +240,17 @@ pub struct InstanceDetails {
 }
 
 impl InstanceDetails {
-    pub fn new(engine: Engine, user_uuid: String, template: &Template, pod: PodDetails) -> Self {
+    pub fn new(engine: Engine, instance_uuid: String, template: &Template, pod: PodDetails) -> Self {
         InstanceDetails {
-            user_uuid: user_uuid.clone(),
+            user_uuid: instance_uuid.clone(),
             template: template.clone(),
-            url: InstanceDetails::url(engine, user_uuid),
+            url: InstanceDetails::url(engine, instance_uuid),
             pod,
         }
     }
 
-    fn url(engine: Engine, user_uuid: String) -> String {
-        format!("//{}.{}", user_uuid, engine.configuration.host)
+    fn url(engine: Engine, instance_uuid: String) -> String {
+        format!("//{}.{}", instance_uuid, engine.configuration.host)
     }
 }
 
@@ -440,7 +440,9 @@ impl Engine {
     }
 
     pub async fn deploy(self, user_uuid: &str, template_id: &str) -> Result<String, String> {
-        if self.clone().get_instance(&user_uuid).await.is_ok() {
+        // Create a unique ID for this instance. Use lowercase to make sure the result can be used as part of a DNS
+        let instance_uuid = user_uuid.to_string().to_lowercase();
+        if self.clone().get_instance(&instance_uuid.clone()).await.is_ok() {
             return Err("One instance is already running".to_string());
         }
 
@@ -453,8 +455,6 @@ impl Engine {
             .ok_or_else(|| format!("Unknow image {}", template_id))?;
         let instance_template = &Template::parse(&template)?;
 
-        // Create a unique ID for this instance. Use lowercase to make sure the result can be used as part of a DNS
-        let instance_uuid = user_uuid.to_string().to_lowercase();
         let namespace = &self.configuration.namespace;
 
         let pod_api: Api<Pod> = Api::namespaced(client.clone(), namespace);
@@ -468,7 +468,7 @@ impl Engine {
         pod_api
             .create(
                 &PostParams::default(),
-                &create_pod(&self.configuration.host, &user_uuid, instance_template)?,
+                &create_pod(&self.configuration.host, &instance_uuid.clone(), instance_template)?,
             )
             .await
             .map_err(error_to_string)?;
