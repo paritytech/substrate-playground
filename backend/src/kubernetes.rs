@@ -225,13 +225,6 @@ pub async fn get_config(
 }
 
 pub async fn get_admins(client: Client, namespace: &str) -> Result<Vec<String>, String> {
-    println!(
-        "Hello! {}",
-        get_config(client.clone(), namespace)
-            .await?
-            .get("admins")
-            .unwrap()
-    );
     get_config(client, namespace)
         .await?
         .get("admins")

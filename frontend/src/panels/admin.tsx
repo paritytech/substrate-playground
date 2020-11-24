@@ -86,6 +86,16 @@ export function AdminPanel({ client }) {
             <Wrapper send={send} details={details}>
                 <Container style={{ display: "flex", flex: 1, justifyContent: "center", alignItems: "center" }}>
                     <Paper style={{ display: "flex", overflowY: "auto", flexDirection: "column", marginTop: 20, justifyContent: "center", width: "80vw", height: "80vh"}} elevation={3}>
+                        {details?.admins.length > 0
+                        ? <div style={{margin: 20}}>
+                            <Typography variant="h5">Admins</Typography>
+                            {details.admins.map((admin) => (
+                                <div>{admin}</div>
+                            ))}
+                          </div>
+                        : <Container style={{display: "flex", flex: 1, flexDirection: "column", padding: 0, justifyContent: "center", alignItems: "center", overflowY: "auto"}}>
+                            <Typography variant="h5">No templates</Typography>
+                        </Container>}
                         {details?.templates.length > 0
                         ? <div style={{margin: 20}}>
                             <Typography variant="h5">Templates</Typography>
