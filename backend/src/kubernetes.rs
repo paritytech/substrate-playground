@@ -217,14 +217,40 @@ pub async fn get_templates(
     get_config_map(client, namespace, "templates").await
 }
 
+pub async fn get_config(
+    client: Client,
+    namespace: &str,
+) -> Result<BTreeMap<String, String>, String> {
+    get_config_map(client, namespace, "config").await
+}
+
+pub async fn get_admins(client: Client, namespace: &str) -> Result<Vec<String>, String> {
+    println!(
+        "Hello! {}",
+        get_config(client.clone(), namespace)
+            .await?
+            .get("admins")
+            .unwrap()
+    );
+    get_config(client, namespace)
+        .await?
+        .get("admins")
+        .ok_or("err".to_string())
+        .map(|s| s.split(',').map(|s| s.to_string()).collect())
+}
+
 #[derive(Clone)]
 pub struct Configuration {
     pub host: String,
     pub namespace: String,
     pub client_id: String,
     pub client_secret: String,
-    pub admins: Vec<String>,
 }
+
+//pub users: Vec<String>, // if empty, anybody is a user. If not, only listed. Only user can create new instance. Non-user should have limited UI
+// TODO Deployment time should be modifiable, extendable
+// At deployment time, some config can be provided (per template, custom duration depending on rights, ..)
+// How to export / connect workspace to GH?
 
 #[derive(Clone)]
 pub struct Engine {
@@ -240,7 +266,12 @@ pub struct InstanceDetails {
 }
 
 impl InstanceDetails {
-    pub fn new(engine: Engine, instance_uuid: String, template: &Template, pod: PodDetails) -> Self {
+    pub fn new(
+        engine: Engine,
+        instance_uuid: String,
+        template: &Template,
+        pod: PodDetails,
+    ) -> Self {
         InstanceDetails {
             user_uuid: instance_uuid.clone(),
             template: template.clone(),
@@ -304,8 +335,7 @@ impl Engine {
             "localhost".to_string()
         };
 
-        let admins_config = env::var("ADMINS").map_err(|_| "ADMINS must be set")?;
-        let admins = admins_config.split(',').map(|s| s.to_string()).collect();
+        // Retrieve 'static' configuration from Env variables
         let client_id = env::var("GITHUB_CLIENT_ID").map_err(|_| "GITHUB_CLIENT_ID must be set")?;
         let client_secret =
             env::var("GITHUB_CLIENT_SECRET").map_err(|_| "GITHUB_CLIENT_SECRET must be set")?;
@@ -316,7 +346,6 @@ impl Engine {
                 namespace,
                 client_id,
                 client_secret,
-                admins,
             },
         })
     }
@@ -383,6 +412,13 @@ impl Engine {
             .collect::<Result<BTreeMap<String, Template>, String>>()?)
     }
 
+    pub async fn get_admins(self) -> Result<Vec<String>, String> {
+        let config = config().await?;
+        let client = Client::new(config);
+
+        get_admins(client, &self.configuration.namespace).await
+    }
+
     /// Lists all currently running instances
     pub async fn list_all(&self) -> Result<BTreeMap<String, InstanceDetails>, String> {
         let config = config().await?;
@@ -442,7 +478,12 @@ impl Engine {
     pub async fn deploy(self, user_uuid: &str, template_id: &str) -> Result<String, String> {
         // Create a unique ID for this instance. Use lowercase to make sure the result can be used as part of a DNS
         let instance_uuid = user_uuid.to_string().to_lowercase();
-        if self.clone().get_instance(&instance_uuid.clone()).await.is_ok() {
+        if self
+            .clone()
+            .get_instance(&instance_uuid.clone())
+            .await
+            .is_ok()
+        {
             return Err("One instance is already running".to_string());
         }
 
@@ -468,7 +509,11 @@ impl Engine {
         pod_api
             .create(
                 &PostParams::default(),
-                &create_pod(&self.configuration.host, &instance_uuid.clone(), instance_template)?,
+                &create_pod(
+                    &self.configuration.host,
+                    &instance_uuid.clone(),
+                    instance_template,
+                )?,
             )
             .await
             .map_err(error_to_string)?;

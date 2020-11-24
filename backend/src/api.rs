@@ -19,6 +19,7 @@ use rocket_contrib::{json, json::JsonValue};
 use rocket_oauth2::{OAuth2, TokenResponse};
 use serde::{Deserialize, Serialize};
 use std::io::Read;
+use tokio::runtime::Runtime;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct User {
@@ -83,31 +84,37 @@ fn token_validity(token: &str, client_id: &str, client_secret: &str) -> Result<G
 
 // Extract a User from private cookies
 impl<'a, 'r> FromRequest<'a, 'r> for User {
-    type Error = ();
+    type Error = &'static str;
 
-    fn from_request(request: &'a Request<'r>) -> request::Outcome<User, ()> {
-        let configuration = &request
-            .guard::<State<Context>>()?
+    fn from_request(request: &'a Request<'r>) -> request::Outcome<User, &'static str> {
+        let engine = &request
+            .guard::<State<Context>>()
+            .map_failure(|f| (Status::BadRequest, "Can't access state"))?
             .manager
-            .engine
-            .configuration;
+            .engine;
         let mut cookies = request.cookies();
         if let Some(token) = cookies.get_private(COOKIE_TOKEN) {
             let token_value = token.value();
             if let Ok(user) = token_validity(
                 token_value,
-                configuration.client_id.as_str(),
-                configuration.client_secret.as_str(),
+                engine.configuration.client_id.as_str(),
+                engine.configuration.client_secret.as_str(),
             ) {
                 let login = user.login;
                 Outcome::Success(User {
                     username: login.clone(),
                     avatar: user.avatar_url,
-                    admin: configuration.admins.clone().contains(&login),
+                    admin: Runtime::new()
+                        .map_err(|_| {
+                            Err((Status::ExpectationFailed, "Failed to execute async fn"))
+                        })?
+                        .block_on(engine.clone().get_admins())
+                        .map_err(|_| Err((Status::FailedDependency, "Missing admins ConfiMap")))?
+                        .contains(&login),
                 })
             } else {
                 clear(cookies);
-                Outcome::Failure((Status::BadRequest, ()))
+                Outcome::Failure((Status::BadRequest, "4"))
             }
         } else {
             Outcome::Forward(())

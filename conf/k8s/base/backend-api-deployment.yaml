@@ -33,11 +33,6 @@ spec:
             value: "normal"
           - name: ROCKET_ADDRESS
             value: "0.0.0.0"
-          - name: ADMINS
-            valueFrom:
-              configMapKeyRef:
-                name: config
-                key: admins
           - name: GITHUB_CLIENT_ID
             valueFrom:
               configMapKeyRef:

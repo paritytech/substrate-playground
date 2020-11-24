@@ -30,6 +30,7 @@ Set required ConfigMap and Secret as defined in the newly created OAuth app:
 
 ```shell
 # WARNING Make sure all needed info are set before running those commands
+kubectl create configmap playground-config --namespace=playground --from-literal=value"???,???"
 kubectl create configmap config --namespace=playground --from-literal=admins="???,???" --from-literal=github.clientId="???"
 kubectl create secret generic secrets --namespace=playground --from-literal=github.clientSecret="???" --from-literal=rocket.secretKey=`openssl rand -base64 32`
 ```
