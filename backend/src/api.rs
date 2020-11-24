@@ -89,7 +89,7 @@ impl<'a, 'r> FromRequest<'a, 'r> for User {
     fn from_request(request: &'a Request<'r>) -> request::Outcome<User, &'static str> {
         let engine = &request
             .guard::<State<Context>>()
-            .map_failure(|f| (Status::BadRequest, "Can't access state"))?
+            .map_failure(|_f| (Status::BadRequest, "Can't access state"))?
             .manager
             .engine;
         let mut cookies = request.cookies();
@@ -159,8 +159,8 @@ pub fn undeploy(state: State<'_, Context>, user: User) -> JsonValue {
     result_to_jsonrpc(manager.undeploy(&user.username))
 }
 
-#[delete("/<_instance_uuid>", rank = 2)]
-pub fn undeploy_unlogged(_instance_uuid: String) -> status::Unauthorized<()> {
+#[delete("/", rank = 2)]
+pub fn undeploy_unlogged() -> status::Unauthorized<()> {
     status::Unauthorized::<()>(None)
 }
 

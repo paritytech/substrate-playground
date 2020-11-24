@@ -1,5 +1,7 @@
 use prometheus::Registry;
-use rocket_prometheus::prometheus::{histogram_opts, exponential_buckets, opts, HistogramVec, IntCounterVec};
+use rocket_prometheus::prometheus::{
+    exponential_buckets, histogram_opts, opts, HistogramVec, IntCounterVec,
+};
 use std::error::Error;
 
 #[derive(Debug, Clone)]
@@ -16,7 +18,11 @@ impl Metrics {
     const TEMPLATE_LABEL: &'static str = "template";
 
     pub fn new() -> Result<Self, Box<dyn Error>> {
-        let opts = histogram_opts!("deploy_duration", "Deployment duration in seconds", exponential_buckets(1.0, 2.0, 8).unwrap());
+        let opts = histogram_opts!(
+            "deploy_duration",
+            "Deployment duration in seconds",
+            exponential_buckets(1.0, 2.0, 8).unwrap()
+        );
         Ok(Metrics {
             deploy_counter: IntCounterVec::new(
                 opts!("deploy_counter", "Count of deployments"),
@@ -37,10 +43,7 @@ impl Metrics {
                 ),
                 &[Self::USERNAME_LABEL],
             )?,
-            deploy_duration: HistogramVec::new(
-                opts,
-                &[Self::USERNAME_LABEL],
-            )?,
+            deploy_duration: HistogramVec::new(opts, &[Self::USERNAME_LABEL])?,
         })
     }
 

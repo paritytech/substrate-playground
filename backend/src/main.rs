@@ -32,7 +32,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     // Prints basic details
 
-    log::info!("Running in {:?} mode", Environment::active()?);
+    log::info!("Running ROCKET in {:?} mode", Environment::active()?);
 
     match env::var("GITHUB_SHA") {
         Ok(version) => log::info!("Version {}", version),
