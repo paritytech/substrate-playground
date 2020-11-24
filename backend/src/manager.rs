@@ -55,6 +55,7 @@ pub struct Manager {
 pub struct PlaygroundDetails {
     pub pod: PodDetails,
     pub templates: BTreeMap<String, Template>,
+    pub admins: Option<Vec<String>>,
     pub instance: Option<InstanceDetails>,
     pub all_instances: Option<BTreeMap<String, InstanceDetails>>,
     pub user: Option<User>,
@@ -164,6 +165,7 @@ impl Manager {
     pub fn get(self, user: User) -> Result<PlaygroundDetails, String> {
         let pod = new_runtime()?.block_on(self.clone().engine.get())?;
         let templates = new_runtime()?.block_on(self.clone().engine.get_templates())?;
+        let admins = new_runtime()?.block_on(self.clone().engine.get_admins())?;
         let all_instances = if user.admin {
             Some(new_runtime()?.block_on(self.engine.list_all())?)
         } else {
@@ -172,6 +174,7 @@ impl Manager {
         Ok(PlaygroundDetails {
             pod,
             templates,
+            admins: Some(admins),
             instance: new_runtime()?
                 .block_on(self.engine.get_instance(user.username.as_str()))
                 .ok(),
@@ -186,6 +189,7 @@ impl Manager {
         Ok(PlaygroundDetails {
             pod,
             templates,
+            admins: None,
             instance: None,
             all_instances: None,
             user: None,
