@@ -160,6 +160,11 @@ export function NotFoundPanel({client, message}: {message?: string, client: Clie
         );
 }
 
+function login(): void {
+    localStorage.setItem('login', "true");
+    window.location.href = "/api/login/github";
+}
+
 function Nav({ send, details }) {
     const user = details?.user;
     const history = useHistory();
