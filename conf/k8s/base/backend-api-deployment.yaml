@@ -36,17 +36,17 @@ spec:
           - name: GITHUB_CLIENT_ID
             valueFrom:
               configMapKeyRef:
-                name: config
+                name: playground-config
                 key: github.clientId
           - name: GITHUB_CLIENT_SECRET
             valueFrom:
               secretKeyRef:
-                name: secrets
+                name: playground-secrets
                 key: github.clientSecret
           - name: ROCKET_SECRET_KEY
             valueFrom:
               secretKeyRef:
-                name: secrets
+                name: playground-secrets
                 key: rocket.secretKey
         resources:
           requests:

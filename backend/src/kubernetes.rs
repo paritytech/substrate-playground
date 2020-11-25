@@ -214,20 +214,20 @@ pub async fn get_templates(
     client: Client,
     namespace: &str,
 ) -> Result<BTreeMap<String, String>, String> {
-    get_config_map(client, namespace, "templates").await
+    get_config_map(client, namespace, "playground-templates").await
 }
 
 pub async fn get_config(
     client: Client,
     namespace: &str,
 ) -> Result<BTreeMap<String, String>, String> {
-    get_config_map(client, namespace, "config").await
+    get_config_map(client, namespace, "playground-config").await
 }
 
 pub async fn get_admins(client: Client, namespace: &str) -> Result<Vec<String>, String> {
     get_config(client, namespace)
         .await?
-        .get("admins")
+        .get("playground-admins")
         .ok_or("err".to_string())
         .map(|s| s.split(',').map(|s| s.to_string()).collect())
 }

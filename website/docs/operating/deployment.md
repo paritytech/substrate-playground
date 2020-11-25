@@ -5,12 +5,12 @@ title: Deployment
 
 ## Update playground image
 
-* build and push new image (`make push-playground-docker-image`)
+* build and push new image (`make push-backend-docker-images`)
 * deploy on GKE (`ENVIRONMENT=staging make k8s-deploy-playground`)
 
 ## Kubernetes
 
-Kubernetes is used as a deployment platform for the playground. It can be deployed on GCE or locally via minikube.
+Kubernetes is used as a deployment platform for the playground. It can be deployed on GKE or locally via minikube.
 (Make sure that k8s 1.14 is used)
 
 ### Setup
@@ -30,9 +30,8 @@ Set required ConfigMap and Secret as defined in the newly created OAuth app:
 
 ```shell
 # WARNING Make sure all needed info are set before running those commands
-kubectl create configmap playground-config --namespace=playground --from-literal=value"???,???"
-kubectl create configmap config --namespace=playground --from-literal=admins="???,???" --from-literal=github.clientId="???"
-kubectl create secret generic secrets --namespace=playground --from-literal=github.clientSecret="???" --from-literal=rocket.secretKey=`openssl rand -base64 32`
+kubectl create configmap playground-config --namespace=playground --from-literal=admins="???,???" --from-literal=github.clientId="???"
+kubectl create secret generic playground-secrets --namespace=playground --from-literal=github.clientSecret="???" --from-literal=rocket.secretKey=`openssl rand -base64 32`
 ```
 
 Deploy on GKE:
@@ -148,9 +147,7 @@ gcloud compute addresses describe playground --global
 
 ```
 gcloud compute addresses create playground --region us-central1
-gcloud compute addresses create playground-theia --region us-central1
 gcloud compute addresses create playground-staging --region us-central1
-gcloud compute addresses create playground-theia-staging --region us-central1
 gcloud compute addresses list --filter="region:( us-central1 )"
 gcloud compute addresses describe playground --region=us-central1 --format="value(address)"
 ```

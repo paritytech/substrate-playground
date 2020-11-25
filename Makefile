@@ -160,4 +160,4 @@ k8s-undeploy-theia: k8s-setup ## Undeploy all theia pods and services from kuber
 	kubectl delete pods,services -l app.kubernetes.io/component=theia --namespace=${NAMESPACE}
 
 k8s-update-templates-config: k8s-setup ## Creates or replaces the `templates` config map from `conf/k8s/overlays/ENVIRONMENT/templates`
-	kubectl create configmap templates --namespace=${NAMESPACE} --from-file=conf/k8s/overlays/${ENVIRONMENT}/templates/ --dry-run=client -o yaml | kubectl apply -f -
+	kubectl create configmap playground-templates --namespace=${NAMESPACE} --from-file=conf/k8s/overlays/${ENVIRONMENT}/templates/ --dry-run=client -o yaml | kubectl apply -f -
