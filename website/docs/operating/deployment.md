@@ -20,7 +20,7 @@ For OSX
 ```
 brew cask install google-cloud-sdk
 gcloud init
-gcloud container clusters get-credentials susbtrate-playground-staging --zone us-central1-a
+gcloud container clusters get-credentials substrate-playground-staging --zone us-central1-a
 ENVIRONMENT=staging make k8s-setup
 ```
 
@@ -47,7 +47,7 @@ make k8s-deploy-playground
 When switching / recreating clusters it might be necessary to refresh credentials:
 
 ```
-gcloud container clusters get-credentials  susbtrate-playground-staging --zone us-central1-a
+gcloud container clusters get-credentials substrate-playground-staging --zone us-central1-a
 ```
 
 Playground is currently deployed on playground.substrate.dev. The cluster is hosted on GKE and composed of some `n2-standard-4` pods.
@@ -102,7 +102,7 @@ dig +short TXT _acme-challenge.playground-staging.substrate.dev @8.8.8.8
 Then update the tls secret:
 
 ```
-gcloud container clusters get-credentials susbtrate-playground-staging --region us-central1-a
+gcloud container clusters get-credentials substrate-playground-staging --region us-central1-a
 ENVIRONMENT=staging make k8s-setup
 sudo kubectl create secret tls playground-tls --save-config --key /etc/letsencrypt/live/playground-staging.substrate.dev/privkey.pem --cert /etc/letsencrypt/live/playground-staging.substrate.dev/fullchain.pem --namespace=playground --dry-run=true -o yaml | sudo kubectl apply -f -
 ```
