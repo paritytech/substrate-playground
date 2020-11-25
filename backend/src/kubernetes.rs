@@ -227,7 +227,7 @@ pub async fn get_config(
 pub async fn get_admins(client: Client, namespace: &str) -> Result<Vec<String>, String> {
     get_config(client, namespace)
         .await?
-        .get("playground-admins")
+        .get("admins")
         .ok_or("err".to_string())
         .map(|s| s.split(',').map(|s| s.to_string()).collect())
 }
