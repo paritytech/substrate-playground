@@ -26,26 +26,24 @@ ifeq ($(ENVIRONMENT),)
   ENVIRONMENT=dev
 endif
 
-ENVIRONMENTS := production staging dev
+# Extract all environments from conf/k8s/overlays/
+ENVIRONMENTS := $(shell cd conf/k8s/overlays/ && ls -d *)
 
 ifeq ($(filter $(ENVIRONMENT),$(ENVIRONMENTS)),)
     $(error ENVIRONMENT should be one of ($(ENVIRONMENTS)) but was $(ENVIRONMENT))
 endif
 
-include .env
--include .env.${ENVIRONMENT}
-
 # Docker images names
-DOCKER_ORG=paritytech
 PLAYGROUND_BACKEND_API_DOCKER_IMAGE_NAME=${DOCKER_ORG}/substrate-playground-backend-api
 PLAYGROUND_BACKEND_UI_DOCKER_IMAGE_NAME=${DOCKER_ORG}/substrate-playground-backend-ui
 TEMPLATE_BASE=${DOCKER_ORG}/substrate-playground-template-base
 TEMPLATE_THEIA_BASE=${DOCKER_ORG}/substrate-playground-template-theia-base
+GKE_CLUSTER=substrate-playground-${ENVIRONMENT}
 
 # Derive CONTEXT from ENVIRONMENT
 ifeq ($(ENVIRONMENT), dev)
   CONTEXT=docker-desktop
-else ifeq ($(ENVIRONMENT), staging)
+else
   CONTEXT=gke_${GKE_PROJECT}_${GKE_ZONE}_${GKE_CLUSTER}
 endif
 
@@ -53,6 +51,13 @@ COLOR_BOLD:= $(shell tput bold)
 COLOR_RED:= $(shell tput bold; tput setaf 1)
 COLOR_GREEN:= $(shell tput bold; tput setaf 2)
 COLOR_RESET:= $(shell tput sgr0)
+
+# Include .env for extra customisable ENV variable 
+include .env
+# Include an optional .env for per environment ENV variable
+-include .env.${ENVIRONMENT}
+
+# TODO check all required env are defined? BASE_TEMPLATE_VERSION, NAMESPACE, GKE_PROJECT, GKE_ZONE, DOCKER_ORG
 
 help:
 	@echo "Build and publish playground components"
