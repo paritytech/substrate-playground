@@ -83,6 +83,8 @@ gcloud compute addresses describe playground --region=us-central1 --format="valu
 
 Create a new [CloudDNS zone](https://console.cloud.google.com/net-services/dns/zones/new/create?authuser=1&project=substrateplayground-252112).
 
+Fill a DevOps [request](https://github.com/paritytech/devops/issues/732) to redirect the new substrate.dev subdomain to CloudDNS.
+
 Add two `A` record set (one with ``, one with `*` as DNS name) pointing to the newly created fixed IP.
 
 Another record set will be added during the TLS certificate generation.
