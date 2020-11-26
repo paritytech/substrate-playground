@@ -38,18 +38,19 @@ jobs:
           echo ::set-output name=sha::sha-${GITHUB_SHA::7}
           PROJECT=`grep GKE_PROJECT .env | cut -d '=' -f2`
           ZONE=`grep GKE_ZONE .env | cut -d '=' -f2`
-          CLUSTER=`grep GKE_CLUSTER .env | cut -d '=' -f2`
           echo ::set-output name=project::$( echo ${PROJECT} )
           echo ::set-output name=zone::$( echo ${ZONE} )
           if [[ $GITHUB_REF == 'refs/heads/master' ]]; then
               echo ::set-output name=environment::production
               echo ::set-output name=domain::playground
               CLUSTER=`grep GKE_CLUSTER .env.production | cut -d '=' -f2`
+              echo ::set-output name=cluster::$( echo ${CLUSTER} )
           elif [[ $GITHUB_REF == 'refs/heads/develop' ]]; then
               echo ::set-output name=environment::staging
               echo ::set-output name=domain::playground-staging
+              CLUSTER=`grep GKE_CLUSTER .env | cut -d '=' -f2`
+              echo ::set-output name=cluster::$( echo ${CLUSTER} )
           fi
-          echo ::set-output name=cluster::$( echo ${CLUSTER} )
 
       - uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
         with:
