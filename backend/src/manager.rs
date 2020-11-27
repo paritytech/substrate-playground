@@ -63,7 +63,6 @@ pub struct PlaygroundDetails {
 
 impl Manager {
     const FIVE_SECONDS: Duration = Duration::from_secs(5);
-    const THREE_HOURS: Duration = Duration::from_secs(60 * 60 * 3);
 
     pub async fn new() -> Result<Self, Box<dyn Error>> {
         let metrics = Metrics::new()?;
@@ -138,7 +137,7 @@ impl Manager {
                 Ok(all_instances) => {
                     for (username, instance) in running_instances(all_instances) {
                         if let Some(duration) = elapsed(&instance.pod) {
-                            if duration > Manager::THREE_HOURS {
+                            if duration > instance.session_duration {
                                 match self.clone().undeploy(&username) {
                                     Ok(()) => (),
                                     Err(err) => {

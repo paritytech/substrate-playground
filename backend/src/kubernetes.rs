@@ -16,7 +16,7 @@ use kube::{
 };
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::env;
-use std::{collections::BTreeMap, error::Error};
+use std::{collections::BTreeMap, error::Error, time::Duration};
 
 const APP_LABEL: &str = "app.kubernetes.io/part-of";
 const APP_VALUE: &str = "playground";
@@ -25,6 +25,7 @@ const COMPONENT_VALUE: &str = "theia";
 const OWNER_LABEL: &str = "app.kubernetes.io/owner";
 const INGRESS_NAME: &str = "ingress";
 const TEMPLATE_ANNOTATION: &str = "playground.substrate.io/template";
+const SESSION_DURATION_ANNOTATION: &str = "playground.substrate.io/session_duration";
 const THEIA_WEB_PORT: i32 = 3000;
 
 fn error_to_string<T: std::fmt::Display>(err: T) -> String {
@@ -81,7 +82,12 @@ fn pod_env_variables(template: &Template, host: &str, instance_uuid: &str) -> Ve
 
 // TODO detect when ingress is restarted, then re-sync theia instances
 
-fn create_pod(host: &str, instance_uuid: &str, template: &Template) -> Result<Pod, String> {
+fn create_pod(
+    host: &str,
+    instance_uuid: &str,
+    template: &Template,
+    session_duration: Duration,
+) -> Result<Pod, String> {
     let mut labels = BTreeMap::new();
     // TODO fetch docker image labels and add them to the pod.
     // Can be done by querying dockerhub (https://docs.docker.com/registry/spec/api/)
@@ -90,6 +96,10 @@ fn create_pod(host: &str, instance_uuid: &str, template: &Template) -> Result<Po
     labels.insert(OWNER_LABEL.to_string(), instance_uuid.to_string());
     let mut annotations = BTreeMap::new();
     annotations.insert(TEMPLATE_ANNOTATION.to_string(), template.to_string());
+    annotations.insert(
+        SESSION_DURATION_ANNOTATION.to_string(),
+        session_duration.as_secs().to_string(),
+    );
 
     Ok(Pod {
         metadata: ObjectMeta {
@@ -238,6 +248,7 @@ pub struct Configuration {
     pub namespace: String,
     pub client_id: String,
     pub client_secret: String,
+    pub session_duration: Duration,
 }
 
 //pub users: Vec<String>, // if empty, anybody is a user. If not, only listed. Only user can create new instance. Non-user should have limited UI
@@ -256,6 +267,7 @@ pub struct InstanceDetails {
     pub template: Template,
     pub url: String,
     pub pod: PodDetails,
+    pub session_duration: Duration,
 }
 
 impl InstanceDetails {
@@ -264,12 +276,14 @@ impl InstanceDetails {
         instance_uuid: String,
         template: &Template,
         pod: PodDetails,
+        session_duration: Duration,
     ) -> Self {
         InstanceDetails {
             user_uuid: instance_uuid.clone(),
             template: template.clone(),
             url: InstanceDetails::url(engine, instance_uuid),
             pod,
+            session_duration,
         }
     }
 
@@ -306,6 +320,8 @@ impl Default for PodDetails {
     }
 }
 
+const DEFAULT_SESSION_DURATION: u64 = 60 * 3; // 3 hours in minutes
+
 impl Engine {
     pub async fn new() -> Result<Self, Box<dyn Error>> {
         let config = config().await?;
@@ -332,6 +348,11 @@ impl Engine {
         let client_id = env::var("GITHUB_CLIENT_ID").map_err(|_| "GITHUB_CLIENT_ID must be set")?;
         let client_secret =
             env::var("GITHUB_CLIENT_SECRET").map_err(|_| "GITHUB_CLIENT_SECRET must be set")?;
+        let session_duration = Duration::from_secs(
+            env::var("PLAYGROUND_SESSION_DURATION").map_or(DEFAULT_SESSION_DURATION, |d| {
+                60 * d.parse::<u64>().unwrap_or(DEFAULT_SESSION_DURATION)
+            }),
+        );
 
         Ok(Engine {
             configuration: Configuration {
@@ -339,25 +360,31 @@ impl Engine {
                 namespace,
                 client_id,
                 client_secret,
+                session_duration,
             },
         })
     }
 
     fn pod_to_instance(self, pod: &Pod) -> Result<InstanceDetails, String> {
         let labels = pod.metadata.labels.clone().ok_or("no labels")?;
+        let annotations = &pod.metadata.annotations.clone().ok_or("no annotations")?;
         Ok(InstanceDetails::new(
             self.clone(),
             labels.get(OWNER_LABEL).ok_or("no owner label")?.to_string(),
             &Template::parse(
-                &pod.metadata
-                    .annotations
-                    .clone()
-                    .ok_or("no annotations")?
+                &annotations
                     .get(TEMPLATE_ANNOTATION)
-                    .ok_or("no template annotation")?
-                    .to_string(),
+                    .ok_or("no template annotation")?,
             )?,
             Self::pod_to_details(self, pod)?,
+            Duration::from_secs(
+                annotations
+                    .get(SESSION_DURATION_ANNOTATION)
+                    .ok_or("no session_duration annotation")?
+                    .to_string()
+                    .parse::<u64>()
+                    .map_err(|err| err.to_string())?,
+            ),
         ))
     }
 
@@ -506,6 +533,7 @@ impl Engine {
                     &self.configuration.host,
                     &instance_uuid.clone(),
                     instance_template,
+                    self.configuration.session_duration,
                 )?,
             )
             .await
