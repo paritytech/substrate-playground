@@ -1,6 +1,6 @@
 repository: SubstrateDevAcademy/assignment-1-template
 name: Assignement
-description: '## Industry connect assignement'
+description: '## Industry connect assignement template'
 public: false
 runtime:
   ports:
