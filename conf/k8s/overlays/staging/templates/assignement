@@ -8,3 +8,4 @@ runtime:
       protocol: TCP
       path: /wss
       port: 9944
+image: paritytech/substrate-playground-template-assignement-theia:sha-aa7538d
