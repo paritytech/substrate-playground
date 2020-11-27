@@ -1,0 +1,10 @@
+repository: SubstrateDevAcademy/assignment-1-template
+name: Assignement
+description: '## Industry connect assignement'
+public: false
+runtime:
+  ports:
+    - name: wss
+      protocol: TCP
+      path: /wss
+      port: 9944
