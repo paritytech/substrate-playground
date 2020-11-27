@@ -78,7 +78,7 @@
         "vscode-substrate": "https://github.com/paritytech/vscode-substrate/releases/download/v0.5.1/vscode-substrate-0.5.1.vsix",
         "vscode-references-view": "https://open-vsx.org/api/ms-vscode/references-view/0.0.47/file/ms-vscode.references-view-0.0.47.vsix",
         "rls-vscode": "https://github.com/rust-lang/rls-vscode/releases/download/v0.7.8/rust.vsix",
-        "vscode-yaml": "https://open-vsx.org/api/redhat/vscode-yaml/0.11.1/file/redhat.vscode-yaml-0.11.1.vsix",
+        "vscode-yaml": "https://open-vsx.org/api/redhat/vscode-yaml/0.12.0/file/redhat.vscode-yaml-0.12.0.vsix",
         "vscode-lldb": "https://github.com/vadimcn/vscode-lldb/releases/download/v1.5.3/codelldb-x86_64-linux.vsix",
         "better-toml": "https://open-vsx.org/api/bungcip/better-toml/0.3.2/file/bungcip.better-toml-0.3.2.vsix",
         "crates": "https://open-vsx.org/api/serayuzgur/crates/0.5.3/file/serayuzgur.crates-0.5.3.vsix"
