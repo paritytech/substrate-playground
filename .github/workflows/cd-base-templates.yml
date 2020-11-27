@@ -108,7 +108,7 @@ jobs:
       - uses: EndBug/add-and-commit@v4
         with:
           message: ":bookmark: yee shall thurst into a new version of base templates"
-          add: .github/workflows/event-template-updated.yml
+          add: .env
           tag: base-templates-${{ steps.env.outputs.sha }}
         env:
           GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
