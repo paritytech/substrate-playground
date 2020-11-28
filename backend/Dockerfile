@@ -3,7 +3,7 @@
 # A multi-stage docker image (https://docs.docker.com/develop/develop-images/multistage-build/)
 # Based on https://github.com/bjornmolin/rust-minimal-docker
 
-FROM clux/muslrust:nightly AS builder
+FROM clux/muslrust:1.50.0-nightly-2020-11-27 AS builder
 
 WORKDIR /opt
 
@@ -19,7 +19,7 @@ COPY Cargo.* ./
 
 RUN mkdir src \
     && echo "fn main() {print!(\"Dummy main\");} // dummy file" > src/main.rs \
-    && set -x && cargo build --target x86_64-unknown-linux-musl --release \
+    && set -x && cargo build --locked --target x86_64-unknown-linux-musl --release \
     && set -x && rm target/x86_64-unknown-linux-musl/release/deps/$BINARY_NAME*
 
 # Now add the rest of the project and build the real main
