@@ -349,7 +349,7 @@ impl Engine {
         let client_secret =
             env::var("GITHUB_CLIENT_SECRET").map_err(|_| "GITHUB_CLIENT_SECRET must be set")?;
         let session_duration = Duration::from_secs(
-            env::var("PLAYGROUND_SESSION_DURATION").map_or(DEFAULT_SESSION_DURATION, |d| {
+            env::var("PLAYGROUND_DEFAULT_SESSION_DURATION").map_or(DEFAULT_SESSION_DURATION, |d| {
                 60 * d.parse::<u64>().unwrap_or(DEFAULT_SESSION_DURATION)
             }),
         );
