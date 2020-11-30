@@ -162,9 +162,10 @@ Set required ConfigMap and Secret as defined in the newly created OAuth app:
 
 ```shell
 # WARNING Make sure all needed info are set before running those commands
-kubectl create configmap playground-config --namespace=playground --from-literal=admins="???,???" --from-literal=github.clientId="???"
+kubectl create configmap playground-config --namespace=playground --from-literal=github.clientId="???"
 kubectl create secret generic playground-secrets --namespace=playground --from-literal=github.clientSecret="???" --from-literal=rocket.secretKey=`openssl rand -base64 32`
 ENVIRONMENT=production make k8s-update-templates-config
+# Also make sure playground-users is defined
 ```
 
 ### Deployment
