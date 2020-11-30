@@ -71,7 +71,8 @@ function lifecycle(history, location, client: Client) {
               const user = res.user;
               const template = context.template;
               const indexedTemplates = Object.entries(templates).map(([k, v]) => {v["id"] = k; return v;});
-              const data = {details: { ...res, ...{templates: indexedTemplates } }};
+              const indexedUsers = Object.entries(res.users).map(([k, v]) => {v["id"] = k; return v;});
+              const data = {details: { ...res, ...{templates: indexedTemplates, users: indexedUsers } }};
               if (user && template) {
                 if (templates[template]) {
                   const instance = res.instance;

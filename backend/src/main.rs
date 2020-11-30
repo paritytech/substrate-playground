@@ -6,6 +6,7 @@ mod kubernetes;
 mod manager;
 mod metrics;
 mod template;
+mod user;
 
 use crate::api::GitHubUser;
 use crate::manager::Manager;
