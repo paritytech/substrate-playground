@@ -30,7 +30,7 @@ generatorOptions:
   disableNameSuffixHash: true
 
 configMapGenerator:
-  - name: config
+  - name: playground-config
     literals:
     # Github client ID can be safely shared publicly.
     # Also it is specific to this dev env whose TLD can't be registered (.test).
@@ -38,7 +38,7 @@ configMapGenerator:
     - github.clientId=dd81163290c118582a1a
 
 secretGenerator:
-  - name: secrets
+  - name: playground-secrets
     literals:
     # Both secrets are safe to be stored in repository as they are specific to this dev env whose TLD can't be registered (.test).
     - github.clientSecret=abdcf38dd290429b98f43074d010b989cf970461
