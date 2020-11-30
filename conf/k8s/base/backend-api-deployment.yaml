@@ -38,6 +38,7 @@ spec:
               configMapKeyRef:
                 name: playground-config
                 key: defaultSessionDuration
+                optional: true
           - name: GITHUB_CLIENT_ID
             valueFrom:
               configMapKeyRef:
