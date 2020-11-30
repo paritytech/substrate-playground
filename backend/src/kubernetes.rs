@@ -2,6 +2,7 @@
 //! * https://docs.rs/k8s-openapi/0.5.1/k8s_openapi/api/core/v1/struct.ServiceStatus.html
 //! * https://docs.rs/k8s-openapi/0.5.1/k8s_openapi/api/core/v1/struct.ServiceSpec.html
 use crate::template::Template;
+use crate::user::User;
 use k8s_openapi::api::core::v1::{
     ConfigMap, Container, EnvVar, Pod, PodSpec, Service, ServicePort, ServiceSpec,
 };
@@ -220,26 +221,15 @@ async fn get_config_map(
         .and_then(|o| o.data.ok_or_else(|| "No data field".to_string()))
 }
 
-pub async fn get_templates(
+async fn get_templates(
     client: Client,
     namespace: &str,
 ) -> Result<BTreeMap<String, String>, String> {
     get_config_map(client, namespace, "playground-templates").await
 }
 
-pub async fn get_config(
-    client: Client,
-    namespace: &str,
-) -> Result<BTreeMap<String, String>, String> {
-    get_config_map(client, namespace, "playground-config").await
-}
-
-pub async fn get_admins(client: Client, namespace: &str) -> Result<Vec<String>, String> {
-    get_config(client, namespace)
-        .await?
-        .get("admins")
-        .ok_or("err".to_string())
-        .map(|s| s.split(',').map(|s| s.to_string()).collect())
+async fn get_users(client: Client, namespace: &str) -> Result<BTreeMap<String, String>, String> {
+    get_config_map(client, namespace, "playground-users").await
 }
 
 #[derive(Clone)]
@@ -432,11 +422,15 @@ impl Engine {
             .collect::<Result<BTreeMap<String, Template>, String>>()?)
     }
 
-    pub async fn get_admins(self) -> Result<Vec<String>, String> {
+    pub async fn get_users(self) -> Result<BTreeMap<String, User>, String> {
         let config = config().await?;
         let client = Client::new(config);
 
-        get_admins(client, &self.configuration.namespace).await
+        Ok(get_users(client, &self.configuration.namespace)
+            .await?
+            .into_iter()
+            .map(|(k, v)| User::parse(&v).map(|v2| (k, v2)))
+            .collect::<Result<BTreeMap<String, User>, String>>()?)
     }
 
     /// Lists all currently running instances

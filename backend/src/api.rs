@@ -1,5 +1,6 @@
 //! HTTP endpoints exposed in /api context
 
+use crate::user::User;
 use crate::Context;
 use hyper::{
     header::{qitem, Accept, Authorization, Basic, UserAgent},
@@ -17,16 +18,9 @@ use rocket::{
 };
 use rocket_contrib::{json, json::JsonValue};
 use rocket_oauth2::{OAuth2, TokenResponse};
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use std::io::Read;
 use tokio::runtime::Runtime;
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct User {
-    pub username: String,
-    pub avatar: String,
-    pub admin: bool,
-}
 
 const COOKIE_TOKEN: &str = "token";
 
@@ -102,15 +96,16 @@ impl<'a, 'r> FromRequest<'a, 'r> for User {
             ) {
                 let login = user.login;
                 Outcome::Success(User {
-                    username: login.clone(),
+                    id: login.clone(),
                     avatar: user.avatar_url,
                     admin: Runtime::new()
                         .map_err(|_| {
                             Err((Status::ExpectationFailed, "Failed to execute async fn"))
                         })?
-                        .block_on(engine.clone().get_admins())
-                        .map_err(|_| Err((Status::FailedDependency, "Missing admins ConfiMap")))?
-                        .contains(&login),
+                        .block_on(engine.clone().get_users())
+                        .map_err(|_| Err((Status::FailedDependency, "Missing users ConfiMap")))?
+                        .get(&login)
+                        .map_or_else(|| false, |user| user.admin),
                 })
             } else {
                 clear(cookies);
@@ -145,7 +140,7 @@ pub fn get_unlogged(state: State<'_, Context>) -> JsonValue {
 #[post("/?<template>")]
 pub fn deploy(state: State<'_, Context>, user: User, template: String) -> JsonValue {
     let manager = state.manager.clone();
-    result_to_jsonrpc(manager.deploy(&user.username, &template))
+    result_to_jsonrpc(manager.deploy(&user.id, &template))
 }
 
 #[post("/", rank = 2)]
@@ -156,7 +151,7 @@ pub fn deploy_unlogged() -> status::Unauthorized<()> {
 #[delete("/")]
 pub fn undeploy(state: State<'_, Context>, user: User) -> JsonValue {
     let manager = state.manager.clone();
-    result_to_jsonrpc(manager.undeploy(&user.username))
+    result_to_jsonrpc(manager.undeploy(&user.id))
 }
 
 #[delete("/", rank = 2)]

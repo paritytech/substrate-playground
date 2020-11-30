@@ -48,8 +48,7 @@ export function intercept({logged = false, noInstance = true, delay = 100}: {log
     let templates = {workshop: template_private, workshop2: template, workshop3: template, workshop4: template, workshop5: template, workshop6: template, workshop7: template};
     let user = logged ?
       {
-        username: 'john',
-        parity: true,
+        id: 'john',
         admin: true
       } : null;
     res.status(200).json({result: {

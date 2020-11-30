@@ -227,7 +227,7 @@ function Nav({ send, details }) {
                                 size="small"
                             >
                                 <Badge color="secondary" variant="dot" invisible={!user.admin}>
-                                    <Avatar alt={user.username} src={user.avatar} />
+                                    <Avatar alt={user.id} src={user.avatar} />
                                 </Badge>
                             </IconButton>
                             <Menu

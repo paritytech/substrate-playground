@@ -1,0 +1,10 @@
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: playground-users
+data:
+  jeluard: |
+    id: jeluard
+    avatar: ezf
+    admin: true
