@@ -23,26 +23,26 @@ function Instances({ instances }) {
     const classes = useStyles();
     return (
         <TableContainer component={Paper}>
-        <Table className={classes.table} aria-label="simple table">
-            <TableHead>
-            <TableRow>
-                <TableCell>ID</TableCell>
-                <TableCell align="right">Template</TableCell>
-                <TableCell align="right">URL</TableCell>
-            </TableRow>
-            </TableHead>
-            <TableBody>
-            {instances.map((instance) => (
+            <Table className={classes.table} aria-label="simple table">
+                <TableHead>
+                    <TableRow>
+                        <TableCell>ID</TableCell>
+                        <TableCell align="right">Template</TableCell>
+                        <TableCell align="right">URL</TableCell>
+                    </TableRow>
+                </TableHead>
+                <TableBody>
+                {instances.map((instance) => (
                 <TableRow key={instance[0]}>
-                <TableCell component="th" scope="row">
-                    {instance[0]}
-                </TableCell>
-                <TableCell align="right">{instance[1].template.name}</TableCell>
-                <TableCell align="right"><a href={instance[1].url}>{instance[1].url}</a></TableCell>
+                    <TableCell component="th" scope="row">
+                        {instance[0]}
+                    </TableCell>
+                    <TableCell align="right">{instance[1].template.name}</TableCell>
+                    <TableCell align="right"><a href={instance[1].url}>{instance[1].url}</a></TableCell>
                 </TableRow>
-            ))}
-            </TableBody>
-        </Table>
+                ))}
+                </TableBody>
+            </Table>
         </TableContainer>
     );
 }
@@ -53,21 +53,21 @@ function Templates({ templates }) {
         <TableContainer component={Paper}>
             <Table className={classes.table} aria-label="simple table">
                 <TableHead>
-                <TableRow>
-                    <TableCell>ID</TableCell>
-                    <TableCell align="right">Name</TableCell>
-                    <TableCell align="right">Image</TableCell>
-                </TableRow>
+                    <TableRow>
+                        <TableCell>ID</TableCell>
+                        <TableCell align="right">Name</TableCell>
+                        <TableCell align="right">Image</TableCell>
+                    </TableRow>
                 </TableHead>
                 <TableBody>
                 {templates.map((template) => (
-                    <TableRow key={template.id}>
+                <TableRow key={template.id}>
                     <TableCell component="th" scope="row">
                         {template.id}
                     </TableCell>
                     <TableCell align="right">{template.name}</TableCell>
                     <TableCell align="right">{template.image}</TableCell>
-                    </TableRow>
+                </TableRow>
                 ))}
                 </TableBody>
             </Table>
@@ -81,19 +81,19 @@ function Users({ users }) {
         <TableContainer component={Paper}>
             <Table className={classes.table} aria-label="simple table">
                 <TableHead>
-                <TableRow>
-                    <TableCell>ID</TableCell>
-                    <TableCell align="right">Admin</TableCell>
-                </TableRow>
+                    <TableRow>
+                        <TableCell>ID</TableCell>
+                        <TableCell align="right">Admin</TableCell>
+                    </TableRow>
                 </TableHead>
                 <TableBody>
                 {users.map((user) => (
-                    <TableRow key={user.id}>
+                <TableRow key={user.id}>
                     <TableCell component="th" scope="row">
                         {user.id}
                     </TableCell>
                     <TableCell align="right">{user.admin.toString()}</TableCell>
-                    </TableRow>
+                </TableRow>
                 ))}
                 </TableBody>
             </Table>
