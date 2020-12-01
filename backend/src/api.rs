@@ -89,27 +89,31 @@ impl<'a, 'r> FromRequest<'a, 'r> for User {
         let mut cookies = request.cookies();
         if let Some(token) = cookies.get_private(COOKIE_TOKEN) {
             let token_value = token.value();
-            if let Ok(user) = token_validity(
+            if let Ok(gh_user) = token_validity(
                 token_value,
                 engine.configuration.client_id.as_str(),
                 engine.configuration.client_secret.as_str(),
             ) {
-                let login = user.login;
-                Outcome::Success(User {
-                    id: login.clone(),
-                    avatar: user.avatar_url,
-                    admin: Runtime::new()
-                        .map_err(|_| {
-                            Err((Status::ExpectationFailed, "Failed to execute async fn"))
-                        })?
-                        .block_on(engine.clone().get_users())
-                        .map_err(|_| Err((Status::FailedDependency, "Missing users ConfiMap")))?
-                        .get(&login)
-                        .map_or_else(|| false, |user| user.admin),
-                })
+                let id = gh_user.login;
+                let users = Runtime::new()
+                    .map_err(|_| Err((Status::ExpectationFailed, "Failed to execute async fn")))?
+                    .block_on(engine.clone().get_users())
+                    .map_err(|_| Err((Status::ExpectationFailed, "Missing users ConfiMap")))?;
+                let user = users.get(&id);
+                // If at least one non-admin user is defined, then users are only allowed if whitelisted
+                let filtered = users.values().find(|user| !user.admin).is_some();
+                if !filtered || (filtered && user.is_some()) {
+                    Outcome::Success(User {
+                        id: id.clone(),
+                        avatar: gh_user.avatar_url,
+                        admin: user.map_or_else(|| false, |user| user.admin),
+                    })
+                } else {
+                    Outcome::Failure((Status::Forbidden, "User is not whitelisted"))
+                }
             } else {
                 clear(cookies);
-                Outcome::Failure((Status::BadRequest, "4"))
+                Outcome::Failure((Status::BadRequest, "Token is invalid"))
             }
         } else {
             Outcome::Forward(())
