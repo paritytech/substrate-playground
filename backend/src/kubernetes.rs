@@ -88,7 +88,7 @@ fn create_pod(
     instance_uuid: &str,
     template: &Template,
     session_duration: Duration,
-) -> Result<Pod, String> {
+) -> Pod {
     let mut labels = BTreeMap::new();
     // TODO fetch docker image labels and add them to the pod.
     // Can be done by querying dockerhub (https://docs.docker.com/registry/spec/api/)
@@ -102,7 +102,7 @@ fn create_pod(
         session_duration.as_secs().to_string(),
     );
 
-    Ok(Pod {
+    Pod {
         metadata: ObjectMeta {
             name: Some(pod_name(instance_uuid)),
             labels: Some(labels),
@@ -119,7 +119,7 @@ fn create_pod(
             ..Default::default()
         }),
         ..Default::default()
-    })
+    }
 }
 
 fn create_service(instance_uuid: &str, template: &Template) -> Service {
@@ -366,7 +366,7 @@ impl Engine {
                     .get(TEMPLATE_ANNOTATION)
                     .ok_or("no template annotation")?,
             )?,
-            Self::pod_to_details(self, pod)?,
+            Self::pod_to_details(self, pod),
             Duration::from_secs(
                 annotations
                     .get(SESSION_DURATION_ANNOTATION)
@@ -378,11 +378,11 @@ impl Engine {
         ))
     }
 
-    fn pod_to_details(self, pod: &Pod) -> Result<PodDetails, String> {
-        Ok(PodDetails {
+    fn pod_to_details(self, pod: &Pod) -> PodDetails {
+        PodDetails {
             details: pod.clone(),
             ..Default::default()
-        })
+        }
     }
 
     pub async fn get(self) -> Result<PodDetails, String> {
@@ -396,7 +396,7 @@ impl Engine {
         .await?;
         let pod = pods.first().ok_or_else(|| "No API pod".to_string())?;
 
-        Ok(self.pod_to_details(&pod)?)
+        Ok(self.pod_to_details(&pod))
     }
 
     pub async fn get_instance(self, user: &str) -> Result<InstanceDetails, String> {
@@ -528,7 +528,7 @@ impl Engine {
                     &instance_uuid.clone(),
                     instance_template,
                     self.configuration.session_duration,
-                )?,
+                ),
             )
             .await
             .map_err(error_to_string)?;
