@@ -188,7 +188,31 @@ pub fn get_unlogged(state: State<'_, Context>) -> JsonValue {
     result_to_jsonrpc(manager.get_unlogged())
 }
 
-// PUT for global configuration
+// User resources. Only accessible to Admins.
+
+#[get("/users")]
+pub fn list_users(state: State<'_, Context>, admin: Admin) -> JsonValue {
+    let manager = state.manager.clone();
+    result_to_jsonrpc(manager.get(user))
+}
+
+#[put("/users", data= JSon<User>)]
+pub fn create_user(state: State<'_, Context>, admin: Admin) -> JsonValue {
+    let manager = state.manager.clone();
+    result_to_jsonrpc(manager.get(user))
+}
+
+#[put("/users/<id>")]
+pub fn update_user(state: State<'_, Context>, admin: Admin) -> JsonValue {
+    let manager = state.manager.clone();
+    result_to_jsonrpc(manager.get(user))
+}
+
+#[delete("/users/<id>")]
+pub fn delete_user(state: State<'_, Context>, admin: Admin) -> JsonValue {
+    let manager = state.manager.clone();
+    result_to_jsonrpc(manager.get(user))
+}
 
 /// Deploy `template` Docker container for `user_id`.
 #[post("/?<template>")]
