@@ -2,6 +2,7 @@
 #![deny(broken_intra_doc_links)]
 
 mod api;
+mod github;
 mod kubernetes;
 mod manager;
 mod metrics;
