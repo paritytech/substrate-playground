@@ -6,16 +6,46 @@ use std::fmt::{self, Display, Formatter};
 pub struct User {
     pub id: String,
     pub avatar: String,
+}
+
+impl Display for User {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{}",
+            serde_yaml::to_string(self).map_err(|_| fmt::Error {})?
+        )
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct Admin {
+    pub id: String,
+    pub avatar: String,
+}
+
+impl Display for Admin {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{}",
+            serde_yaml::to_string(self).map_err(|_| fmt::Error {})?
+        )
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct UserConfiguration {
     pub admin: bool,
 }
 
-impl User {
+impl UserConfiguration {
     pub fn parse(s: &str) -> Result<Self, String> {
         from_str(s).map_err(|err| format!("{}", err))
     }
 }
 
-impl Display for User {
+impl Display for UserConfiguration {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(
             f,

@@ -86,6 +86,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 api::deploy,
                 api::deploy_unlogged,
                 api::get,
+                api::get_admin,
                 api::get_unlogged,
                 api::github_login,
                 api::logout,

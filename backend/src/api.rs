@@ -1,6 +1,6 @@
 //! HTTP endpoints exposed in /api context
 
-use crate::user::User;
+use crate::user::{Admin, User};
 use crate::Context;
 use hyper::{
     header::{qitem, Accept, Authorization, Basic, UserAgent},
@@ -106,10 +106,52 @@ impl<'a, 'r> FromRequest<'a, 'r> for User {
                     Outcome::Success(User {
                         id: id.clone(),
                         avatar: gh_user.avatar_url,
-                        admin: user.map_or_else(|| false, |user| user.admin),
                     })
                 } else {
                     Outcome::Failure((Status::Forbidden, "User is not whitelisted"))
+                }
+            } else {
+                clear(cookies);
+                Outcome::Failure((Status::BadRequest, "Token is invalid"))
+            }
+        } else {
+            Outcome::Forward(())
+        }
+    }
+}
+
+// Extract an Admin from private cookies
+impl<'a, 'r> FromRequest<'a, 'r> for Admin {
+    type Error = &'static str;
+
+    fn from_request(request: &'a Request<'r>) -> request::Outcome<Admin, &'static str> {
+        let engine = &request
+            .guard::<State<Context>>()
+            .map_failure(|_f| (Status::BadRequest, "Can't access state"))?
+            .manager
+            .engine;
+        let mut cookies = request.cookies();
+        if let Some(token) = cookies.get_private(COOKIE_TOKEN) {
+            let token_value = token.value();
+            if let Ok(gh_user) = token_validity(
+                token_value,
+                engine.configuration.client_id.as_str(),
+                engine.configuration.client_secret.as_str(),
+            ) {
+                let id = gh_user.login;
+                let users = Runtime::new()
+                    .map_err(|_| Err((Status::ExpectationFailed, "Failed to execute async fn")))?
+                    .block_on(engine.clone().get_users())
+                    .map_err(|_| Err((Status::ExpectationFailed, "Missing users ConfiMap")))?;
+                let user = users.get(&id);
+                if user.map_or_else(|| false, |user| user.admin) {
+                    Outcome::Success(Admin {
+                        id: id.clone(),
+                        avatar: gh_user.avatar_url,
+                    })
+                } else {
+                    // Give the opportunity to be a regular User
+                    Outcome::Forward(())
                 }
             } else {
                 clear(cookies);
@@ -129,23 +171,35 @@ fn result_to_jsonrpc<T: Serialize>(res: Result<T, String>) -> JsonValue {
 }
 
 #[get("/")]
+pub fn get_admin(state: State<'_, Context>, admin: Admin) -> JsonValue {
+    let manager = state.manager.clone();
+    result_to_jsonrpc(manager.get_admin(admin))
+}
+
+#[get("/", rank = 2)]
 pub fn get(state: State<'_, Context>, user: User) -> JsonValue {
     let manager = state.manager.clone();
     result_to_jsonrpc(manager.get(user))
 }
 
-#[get("/", rank = 2)]
+#[get("/", rank = 3)]
 pub fn get_unlogged(state: State<'_, Context>) -> JsonValue {
     let manager = state.manager.clone();
     result_to_jsonrpc(manager.get_unlogged())
 }
 
+// PUT for global configuration
+
 /// Deploy `template` Docker container for `user_id`.
 #[post("/?<template>")]
 pub fn deploy(state: State<'_, Context>, user: User, template: String) -> JsonValue {
+    // TODO get parameters as body (sessionDuration, ..)
     let manager = state.manager.clone();
     result_to_jsonrpc(manager.deploy(&user.id, &template))
 }
+
+// GET for instance details?
+// PUT for instance configuration
 
 #[post("/", rank = 2)]
 pub fn deploy_unlogged() -> status::Unauthorized<()> {
