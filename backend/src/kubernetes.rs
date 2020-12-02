@@ -2,7 +2,7 @@
 //! * https://docs.rs/k8s-openapi/0.5.1/k8s_openapi/api/core/v1/struct.ServiceStatus.html
 //! * https://docs.rs/k8s-openapi/0.5.1/k8s_openapi/api/core/v1/struct.ServiceSpec.html
 use crate::template::Template;
-use crate::user::User;
+use crate::user::UserConfiguration;
 use k8s_openapi::api::core::v1::{
     ConfigMap, Container, EnvVar, Pod, PodSpec, Service, ServicePort, ServiceSpec,
 };
@@ -422,15 +422,15 @@ impl Engine {
             .collect::<Result<BTreeMap<String, Template>, String>>()?)
     }
 
-    pub async fn get_users(self) -> Result<BTreeMap<String, User>, String> {
+    pub async fn get_users(self) -> Result<BTreeMap<String, UserConfiguration>, String> {
         let config = config().await?;
         let client = Client::new(config);
 
         Ok(get_users(client, &self.configuration.namespace)
             .await?
             .into_iter()
-            .map(|(k, v)| User::parse(&v).map(|v2| (k, v2)))
-            .collect::<Result<BTreeMap<String, User>, String>>()?)
+            .map(|(k, v)| UserConfiguration::parse(&v).map(|v2| (k, v2)))
+            .collect::<Result<BTreeMap<String, UserConfiguration>, String>>()?)
     }
 
     /// Lists all currently running instances

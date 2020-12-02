@@ -6,5 +6,4 @@ metadata:
 data:
   jeluard: |
     id: jeluard
-    avatar: ezf
     admin: true

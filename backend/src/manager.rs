@@ -1,7 +1,7 @@
 use crate::kubernetes::{Engine, InstanceDetails, PodDetails};
 use crate::metrics::Metrics;
 use crate::template::Template;
-use crate::user::User;
+use crate::user::{Admin, User, UserConfiguration};
 use log::{error, warn};
 use serde::{Deserialize, Serialize};
 use std::{
@@ -52,13 +52,20 @@ pub struct Manager {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct PlaygroundUser {
+    pub id: String,
+    pub avatar: String,
+    pub admin: bool,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct PlaygroundDetails {
     pub pod: PodDetails,
     pub templates: BTreeMap<String, Template>,
-    pub users: Option<BTreeMap<String, User>>,
+    pub users: Option<BTreeMap<String, UserConfiguration>>,
     pub instance: Option<InstanceDetails>,
     pub all_instances: Option<BTreeMap<String, InstanceDetails>>,
-    pub user: Option<User>,
+    pub user: Option<PlaygroundUser>,
 }
 
 impl Manager {
@@ -165,11 +172,6 @@ impl Manager {
         let pod = new_runtime()?.block_on(self.clone().engine.get())?;
         let templates = new_runtime()?.block_on(self.clone().engine.get_templates())?;
         let users = new_runtime()?.block_on(self.clone().engine.get_users())?;
-        let all_instances = if user.admin {
-            Some(new_runtime()?.block_on(self.engine.list_all())?)
-        } else {
-            None
-        };
         Ok(PlaygroundDetails {
             pod,
             templates,
@@ -177,8 +179,24 @@ impl Manager {
             instance: new_runtime()?
                 .block_on(self.engine.get_instance(user.id.as_str()))
                 .ok(),
-            all_instances,
-            user: Some(user),
+            all_instances: None,
+            user: Some(PlaygroundUser{id: user.id, avatar: user.avatar, admin: false}),
+        })
+    }
+
+    pub fn get_admin(self, admin: Admin) -> Result<PlaygroundDetails, String> {
+        let pod = new_runtime()?.block_on(self.clone().engine.get())?;
+        let templates = new_runtime()?.block_on(self.clone().engine.get_templates())?;
+        let users = new_runtime()?.block_on(self.clone().engine.get_users())?;
+        Ok(PlaygroundDetails {
+            pod,
+            templates,
+            users: Some(users),
+            instance: new_runtime()?
+                .block_on(self.clone().engine.get_instance(admin.id.as_str()))
+                .ok(),
+            all_instances: Some(new_runtime()?.block_on(self.clone().engine.list_all())?),
+            user: Some(PlaygroundUser{id: admin.id, avatar: admin.avatar, admin: true}),
         })
     }
 
