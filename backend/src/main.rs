@@ -94,6 +94,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 api::post_install_callback,
                 api::undeploy,
                 api::undeploy_unlogged,
+                // Users
+                api::list_users,
+                api::create_or_update_user,
+                api::delete_user,
             ],
         )
         .mount("/metrics", prometheus)
