@@ -171,7 +171,7 @@ impl Manager {
     pub fn get(self, user: User) -> Result<PlaygroundDetails, String> {
         let pod = new_runtime()?.block_on(self.clone().engine.get())?;
         let templates = new_runtime()?.block_on(self.clone().engine.get_templates())?;
-        let users = new_runtime()?.block_on(self.clone().engine.get_users())?;
+        let users = new_runtime()?.block_on(self.clone().engine.list_users())?;
         Ok(PlaygroundDetails {
             pod,
             templates,
@@ -187,7 +187,7 @@ impl Manager {
     pub fn get_admin(self, admin: Admin) -> Result<PlaygroundDetails, String> {
         let pod = new_runtime()?.block_on(self.clone().engine.get())?;
         let templates = new_runtime()?.block_on(self.clone().engine.get_templates())?;
-        let users = new_runtime()?.block_on(self.clone().engine.get_users())?;
+        let users = new_runtime()?.block_on(self.clone().engine.list_users())?;
         Ok(PlaygroundDetails {
             pod,
             templates,
@@ -211,6 +211,20 @@ impl Manager {
             all_instances: None,
             user: None,
         })
+    }
+
+    // Users
+
+    pub fn list_users(self) -> Result<BTreeMap<String, UserConfiguration>, String> {
+        new_runtime()?.block_on(self.clone().engine.list_users())
+    }
+
+    pub fn create_or_update_user(self, id: String, user: UserConfiguration) -> Result<(), String> {
+        new_runtime()?.block_on(self.clone().engine.create_or_update_user(id, user))
+    }
+
+    pub fn delete_user(self, id: String) -> Result<(), String> {
+        new_runtime()?.block_on(self.clone().engine.delete_user(id))
     }
 
     pub fn get_instance(self, instance_uuid: &str) -> Result<InstanceDetails, String> {

@@ -11,7 +11,7 @@ use k8s_openapi::api::extensions::v1beta1::{
 };
 use k8s_openapi::apimachinery::pkg::{apis::meta::v1::ObjectMeta, util::intstr::IntOrString};
 use kube::{
-    api::{Api, DeleteParams, ListParams, Meta, PostParams},
+    api::{Api, DeleteParams, ListParams, Meta, PatchParams, PatchStrategy, PostParams},
     config::KubeConfigOptions,
     Client, Config,
 };
@@ -208,6 +208,8 @@ async fn config() -> Result<Config, String> {
         .map_err(error_to_string)
 }
 
+// ConfigMap utilities
+
 async fn get_config_map(
     client: Client,
     namespace: &str,
@@ -221,6 +223,56 @@ async fn get_config_map(
         .and_then(|o| o.data.ok_or_else(|| "No data field".to_string()))
 }
 
+//
+// Adds a value to a ConfigMap, specified by a `key`.
+// Err if provided `key` doesn't exist
+//
+// Equivalent to `kubectl patch configmap $name --type=json -p='[{"op": "remove", "path": "/data/$key"}]'`
+async fn add_config_map_value(
+    client: Client,
+    namespace: &str,
+    name: &str,
+    key: &str,
+    value: &str,
+) -> Result<(), String> {
+    let config_map_api: Api<ConfigMap> = Api::namespaced(client, namespace);
+    let params = PatchParams{patch_strategy: PatchStrategy::JSON, ..PatchParams::default()};
+    let patch = serde_yaml::to_vec(&serde_json::json!({
+        "op": "add",
+        "path": format!("/data/{}", key),
+        "value": value,
+    })).unwrap();
+    config_map_api
+        .patch(name, &params, patch)
+        .await
+        .map_err(error_to_string)?;
+    Ok(())
+}
+
+//
+// Deletes a value from a ConfigMap, specified by a `key`.
+// Err if provided `key` doesn't exist
+//
+// Equivalent to `kubectl patch configmap $name --type=json -p='[{"op": "remove", "path": "/data/$key"}]'`
+async fn delete_config_map_value(
+    client: Client,
+    namespace: &str,
+    name: &str,
+    key: &str,
+) -> Result<(), String> {
+    let config_map_api: Api<ConfigMap> = Api::namespaced(client, namespace);
+    let params = PatchParams{patch_strategy: PatchStrategy::JSON, ..PatchParams::default()};
+    let patch = serde_yaml::to_vec(&serde_json::json!({
+        "op": "remove",
+        "path": format!("/data/{}", key),
+    })).unwrap();
+    config_map_api
+        .patch(name, &params, patch)
+        .await
+        .map_err(error_to_string)?;
+    Ok(())
+}
+
 async fn get_templates(
     client: Client,
     namespace: &str,
@@ -228,7 +280,7 @@ async fn get_templates(
     get_config_map(client, namespace, "playground-templates").await
 }
 
-async fn get_users(client: Client, namespace: &str) -> Result<BTreeMap<String, String>, String> {
+async fn list_users(client: Client, namespace: &str) -> Result<BTreeMap<String, String>, String> {
     get_config_map(client, namespace, "playground-users").await
 }
 
@@ -422,15 +474,27 @@ impl Engine {
             .collect::<Result<BTreeMap<String, Template>, String>>()?)
     }
 
-    pub async fn get_users(self) -> Result<BTreeMap<String, UserConfiguration>, String> {
+    pub async fn list_users(self) -> Result<BTreeMap<String, UserConfiguration>, String> {
         let config = config().await?;
         let client = Client::new(config);
 
-        Ok(get_users(client, &self.configuration.namespace)
+        Ok(list_users(client, &self.configuration.namespace)
             .await?
             .into_iter()
             .map(|(k, v)| UserConfiguration::parse(&v).map(|v2| (k, v2)))
             .collect::<Result<BTreeMap<String, UserConfiguration>, String>>()?)
+    }
+
+    pub async fn create_or_update_user(self, id: String, user: UserConfiguration) -> Result<(), String> {
+        let config = config().await?;
+        let client = Client::new(config);
+        Ok(add_config_map_value(client, &self.configuration.namespace, "playground-users", id.as_str(), format!("admin: {}", user.admin).as_str()).await?)
+    }
+
+    pub async fn delete_user(self, id: String) -> Result<(), String> {
+        let config = config().await?;
+        let client = Client::new(config);
+        Ok(delete_config_map_value(client, &self.configuration.namespace, "playground-users", id.as_str()).await?)
     }
 
     /// Lists all currently running instances

@@ -1,7 +1,7 @@
 //! HTTP endpoints exposed in /api context
 
 use crate::github::token_validity;
-use crate::user::{Admin, User};
+use crate::user::{Admin, User, UserConfiguration};
 use crate::Context;
 use rocket::request::{self, FromRequest, Request};
 use rocket::response::{content, status, Redirect};
@@ -53,7 +53,7 @@ impl<'a, 'r> FromRequest<'a, 'r> for User {
                 let id = gh_user.login;
                 let users = Runtime::new()
                     .map_err(|_| Err((Status::ExpectationFailed, "Failed to execute async fn")))?
-                    .block_on(engine.clone().get_users())
+                    .block_on(engine.clone().list_users())
                     .map_err(|_| Err((Status::ExpectationFailed, "Missing users ConfiMap")))?;
                 let user = users.get(&id);
                 // If at least one non-admin user is defined, then users are only allowed if whitelisted
@@ -97,7 +97,7 @@ impl<'a, 'r> FromRequest<'a, 'r> for Admin {
                 let id = gh_user.login;
                 let users = Runtime::new()
                     .map_err(|_| Err((Status::ExpectationFailed, "Failed to execute async fn")))?
-                    .block_on(engine.clone().get_users())
+                    .block_on(engine.clone().list_users())
                     .map_err(|_| Err((Status::ExpectationFailed, "Missing users ConfiMap")))?;
                 let user = users.get(&id);
                 if user.map_or_else(|| false, |user| user.admin) {
@@ -147,27 +147,21 @@ pub fn get_unlogged(state: State<'_, Context>) -> JsonValue {
 // User resources. Only accessible to Admins.
 
 #[get("/users")]
-pub fn list_users(state: State<'_, Context>, admin: Admin) -> JsonValue {
+pub fn list_users(state: State<'_, Context>, _admin: Admin) -> JsonValue {
     let manager = state.manager.clone();
-    result_to_jsonrpc(manager.get_admin(admin))
+    result_to_jsonrpc(manager.list_users())
 }
 
-#[put("/users", data= "<user>")]
-pub fn create_user(state: State<'_, Context>, admin: Admin, user: Json<User>) -> JsonValue {
+#[put("/users/<id>", data= "<user>")]
+pub fn create_or_update_user(state: State<'_, Context>, _admin: Admin, id: String, user: Json<UserConfiguration>) -> JsonValue {
     let manager = state.manager.clone();
-    result_to_jsonrpc(manager.get_admin(admin))
-}
-
-#[put("/users/<id>")]
-pub fn update_user(state: State<'_, Context>, admin: Admin, id: String) -> JsonValue {
-    let manager = state.manager.clone();
-    result_to_jsonrpc(manager.get_admin(admin))
+    result_to_jsonrpc(manager.create_or_update_user(id, user.0))
 }
 
 #[delete("/users/<id>")]
-pub fn delete_user(state: State<'_, Context>, admin: Admin, id: String) -> JsonValue {
+pub fn delete_user(state: State<'_, Context>, _admin: Admin, id: String) -> JsonValue {
     let manager = state.manager.clone();
-    result_to_jsonrpc(manager.get_admin(admin))
+    result_to_jsonrpc(manager.delete_user(id))
 }
 
 /// Deploy `template` Docker container for `user_id`.
