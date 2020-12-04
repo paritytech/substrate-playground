@@ -1,12 +1,15 @@
 {
   "name": "@substrate/playground-api",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "An isomorphic API client for Substrate Playground",
   "main": "dist/index.js",
   "browser": "dist.browser/index.js",
   "scripts": {
+    "build": "tsc && tsc -p tsconfig.browser.json",
     "clean": "rm -rf dist/ dist.browser/ node_modules/ yarn.lock",
-    "build": "tsc && tsc -p tsconfig.browser.json"
+    "preversion": "test -z \"$(git diff-index --name-only HEAD --)\"",
+    "postversion": "git push --tags && git push && echo \"Successfully released version $npm_package_version!\"",
+    "release": "yarn version --major"
   },
   "files": [
     "dist"
