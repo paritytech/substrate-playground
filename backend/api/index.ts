@@ -48,6 +48,15 @@ export interface Details {
     name: string,
 }
 
+export interface UserDetails {
+    admin: boolean,
+}
+
+export interface User {
+    id: string,
+    admin: boolean,
+}
+
 // See https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#pod-phase
 export type Phase = "Pending" | "Running" | "Succeeded" | "Failed" | "Unknown";
 
@@ -91,7 +100,32 @@ export class Client {
             ...opts
         }));
     }
-    
+
+    async listUsers(opts: Object = this.defaultOpts): Promise<RPCResponse<Array<User>>> {
+        return fromResponse(await fetchWithTimeout(`${this.base}/users`, {
+            method: 'GET',
+            headers: headers,
+            ...opts
+        }));
+    }
+
+    async createOrUpdateUser(id: String, user: UserDetails, opts: Object = this.defaultOpts): Promise<RPCResponse<void>> {
+        return fromResponse(await fetchWithTimeout(`${this.base}/users/${id}`, {
+            method: 'PUT',
+            headers: headers,
+            body: user,
+            ...opts
+        }));
+    }
+
+    async deleteUser(id: String, opts: Object = this.defaultOpts): Promise<RPCResponse<void>> {
+        return fromResponse(await fetchWithTimeout(`${this.base}/users/${id}`, {
+            method: 'DELETE',
+            headers: headers,
+            ...opts
+        }));
+    }
+
     async deployInstance(template: string, opts: Object = this.defaultOpts) {
         return fromResponse(await fetchWithTimeout(`${this.base}/?template=${template}`, {
             method: 'POST',
