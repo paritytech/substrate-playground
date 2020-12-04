@@ -236,12 +236,16 @@ async fn add_config_map_value(
     value: &str,
 ) -> Result<(), String> {
     let config_map_api: Api<ConfigMap> = Api::namespaced(client, namespace);
-    let params = PatchParams{patch_strategy: PatchStrategy::JSON, ..PatchParams::default()};
+    let params = PatchParams {
+        patch_strategy: PatchStrategy::JSON,
+        ..PatchParams::default()
+    };
     let patch = serde_yaml::to_vec(&serde_json::json!({
         "op": "add",
         "path": format!("/data/{}", key),
         "value": value,
-    })).unwrap();
+    }))
+    .unwrap();
     config_map_api
         .patch(name, &params, patch)
         .await
@@ -261,11 +265,15 @@ async fn delete_config_map_value(
     key: &str,
 ) -> Result<(), String> {
     let config_map_api: Api<ConfigMap> = Api::namespaced(client, namespace);
-    let params = PatchParams{patch_strategy: PatchStrategy::JSON, ..PatchParams::default()};
+    let params = PatchParams {
+        patch_strategy: PatchStrategy::JSON,
+        ..PatchParams::default()
+    };
     let patch = serde_yaml::to_vec(&serde_json::json!({
         "op": "remove",
         "path": format!("/data/{}", key),
-    })).unwrap();
+    }))
+    .unwrap();
     config_map_api
         .patch(name, &params, patch)
         .await
@@ -485,16 +493,33 @@ impl Engine {
             .collect::<Result<BTreeMap<String, UserConfiguration>, String>>()?)
     }
 
-    pub async fn create_or_update_user(self, id: String, user: UserConfiguration) -> Result<(), String> {
+    pub async fn create_or_update_user(
+        self,
+        id: String,
+        user: UserConfiguration,
+    ) -> Result<(), String> {
         let config = config().await?;
         let client = Client::new(config);
-        Ok(add_config_map_value(client, &self.configuration.namespace, "playground-users", id.as_str(), format!("admin: {}", user.admin).as_str()).await?)
+        Ok(add_config_map_value(
+            client,
+            &self.configuration.namespace,
+            "playground-users",
+            id.as_str(),
+            format!("admin: {}", user.admin).as_str(),
+        )
+        .await?)
     }
 
     pub async fn delete_user(self, id: String) -> Result<(), String> {
         let config = config().await?;
         let client = Client::new(config);
-        Ok(delete_config_map_value(client, &self.configuration.namespace, "playground-users", id.as_str()).await?)
+        Ok(delete_config_map_value(
+            client,
+            &self.configuration.namespace,
+            "playground-users",
+            id.as_str(),
+        )
+        .await?)
     }
 
     /// Lists all currently running instances

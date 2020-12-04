@@ -6,11 +6,14 @@ use crate::Context;
 use rocket::request::{self, FromRequest, Request};
 use rocket::response::{content, status, Redirect};
 use rocket::{
-    catch, delete, get, put,
+    catch, delete, get,
     http::{Cookie, Cookies, SameSite, Status},
-    post, Outcome, State,
+    post, put, Outcome, State,
 };
-use rocket_contrib::{json, json::{Json, JsonValue}};
+use rocket_contrib::{
+    json,
+    json::{Json, JsonValue},
+};
 use rocket_oauth2::{OAuth2, TokenResponse};
 use serde::Serialize;
 use tokio::runtime::Runtime;
@@ -152,8 +155,13 @@ pub fn list_users(state: State<'_, Context>, _admin: Admin) -> JsonValue {
     result_to_jsonrpc(manager.list_users())
 }
 
-#[put("/users/<id>", data= "<user>")]
-pub fn create_or_update_user(state: State<'_, Context>, _admin: Admin, id: String, user: Json<UserConfiguration>) -> JsonValue {
+#[put("/users/<id>", data = "<user>")]
+pub fn create_or_update_user(
+    state: State<'_, Context>,
+    _admin: Admin,
+    id: String,
+    user: Json<UserConfiguration>,
+) -> JsonValue {
     let manager = state.manager.clone();
     result_to_jsonrpc(manager.create_or_update_user(id, user.0))
 }
@@ -205,7 +213,6 @@ pub fn post_install_callback(
     token: TokenResponse<GitHubUser>,
     mut cookies: Cookies<'_>,
 ) -> Result<Redirect, String> {
-
     cookies.add_private(
         Cookie::build(COOKIE_TOKEN, token.access_token().to_string())
             .same_site(SameSite::Lax)

@@ -180,7 +180,11 @@ impl Manager {
                 .block_on(self.engine.get_instance(user.id.as_str()))
                 .ok(),
             all_instances: None,
-            user: Some(PlaygroundUser{id: user.id, avatar: user.avatar, admin: false}),
+            user: Some(PlaygroundUser {
+                id: user.id,
+                avatar: user.avatar,
+                admin: false,
+            }),
         })
     }
 
@@ -196,7 +200,11 @@ impl Manager {
                 .block_on(self.clone().engine.get_instance(admin.id.as_str()))
                 .ok(),
             all_instances: Some(new_runtime()?.block_on(self.clone().engine.list_all())?),
-            user: Some(PlaygroundUser{id: admin.id, avatar: admin.avatar, admin: true}),
+            user: Some(PlaygroundUser {
+                id: admin.id,
+                avatar: admin.avatar,
+                admin: true,
+            }),
         })
     }
 

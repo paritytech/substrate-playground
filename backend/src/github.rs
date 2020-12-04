@@ -20,18 +20,22 @@ pub struct GitHubUser {
     #[serde(default)]
     pub login: String,
     #[serde(default)]
-    pub  avatar_url: String,
+    pub avatar_url: String,
 }
 
 /// Returns a GitHubUser representing provided token.
 ///
 /// # Arguments
 ///
-/// * `token` - a github token 
+/// * `token` - a github token
 /// * `client_id` - a github OAuth client ID
 /// * `client_secret` - a github OAuth client secret (matching client ID)
 ///
-pub fn token_validity(token: &str, client_id: &str, client_secret: &str) -> Result<GitHubUser, String> {
+pub fn token_validity(
+    token: &str,
+    client_id: &str,
+    client_secret: &str,
+) -> Result<GitHubUser, String> {
     let https = HttpsConnector::new(hyper_sync_rustls::TlsClient::new());
     let client = Client::with_connector(https);
 
