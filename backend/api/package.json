@@ -1,6 +1,6 @@
 {
   "name": "@substrate/playground-api",
-  "version": "1.0.5",
+  "version": "2.0.0",
   "description": "An isomorphic API client for Substrate Playground",
   "main": "dist/index.js",
   "browser": "dist.browser/index.js",
