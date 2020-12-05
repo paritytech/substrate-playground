@@ -52,9 +52,8 @@ export interface UserDetails {
     admin: boolean,
 }
 
-export interface User {
-    id: string,
-    admin: boolean,
+export interface Users {
+    [key: string]: UserDetails;
 }
 
 // See https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#pod-phase
@@ -101,7 +100,7 @@ export class Client {
         }));
     }
 
-    async listUsers(opts: Object = this.defaultOpts): Promise<RPCResponse<Array<User>>> {
+    async listUsers(opts: Object = this.defaultOpts): Promise<RPCResponse<Record<string, UserDetails>>> {
         return fromResponse(await fetchWithTimeout(`${this.base}/users`, {
             method: 'GET',
             headers: headers,
