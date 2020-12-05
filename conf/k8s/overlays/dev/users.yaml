@@ -5,5 +5,4 @@ metadata:
   name: playground-users
 data:
   jeluard: |
-    id: jeluard
     admin: true
