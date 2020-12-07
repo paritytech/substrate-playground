@@ -22,6 +22,6 @@ serde = { version = "1.0.117", features = ["derive"] }
 serde_json = "1.0.60"
 serde_yaml = "0.8.14"
 kube = "0.43.0"
-k8s-openapi = { version = "0.9.0", default-features = false, features = ["v1_15"] }
+k8s-openapi = { version = "0.10.0", default-features = false, features = ["v1_15"] }
 tokio = {version = "0.2.22", features = ["macros"] }
 time = "0.1" # Matches the version used by `cookie`
