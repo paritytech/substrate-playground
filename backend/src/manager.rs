@@ -199,7 +199,7 @@ impl Manager {
             instance: new_runtime()?
                 .block_on(self.clone().engine.get_instance(admin.id.as_str()))
                 .ok(),
-            all_instances: Some(new_runtime()?.block_on(self.clone().engine.list_all())?),
+            all_instances: Some(new_runtime()?.block_on(self.engine.list_all())?),
             user: Some(PlaygroundUser {
                 id: admin.id,
                 avatar: admin.avatar,
@@ -224,15 +224,15 @@ impl Manager {
     // Users
 
     pub fn list_users(self) -> Result<BTreeMap<String, UserConfiguration>, String> {
-        new_runtime()?.block_on(self.clone().engine.list_users())
+        new_runtime()?.block_on(self.engine.list_users())
     }
 
     pub fn create_or_update_user(self, id: String, user: UserConfiguration) -> Result<(), String> {
-        new_runtime()?.block_on(self.clone().engine.create_or_update_user(id, user))
+        new_runtime()?.block_on(self.engine.create_or_update_user(id, user))
     }
 
     pub fn delete_user(self, id: String) -> Result<(), String> {
-        new_runtime()?.block_on(self.clone().engine.delete_user(id))
+        new_runtime()?.block_on(self.engine.delete_user(id))
     }
 
     pub fn get_instance(self, instance_uuid: &str) -> Result<InstanceDetails, String> {

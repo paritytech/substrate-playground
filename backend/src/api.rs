@@ -60,8 +60,8 @@ impl<'a, 'r> FromRequest<'a, 'r> for User {
                     .map_err(|_| Err((Status::ExpectationFailed, "Missing users ConfiMap")))?;
                 let user = users.get(&id);
                 // If at least one non-admin user is defined, then users are only allowed if whitelisted
-                let filtered = users.values().find(|user| !user.admin).is_some();
-                if !filtered || (filtered && user.is_some()) {
+                let filtered = users.values().any(|user| !user.admin);
+                if !filtered || user.is_some() {
                     Outcome::Success(User {
                         id: id.clone(),
                         avatar: gh_user.avatar_url,
