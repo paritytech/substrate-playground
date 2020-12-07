@@ -143,10 +143,11 @@ ifeq ($(SKIP_ACK), )
 endif
 
 k8s-status: k8s-setup
-	@kubectl get configmap config &> /dev/null && [ $$? -eq 0 ] || (echo "Missing config 'config'"; exit 1)
-	@#TODO check proper content: @kubectl get configmap config -o json | jq -r '.data'
-	@kubectl get configmap templates &> /dev/null && [ $$? -eq 0 ] || (echo "Missing config 'templates'"; exit 1)
-	@kubectl get secrets secrets &> /dev/null && [ $$? -eq 0 ] || (echo "Missing secrets 'secrets'"; exit 1)
+	@kubectl get configmap playground-config &> /dev/null && [ $$? -eq 0 ] || (echo "Missing config 'playground-config'"; exit 1)
+	@#TODO check proper content: @kubectl get configmap playground-config -o json | jq -r '.data'
+	@kubectl get configmap playground-templates &> /dev/null && [ $$? -eq 0 ] || (echo "Missing config 'playground-templates'"; exit 1)
+	@kubectl get configmap playground-users &> /dev/null && [ $$? -eq 0 ] || (echo "Missing config 'playground-users'"; exit 1)
+	@kubectl get secrets playground-secrets &> /dev/null && [ $$? -eq 0 ] || (echo "Missing secrets 'playground-secrets'"; exit 1)
 	@#TODO check deployment is correctly running
 
 k8s-gke-static-ip: k8s-setup
@@ -166,3 +167,6 @@ k8s-undeploy-theia: k8s-setup ## Undeploy all theia pods and services from kuber
 
 k8s-update-templates-config: k8s-setup ## Creates or replaces the `templates` config map from `conf/k8s/overlays/ENVIRONMENT/templates`
 	kubectl create configmap playground-templates --namespace=${NAMESPACE} --from-file=conf/k8s/overlays/${ENVIRONMENT}/templates/ --dry-run=client -o yaml | kubectl apply -f -
+
+k8s-update-users-config: k8s-setup ## Creates or replaces the `templates` config map from `conf/k8s/overlays/ENVIRONMENT/templates`
+	kubectl create configmap playground-users --namespace=${NAMESPACE} --from-file=conf/k8s/overlays/${ENVIRONMENT}/users.yaml --dry-run=client -o yaml | kubectl apply -f -
