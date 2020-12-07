@@ -2,7 +2,7 @@ use crate::kubernetes::{Engine, InstanceDetails, PodDetails};
 use crate::metrics::Metrics;
 use crate::template::Template;
 use crate::user::{Admin, User, UserConfiguration};
-use log::{error, warn};
+use log::{error, info, warn};
 use serde::{Deserialize, Serialize};
 use std::{
     collections::BTreeMap,
@@ -145,6 +145,8 @@ impl Manager {
                     for (username, instance) in running_instances(all_instances) {
                         if let Some(duration) = elapsed(&instance.pod) {
                             if duration > instance.session_duration {
+                                info!("Undeploying {} {:?} {:?}", username, duration, instance.session_duration);
+
                                 match self.clone().undeploy(&username) {
                                     Ok(()) => (),
                                     Err(err) => {
