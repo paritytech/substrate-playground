@@ -10,23 +10,6 @@ resources:
 - templates.yaml
 - users.yaml
 
-images:
-- name: paritytech/substrate-playground-backend-api
-  newTag: latest
-- name: paritytech/substrate-playground-backend-ui
-  newTag: latest
-
-patches:
-- patch: |-
-    - op: replace
-      path: /spec/rules/0/host
-      value: playground-dev.substrate.test
-  target:
-    group: networking.k8s.io
-    kind: Ingress
-    name: ingress
-    version: v1beta1
-
 generatorOptions:
   disableNameSuffixHash: true
 
@@ -43,3 +26,20 @@ secretGenerator:
     # Both secrets are safe to be stored in repository as they are specific to this dev env whose TLD can't be registered (.test).
     - github.clientSecret=abdcf38dd290429b98f43074d010b989cf970461
     - rocket.secretKey=tNxYqkQ5o9KiT8mQPVxqxu+H2Sl+Jd4CxkpFZmkw6Kw=
+
+images:
+- name: paritytech/substrate-playground-backend-api
+  newTag: latest
+- name: paritytech/substrate-playground-backend-ui
+  newTag: latest
+
+patches:
+- patch: |-
+    - op: replace
+      path: /spec/rules/0/host
+      value: playground-dev.substrate.test
+  target:
+    group: networking.k8s.io
+    kind: Ingress
+    name: ingress
+    version: v1beta1
