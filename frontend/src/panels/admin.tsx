@@ -1,8 +1,19 @@
-import React from "react";
+import clsx from 'clsx';
+import React, { useState } from "react";
 import { useHistory, useLocation } from "react-router-dom";
 import { Wrapper } from '../components';
 import { useLifecycle } from '../lifecycle';
-import { makeStyles } from '@material-ui/core/styles';
+import { createStyles, lighten, makeStyles, Theme } from '@material-ui/core/styles';
+import Checkbox from '@material-ui/core/Checkbox';
+import IconButton from '@material-ui/core/IconButton';
+import Tooltip from '@material-ui/core/Tooltip';
+import FormControlLabel from '@material-ui/core/FormControlLabel';
+import Switch from '@material-ui/core/Switch';
+import DeleteIcon from '@material-ui/icons/Delete';
+import FilterListIcon from '@material-ui/icons/FilterList';
+import TablePagination from '@material-ui/core/TablePagination';
+import TableSortLabel from '@material-ui/core/TableSortLabel';
+import Toolbar from '@material-ui/core/Toolbar';
 import { Container } from "@material-ui/core";
 import Paper from '@material-ui/core/Paper';
 import Table from '@material-ui/core/Table';
@@ -12,6 +23,7 @@ import TableContainer from '@material-ui/core/TableContainer';
 import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
 import Typography from '@material-ui/core/Typography';
+import { Client, User } from '@substrate/playground-api';
 
 const useStyles = makeStyles({
     table: {
@@ -75,33 +87,141 @@ function Templates({ templates }) {
     );
 }
 
-function Users({ users }) {
-    const classes = useStyles();
+async function createOrUpdateUser(client: Client, id: String, admin: boolean): Promise<void> {
+    await client.createOrUpdateUser(id, {admin: admin});
+}
+
+async function deleteUser(client: Client, id: String, admin: boolean): Promise<void> {
+    await client.deleteUser(id);
+}
+
+const useToolbarStyles = makeStyles((theme: Theme) =>
+  createStyles({
+    root: {
+      paddingLeft: theme.spacing(2),
+      paddingRight: theme.spacing(1),
+    },
+    highlight:
+      theme.palette.type === 'light'
+        ? {
+            color: theme.palette.secondary.main,
+            backgroundColor: lighten(theme.palette.secondary.light, 0.85),
+          }
+        : {
+            color: theme.palette.text.primary,
+            backgroundColor: theme.palette.secondary.dark,
+          },
+    title: {
+      flex: '1 1 100%',
+    },
+  }),
+);
+
+async function handleUsersDelete(o) {
+    console.log(o)
+}
+
+function EnhancedTableToolbar({ client, selected }: { client: Client, selected: Array<String>}) {
+    const classes = useToolbarStyles();
     return (
-        <TableContainer component={Paper}>
-            <Table className={classes.table} aria-label="simple table">
-                <TableHead>
-                    <TableRow>
-                        <TableCell>ID</TableCell>
-                        <TableCell align="right">Admin</TableCell>
+        <Toolbar
+        className={clsx(classes.root, {
+            [classes.highlight]: selected.length > 0,
+        })}
+        >
+        {selected.length > 0 ? (
+            <Typography className={classes.title} color="inherit" variant="subtitle1" component="div">
+            {selected.length} selected
+            </Typography>
+        ) : (
+            <Typography className={classes.title} variant="h6" id="tableTitle" component="div">
+            Users
+            </Typography>
+        )}
+        {selected.length > 0 ? (
+            <Tooltip title="Delete">
+            <IconButton aria-label="delete" onClick={() => handleUsersDelete(selected)}>
+                <DeleteIcon />
+            </IconButton>
+            </Tooltip>
+        ) : (
+            <Tooltip title="Filter list">
+            <IconButton aria-label="filter list">
+                <FilterListIcon />
+            </IconButton>
+            </Tooltip>
+        )}
+        </Toolbar>
+    );
+};
+
+function Users({ client, users }: { client: Client, users: Array<User> }) {
+    const classes = useStyles();
+    const [selected, setSelected] = useState<string[]>([]);
+    const isSelected = (name: string) => selected.indexOf(name) !== -1;
+    const handleClick = (event: React.MouseEvent<unknown>, name: string) => {
+        const selectedIndex = selected.indexOf(name);
+        let newSelected: string[] = [];
+    
+        if (selectedIndex === -1) {
+          newSelected = newSelected.concat(selected, name);
+        } else if (selectedIndex === 0) {
+          newSelected = newSelected.concat(selected.slice(1));
+        } else if (selectedIndex === selected.length - 1) {
+          newSelected = newSelected.concat(selected.slice(0, -1));
+        } else if (selectedIndex > 0) {
+          newSelected = newSelected.concat(
+            selected.slice(0, selectedIndex),
+            selected.slice(selectedIndex + 1),
+          );
+        }
+    
+        setSelected(newSelected);
+      };
+    return (
+        <>
+            <EnhancedTableToolbar client={client} selected={selected} />
+            <TableContainer component={Paper}>
+                <Table className={classes.table} aria-label="simple table">
+                    <TableHead>
+                        <TableRow>
+                            <TableCell>ID</TableCell>
+                            <TableCell align="right">Admin</TableCell>
+                        </TableRow>
+                    </TableHead>
+                    <TableBody>
+                    {users.map((user, index) => {
+                        const isItemSelected = isSelected(user.id);
+                        const labelId = `enhanced-table-checkbox-${index}`;
+                        return (
+                    <TableRow
+                        key={user.id}
+                        hover
+                        onClick={(event) => handleClick(event, user.id)}
+                        role="checkbox"
+                        aria-checked={isItemSelected}
+                        tabIndex={-1}
+                        selected={isItemSelected}>
+                        <TableCell padding="checkbox">
+                            <Checkbox
+                                checked={isItemSelected}
+                                inputProps={{ 'aria-labelledby': labelId }}
+                            />
+                        </TableCell>
+                        <TableCell component="th" scope="row">
+                            {user.id}
+                        </TableCell>
+                        <TableCell align="right">{user.admin.toString()}</TableCell>
                     </TableRow>
-                </TableHead>
-                <TableBody>
-                {users.map((user) => (
-                <TableRow key={user.id}>
-                    <TableCell component="th" scope="row">
-                        {user.id}
-                    </TableCell>
-                    <TableCell align="right">{user.admin.toString()}</TableCell>
-                </TableRow>
-                ))}
-                </TableBody>
-            </Table>
-        </TableContainer>
+                    )})}
+                    </TableBody>
+                </Table>
+            </TableContainer>
+        </>
     );
 }
 
-export function AdminPanel({ client }) {
+export function AdminPanel({ client }: { client: Client }) {
     const location = useLocation();
     const history = useHistory();
     const [state, send] = useLifecycle(history, location, client);
@@ -112,10 +232,9 @@ export function AdminPanel({ client }) {
             <Wrapper send={send} details={details}>
                 <Container style={{ display: "flex", flex: 1, justifyContent: "center", alignItems: "center" }}>
                     <Paper style={{ display: "flex", overflowY: "auto", flexDirection: "column", marginTop: 20, justifyContent: "center", width: "80vw", height: "80vh"}} elevation={3}>
-                        {details?.users.length > 0
+                        {details?.users?.length > 0
                         ? <div style={{margin: 20}}>
-                             <Typography variant="h5">Users</Typography>
-                             <Users users={details.users} />
+                             <Users client={client} users={details.users} />
                          </div>
                         : <Container style={{display: "flex", flex: 1, flexDirection: "column", padding: 0, justifyContent: "center", alignItems: "center", overflowY: "auto"}}>
                              <Typography variant="h5">No users</Typography>
