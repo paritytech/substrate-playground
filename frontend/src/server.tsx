@@ -45,21 +45,22 @@ export function intercept({logged = false, noInstance = true, delay = 100}: {log
   });
   server.get('/api/').intercept(async (req, res) => {
     await server.timeout(delay);
-    let templates = {workshop: template_private, workshop2: template, workshop3: template, workshop4: template, workshop5: template, workshop6: template, workshop7: template};
+    let templates = {workshop: template_private, workshop2: template, workshop3: template, workshop4: template, workshop5: template};
     let user = logged ?
       {
         id: 'john',
         admin: true
       } : null;
     res.status(200).json({result: {
-      templates: templates,
+      templates: [],//templates,
       instance: instance,
       "all_instances": {"instance1": instance,
                         "instance2": instance,
                         "instance3": instance,
                         "instance4": instance,
                         "instance5": instance},
-      user: user
+      user: user,
+      users: {"id1": user}
     }});
   });
   server.delete('/api/').intercept(async (req, res) => {
