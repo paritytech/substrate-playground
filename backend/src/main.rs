@@ -45,13 +45,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let configuration = manager.clone().engine.configuration;
     manager.clone().spawn_background_thread();
 
+    log::info!("Configuration: host {}, namespace {}", configuration.host, configuration.namespace);
+
     // Configure CORS
     let cors = CorsOptions {
-        allowed_origins: AllowedOrigins::some_regex(&[
-            format!("https?://{}", configuration.host),
-            format!("^https?://(.+).{}$", configuration.host),
-        ]),
-        allowed_methods: vec![Method::Get, Method::Delete]
+        allowed_origins: AllowedOrigins::all(),
+        allowed_methods: vec![Method::Get, Method::Post, Method::Put, Method::Delete]
             .into_iter()
             .map(From::from)
             .collect(),
