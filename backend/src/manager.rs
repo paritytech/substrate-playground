@@ -145,7 +145,10 @@ impl Manager {
                     for (username, instance) in running_instances(all_instances) {
                         if let Some(duration) = elapsed(&instance.pod) {
                             if duration > instance.session_duration {
-                                info!("Undeploying {} {:?} {:?}", username, duration, instance.session_duration);
+                                info!(
+                                    "Undeploying {} {:?} {:?}",
+                                    username, duration, instance.session_duration
+                                );
 
                                 match self.clone().undeploy(&username) {
                                     Ok(()) => (),

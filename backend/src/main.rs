@@ -45,7 +45,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let configuration = manager.clone().engine.configuration;
     manager.clone().spawn_background_thread();
 
-    log::info!("Configuration: host {}, namespace {}", configuration.host, configuration.namespace);
+    log::info!(
+        "Configuration: host {}, namespace {}",
+        configuration.host,
+        configuration.namespace
+    );
 
     // Configure CORS
     let cors = CorsOptions {
