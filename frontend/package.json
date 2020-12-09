@@ -32,7 +32,7 @@
     "@ava/typescript": "1.1.1",
     "@pollyjs/adapter-fetch": "5.0.0",
     "@pollyjs/core": "5.0.0",
-    "@types/node": "14.14.10",
+    "@types/node": "14.14.11",
     "@types/react": "17.0.0",
     "@types/react-dom": "17.0.0",
     "@types/react-router-dom": "5.1.6",
