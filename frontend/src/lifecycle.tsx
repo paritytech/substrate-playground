@@ -54,6 +54,7 @@ function lifecycle(history, location, client: Client) {
             // Retrieve initial data
             const response = (await client.getDetails());
             if (response.error) {
+              console.error(response);
               throw response;
             }
 
