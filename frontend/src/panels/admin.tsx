@@ -153,7 +153,7 @@ function EnhancedTableToolbar({ client, selected }: { client: Client, selected: 
         )}
         </Toolbar>
     );
-};
+}
 
 function Users({ client, users }: { client: Client, users: Array<User> }) {
     const classes = useStyles();
