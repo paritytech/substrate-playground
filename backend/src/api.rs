@@ -1,5 +1,4 @@
 //! HTTP endpoints exposed in /api context
-
 use crate::github::token_validity;
 use crate::user::{Admin, User, UserConfiguration};
 use crate::Context;
@@ -57,7 +56,7 @@ impl<'a, 'r> FromRequest<'a, 'r> for User {
                 let users = Runtime::new()
                     .map_err(|_| Err((Status::ExpectationFailed, "Failed to execute async fn")))?
                     .block_on(engine.clone().list_users())
-                    .map_err(|_| Err((Status::ExpectationFailed, "Missing users ConfiMap")))?;
+                    .map_err(|_| Err((Status::FailedDependency, "Missing users ConfiMap")))?;
                 let user = users.get(&id);
                 // If at least one non-admin user is defined, then users are only allowed if whitelisted
                 let filtered = users.values().any(|user| !user.admin);
@@ -101,7 +100,7 @@ impl<'a, 'r> FromRequest<'a, 'r> for Admin {
                 let users = Runtime::new()
                     .map_err(|_| Err((Status::ExpectationFailed, "Failed to execute async fn")))?
                     .block_on(engine.clone().list_users())
-                    .map_err(|_| Err((Status::ExpectationFailed, "Missing users ConfiMap")))?;
+                    .map_err(|_| Err((Status::FailedDependency, "Missing users ConfiMap")))?;
                 let user = users.get(&id);
                 if user.map_or_else(|| false, |user| user.admin) {
                     Outcome::Success(Admin {
