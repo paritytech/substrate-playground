@@ -93,7 +93,7 @@ function lifecycle(history, location, client: Client) {
           },
           onError: {
             target: failed,
-            actions: assign({ error: (_context, event) => event.data.error, data: (_context, event) => event.data.data, details: (_context, event) => event.data?.details})
+            actions: assign({ error: (_context, event) => event.data.error || event, data: (_context, event) => event.data.data,  details: (_context, event) => event.data?.details})
           }
         },
         on: {
@@ -146,7 +146,7 @@ function lifecycle(history, location, client: Client) {
           },
           onError: {
             target: failed,
-            actions: assign({ error: (_context, event) => event.data.error})
+            actions: assign({ error: (_context, event) => event.data.error || event})
           }
         },
         on: {
@@ -168,7 +168,7 @@ function lifecycle(history, location, client: Client) {
           },
           onError: {
             target: failed,
-            actions: assign({ error: (_context, event) => event.data.error})
+            actions: assign({ error: (_context, event) => event.data.error || event})
           }
         },
         on: {

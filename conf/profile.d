@@ -1,0 +1,1 @@
+echo "sudo password: password"
