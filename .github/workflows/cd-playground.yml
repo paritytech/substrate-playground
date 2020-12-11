@@ -24,6 +24,7 @@ on:
 env:
   GKE_ZONE: us-central1-a
   DOCKER_BUILDKIT: 1
+  ACTIONS_ALLOW_UNSECURE_COMMANDS: true
 
 jobs:
   build-and-push:
