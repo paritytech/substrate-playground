@@ -3,7 +3,7 @@
 _Please read these terms and conditions carefully before clicking 'ACCEPT'._
 
 
-These user terms and conditions (these __"Terms"__) form a legal agreement between: (a) you (being the person accessing and using the Playground Site (as defined below)) (the __"User"__); and (b) Parity Technologies Limited, a company registered in England and Wales under company number 09760015 with its registered office at Ignition Law, Moray House, Floor 1, Moray House, 23-31 Great Titchfield Street, London, United Kingdom, WC1W 7PA (__"Parity"__).
+These user terms and conditions (these __"Terms"__) form a legal agreement between: (a) you (being the person accessing and using the Playground Site (as defined below)) (the __"User"__); and (b) Parity Technologies Limited, a company registered in England and Wales under company number 09760015 with its registered office at c/o Ignition Law, 1 Sans Walk, London, England, EC1R 0LT (__"Parity"__).
 
 In these Terms, when we refer to __"we"__, __"us"__ or __"our"__, we mean Parity, and when we refer to __"you"__ or __"your"__ we mean the User. The User and Parity are each a __"party"__ and are together the __"parties"__.
 
@@ -156,7 +156,7 @@ _General exclusions_
 
 8.2 We assume no responsibility for the content of any websites linked on or integrated with the Playground Site (including links to our commercial sponsors and partners, and including Github). Such links should not be interpreted as endorsement by us of those linked websites, and we will not be liable for any Losses that may arise from your use of them.
 
-_ If you are a Business User_
+_If you are a Business User_
 
 8.3 If you are a Business User, then subject to clause 8.1:
 
@@ -208,7 +208,7 @@ _If you are a Business User_
 
 11.1 These Terms are governed by the laws of England and Wales. This means that your access to and use of the Playground Site, and any dispute or claim arising out of or in connection therewith (including non-contractual disputes or claims) shall be governed by English law.  The courts of England and Wales shall have exclusive jurisdiction over any disputes between us (including non-contractual disputes or claims).
 
-_ If you are a consumer_
+_If you are a consumer_
 
 11.2 These Terms are governed by the laws of England and Wales. This means that your access to and use of the Playground Site, and any dispute or claim arising out of or in connection therewith (including non-contractual disputes or claims) shall be governed by English law.  
 
@@ -220,7 +220,7 @@ __Contact us__
 
 Should you have any reasons for a complaint, we will endeavour to resolve the issue and avoid any re-occurrence in the future. You can always contact us by using the following details:
 
-_Address_: Ignition Law, Moray House Floor 1, 23-31 Great Titchfield Street, London, United Kingdom, WC1W 7PA
+_Address_: c/o Ignition Law, 1 Sans Walk, London, England, EC1R 0LT
 _Email address_: <a href="mailto:legal@parity.io">legal@parity.io</a>
 
 __Statutory information__
@@ -229,8 +229,8 @@ Statutory information about Parity Technologies Limited:
 
 * Registered in England and Wales
 * Registered Number: 09760015
-* Registered Office: Ignition Law, Moray House Floor 1, 23-31 Great Titchfield Street, London, United Kingdom, WC1W 7PA.
+* Registered Office: c/o Ignition Law, 1 Sans Walk, London, England, EC1R 0LT.
 
 Thank you for visiting the Site.
 
-Terms last updated: 9 November 2020
+Terms last updated: 11 December 2020
