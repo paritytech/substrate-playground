@@ -153,7 +153,7 @@ jobs:
 # TODO update name, desc, .. from devcontainer.json
 
       - name: Commit template version update
-        uses: EndBug/add-and-commit@v4
+        uses: EndBug/add-and-commit@v5.3.0
         with:
           message: ":bookmark: yee shall thurst into a new version of ${{ env.TEMPLATE_ID }}"
           add: conf/k8s/overlays/staging/templates/${{ env.TEMPLATE_ID }}
