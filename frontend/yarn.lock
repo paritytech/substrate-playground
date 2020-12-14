@@ -1963,10 +1963,10 @@
     chrome-trace-event "^1.0.2"
     nullthrows "^1.1.1"
 
-"@pollyjs/adapter-fetch@5.0.0":
-  version "5.0.0"
-  resolved "https://registry.yarnpkg.com/@pollyjs/adapter-fetch/-/adapter-fetch-5.0.0.tgz#ee92941893646e58b46959501420f24f407505ba"
-  integrity sha512-nU+aNYEx/e7hZFwB/Bopw77Y82Tax7xvpoycoCFhWcdAmzLMl0MQA7ptQ4pYr0XaVXOPj0R75jVbGY7SJLZ2mw==
+"@pollyjs/adapter-fetch@5.1.0":
+  version "5.1.0"
+  resolved "https://registry.yarnpkg.com/@pollyjs/adapter-fetch/-/adapter-fetch-5.1.0.tgz#b25cec1d9560bca70d87a6dc9066c296d2a46770"
+  integrity sha512-oij8WzZm7zSV7B49OFQaBkYqVTnxL4q3ykwwL9TwT/yntR370Ewh7g/k1nRJs1ZX3uKxKLPkFn5WkwhR07dDrw==
   dependencies:
     "@pollyjs/adapter" "^5.0.0"
     "@pollyjs/utils" "^5.0.0"
