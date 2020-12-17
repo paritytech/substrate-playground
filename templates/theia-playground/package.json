@@ -29,7 +29,7 @@
         "@theia/plugin": "1.8.1",
         "@theia/plugin-dev": "1.8.1",
         "@theia/plugin-ext": "1.8.1",
-        "@theia/plugin-ext-vscode": "1.8.1",
+        "@theia/plugin-ext-vscode": "1.9.0",
         "@theia/preview": "1.8.1",
         "@theia/preferences": "1.8.1",
         "@theia/process": "1.8.1",
