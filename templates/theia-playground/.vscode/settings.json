@@ -1,6 +1,7 @@
 {
     "gitlens.advanced.telemetry.enabled": false,
     "gitlens.showWhatsNewAfterUpgrades": false,
+    "gitlens.showWelcomeOnInstall": false,
     "editor.formatOnSave": true,
     "editor.insertSpaces": true,
     "editor.renderLineHighlight": "all",
