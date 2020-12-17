@@ -20,7 +20,7 @@
         "@theia/keymaps": "1.8.1",
         "@theia/markers": "1.8.1",
         "@theia/messages": "1.8.1",
-        "@theia/metrics": "1.8.1",
+        "@theia/metrics": "1.9.0",
         "@theia/mini-browser": "1.8.1",
         "@theia/monaco": "1.8.1",
         "@theia/navigator": "1.8.1",
