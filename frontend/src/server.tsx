@@ -1,4 +1,4 @@
-import { Polly, Timing } from '@pollyjs/core';
+import { Polly } from '@pollyjs/core';
 import FetchAdapter from '@pollyjs/adapter-fetch';
 
 const description = `#frdsfd

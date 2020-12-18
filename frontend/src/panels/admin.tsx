@@ -1,20 +1,12 @@
 import clsx from 'clsx';
 import React, { useState } from "react";
 import { useHistory, useLocation } from "react-router-dom";
-import { Wrapper } from '../components';
-import { useLifecycle } from '../lifecycle';
 import { createStyles, lighten, makeStyles, Theme } from '@material-ui/core/styles';
 import Checkbox from '@material-ui/core/Checkbox';
+import Container from "@material-ui/core/Container";
 import IconButton from '@material-ui/core/IconButton';
-import Tooltip from '@material-ui/core/Tooltip';
-import FormControlLabel from '@material-ui/core/FormControlLabel';
-import Switch from '@material-ui/core/Switch';
 import DeleteIcon from '@material-ui/icons/Delete';
 import FilterListIcon from '@material-ui/icons/FilterList';
-import TablePagination from '@material-ui/core/TablePagination';
-import TableSortLabel from '@material-ui/core/TableSortLabel';
-import Toolbar from '@material-ui/core/Toolbar';
-import { Container } from "@material-ui/core";
 import Paper from '@material-ui/core/Paper';
 import Table from '@material-ui/core/Table';
 import TableBody from '@material-ui/core/TableBody';
@@ -22,8 +14,12 @@ import TableCell from '@material-ui/core/TableCell';
 import TableContainer from '@material-ui/core/TableContainer';
 import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
+import Tooltip from '@material-ui/core/Tooltip';
+import Toolbar from '@material-ui/core/Toolbar';
 import Typography from '@material-ui/core/Typography';
 import { Client, User } from '@substrate/playground-api';
+import { Wrapper } from '../components';
+import { useLifecycle } from '../lifecycle';
 
 const useStyles = makeStyles({
     table: {

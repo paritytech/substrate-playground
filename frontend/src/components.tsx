@@ -1,5 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
-import marked from 'marked';
+import React, { useState } from "react";
 import { useHistory, useLocation } from "react-router-dom";
 import { useSpring, animated } from 'react-spring'
 import { Client } from "@substrate/playground-api";
@@ -9,35 +8,21 @@ import Avatar from '@material-ui/core/Avatar';
 import Badge from '@material-ui/core/Badge';
 import Button from '@material-ui/core/Button';
 import Box from '@material-ui/core/Box';
-import Card from '@material-ui/core/Card';
-import CardContent from '@material-ui/core/CardContent';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import Container from "@material-ui/core/Container";
-import Divider from '@material-ui/core/Divider';
 import Fade from '@material-ui/core/Fade';
+import GitHubIcon from '@material-ui/icons/GitHub';
 import IconButton from '@material-ui/core/IconButton';
 import Link from '@material-ui/core/Link';
-import List from '@material-ui/core/List';
-import ListItem from '@material-ui/core/ListItem';
-import ListItemText from '@material-ui/core/ListItemText';
 import Menu from '@material-ui/core/Menu';
 import MenuItem from '@material-ui/core/MenuItem';
+import MoreVertIcon from '@material-ui/icons/MoreVert';
 import Paper from '@material-ui/core/Paper';
-import Table from '@material-ui/core/Table';
-import TableBody from '@material-ui/core/TableBody';
-import TableCell from '@material-ui/core/TableCell';
-import TableContainer from '@material-ui/core/TableContainer';
-import TableHead from '@material-ui/core/TableHead';
-import TableRow from '@material-ui/core/TableRow';
 import Toolbar from '@material-ui/core/Toolbar';
 import Typography from '@material-ui/core/Typography';
-import { makeStyles, createStyles, Theme } from '@material-ui/core/styles';
-import GitHubIcon from '@material-ui/icons/GitHub';
-import MoreVertIcon from '@material-ui/icons/MoreVert';
-import { Responder } from "./connect";
 import { useInterval } from './hooks';
-import { useLifecycle, deploy, deploying, failed, logged, logout, restart, setup, stop, stopping } from './lifecycle';
-import { fetchWithTimeout, navigateToAdmin, navigateToStats, navigateToInstance } from "./utils";
+import { useLifecycle, logout, restart } from './lifecycle';
+import { navigateToAdmin, navigateToStats } from "./utils";
 
 function wrapAction(action: (() => void) | Promise<void>, call: (boolean) => void):(() => void) | Promise<void> {
     if (action instanceof Promise) {
