@@ -5,7 +5,6 @@ import { Client } from "@substrate/playground-api";
 import { Alert, AlertTitle } from '@material-ui/lab';
 import AppBar from '@material-ui/core/AppBar';
 import Avatar from '@material-ui/core/Avatar';
-import Badge from '@material-ui/core/Badge';
 import Button from '@material-ui/core/Button';
 import Box from '@material-ui/core/Box';
 import CircularProgress from '@material-ui/core/CircularProgress';
@@ -211,9 +210,7 @@ function Nav({ send, details }) {
                                 color="inherit"
                                 size="small"
                             >
-                                <Badge color="secondary" variant="dot" invisible={!user.admin}>
-                                    <Avatar alt={user.id} src={user.avatar} />
-                                </Badge>
+                                <Avatar alt={user.id} src={user.avatar} />
                             </IconButton>
                             <Menu
                                 id="menu-appbar"
@@ -244,11 +241,9 @@ function Nav({ send, details }) {
                                     color="inherit"
                                     size="small"
                                 >
-                                    <Badge color="secondary" variant="dot" invisible={true}>
-                                        <Avatar alt="Not logged">
-                                            <GitHubIcon />
-                                        </Avatar>
-                                    </Badge>
+                                    <Avatar alt="Not logged">
+                                        <GitHubIcon />
+                                    </Avatar>
                                 </IconButton>
                               </div>)}
                 </div>
