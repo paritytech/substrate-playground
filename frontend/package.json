@@ -10,7 +10,7 @@
     "build": "parcel build public/index.html && mkdir -p dist/assets/ && cp -R public/assets/* dist/assets/ && cp public/robots.txt dist/",
     "start": "yarn build && cd dist/ && npx http-server",
     "test": "ava",
-    "clean": "rm -rf node_modules/ dist/ .cache/ yarn.lock"
+    "clean": "rm -rf node_modules/ dist/ .parcel-cache/ yarn.lock"
   },
   "dependencies": {
     "@material-ui/core": "4.11.2",
