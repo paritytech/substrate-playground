@@ -12,11 +12,11 @@ function instanceChannelId(uuid: string) {
 
 export class Discoverer {
 
-    #channel = new BroadcastChannel(GLOBAL_CHANNEL);
-    #instances = new Map<string, Instance>();
+    channel = new BroadcastChannel(GLOBAL_CHANNEL);
+    instances = new Map<string, Instance>();
 
     constructor(onInstanceAppeared: (Instance) => void, onInstanceLeft?: (string) => void) {
-        this.#channel.onmessage = (oo) => {
+        this.channel.onmessage = (oo) => {
             const o = JSON.parse(oo);
             const type = o.type;
             const uuid = o.uuid;
@@ -25,18 +25,18 @@ export class Discoverer {
                     // Another instance of Discoverer is sending 'discovery' request; ignore
                     break;
                 case TYPE_INSTANCE_ANNOUNCED: {
-                    const existingInstance = this.#instances.get(uuid);
+                    const existingInstance = this.instances.get(uuid);
                     if (existingInstance) {
                         onInstanceAppeared(existingInstance);
                     } else {
                         const instance = new Instance(uuid);
-                        this.#instances.set(uuid, instance);
+                        this.instances.set(uuid, instance);
                         onInstanceAppeared(instance);
                     }
                     break;
                 }
                 case TYPE_INSTANCE_LEFT: {
-                    if (this.#instances.delete(uuid)) {
+                    if (this.instances.delete(uuid)) {
                         onInstanceLeft?.(uuid);
                     }
                     break;
@@ -47,15 +47,11 @@ export class Discoverer {
             }
         };
         // Fire this initial events to trigger a response from already running instances
-        this.#channel.postMessage(JSON.stringify({type: TYPE_DISCOVERY}));
-    }
-
-    get instances(): Map<string, Instance> {
-        return this.#instances;
+        this.channel.postMessage(JSON.stringify({type: TYPE_DISCOVERY}));
     }
 
     close(): void {
-        this.#channel.close();
+        this.channel.close();
     }
 
 }
@@ -65,15 +61,15 @@ export class Discoverer {
  */
 export class Responder {
 
-    #channel = new BroadcastChannel(GLOBAL_CHANNEL);
-    #instanceChannel;
-    #uuid;
+    channel = new BroadcastChannel(GLOBAL_CHANNEL);
+    instanceChannel;
+    uuid;
     online;
 
     constructor(uuid: string, onInstanceMessage: (o: any) => void) {
         this.online = false;
-        this.#uuid = uuid;
-        this.#channel.onmessage = (oo: string) => {
+        this.uuid = uuid;
+        this.channel.onmessage = (oo: string) => {
             const o = JSON.parse(oo);
             const type = o.type;
             switch (type) {
@@ -91,8 +87,8 @@ export class Responder {
                     break;
             }
         };
-        this.#instanceChannel = new BroadcastChannel(instanceChannelId(uuid));
-        this.#instanceChannel.onmessage = (s: string) => onInstanceMessage(JSON.parse(s));
+        this.instanceChannel = new BroadcastChannel(instanceChannelId(uuid));
+        this.instanceChannel.onmessage = (s: string) => onInstanceMessage(JSON.parse(s));
     }
 
     setStatus(online: boolean): void {
@@ -100,20 +96,20 @@ export class Responder {
     }
 
     announce(): void {
-        this.#channel.postMessage(JSON.stringify({type: TYPE_INSTANCE_ANNOUNCED, uuid: this.#uuid}));
+        this.channel.postMessage(JSON.stringify({type: TYPE_INSTANCE_ANNOUNCED, uuid: this.uuid}));
     }
 
     unannounce(): void {
-        this.#channel.postMessage(JSON.stringify({type: TYPE_INSTANCE_LEFT, uuid: this.#uuid}));
+        this.channel.postMessage(JSON.stringify({type: TYPE_INSTANCE_LEFT, uuid: this.uuid}));
     }
 
     respond(data: object): void {
-        this.#instanceChannel.postMessage(JSON.stringify(data));
+        this.instanceChannel.postMessage(JSON.stringify(data));
     }
 
     close(): void {
-        this.#channel.close();
-        this.#instanceChannel.close();
+        this.channel.close();
+        this.instanceChannel.close();
     }
 
 }
@@ -124,11 +120,11 @@ export class Responder {
 export class Instance {
 
     uuid;
-    #channel;
+    channel;
 
     constructor(uuid: string) {
         this.uuid = uuid;
-        this.#channel = new BroadcastChannel(instanceChannelId(uuid));
+        this.channel = new BroadcastChannel(instanceChannelId(uuid));
     }
 
     async sendMessage(data: object): Promise<object> {
@@ -138,7 +134,7 @@ export class Instance {
                 const o = JSON.parse(oo);
                 // TODO introduce a timeout mechanism: automatically unregister and reject after some time
                 if (o.uuid == messageUuid) {
-                    this.#channel.removeEventListener('message', callback);
+                    this.channel.removeEventListener('message', callback);
                     const type = o.type;
                     switch (type) {
                         case "extension-answer":
@@ -156,8 +152,8 @@ export class Instance {
                     }
                 }
             };
-            this.#channel.addEventListener('message', callback);
-            this.#channel.postMessage(JSON.stringify(Object.assign({uuid: messageUuid}, data)));
+            this.channel.addEventListener('message', callback);
+            this.channel.postMessage(JSON.stringify(Object.assign({uuid: messageUuid}, data)));
         });
     }
 
@@ -170,7 +166,7 @@ export class Instance {
     }
 
     close(): void {
-        this.#channel.close();
+        this.channel.close();
     }
 
     toString(): string {
