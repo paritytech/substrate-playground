@@ -1,13 +1,17 @@
-import * as React from "react";
+import React from "react";
 import ReactDOM from "react-dom";
 import { Client } from '@substrate/playground-api';
 import { createMuiTheme, ThemeProvider } from '@material-ui/core/styles';
-import { Redirect, Route, Router, Switch } from "react-router-dom";
 import { createBrowserHistory } from "history";
-import { AdminPanel, StatsPanel } from './panels/admin';
-import { MainPanel } from './panels/main';
+import { Redirect, Route, Router, Switch } from "react-router-dom";
+import { AdminPanel } from './panels/admin';
+import { LoginPanel } from './panels/login';
+import { SessionPanel } from './panels/session';
+import { StatsPanel } from './panels/stats';
+import { TermsPanel } from './panels/terms';
 import { TheiaPanel } from './panels/theia';
-import { NotFoundPanel } from './components';
+import { Wrapper } from './components';
+import { useLifecycle, logged, logout, restart, select, termsApproval, termsUnapproved } from './lifecycle';
 import { intercept } from './server';
 
 const base = process.env.BASE_URL;
@@ -16,7 +20,7 @@ if (base) {
 } else {
   if (devMode()) {
     console.log("Installing HTTP interceptor");
-    intercept({noInstance: false, logged: true});
+    intercept({noInstance: true, logged: true});
   }
 }
 
@@ -27,9 +31,48 @@ function apiBaseURL(base: string | undefined) {
   return "/api";
 }
 
-const client = new Client({base: apiBaseURL(base)});
+export enum PanelId {Session, Admin, Stats, Theia}
 
-function App({ client }) {
+function MainPanelComponent({ client, send, state, restartAction, id }: {id: PanelId}) {
+  if (state.matches(logged)) {
+    switch(id) {
+      case PanelId.Session:
+        return <SessionPanel state={state} onRetry={restartAction}
+                onStopSession={() => client.stopInstance()}
+                onDeployed={() => send(select, {panel: PanelId.Theia})}
+                onConnect={() => send(select, {panel: PanelId.Theia})} />;
+      case PanelId.Stats:
+        return <StatsPanel />;
+      case PanelId.Admin:
+        return <AdminPanel client={client} state={state} />;
+      case PanelId.Theia:
+        return <TheiaPanel client={client} onMissingSession={restartAction} onSessionFailing={restartAction} onSessionTimeout={restartAction} />;
+    }
+  } else if (state.matches(termsUnapproved)) {
+    return <TermsPanel terms={state.context.terms} onTermsApproved={() => send(termsApproval)} />
+  } else {
+    return <LoginPanel />;
+  }
+}
+
+function Panel() {
+  const client = new Client({base: apiBaseURL(base)});
+  const [state, send] = useLifecycle(client);
+
+  function restartAction() {
+    send(restart);
+  }
+  const {panel, details} = state.context;
+  return (
+      <div style={{ display: "flex", width: "100vw", height: "100vh", alignItems: "center", justifyContent: "center" }}>
+          <Wrapper onPlayground={() => send(select, {panel: PanelId.Session})} onAdminClick={() => send(select, {panel: PanelId.Admin})} onStatsClick={() => send(select, {panel: PanelId.Stats})} onLogout={() => send(logout)} details={details}>
+              <MainPanelComponent client={client} restartAction={restartAction} send={send} state={state} id={panel || PanelId.Session} />
+          </Wrapper>
+      </div>
+    );
+}
+
+function App() {
   const history = createBrowserHistory();
   const theme = createMuiTheme({
     palette: {
@@ -37,11 +80,16 @@ function App({ client }) {
     },
   });
 
+  // TODO: handle URL parameters. deploy, .., propagate to Theia. Survive GH login.
+
   return (
     <ThemeProvider theme={theme}>
       <Router history={history}>
         <Switch>
-          <Route exact path={"/"} component={() => <MainPanel client={client} />} />
+          <Route path={"/"} component={() =>
+            <Panel />
+            }
+          />
           <Route exact path={"/logged"}>
             <Redirect
               to={{
@@ -50,10 +98,6 @@ function App({ client }) {
               }}
             />
           </Route>
-          <Route exact path={"/stats"} component={() => <StatsPanel client={client} />} />
-          <Route exact path={"/admin"} component={() => <AdminPanel client={client} />} />
-          <Route path={"/instance"} component={() => <TheiaPanel client={client} />} />
-          <Route component={() => <NotFoundPanel client={client} message="Unknown page" />} />
         </Switch>
       </Router>
     </ThemeProvider>
@@ -74,9 +118,10 @@ if (version) {
 }
 
 ReactDOM.render(
-    <App client={client} />,
+    <App />,
     document.querySelector("main")
 );
 
+// Set domain to root DNS so that they share the same origin and communicate
 const members = document.domain.split(".");
 document.domain = members.slice(members.length-2).join(".");

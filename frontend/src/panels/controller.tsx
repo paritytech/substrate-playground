@@ -112,12 +112,3 @@ function InstanceController({ instances }) {
         );
     }
 }
-
-export function ControllerPanel() {
-    const instances = useDiscovery();
-    return (
-        <div style={{ display: "flex", height: "100vh" }}>
-            <InstanceController instances={instances} />
-        </div>
-    );
-}

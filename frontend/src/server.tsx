@@ -52,8 +52,8 @@ export function intercept({logged = false, noInstance = true, delay = 100}: {log
         admin: true
       } : null;
     res.status(200).json({result: {
-      templates: [],//templates,
-      instance: instance,
+      templates: templates,
+      instance: noInstance? null: instance,
       "all_instances": {"instance1": instance,
                         "instance2": instance,
                         "instance3": instance,
