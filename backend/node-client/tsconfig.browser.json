@@ -1,0 +1,14 @@
+{
+  "declaration":"true",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "outDir": "./dist.browser",
+    "target": "es2015",
+    "module": "es2015",
+    "moduleResolution": "node",
+    "lib": ["es2016", "dom", "es5"]
+  },
+  "include": [
+      "./index.ts"
+  ]
+}

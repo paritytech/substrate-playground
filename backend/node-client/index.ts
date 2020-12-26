@@ -125,7 +125,7 @@ export class Client {
         }));
     }
 
-    async deployInstance(template: string, opts: Object = this.defaultOpts) {
+    async startSession(template: string, opts: Object = this.defaultOpts) {
         return fromResponse(await fetchWithTimeout(`${this.base}/?template=${template}`, {
             method: 'POST',
             headers: headers,
@@ -133,7 +133,15 @@ export class Client {
         }));
     }
     
-    async stopInstance(opts: Object = this.defaultOpts) {
+    async stopSession(opts: Object = this.defaultOpts) {
+        return fromResponse(await fetchWithTimeout(`${this.base}/`, {
+            method: 'DELETE',
+            headers: headers,
+            ...opts
+        }));
+    }
+
+    async listSessions(opts: Object = this.defaultOpts) {
         return fromResponse(await fetchWithTimeout(`${this.base}/`, {
             method: 'DELETE',
             headers: headers,
