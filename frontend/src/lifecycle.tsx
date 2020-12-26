@@ -1,37 +1,52 @@
+import crypto from 'crypto';
 import { assign, Machine } from 'xstate';
 import { useMachine } from '@xstate/react';
 import { Client } from '@substrate/playground-api';
-import { navigateToHomepage, navigateToInstance } from './utils';
+import { PanelId } from './index';
+import terms from 'bundle-text:./terms.md';
+
+const termsHash = crypto.createHash('md5').update(terms).digest('hex');
 
 export interface Context {
+  terms: string,
+  panel: PanelId,
   details?: object,
   instance?: string;
   template?: string;
   templates?: Array<string>;
-  phase?: string;
   error?: string
 }
 
+export const termsUnapproved = "@state/TERMS_UNAPPROVED";
 export const setup = "@state/SETUP";
 export const logged = "@state/LOGGED";
 export const unlogged = "@state/UNLOGGED";
-export const deploying = "@state/DEPLOYING";
-export const stopping = "@state/STOPPING";
-export const failed = "@state/FAILED";
+//export const deploying = "@state/DEPLOYING";
+//export const stopping = "@state/STOPPING";
+//export const failed = "@state/FAILED";
 
 export const success = "@event/SUCCESS";
 export const failure = "@event/FAILURE";
 
+export const termsApproval = "@action/TERMS_APPROVAL";
 export const check = "@action/CHECK";
 export const deploy = "@action/DEPLOY";
 export const stop = "@action/STOP";
+export const select = "@action/SELECT";
 export const restart = "@action/RESTART";
 export const logout = "@action/LOGOUT";
 
-function lifecycle(history, location, client: Client) {
+const termsApprovedKey = 'termsApproved';
+
+function termsApproved(): boolean {
+  const approvedTermsHash = localStorage.getItem(termsApprovedKey);
+  return termsHash == approvedTermsHash;
+}
+
+function lifecycle(client: Client) {
   const pathParam = 'path';
   const deployParam = 'deploy';
-  let template = new URLSearchParams(location.search).get(deployParam);
+  /*let template = new URLSearchParams(location.search).get(deployParam);
   if (location.state?.freshLog) {
     // Restore query params
     const query = localStorage.getItem(pathParam);
@@ -40,17 +55,25 @@ function lifecycle(history, location, client: Client) {
       template = params.get(deployParam);
       history.replace(`/?${params.toString()}`);
     }
-  }
+  }*/
   return Machine<Context>({
   id: 'lifecycle',
-  initial: setup,
+  initial: termsApproved() ? setup: termsUnapproved,
   context: {
-    template: template,
+    terms: terms,
+    panel: PanelId.Session,
+   // template: template,
   },
   states: {
+      [termsUnapproved]: {
+        on: {
+          [termsApproval]: { target: setup,
+                             actions: ['storeTermsHash']},
+        }
+      },
       [setup]: {
         invoke: {
-          src: (context, _event) => async (callback) =>  {
+          src: (context, _event) => async (callback) => {
             // Retrieve initial data
             const response = (await client.getDetails());
             if (response.error) {
@@ -92,14 +115,14 @@ function lifecycle(history, location, client: Client) {
               callback({type: check});
             }
           },
-          onError: {
+          /*onError: {
             target: failed,
-            actions: assign({ error: (_context, event) => event.data.error || event, data: (_context, event) => event.data.data,  details: (_context, event) => event.data?.details})
-          }
+            actions: assign({ error: (_context, event) => event.data.error || event.data, data: (_context, event) => event.data.data,  details: (_context, event) => event.data?.details})
+          }*/
         },
         on: {
-          [deploy]: { target: deploying,
-                      actions: assign({template: (_context, event) => event.template, details: (_context, event) => event.data?.details}) },
+          //[deploy]: { target: deploying,
+          //            actions: assign({template: (_context, event) => event.template, details: (_context, event) => event.data?.details}) },
           [check]: { target: logged,
                      actions: assign({details: (_context, event) => event.data?.details}) }
         }
@@ -107,20 +130,20 @@ function lifecycle(history, location, client: Client) {
       [logged]: {
         on: {[restart]: setup,
              [logout]: unlogged,
-             [stop]: {target: stopping},
-             [deploy]: {target: deploying,
-                        actions: assign({ template: (_, event) => event.template})}}
+             //[stop]: {target: stopping},
+             [select]: {actions: assign({ panel: (_, event) => event.panel})},
+             /*[deploy]: {target: deploying,
+             actions: assign({ template: (_, event) => event.template})*/}
       },
       [unlogged]: {
         invoke: {
-          src: async (ctx, event) => {
+          src: async () => {
             await client.logout();
-            navigateToHomepage(history);
           },
           onDone: {target: setup}
         }
       },
-      [stopping]: {
+      /*[stopping]: {
         invoke: {
           src: (context, event) => async (callback) => {
             await client.stopInstance();
@@ -181,10 +204,16 @@ function lifecycle(history, location, client: Client) {
       [failed]: {
         on: { [stop]: {target: stopping},
               [restart]: setup }
-      }
-  }
-})}
+      }*/
+  }},
+  {
+    actions: {
+      storeTermsHash: () => {
+        localStorage.setItem(termsApprovedKey, termsHash);
+      },
+    }
+  })}
 
-export function useLifecycle(history, location, client: Client) {
-    return useMachine(lifecycle(history, location, client), { devTools: true });
+export function useLifecycle(client: Client) {
+    return useMachine(lifecycle(client), { devTools: true });
 }

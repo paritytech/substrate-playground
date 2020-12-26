@@ -1,6 +1,5 @@
 import clsx from 'clsx';
 import React, { useState } from "react";
-import { useHistory, useLocation } from "react-router-dom";
 import { createStyles, lighten, makeStyles, Theme } from '@material-ui/core/styles';
 import Checkbox from '@material-ui/core/Checkbox';
 import Container from "@material-ui/core/Container";
@@ -18,8 +17,6 @@ import Tooltip from '@material-ui/core/Tooltip';
 import Toolbar from '@material-ui/core/Toolbar';
 import Typography from '@material-ui/core/Typography';
 import { Client, User } from '@substrate/playground-api';
-import { Wrapper } from '../components';
-import { useLifecycle } from '../lifecycle';
 
 const useStyles = makeStyles({
     table: {
@@ -217,57 +214,36 @@ function Users({ client, users }: { client: Client, users: Array<User> }) {
     );
 }
 
-export function AdminPanel({ client }: { client: Client }) {
-    const location = useLocation();
-    const history = useHistory();
-    const [state, send] = useLifecycle(history, location, client);
+export function AdminPanel({ client, state }: { client: Client }) {
     const details = state.context.details;
     const instances = Object.entries(details ? details["all_instances"] : {});
     return (
-        <div style={{ display: "flex", width: "100vw", height: "100vh", alignItems: "center", justifyContent: "center"}}>
-            <Wrapper send={send} details={details}>
-                <Container style={{ display: "flex", flex: 1, justifyContent: "center", alignItems: "center" }}>
-                    <Paper style={{ display: "flex", overflowY: "auto", flexDirection: "column", marginTop: 20, justifyContent: "center", width: "80vw", height: "80vh"}} elevation={3}>
-                        {details?.users?.length > 0
-                        ? <div style={{margin: 20}}>
-                             <Users client={client} users={details.users} />
-                         </div>
-                        : <Container style={{display: "flex", flex: 1, flexDirection: "column", padding: 0, justifyContent: "center", alignItems: "center", overflowY: "auto"}}>
-                             <Typography variant="h5">No users</Typography>
-                          </Container>}
-                        {details?.templates.length > 0
-                        ? <div style={{margin: 20}}>
-                            <Typography variant="h5">Templates</Typography>
-                            <Templates templates={details?.templates} />
-                          </div>
-                        : <Container style={{display: "flex", flex: 1, flexDirection: "column", padding: 0, justifyContent: "center", alignItems: "center", overflowY: "auto"}}>
-                            <Typography variant="h5">No templates</Typography>
-                         </Container>}
-                        {instances.length > 0
-                        ? <div style={{margin: 20}}>
-                            <Typography variant="h5">Instances</Typography>
-                            <Instances instances={instances} />
-                          </div>
-                        : <Container style={{display: "flex", flex: 1, flexDirection: "column", padding: 0, justifyContent: "center", alignItems: "center", overflowY: "auto"}}>
-                            <Typography variant="h5">No instance currently running</Typography>
-                        </Container>}
-                    </Paper>
-                </Container>
-            </Wrapper>
-        </div>
-    );
-}
-
-export function StatsPanel({ client }) {
-    const location = useLocation();
-    const history = useHistory();
-    const [state, send] = useLifecycle(history, location, client);
-    const details = state.context.details;
-    return (
-        <div style={{ display: "flex", width: "100vw", height: "100vh", alignItems: "center", justifyContent: "center"}}>
-            <Wrapper send={send} details={details}>
-                <iframe src="/grafana/" width="100%" height="100%" frameBorder="0"></iframe>
-            </Wrapper>
-        </div>
+        <Container style={{ display: "flex", flex: 1, justifyContent: "center", alignItems: "center" }}>
+            <Paper style={{ display: "flex", overflowY: "auto", flexDirection: "column", marginTop: 20, justifyContent: "center", width: "80vw", height: "80vh"}} elevation={3}>
+                {details?.users?.length > 0
+                ? <div style={{margin: 20}}>
+                        <Users client={client} users={details.users} />
+                    </div>
+                : <Container style={{display: "flex", flex: 1, flexDirection: "column", padding: 0, justifyContent: "center", alignItems: "center", overflowY: "auto"}}>
+                        <Typography variant="h5">No users</Typography>
+                    </Container>}
+                {details?.templates.length > 0
+                ? <div style={{margin: 20}}>
+                    <Typography variant="h5">Templates</Typography>
+                    <Templates templates={details?.templates} />
+                    </div>
+                : <Container style={{display: "flex", flex: 1, flexDirection: "column", padding: 0, justifyContent: "center", alignItems: "center", overflowY: "auto"}}>
+                    <Typography variant="h5">No templates</Typography>
+                    </Container>}
+                {instances.length > 0
+                ? <div style={{margin: 20}}>
+                    <Typography variant="h5">Instances</Typography>
+                    <Instances instances={instances} />
+                    </div>
+                : <Container style={{display: "flex", flex: 1, flexDirection: "column", padding: 0, justifyContent: "center", alignItems: "center", overflowY: "auto"}}>
+                    <Typography variant="h5">No instance currently running</Typography>
+                </Container>}
+            </Paper>
+        </Container>
     );
 }

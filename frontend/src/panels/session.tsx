@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import marked from 'marked';
-import { useHistory, useLocation } from "react-router-dom";
 import Button from '@material-ui/core/Button';
 import Card from '@material-ui/core/Card';
 import CardContent from '@material-ui/core/CardContent';
@@ -19,10 +18,7 @@ import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
 import Typography from '@material-ui/core/Typography';
 import { makeStyles, createStyles, Theme } from '@material-ui/core/styles';
-import { ErrorMessage, Loading, Wrapper } from "../components";
-import { useLifecycle, deploy, deploying, failed, logged, restart, setup, stop, stopping } from '../lifecycle';
-import { LoginPanel } from "./login";
-import { navigateToInstance } from "../utils";
+import { ErrorMessage } from "../components";
 
 const useStyles = makeStyles((theme: Theme) =>
     createStyles({
@@ -34,7 +30,7 @@ const useStyles = makeStyles((theme: Theme) =>
     }),
 );
 
-function TemplateSelector({templates, onSelect, onRetryClick, state, user}) {
+function TemplateSelector({templates, onDeployed, onRetry}) {
     const publicTemplates = templates.filter(t => t.public);
     const [selection, select] = useState(publicTemplates[0]);
     const templatesAvailable = templates?.length > 0;
@@ -45,7 +41,7 @@ function TemplateSelector({templates, onSelect, onRetryClick, state, user}) {
         <Typography variant="h5" style={{padding: 20}}>Select a template</Typography>
         <Divider orientation="horizontal" />
         <Container style={{display: "flex", flex: 1, padding: 0, alignItems: "center", overflowY: "auto"}}>
-            {(!state.matches(failed) && templatesAvailable)
+            {templatesAvailable
                 ? <div style={{display: "flex", flex: 1, flexDirection: "row", minHeight: 0, height: "100%"}}>
                     <List style={{paddingTop: 0, paddingBottom: 0, overflowY: "auto"}}>
                         {publicTemplates.map((template, index: number) => (
@@ -73,12 +69,12 @@ function TemplateSelector({templates, onSelect, onRetryClick, state, user}) {
                                 </Typography>
                             </div>}
                     </div>
-                    : <ErrorMessage reason="Can't find any template. Is the templates configuration incorrect." action={onRetryClick} />
+                    : <ErrorMessage reason="Can't find any template. Is the templates configuration incorrect." action={onRetry} />
                 }
             </Container>
             <Divider orientation="horizontal" />
             <Container style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", paddingTop: 10, paddingBottom: 10 }}>
-                <Button onClick={() => onSelect(selection.id)} color="primary" variant="contained" disableElevation disabled={user == null || (!templatesAvailable || state.matches(failed))}>
+                <Button onClick={() => onDeployed(selection.id)} color="primary" variant="contained" disableElevation disabled={!templatesAvailable}>
                     Create
                 </Button>
             </Container>
@@ -187,7 +183,7 @@ export function InstanceDetails({ instance }) {
     );
 }
 
-function ExistingInstance({instance, onStopClick, onConnectClick}) {
+function ExistingInstance({instance, onStop, onConnect}) {
     const status = instance?.pod?.details?.status;
     return (
     <React.Fragment>
@@ -199,10 +195,10 @@ function ExistingInstance({instance, onStopClick, onConnectClick}) {
         <Divider orientation="horizontal" />
         <Container style={{display: "flex", flexDirection: "column", alignItems: "flex-end", paddingTop: 10, paddingBottom: 10}}>
             <div>
-                <Button style={{marginRight: 10}} onClick={onStopClick} color="secondary" variant="outlined" disableElevation>
+                <Button style={{marginRight: 10}} onClick={onStop} color="secondary" variant="outlined" disableElevation>
                     Stop
                 </Button>
-                <Button onClick={() => onConnectClick(instance)} disabled={status?.phase != "Running"} color="primary" variant="contained" disableElevation>
+                <Button onClick={() => onConnect(instance)} disabled={status?.phase != "Running"} color="primary" variant="contained" disableElevation>
                     Connect
                 </Button>
                 </div>
@@ -211,47 +207,15 @@ function ExistingInstance({instance, onStopClick, onConnectClick}) {
     );
 }
 
-export function MainPanel({ client }) {
-    const location = useLocation();
-    const history = useHistory();
-    const [state, send] = useLifecycle(history, location, client);
-
-    const details = state.context.details;
-
-    function Content() {
-        if (state.matches(logged)) {
-            if (details?.instance) {
-                return <ExistingInstance onConnectClick={(instance) => navigateToInstance(history)} onStopClick={() => send(stop)} instance={details.instance} />;
-            } else if (details?.user) {
-                return <TemplateSelector state={state} user={details.user} templates={details.templates} onRetryClick={() => send(restart)} onSelect={(template) => send(deploy, { template: template })} />;
-            } else {
-                return <LoginPanel />;
-            }
-        } else if (state.matches(setup) || state.matches(stopping) || state.matches(deploying)) {
-            return <Loading />;
-        } else if (state.matches(failed)) {
-            const instance = state.context?.data?.instance;
-            if (instance) {
-                return <ErrorMessage title="Quota reached" actionTitle="Shoot it" reason="Your maximum number of instances concurrently running has been reached" action={() => send(stop, {instance: instance})} />;
-            } else {
-                return <ErrorMessage reason={state.context.error?.toString() || "Unknown error"} action={() => send(restart)} />;
-            }
-        } else if (!details?.instance || details?.templates?.length == 0) {
-            return <ErrorMessage reason={"No templates"} action={() => send(restart)} />;
-        } else {
-            return <div>Unknown state: ${state.value}</div>;
-        }
-    }
-
+export function SessionPanel({ state, onDeployed, onConnect, onRetry, onStopSession }) {
+    const {instance, templates} = state.context.details; // TODO use direct templates endpoint
     return (
-        <div style={{ display: "flex", width: "100vw", height: "100vh" }}>
-            <Wrapper send={send} details={details}>
-                <Container style={{ display: "flex", flex: 1, justifyContent: "center", alignItems: "center" }}>
-                    <Paper style={{ display: "flex", flexDirection: "column", height: "60vh", width: "60vw", justifyContent: "center"}} elevation={3}>
-                        <Content />
-                    </Paper>
-                </Container>
-            </Wrapper>
-        </div>
+        <Container style={{ display: "flex", flex: 1, justifyContent: "center", alignItems: "center" }}>
+            <Paper style={{ display: "flex", flexDirection: "column", height: "60vh", width: "60vw", justifyContent: "center"}} elevation={3}>
+                {instance
+                 ? <ExistingInstance onConnect={onConnect} onStop={onStopSession} instance={instance} />
+                 : <TemplateSelector templates={templates} onRetry={onRetry} onDeployed={onDeployed} />}
+            </Paper>
+        </Container>
     );
 }

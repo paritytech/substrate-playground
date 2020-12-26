@@ -1,7 +1,5 @@
 import React, { useState } from "react";
-import { useHistory, useLocation } from "react-router-dom";
 import { useSpring, animated } from 'react-spring'
-import { Client } from "@substrate/playground-api";
 import { Alert, AlertTitle } from '@material-ui/lab';
 import AppBar from '@material-ui/core/AppBar';
 import Avatar from '@material-ui/core/Avatar';
@@ -16,12 +14,9 @@ import Link from '@material-ui/core/Link';
 import Menu from '@material-ui/core/Menu';
 import MenuItem from '@material-ui/core/MenuItem';
 import MoreVertIcon from '@material-ui/icons/MoreVert';
-import Paper from '@material-ui/core/Paper';
 import Toolbar from '@material-ui/core/Toolbar';
 import Typography from '@material-ui/core/Typography';
 import { useInterval } from './hooks';
-import { useLifecycle, logout, restart } from './lifecycle';
-import { navigateToAdmin, navigateToStats } from "./utils";
 
 function wrapAction(action: (() => void) | Promise<void>, call: (boolean) => void):(() => void) | Promise<void> {
     if (action instanceof Promise) {
@@ -115,43 +110,13 @@ export function Loading({ phase, retry = 0 }: { phase?: string, retry?: number }
     );
 }
 
-export function Panel({ client, children }) {
-    const location = useLocation();
-    const history = useHistory();
-    const [state, send] = useLifecycle(history, location, client);
-    const details = state.context.details;
-    return (
-        <div style={{ display: "flex", width: "100vw", height: "100vh" }}>
-            <Wrapper send={send} details={details}>
-                {children}
-            </Wrapper>
-        </div>
-        );
-  }
-
-export function NotFoundPanel({client, message}: {message?: string, client: Client}) {
-    const location = useLocation();
-    const history = useHistory();
-    const [state, send] = useLifecycle(history, location, client);
-    return (
-        <Panel client={client}>
-            <Container style={{ display: "flex", flex: 1, justifyContent: "center", alignItems: "center" }}>
-                <Paper style={{ display: "flex", flexDirection: "column", height: "60vh", width: "60vw", justifyContent: "center"}} elevation={3}>
-                    <ErrorMessage title={message || "Oups"} action={() => send(restart)} actionTitle="GO HOME" />
-                </Paper>
-            </Container>
-        </Panel>
-        );
-}
-
 function login(): void {
     localStorage.setItem('login', "true");
     window.location.href = "/api/login/github";
 }
 
-function Nav({ send, details }) {
+function Nav({ onPlayground, onStatsClick, onAdminClick, onLogout, details }) {
     const user = details?.user;
-    const history = useHistory();
     const [anchorEl, setAnchorEl] = React.useState(null);
     const open = Boolean(anchorEl);
     const handleMenu = (event) => setAnchorEl(event.currentTarget);
@@ -166,7 +131,7 @@ function Nav({ send, details }) {
         <AppBar position="sticky">
             <Toolbar style={{ justifyContent: "space-between" }} variant="dense">
                 <Typography variant="h6">
-                    <Button onClick={() => send(restart)}>Playground</Button>
+                    <Button onClick={onPlayground}>Playground</Button>
                 </Typography>
                 <div style={{display: "flex", alignItems: "center"}}>
                     {user?.admin &&
@@ -196,8 +161,8 @@ function Nav({ send, details }) {
                             open={openAdmin}
                             onClose={handleCloseAdmin}
                         >
-                            <MenuItem onClick={async () => {handleCloseAdmin(); await navigateToStats(history)}}>STATS</MenuItem>
-                            <MenuItem onClick={async () => {handleCloseAdmin(); await navigateToAdmin(history)}}>ADMIN</MenuItem>
+                            <MenuItem onClick={async () => {handleCloseAdmin(); onStatsClick();}}>STATS</MenuItem>
+                            <MenuItem onClick={async () => {handleCloseAdmin(); onAdminClick();}}>ADMIN</MenuItem>
                         </Menu>
                     </div>}
                     {logged
@@ -228,7 +193,7 @@ function Nav({ send, details }) {
                                 onClose={handleClose}
                             >
                                 <MenuItem onClick={() => window.open("https://docs.google.com/forms/d/e/1FAIpQLSdXpq_fHqS_ow4nC7EpGmrC_XGX_JCIRzAqB1vaBtoZrDW-ZQ/viewform?edit_requested=true")}>FEEDBACK</MenuItem>
-                                <MenuItem onClick={async () => {handleClose(); send(logout)}}>LOGOUT</MenuItem>
+                                <MenuItem onClick={async () => {handleClose(); onLogout()}}>LOGOUT</MenuItem>
                             </Menu>
                         </div>
                         : (user === null
@@ -252,17 +217,16 @@ function Nav({ send, details }) {
     );
 }
 
-export function Wrapper({ send, details, light = false, children}) {
+export function Wrapper({ onPlayground, onStatsClick, onAdminClick, onLogout, details, children}) {
     return (
         <div style={{display: "flex", flexDirection: "column", width: "inherit", height: "inherit"}}>
 
-            <Nav send={send} details={details} />
+            <Nav onPlayground={onPlayground} onStatsClick={onStatsClick} onAdminClick={onAdminClick} onLogout={onLogout} details={details} />
 
             <Fade in appear>
                 {children}
             </Fade>
 
-            {!light &&
             <Container style={{display: "flex", justifyContent: "center"}} component="footer" maxWidth={false}>
                 <Link
                     href="https://www.parity.io/privacy/"
@@ -271,7 +235,7 @@ export function Wrapper({ send, details, light = false, children}) {
                     style={{ margin: 15 }}>
                     Privacy Policy
                 </Link>
-            </Container>}
+            </Container>
 
         </div>
     );
