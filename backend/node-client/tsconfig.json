@@ -1,4 +1,5 @@
 {
+  "declaration":"true",
   "compilerOptions": {
     "baseUrl": ".",
     "outDir": "./dist",

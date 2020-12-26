@@ -1,7 +1,7 @@
 {
-  "name": "@substrate/playground-api",
+  "name": "@substrate/playground-client",
   "version": "1.0.4",
-  "description": "An isomorphic API client for Substrate Playground",
+  "description": "An isomorphic client for Substrate Playground",
   "main": "dist/index.js",
   "browser": "dist.browser/index.js",
   "scripts": {
@@ -14,7 +14,7 @@
   "files": [
     "dist"
   ],
-  "homepage": "https://github.com/paritytech/substrate-playground/tree/master/backend/api",
+  "homepage": "https://github.com/paritytech/substrate-playground/tree/master/backend/node-client",
   "author": "Julien Eluard <julien@parity.io>",
   "license": "Apache-2.0",
   "repository": {
