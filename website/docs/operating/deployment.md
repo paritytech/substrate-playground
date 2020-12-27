@@ -113,7 +113,7 @@ Then update the tls secret:
 
 ```
 gcloud container clusters get-credentials substrate-playground-staging --region us-central1-a
-ENVIRONMENT=staging make k8s-setup
+ENV=staging make k8s-setup
 sudo kubectl create secret tls playground-tls --save-config --key /etc/letsencrypt/live/playground-staging.substrate.dev/privkey.pem --cert /etc/letsencrypt/live/playground-staging.substrate.dev/fullchain.pem --namespace=playground --dry-run=true -o yaml | sudo kubectl apply -f -
 ```
 
@@ -134,7 +134,7 @@ Then update the tls secret:
 
 ```
 gcloud container clusters get-credentials substrate-playground --region us-central1-a
-ENVIRONMENT=production make k8s-setup
+ENV=production make k8s-setup
 sudo kubectl create secret tls playground-tls --save-config --key /etc/letsencrypt/live/playground.substrate.dev/privkey.pem --cert /etc/letsencrypt/live/playground.substrate.dev/fullchain.pem --namespace=playground --dry-run=true -o yaml | sudo kubectl apply -f -
 ```
 
@@ -164,7 +164,7 @@ Set required ConfigMap and Secret as defined in the newly created OAuth app:
 # WARNING Make sure all needed info are set before running those commands
 kubectl create configmap playground-config --namespace=playground --from-literal=github.clientId="???"
 kubectl create secret generic playground-secrets --namespace=playground --from-literal=github.clientSecret="???" --from-literal=rocket.secretKey=`openssl rand -base64 32`
-ENVIRONMENT=production make k8s-update-templates-config
+ENV=production make k8s-update-templates-config
 # Also make sure playground-users is defined
 ```
 
@@ -173,7 +173,7 @@ ENVIRONMENT=production make k8s-update-templates-config
 Finally, deploy the playground infrastructure:
 
 ```
-ENVIRONMENT=production make k8s-deploy-playground
+ENV=production make k8s-deploy-playground
 ```
 ### Sanity checks
 

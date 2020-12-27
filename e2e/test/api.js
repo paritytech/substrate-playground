@@ -2,7 +2,7 @@ import test from 'ava';
 import pkg from '@substrate/playground-api';
 const { Client } = pkg;
 
-const env = process.env.ENVIRONMENT || "development";
+const env = process.env.ENV || "dev";
 const client = new Client({env: env});
 
 test('unauthenticated - should not be able to create a new instance', async (t) => {

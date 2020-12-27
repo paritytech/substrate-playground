@@ -1,5 +1,5 @@
 ## Integration tests
 
 ```shell
-ENVIRONMENT=staging yarn test
+ENV=staging yarn test
 ```

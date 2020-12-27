@@ -2,9 +2,9 @@ import test from 'ava';
 import { chromium } from 'playwright';
 
 function playgroundDomain() {
-  const env = process.env.ENVIRONMENT || "development";
+  const env = process.env.ENV || "dev";
   switch (env) {
-    case "development":
+    case "dev":
       return "http://playground-dev.substrate.test";
     case "staging":
       return "https://playground-staging.substrate.dev";

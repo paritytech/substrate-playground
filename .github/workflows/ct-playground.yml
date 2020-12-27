@@ -28,7 +28,7 @@ jobs:
         continue-on-error: true
         timeout-minutes: 3
         env:
-          ENVIRONMENT: ${{ matrix.env }}
+          ENV: ${{ matrix.env }}
 
       - if: ${{ failure() }}
         uses: s3krit/matrix-message-action@v0.0.3
