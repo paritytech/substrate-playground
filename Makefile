@@ -21,16 +21,14 @@ ifeq (, $(shell which kustomize))
     $(error "kustomize not installed, see https://github.com/kubernetes-sigs/kustomize")
 endif
 
-# ENVIRONMENT defaults to dev
-ifeq ($(ENVIRONMENT),)
-  ENVIRONMENT=dev
-endif
+# ENV defaults to dev
+ENV?=dev
 
 # Extract all environments from conf/k8s/overlays/
-ENVIRONMENTS := $(shell cd conf/k8s/overlays/ && ls -d *)
+ENVS := $(shell cd conf/k8s/overlays/ && ls -d *)
 
-ifeq ($(filter $(ENVIRONMENT),$(ENVIRONMENTS)),)
-    $(error ENVIRONMENT should be one of ($(ENVIRONMENTS)) but was $(ENVIRONMENT))
+ifeq ($(filter $(ENV),$(ENVS)),)
+    $(error ENV should be one of ($(ENVS)) but was $(ENV))
 endif
 
 # Docker images names
@@ -38,10 +36,10 @@ PLAYGROUND_BACKEND_API_DOCKER_IMAGE_NAME=${DOCKER_ORG}/substrate-playground-back
 PLAYGROUND_BACKEND_UI_DOCKER_IMAGE_NAME=${DOCKER_ORG}/substrate-playground-backend-ui
 TEMPLATE_BASE=${DOCKER_ORG}/substrate-playground-template-base
 TEMPLATE_THEIA_BASE=${DOCKER_ORG}/substrate-playground-template-theia-base
-GKE_CLUSTER=substrate-playground-${ENVIRONMENT}
+GKE_CLUSTER=substrate-playground-${ENV}
 
-# Derive CONTEXT from ENVIRONMENT
-ifeq ($(ENVIRONMENT), dev)
+# Derive CONTEXT from ENV
+ifeq ($(ENV), dev)
   CONTEXT=docker-desktop
 else
   CONTEXT=gke_${GKE_PROJECT}_${GKE_ZONE}_${GKE_CLUSTER}
@@ -52,10 +50,10 @@ COLOR_RED:= $(shell tput bold; tput setaf 1)
 COLOR_GREEN:= $(shell tput bold; tput setaf 2)
 COLOR_RESET:= $(shell tput sgr0)
 
-# Include .env for extra customisable ENV variable 
+# Include .env for extra customisable ENV variable
 include .env
 # Include an optional .env for per environment ENV variable
--include .env.${ENVIRONMENT}
+-include .env.${ENV}
 
 # TODO check all required env are defined? BASE_TEMPLATE_VERSION, NAMESPACE, GKE_PROJECT, GKE_ZONE, DOCKER_ORG
 
@@ -97,7 +95,7 @@ build-test-templates: build-template-base build-template-theia-base
 	@cd templates; docker build --force-rm --build-arg BASE_TEMPLATE_VERSION=sha-${THEIA_DOCKER_IMAGE_VERSION} -t ${TAG} -f Dockerfile.template test
 	@cd templates; docker build --force-rm --build-arg BASE_TEMPLATE_VERSION=sha-${THEIA_DOCKER_IMAGE_VERSION} --build-arg TEMPLATE_IMAGE=${TAG} -t ${TAG_THEIA} -f Dockerfile.theia-template .
 
-push-test-templates: build-test-templates 
+push-test-templates: build-test-templates
 	docker push paritytech/substrate-playground-template-test:latest
 	docker push paritytech/substrate-playground-template-test-theia:latest
 
@@ -120,7 +118,7 @@ push-backend-docker-images: build-backend-docker-images ## Push newly built back
 k8s-setup:
 	$(eval CURRENT_CONTEXT=$(shell kubectl config current-context))
 	$(eval CURRENT_NAMESPACE=$(shell kubectl config view --minify --output 'jsonpath={..namespace}'))
-	@echo "You are about to interact with the ${COLOR_GREEN}${ENVIRONMENT}${COLOR_RESET} environment. (Modify the environment by setting the ${COLOR_BOLD}'ENVIRONMENT'${COLOR_RESET} variable)"
+	@echo "You are about to interact with the ${COLOR_GREEN}${ENV}${COLOR_RESET} environment. (Modify the environment by setting the ${COLOR_BOLD}'ENV'${COLOR_RESET} variable)"
 	@echo "(namespace: ${COLOR_GREEN}${CURRENT_NAMESPACE}${COLOR_RESET}, context: ${COLOR_GREEN}${CURRENT_CONTEXT}${COLOR_RESET})"
 	@if [ "${CURRENT_CONTEXT}" != "${CONTEXT}" ] ;then \
 	  read -p "Current context (${COLOR_GREEN}${CURRENT_CONTEXT}${COLOR_RESET}) doesn't match environment. Update to ${COLOR_RED}${CONTEXT}${COLOR_RESET}? [yN]" proceed; \
@@ -157,16 +155,16 @@ k8s-dev: k8s-setup
 	@cd conf/k8s; skaffold dev
 
 k8s-deploy-playground: k8s-setup ## Deploy playground on kubernetes
-	kustomize build conf/k8s/overlays/${ENVIRONMENT}/ | kubectl apply --record -f -
+	kustomize build conf/k8s/overlays/${ENV}/ | kubectl apply --record -f -
 
 k8s-undeploy-playground: k8s-setup ## Undeploy playground from kubernetes
-	kustomize build conf/k8s/overlays/${ENVIRONMENT}/ | kubectl delete -f -
+	kustomize build conf/k8s/overlays/${ENV}/ | kubectl delete -f -
 
 k8s-undeploy-theia: k8s-setup ## Undeploy all theia pods and services from kubernetes
 	kubectl delete pods,services -l app.kubernetes.io/component=theia --namespace=${NAMESPACE}
 
-k8s-update-templates-config: k8s-setup ## Creates or replaces the `templates` config map from `conf/k8s/overlays/ENVIRONMENT/templates`
-	kubectl create configmap playground-templates --namespace=${NAMESPACE} --from-file=conf/k8s/overlays/${ENVIRONMENT}/templates/ --dry-run=client -o yaml | kubectl apply -f -
+k8s-update-templates-config: k8s-setup ## Creates or replaces the `templates` config map from `conf/k8s/overlays/ENV/templates`
+	kubectl create configmap playground-templates --namespace=${NAMESPACE} --from-file=conf/k8s/overlays/${ENV}/templates/ --dry-run=client -o yaml | kubectl apply -f -
 
-k8s-update-users-config: k8s-setup ## Creates or replaces the `users` config map from `conf/k8s/overlays/ENVIRONMENT/users`
-	kubectl create configmap playground-users --namespace=${NAMESPACE} --from-file=conf/k8s/overlays/${ENVIRONMENT}/users/ --dry-run=client -o yaml | kubectl apply -f -
+k8s-update-users-config: k8s-setup ## Creates or replaces the `users` config map from `conf/k8s/overlays/ENV/users`
+	kubectl create configmap playground-users --namespace=${NAMESPACE} --from-file=conf/k8s/overlays/${ENV}/users/ --dry-run=client -o yaml | kubectl apply -f -

@@ -140,7 +140,7 @@ jobs:
         run: |-
           curl -sfLo kustomize https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv3.6.1/kustomize_v3.6.1_linux_amd64.tar.gz
           tar zxvf kustomize*
-          chmod u+x ./kustomize  
+          chmod u+x ./kustomize
         working-directory: conf/k8s/overlays/${{ steps.env.outputs.environment }}
 
       - name: Update version
@@ -176,7 +176,7 @@ jobs:
         working-directory: ./e2e
         continue-on-error: true
         env:
-          ENVIRONMENT: ${{ steps.env.outputs.environment }}
+          ENV: ${{ steps.env.outputs.environment }}
 
       # TODO
       # if not ok, fails and rollback
