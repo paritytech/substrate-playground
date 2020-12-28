@@ -2,7 +2,8 @@ image: paritytech/substrate-playground-template-node-template-theia:sha-4faf480
 repository: substrate-developer-hub/substrate-node-template
 name: Node template
 description: '## The Node template you know and love'
-public: true
+tags:
+    - public: true
 runtime:
   ports:
     - name: ssh

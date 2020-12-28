@@ -8,7 +8,8 @@ data:
     image: paritytech/substrate-playground-template-test-theia:latest
     name: Test
     description: 'A stock template'
-    public: true
+    tags:
+      - public: true
     runtime:
       ports:
         - name: wss

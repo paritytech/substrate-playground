@@ -2,7 +2,8 @@ image: paritytech/substrate-playground-template-assignement-theia:sha-aa7538d
 repository: SubstrateDevAcademy/assignment-1-template
 name: Assignement
 description: '## Industry connect assignement'
-public: true
+tags:
+    - public: true
 runtime:
   ports:
     - name: wss

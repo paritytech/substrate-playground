@@ -1,13 +1,16 @@
 use serde::{Deserialize, Serialize};
 use serde_yaml::from_str;
-use std::fmt::{self, Display, Formatter};
+use std::{
+    collections::BTreeMap,
+    fmt::{self, Display, Formatter},
+};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Template {
-    pub image: String,
     pub name: String,
+    pub image: String,
     pub description: String,
-    pub public: bool,
+    pub tags: Option<BTreeMap<String, String>>,
     pub runtime: Option<RuntimeConfiguration>,
 }
 

@@ -5,26 +5,10 @@ use std::fmt::{self, Display, Formatter};
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct User {
     pub id: String,
-    pub avatar: String,
+    pub admin: bool,
 }
 
 impl Display for User {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "{}",
-            serde_yaml::to_string(self).map_err(|_| fmt::Error {})?
-        )
-    }
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct Admin {
-    pub id: String,
-    pub avatar: String,
-}
-
-impl Display for Admin {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(
             f,
@@ -53,4 +37,27 @@ impl Display for UserConfiguration {
             serde_yaml::to_string(self).map_err(|_| fmt::Error {})?
         )
     }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct LoggedUser {
+    pub id: String,
+    pub avatar: String,
+    pub admin: bool,
+}
+
+impl Display for LoggedUser {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{}",
+            serde_yaml::to_string(self).map_err(|_| fmt::Error {})?
+        )
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct LoggedAdmin {
+    pub id: String,
+    pub avatar: String,
 }

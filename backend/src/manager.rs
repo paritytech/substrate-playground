@@ -1,7 +1,10 @@
-use crate::kubernetes::{Engine, InstanceDetails, PodDetails};
-use crate::metrics::Metrics;
 use crate::template::Template;
-use crate::user::{Admin, User, UserConfiguration};
+use crate::user::{User, UserConfiguration};
+use crate::{
+    kubernetes::{Engine, PodDetails},
+    session::SessionConfiguration,
+};
+use crate::{metrics::Metrics, session::Session, user::LoggedUser};
 use log::{error, info, warn};
 use serde::{Deserialize, Serialize};
 use std::{
@@ -35,12 +38,10 @@ fn is_running(pod: &PodDetails) -> bool {
     phase(pod).map_or(false, |phase| phase == "Running")
 }
 
-fn running_instances(
-    instances: BTreeMap<String, InstanceDetails>,
-) -> BTreeMap<String, InstanceDetails> {
-    instances
+fn running_sessions(sessions: Vec<Session>) -> Vec<Session> {
+    sessions
         .into_iter()
-        .filter(|instance| is_running(&instance.1.pod))
+        .filter(|session| is_running(&session.pod))
         .collect()
 }
 
@@ -60,11 +61,8 @@ pub struct PlaygroundUser {
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct PlaygroundDetails {
-    pub pod: PodDetails,
-    pub templates: BTreeMap<String, Template>,
-    pub users: Option<BTreeMap<String, UserConfiguration>>,
-    pub instance: Option<InstanceDetails>,
-    pub all_instances: Option<BTreeMap<String, InstanceDetails>>,
+    pub templates: Vec<Template>,
+    pub session: Option<Session>,
     pub user: Option<PlaygroundUser>,
 }
 
@@ -74,21 +72,21 @@ impl Manager {
     pub async fn new() -> Result<Self, Box<dyn Error>> {
         let metrics = Metrics::new()?;
         let engine = Engine::new().await?;
-        // Go through all existing instances and update the ingress
-        match engine.clone().list_all().await {
-            Ok(all_instances) => {
+        // Go through all existing sessions and update the ingress
+        match engine.clone().list_sessions().await {
+            Ok(sessions) => {
                 engine
                     .clone()
                     .patch_ingress(
-                        running_instances(all_instances)
+                        running_sessions(sessions)
                             .iter()
-                            .map(|i| (i.1.user_uuid.clone(), &i.1.template))
+                            .map(|i| (i.username.clone(), &i.template))
                             .collect(),
                     )
                     .await?;
             }
             Err(err) => error!(
-                "Failed to call list_all: {}. Existing instances won't be accessible",
+                "Failed to call list_all: {}. Existing sessions won't be accessible",
                 err
             ),
         }
@@ -104,22 +102,21 @@ impl Manager {
             thread::sleep(Manager::FIVE_SECONDS);
 
             // Track some deployments metrics
-            // TODO can't this be merged with the reaping logic bellow?
             let instances_thread = self.clone().instances.clone();
             if let Ok(mut instances2) = instances_thread.lock() {
                 let instances3 = &mut instances2.clone();
                 for id in instances3 {
-                    match self.clone().get_instance(&id.0) {
-                        Ok(details) => {
+                    match self.clone().get_session(&id.0) {
+                        Ok(session) => {
                             let phase =
-                                phase(&details.pod).unwrap_or_else(|| "Unknown".to_string());
+                                phase(&session.pod).unwrap_or_else(|| "Unknown".to_string());
                             // Deployed instances are removed from the set
                             // Additionally the deployment time is tracked
                             match phase.as_str() {
                                 "Running" | "Failed" => {
-                                    instances2.remove(&details.user_uuid);
+                                    instances2.remove(&session.username);
                                     // TODO track success / failure
-                                    if let Some(duration) = elapsed(&details.pod) {
+                                    if let Some(duration) = elapsed(&session.pod) {
                                         self.clone()
                                             .metrics
                                             .observe_deploy_duration(&id.0, duration.as_secs_f64());
@@ -140,25 +137,28 @@ impl Manager {
             }
 
             // Go through all Running pods and figure out if they have to be undeployed
-            match self.clone().list_all() {
-                Ok(all_instances) => {
-                    for (username, instance) in running_instances(all_instances) {
-                        if let Some(duration) = elapsed(&instance.pod) {
-                            if duration > instance.session_duration {
+            match self.clone().list_sessions() {
+                Ok(sessions) => {
+                    for session in running_sessions(sessions) {
+                        if let Some(duration) = elapsed(&session.pod) {
+                            if duration > session.session_duration {
                                 info!(
                                     "Undeploying {} {:?} {:?}",
-                                    username, duration, instance.session_duration
+                                    session.username, duration, session.session_duration
                                 );
 
-                                match self.clone().undeploy(&username) {
+                                match self.clone().delete_session(&session.username) {
                                     Ok(()) => (),
                                     Err(err) => {
-                                        warn!("Error while undeploying {}: {}", username, err)
+                                        warn!(
+                                            "Error while undeploying {}: {}",
+                                            session.username, err
+                                        )
                                     }
                                 }
                             }
                         } else {
-                            error!("Failed to compute this instance lifetime");
+                            error!("Failed to compute this session lifetime");
                         }
                     }
                 }
@@ -173,18 +173,13 @@ fn new_runtime() -> Result<Runtime, String> {
 }
 
 impl Manager {
-    pub fn get(self, user: User) -> Result<PlaygroundDetails, String> {
-        let pod = new_runtime()?.block_on(self.clone().engine.get())?;
-        let templates = new_runtime()?.block_on(self.clone().engine.get_templates())?;
-        let users = new_runtime()?.block_on(self.clone().engine.list_users())?;
+    pub fn get(self, user: LoggedUser) -> Result<PlaygroundDetails, String> {
+        let templates = new_runtime()?.block_on(self.clone().engine.list_templates())?;
         Ok(PlaygroundDetails {
-            pod,
             templates,
-            users: Some(users),
-            instance: new_runtime()?
-                .block_on(self.engine.get_instance(user.id.as_str()))
+            session: new_runtime()?
+                .block_on(self.engine.get_session(user.id.as_str()))
                 .ok(),
-            all_instances: None,
             user: Some(PlaygroundUser {
                 id: user.id,
                 avatar: user.avatar,
@@ -193,42 +188,18 @@ impl Manager {
         })
     }
 
-    pub fn get_admin(self, admin: Admin) -> Result<PlaygroundDetails, String> {
-        let pod = new_runtime()?.block_on(self.clone().engine.get())?;
-        let templates = new_runtime()?.block_on(self.clone().engine.get_templates())?;
-        let users = new_runtime()?.block_on(self.clone().engine.list_users())?;
-        Ok(PlaygroundDetails {
-            pod,
-            templates,
-            users: Some(users),
-            instance: new_runtime()?
-                .block_on(self.clone().engine.get_instance(admin.id.as_str()))
-                .ok(),
-            all_instances: Some(new_runtime()?.block_on(self.engine.list_all())?),
-            user: Some(PlaygroundUser {
-                id: admin.id,
-                avatar: admin.avatar,
-                admin: true,
-            }),
-        })
-    }
-
     pub fn get_unlogged(self) -> Result<PlaygroundDetails, String> {
-        let pod = new_runtime()?.block_on(self.clone().engine.get())?;
-        let templates = new_runtime()?.block_on(self.engine.get_templates())?;
+        let templates = new_runtime()?.block_on(self.engine.list_templates())?;
         Ok(PlaygroundDetails {
-            pod,
             templates,
-            users: None,
-            instance: None,
-            all_instances: None,
+            session: None,
             user: None,
         })
     }
 
     // Users
 
-    pub fn list_users(self) -> Result<BTreeMap<String, UserConfiguration>, String> {
+    pub fn list_users(self) -> Result<Vec<User>, String> {
         new_runtime()?.block_on(self.engine.list_users())
     }
 
@@ -240,16 +211,24 @@ impl Manager {
         new_runtime()?.block_on(self.engine.delete_user(id))
     }
 
-    pub fn get_instance(self, instance_uuid: &str) -> Result<InstanceDetails, String> {
-        new_runtime()?.block_on(self.engine.get_instance(&instance_uuid))
+    // Sessions
+
+    pub fn get_session(self, username: &str) -> Result<Session, String> {
+        new_runtime()?.block_on(self.engine.get_session(&username))
     }
 
-    pub fn list_all(&self) -> Result<BTreeMap<String, InstanceDetails>, String> {
-        new_runtime()?.block_on(self.clone().engine.list_all())
+    pub fn list_sessions(&self) -> Result<Vec<Session>, String> {
+        new_runtime()?.block_on(self.clone().engine.list_sessions())
     }
 
-    pub fn deploy(self, username: &str, template: &str) -> Result<String, String> {
-        let result = new_runtime()?.block_on(self.engine.deploy(&username, &template));
+    pub fn create_or_update_session(
+        self,
+        username: &str,
+        session: SessionConfiguration,
+    ) -> Result<String, String> {
+        let template = session.clone().template;
+        let result =
+            new_runtime()?.block_on(self.engine.create_or_update_session(&username, session));
         match result.clone() {
             Ok(instance_uuid) => {
                 if let Ok(mut instances) = self.instances.lock() {
@@ -266,8 +245,8 @@ impl Manager {
         result
     }
 
-    pub fn undeploy(self, username: &str) -> Result<(), String> {
-        let result = new_runtime()?.block_on(self.engine.undeploy(&username));
+    pub fn delete_session(self, username: &str) -> Result<(), String> {
+        let result = new_runtime()?.block_on(self.engine.delete_session(&username));
         match result {
             Ok(_) => self.metrics.inc_undeploy_counter(&username),
             Err(_) => self.metrics.inc_undeploy_failures_counter(&username),
