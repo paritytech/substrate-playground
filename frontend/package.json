@@ -17,7 +17,7 @@
     "@material-ui/icons": "4.11.2",
     "@material-ui/lab": "4.0.0-alpha.57",
     "@substrate/playground-api": "1.0.4",
-    "@xstate/react": "1.2.1",
+    "@xstate/react": "1.2.2",
     "broadcast-channel": "3.3.0",
     "jpeg-js": "0.4.2",
     "marked": "1.2.7",
