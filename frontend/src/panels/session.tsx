@@ -138,8 +138,8 @@ function PortsTable({ ports }) {
     );
 }
 
-export function InstanceDetails({ instance }) {
-    const { pod, template } = instance;
+export function SessionDetails({ session }) {
+    const { pod, template } = session;
     const { name, runtime } = template;
     const { env, ports } = runtime;
     const status = pod?.details?.status;
@@ -183,14 +183,14 @@ export function InstanceDetails({ instance }) {
     );
 }
 
-function ExistingInstance({instance, onStop, onConnect}) {
-    const status = instance?.pod?.details?.status;
+function ExistingISession({session, onStop, onConnect}) {
+    const status = session?.pod?.details?.status;
     return (
     <React.Fragment>
-        <Typography variant="h5" style={{padding: 20}}>Existing instance</Typography>
+        <Typography variant="h5" style={{padding: 20}}>Existing session</Typography>
         <Divider orientation="horizontal" />
         <Container style={{display: "flex", flex: 1, padding: 0, justifyContent: "center", alignItems: "center", overflowY: "auto"}}>
-            <InstanceDetails instance={instance} />
+            <SessionDetails session={session} />
         </Container>
         <Divider orientation="horizontal" />
         <Container style={{display: "flex", flexDirection: "column", alignItems: "flex-end", paddingTop: 10, paddingBottom: 10}}>
@@ -198,7 +198,7 @@ function ExistingInstance({instance, onStop, onConnect}) {
                 <Button style={{marginRight: 10}} onClick={onStop} color="secondary" variant="outlined" disableElevation>
                     Stop
                 </Button>
-                <Button onClick={() => onConnect(instance)} disabled={status?.phase != "Running"} color="primary" variant="contained" disableElevation>
+                <Button onClick={() => onConnect(session)} disabled={status?.phase != "Running"} color="primary" variant="contained" disableElevation>
                     Connect
                 </Button>
                 </div>
@@ -208,12 +208,12 @@ function ExistingInstance({instance, onStop, onConnect}) {
 }
 
 export function SessionPanel({ state, onDeployed, onConnect, onRetry, onStopSession }) {
-    const {instance, templates} = state.context.details; // TODO use direct templates endpoint
+    const {session, templates} = state.context.details; // TODO use direct templates endpoint
     return (
         <Container style={{ display: "flex", flex: 1, justifyContent: "center", alignItems: "center" }}>
             <Paper style={{ display: "flex", flexDirection: "column", height: "60vh", width: "60vw", justifyContent: "center"}} elevation={3}>
-                {instance
-                 ? <ExistingInstance onConnect={onConnect} onStop={onStopSession} instance={instance} />
+                {session
+                 ? <ExistingSession onConnect={onConnect} onStop={onStopSession} session={session} />
                  : <TemplateSelector templates={templates} onRetry={onRetry} onDeployed={onDeployed} />}
             </Paper>
         </Container>
