@@ -1,8 +1,11 @@
 //! Find more details here:
 //! * https://docs.rs/k8s-openapi/0.5.1/k8s_openapi/api/core/v1/struct.ServiceStatus.html
 //! * https://docs.rs/k8s-openapi/0.5.1/k8s_openapi/api/core/v1/struct.ServiceSpec.html
-use crate::template::Template;
-use crate::user::UserConfiguration;
+use crate::user::{User, UserConfiguration};
+use crate::{
+    session::{Session, SessionConfiguration},
+    template::Template,
+};
 use k8s_openapi::api::core::v1::{
     ConfigMap, Container, EnvVar, Pod, PodSpec, Service, ServicePort, ServiceSpec,
 };
@@ -312,43 +315,7 @@ pub struct Engine {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct InstanceDetails {
-    pub user_uuid: String,
-    pub template: Template,
-    pub url: String,
-    pub pod: PodDetails,
-    pub session_duration: Duration,
-}
-
-impl InstanceDetails {
-    pub fn new(
-        engine: Engine,
-        instance_uuid: String,
-        template: &Template,
-        pod: PodDetails,
-        session_duration: Duration,
-    ) -> Self {
-        InstanceDetails {
-            user_uuid: instance_uuid.clone(),
-            template: template.clone(),
-            url: InstanceDetails::url(engine, instance_uuid),
-            pod,
-            session_duration,
-        }
-    }
-
-    fn url(engine: Engine, instance_uuid: String) -> String {
-        format!("//{}.{}", instance_uuid, engine.configuration.host)
-    }
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct PodDetails {
-    // Docker labels (https://github.com/opencontainers/image-spec/blob/master/annotations.md)
-    pub title: Option<String>,
-    pub description: Option<String>,
-    pub version: Option<String>,
-    pub revision: Option<String>,
     pub details: Pod,
 }
 
@@ -361,10 +328,6 @@ pub struct PlaygroundDetails {
 impl Default for PodDetails {
     fn default() -> Self {
         Self {
-            title: None,
-            description: None,
-            version: None,
-            revision: None,
             details: Pod { ..Pod::default() },
         }
     }
@@ -415,27 +378,31 @@ impl Engine {
         })
     }
 
-    fn pod_to_instance(self, pod: &Pod) -> Result<InstanceDetails, String> {
+    // Creates a Session from a Pod annotations
+    fn pod_to_session(self, pod: &Pod) -> Result<Session, String> {
         let labels = pod.metadata.labels.clone().ok_or("no labels")?;
+        let username = labels.get(OWNER_LABEL).ok_or("no owner label")?.to_string();
         let annotations = &pod.metadata.annotations.clone().ok_or("no annotations")?;
-        Ok(InstanceDetails::new(
-            self.clone(),
-            labels.get(OWNER_LABEL).ok_or("no owner label")?.to_string(),
-            &Template::parse(
-                &annotations
-                    .get(TEMPLATE_ANNOTATION)
-                    .ok_or("no template annotation")?,
-            )?,
-            Self::pod_to_details(self, pod),
-            Duration::from_secs(
-                annotations
-                    .get(SESSION_DURATION_ANNOTATION)
-                    .ok_or("no session_duration annotation")?
-                    .to_string()
-                    .parse::<u64>()
-                    .map_err(|err| err.to_string())?,
-            ),
-        ))
+        let template = Template::parse(
+            &annotations
+                .get(TEMPLATE_ANNOTATION)
+                .ok_or("no template annotation")?,
+        )?;
+        let session_duration = Duration::from_secs(
+            annotations
+                .get(SESSION_DURATION_ANNOTATION)
+                .ok_or("no session_duration annotation")?
+                .to_string()
+                .parse::<u64>()
+                .map_err(|err| err.to_string())?,
+        );
+        Ok(Session {
+            username: username.clone(),
+            template,
+            url: format!("//{}.{}", username, self.configuration.host),
+            pod: Self::pod_to_details(self, pod),
+            session_duration,
+        })
     }
 
     fn pod_to_details(self, pod: &Pod) -> PodDetails {
@@ -445,52 +412,32 @@ impl Engine {
         }
     }
 
-    pub async fn get(self) -> Result<PodDetails, String> {
-        let config = config().await?;
-        let client = Client::new(config);
-        let pod_api: Api<Pod> = Api::namespaced(client, &self.configuration.namespace);
-        let pods = list_by_selector(
-            &pod_api,
-            format!("{}={}", COMPONENT_LABEL, "backend-api").to_string(),
-        )
-        .await?;
-        let pod = pods.first().ok_or_else(|| "No API pod".to_string())?;
-
-        Ok(self.pod_to_details(&pod))
-    }
-
-    pub async fn get_instance(self, user: &str) -> Result<InstanceDetails, String> {
-        let config = config().await?;
-        let client = Client::new(config);
-        let pod_api: Api<Pod> = Api::namespaced(client, &self.configuration.namespace);
-        let pod = pod_api
-            .get(&pod_name(user))
-            .await
-            .map_err(error_to_string)?;
-
-        Ok(self.pod_to_instance(&pod)?)
-    }
-
-    pub async fn get_templates(self) -> Result<BTreeMap<String, Template>, String> {
+    pub async fn list_templates(self) -> Result<Vec<Template>, String> {
         let config = config().await?;
         let client = Client::new(config);
 
         Ok(get_templates(client, &self.configuration.namespace)
             .await?
             .into_iter()
-            .map(|(k, v)| Template::parse(&v).map(|v2| (k, v2)))
-            .collect::<Result<BTreeMap<String, Template>, String>>()?)
+            .map(|(_, v)| Template::parse(&v))
+            .collect::<Result<Vec<Template>, String>>()?)
     }
 
-    pub async fn list_users(self) -> Result<BTreeMap<String, UserConfiguration>, String> {
+    pub async fn list_users(self) -> Result<Vec<User>, String> {
         let config = config().await?;
         let client = Client::new(config);
 
         Ok(list_users(client, &self.configuration.namespace)
             .await?
             .into_iter()
-            .map(|(k, v)| UserConfiguration::parse(&v).map(|v2| (k, v2)))
-            .collect::<Result<BTreeMap<String, UserConfiguration>, String>>()?)
+            .map(|(k, v)| {
+                let user_configuration = UserConfiguration::parse(&v)?;
+                Ok(User {
+                    id: k,
+                    admin: user_configuration.admin,
+                })
+            })
+            .collect::<Result<Vec<User>, String>>()?)
     }
 
     pub async fn create_or_update_user(
@@ -522,8 +469,20 @@ impl Engine {
         .await?)
     }
 
-    /// Lists all currently running instances
-    pub async fn list_all(&self) -> Result<BTreeMap<String, InstanceDetails>, String> {
+    pub async fn get_session(self, username: &str) -> Result<Session, String> {
+        let config = config().await?;
+        let client = Client::new(config);
+        let pod_api: Api<Pod> = Api::namespaced(client, &self.configuration.namespace);
+        let pod = pod_api
+            .get(&pod_name(username))
+            .await
+            .map_err(error_to_string)?;
+
+        Ok(self.pod_to_session(&pod)?)
+    }
+
+    /// Lists all currently running sessions
+    pub async fn list_sessions(&self) -> Result<Vec<Session>, String> {
         let config = config().await?;
         let client = Client::new(config);
         let pod_api: Api<Pod> = Api::namespaced(client, &self.configuration.namespace);
@@ -535,12 +494,7 @@ impl Engine {
 
         Ok(pods
             .iter()
-            .flat_map(|pod| {
-                self.clone()
-                    .pod_to_instance(pod)
-                    .ok()
-                    .map(|i| (i.clone().user_uuid, i))
-            })
+            .flat_map(|pod| self.clone().pod_to_session(pod).ok())
             .collect())
     }
 
@@ -578,12 +532,18 @@ impl Engine {
         Ok(())
     }
 
-    pub async fn deploy(self, user_uuid: &str, template_id: &str) -> Result<String, String> {
+    pub async fn create_or_update_session(
+        self,
+        username: &str,
+        session: SessionConfiguration,
+    ) -> Result<String, String> {
+        // TODO check if already exists, update if yes
+        // TODO template can't be updated
         // Create a unique ID for this instance. Use lowercase to make sure the result can be used as part of a DNS
-        let instance_uuid = user_uuid.to_string().to_lowercase();
+        let instance_uuid = username.to_string().to_lowercase();
         if self
             .clone()
-            .get_instance(&instance_uuid.clone())
+            .get_session(&instance_uuid.clone())
             .await
             .is_ok()
         {
@@ -595,15 +555,18 @@ impl Engine {
         // Access the right image id
         let templates = get_templates(client.clone(), &self.configuration.namespace).await?;
         let template = templates
-            .get(&template_id.to_string())
-            .ok_or_else(|| format!("Unknow image {}", template_id))?;
+            .get(&session.template.to_string())
+            .ok_or_else(|| format!("Unknow image {}", session.template))?;
         let instance_template = &Template::parse(&template)?;
 
         let namespace = &self.configuration.namespace;
 
         let pod_api: Api<Pod> = Api::namespaced(client.clone(), namespace);
 
+        //TODO deploy a new ingress matching the route
+        // With the proper mapping
         // Define the correct route
+        // Also deploy proper tcp mapping configmap https://kubernetes.github.io/ingress-nginx/user-guide/exposing-tcp-udp-services/
         let mut instances = BTreeMap::new();
         instances.insert(instance_uuid.clone(), instance_template);
         self.patch_ingress(instances).await?;
@@ -633,24 +596,24 @@ impl Engine {
         Ok(instance_uuid)
     }
 
-    pub async fn undeploy(self, instance_uuid: &str) -> Result<(), String> {
+    pub async fn delete_session(self, username: &str) -> Result<(), String> {
         // Undeploy the service by its id
         let config = config().await?;
         let client = Client::new(config);
         let service_api: Api<Service> =
             Api::namespaced(client.clone(), &self.configuration.namespace);
         service_api
-            .delete(&service_name(instance_uuid), &DeleteParams::default())
+            .delete(&service_name(username), &DeleteParams::default())
             .await
             .map_err(|s| format!("Error {}", s))?;
 
         let pod_api: Api<Pod> = Api::namespaced(client.clone(), &self.configuration.namespace);
         pod_api
-            .delete(&pod_name(instance_uuid), &DeleteParams::default())
+            .delete(&pod_name(username), &DeleteParams::default())
             .await
             .map_err(|s| format!("Error {}", s))?;
 
-        let subdomain = subdomain(&self.configuration.host, instance_uuid);
+        let subdomain = subdomain(&self.configuration.host, username);
         let ingress_api: Api<Ingress> = Api::namespaced(client, &self.configuration.namespace);
         let mut ingress: Ingress = ingress_api
             .get(INGRESS_NAME)

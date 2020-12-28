@@ -1,13 +1,14 @@
 //! HTTP endpoints exposed in /api context
-use crate::github::token_validity;
-use crate::user::{Admin, User, UserConfiguration};
+use crate::github::{token_validity, GitHubUser};
+use crate::session::SessionConfiguration;
+use crate::user::{LoggedAdmin, LoggedUser, User, UserConfiguration};
 use crate::Context;
 use rocket::request::{self, FromRequest, Request};
 use rocket::response::{content, status, Redirect};
 use rocket::{
     catch, delete, get,
     http::{Cookie, Cookies, SameSite, Status},
-    post, put, Outcome, State,
+    put, Outcome, State,
 };
 use rocket_contrib::{
     json,
@@ -19,104 +20,73 @@ use tokio::runtime::Runtime;
 
 const COOKIE_TOKEN: &str = "token";
 
-#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
-pub struct GitHubTokenValidity {
-    #[serde(default)]
-    user: GitHubUser,
-}
-
-/// User information to be retrieved from the GitHub API.
-#[derive(Clone, Default, Debug, serde::Serialize, serde::Deserialize)]
-pub struct GitHubUser {
-    #[serde(default)]
-    login: String,
-    #[serde(default)]
-    avatar_url: String,
-}
-
-// Extract a User from private cookies
-impl<'a, 'r> FromRequest<'a, 'r> for User {
-    type Error = &'static str;
-
-    fn from_request(request: &'a Request<'r>) -> request::Outcome<User, &'static str> {
-        let engine = &request
-            .guard::<State<Context>>()
-            .map_failure(|_f| (Status::BadRequest, "Can't access state"))?
-            .manager
-            .engine;
-        let mut cookies = request.cookies();
-        if let Some(token) = cookies.get_private(COOKIE_TOKEN) {
-            let token_value = token.value();
-            if let Ok(gh_user) = token_validity(
-                token_value,
-                engine.configuration.client_id.as_str(),
-                engine.configuration.client_secret.as_str(),
-            ) {
-                let id = gh_user.login;
-                let users = Runtime::new()
-                    .map_err(|_| Err((Status::ExpectationFailed, "Failed to execute async fn")))?
-                    .block_on(engine.clone().list_users())
-                    .map_err(|_| Err((Status::FailedDependency, "Missing users ConfiMap")))?;
-                let user = users.get(&id);
-                // If at least one non-admin user is defined, then users are only allowed if whitelisted
-                let filtered = users.values().any(|user| !user.admin);
-                if !filtered || user.is_some() {
-                    Outcome::Success(User {
-                        id: id.clone(),
-                        avatar: gh_user.avatar_url,
-                    })
-                } else {
-                    Outcome::Failure((Status::Forbidden, "User is not whitelisted"))
-                }
+fn request_to_user<'a, 'r>(request: &'a Request<'r>) -> request::Outcome<LoggedUser, &'static str> {
+    let engine = &request
+        .guard::<State<Context>>()
+        .map_failure(|_f| (Status::BadRequest, "Can't access state"))?
+        .manager
+        .engine;
+    let cookies = request.cookies();
+    if let Some(token) = cookies.get(COOKIE_TOKEN) {
+        let token_value = token.value();
+        if let Ok(gh_user) = token_validity(
+            token_value,
+            engine.configuration.client_id.as_str(),
+            engine.configuration.client_secret.as_str(),
+        ) {
+            let id = gh_user.login;
+            let users: Vec<User> = Runtime::new()
+                .map_err(|_| Err((Status::ExpectationFailed, "Failed to execute async fn")))?
+                .block_on(engine.clone().list_users())
+                .map_err(|_| Err((Status::FailedDependency, "Missing users ConfiMap")))?;
+            let user = users.clone().into_iter().find(|user| id == user.id);
+            // If at least one non-admin user is defined, then users are only allowed if whitelisted
+            let filtered = users.iter().any(|user| !user.admin);
+            if !filtered || user.is_some() {
+                Outcome::Success(LoggedUser {
+                    id: id.clone(),
+                    avatar: gh_user.avatar_url,
+                    admin: user.map_or(false, |user| user.admin),
+                })
             } else {
-                clear(cookies);
-                Outcome::Failure((Status::BadRequest, "Token is invalid"))
+                Outcome::Failure((Status::Forbidden, "User is not whitelisted"))
             }
         } else {
-            Outcome::Forward(())
+            clear(cookies);
+            Outcome::Failure((Status::BadRequest, "Token is invalid"))
         }
+    } else {
+        Outcome::Forward(())
     }
 }
 
-// Extract an Admin from private cookies
-impl<'a, 'r> FromRequest<'a, 'r> for Admin {
+// Extract a User from cookies
+impl<'a, 'r> FromRequest<'a, 'r> for LoggedUser {
     type Error = &'static str;
 
-    fn from_request(request: &'a Request<'r>) -> request::Outcome<Admin, &'static str> {
-        let engine = &request
-            .guard::<State<Context>>()
-            .map_failure(|_f| (Status::BadRequest, "Can't access state"))?
-            .manager
-            .engine;
-        let mut cookies = request.cookies();
-        if let Some(token) = cookies.get_private(COOKIE_TOKEN) {
-            let token_value = token.value();
-            if let Ok(gh_user) = token_validity(
-                token_value,
-                engine.configuration.client_id.as_str(),
-                engine.configuration.client_secret.as_str(),
-            ) {
-                let id = gh_user.login;
-                let users = Runtime::new()
-                    .map_err(|_| Err((Status::ExpectationFailed, "Failed to execute async fn")))?
-                    .block_on(engine.clone().list_users())
-                    .map_err(|_| Err((Status::FailedDependency, "Missing users ConfiMap")))?;
-                let user = users.get(&id);
-                if user.map_or_else(|| false, |user| user.admin) {
-                    Outcome::Success(Admin {
-                        id: id.clone(),
-                        avatar: gh_user.avatar_url,
+    fn from_request(request: &'a Request<'r>) -> request::Outcome<LoggedUser, &'static str> {
+        request_to_user(request)
+    }
+}
+
+impl<'a, 'r> FromRequest<'a, 'r> for LoggedAdmin {
+    type Error = &'static str;
+
+    fn from_request(request: &'a Request<'r>) -> request::Outcome<LoggedAdmin, &'static str> {
+        let outcome = request_to_user(request);
+        match outcome {
+            Outcome::Success(user) => {
+                if user.admin {
+                    Outcome::Success(LoggedAdmin {
+                        id: user.id,
+                        avatar: user.avatar,
                     })
                 } else {
-                    // Give the opportunity to be a regular User
                     Outcome::Forward(())
                 }
-            } else {
-                clear(cookies);
-                Outcome::Failure((Status::BadRequest, "Token is invalid"))
             }
-        } else {
-            Outcome::Forward(())
+            Outcome::Failure((s, str)) => Outcome::Failure((s, str)),
+            Outcome::Forward(()) => Outcome::Forward(()),
         }
     }
 }
@@ -129,18 +99,12 @@ fn result_to_jsonrpc<T: Serialize>(res: Result<T, String>) -> JsonValue {
 }
 
 #[get("/")]
-pub fn get_admin(state: State<'_, Context>, admin: Admin) -> JsonValue {
-    let manager = state.manager.clone();
-    result_to_jsonrpc(manager.get_admin(admin))
-}
-
-#[get("/", rank = 2)]
-pub fn get(state: State<'_, Context>, user: User) -> JsonValue {
+pub fn get(state: State<'_, Context>, user: LoggedUser) -> JsonValue {
     let manager = state.manager.clone();
     result_to_jsonrpc(manager.get(user))
 }
 
-#[get("/", rank = 3)]
+#[get("/", rank = 2)]
 pub fn get_unlogged(state: State<'_, Context>) -> JsonValue {
     let manager = state.manager.clone();
     result_to_jsonrpc(manager.get_unlogged())
@@ -149,54 +113,102 @@ pub fn get_unlogged(state: State<'_, Context>) -> JsonValue {
 // User resources. Only accessible to Admins.
 
 #[get("/users")]
-pub fn list_users(state: State<'_, Context>, _admin: Admin) -> JsonValue {
+pub fn list_users(state: State<'_, Context>, _admin: LoggedAdmin) -> JsonValue {
     let manager = state.manager.clone();
     result_to_jsonrpc(manager.list_users())
 }
 
-#[put("/users/<id>", data = "<user>")]
+#[put("/users/<id>", data = "<conf>")]
 pub fn create_or_update_user(
     state: State<'_, Context>,
-    _admin: Admin,
+    _admin: LoggedAdmin,
     id: String,
-    user: Json<UserConfiguration>,
+    conf: Json<UserConfiguration>,
 ) -> JsonValue {
     let manager = state.manager.clone();
-    result_to_jsonrpc(manager.create_or_update_user(id, user.0))
+    result_to_jsonrpc(manager.create_or_update_user(id, conf.0))
 }
 
 #[delete("/users/<id>")]
-pub fn delete_user(state: State<'_, Context>, _admin: Admin, id: String) -> JsonValue {
+pub fn delete_user(state: State<'_, Context>, _admin: LoggedAdmin, id: String) -> JsonValue {
     let manager = state.manager.clone();
     result_to_jsonrpc(manager.delete_user(id))
 }
 
-/// Deploy `template` Docker container for `user_id`.
-#[post("/?<template>")]
-pub fn deploy(state: State<'_, Context>, user: User, template: String) -> JsonValue {
-    // TODO get parameters as body (sessionDuration, ..)
+// User Session
+
+#[get("/session")]
+pub fn get_user_session(state: State<'_, Context>, user: LoggedUser) -> JsonValue {
     let manager = state.manager.clone();
-    result_to_jsonrpc(manager.deploy(&user.id, &template))
+    result_to_jsonrpc(manager.get_session(&user.id))
 }
 
-// GET for instance details?
-// PUT for instance configuration
+// TODO Can provide extra data that will override defaults (sessionDuration, template details, )
+// Depending on users attributes, assign the right pod affinity
 
-#[post("/", rank = 2)]
-pub fn deploy_unlogged() -> status::Unauthorized<()> {
+#[put("/session", data = "<conf>")]
+pub fn create_or_update_user_session(
+    state: State<'_, Context>,
+    user: LoggedUser,
+    conf: Json<SessionConfiguration>,
+) -> JsonValue {
+    // TODO template can't be updated
+    // allow to update sessionDuration
+    let manager = state.manager.clone();
+    result_to_jsonrpc(manager.create_or_update_session(&user.id, conf.0))
+}
+
+#[delete("/session")]
+pub fn delete_user_session(state: State<'_, Context>, user: LoggedUser) -> JsonValue {
+    let manager = state.manager.clone();
+    result_to_jsonrpc(manager.delete_session(&user.id))
+}
+
+#[delete("/session", rank = 2)]
+pub fn delete_user_session_unlogged() -> status::Unauthorized<()> {
     status::Unauthorized::<()>(None)
 }
 
-#[delete("/")]
-pub fn undeploy(state: State<'_, Context>, user: User) -> JsonValue {
+// Sessions
+
+#[get("/sessions")]
+pub fn list_sessions(state: State<'_, Context>, _admin: LoggedAdmin) -> JsonValue {
     let manager = state.manager.clone();
-    result_to_jsonrpc(manager.undeploy(&user.id))
+    result_to_jsonrpc(manager.list_sessions())
 }
 
-#[delete("/", rank = 2)]
-pub fn undeploy_unlogged() -> status::Unauthorized<()> {
+#[put("/sessions/<username>", data = "<conf>")]
+pub fn create_or_update_session(
+    state: State<'_, Context>,
+    _admin: LoggedAdmin,
+    username: String,
+    conf: Json<SessionConfiguration>,
+) -> JsonValue {
+    let manager = state.manager.clone();
+    result_to_jsonrpc(manager.create_or_update_session(&username, conf.0))
+}
+
+#[put("/sessions/<_username>", data = "<_conf>", rank = 2)]
+pub fn create_or_update_session_unlogged(
+    _username: String,
+    _conf: Json<SessionConfiguration>,
+) -> status::Unauthorized<()> {
     status::Unauthorized::<()>(None)
 }
+
+#[delete("/sessions/<username>")]
+pub fn delete_session(
+    state: State<'_, Context>,
+    _admin: LoggedAdmin,
+    username: String,
+) -> JsonValue {
+    let manager = state.manager.clone();
+    result_to_jsonrpc(manager.delete_session(&username))
+}
+
+// TODO Nodes / Pods
+
+// kubectl get pod -o=custom-columns=NAME:.metadata.name,STATUS:.status.phase,NODE:.spec.nodeName --namespace playground
 
 // GitHub login logic
 
@@ -206,13 +218,13 @@ pub fn github_login(oauth2: OAuth2<GitHubUser>, mut cookies: Cookies<'_>) -> Red
 }
 
 /// Callback to handle the authenticated token recieved from GitHub
-/// and store it as a private cookie
+/// and store it as a cookie
 #[get("/auth/github")]
 pub fn post_install_callback(
     token: TokenResponse<GitHubUser>,
     mut cookies: Cookies<'_>,
 ) -> Result<Redirect, String> {
-    cookies.add_private(
+    cookies.add(
         Cookie::build(COOKIE_TOKEN, token.access_token().to_string())
             .same_site(SameSite::Lax)
             .finish(),
@@ -228,7 +240,7 @@ pub fn logout(cookies: Cookies<'_>) -> Redirect {
 }
 
 fn clear(mut cookies: Cookies<'_>) {
-    cookies.remove_private(Cookie::named(COOKIE_TOKEN));
+    cookies.remove(Cookie::named(COOKIE_TOKEN));
 }
 
 #[allow(dead_code)]

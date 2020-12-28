@@ -6,11 +6,12 @@ mod github;
 mod kubernetes;
 mod manager;
 mod metrics;
+mod session;
 mod template;
 mod user;
 
-use crate::api::GitHubUser;
 use crate::manager::Manager;
+use github::GitHubUser;
 use rocket::fairing::AdHoc;
 use rocket::{catchers, config::Environment, http::Method, routes};
 use rocket_cors::{AllowedOrigins, CorsOptions};
@@ -87,20 +88,25 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .mount(
             "/api",
             routes![
-                api::deploy,
-                api::deploy_unlogged,
                 api::get,
-                api::get_admin,
                 api::get_unlogged,
-                api::github_login,
-                api::logout,
-                api::post_install_callback,
-                api::undeploy,
-                api::undeploy_unlogged,
+                // Sessions
+                api::get_user_session,
+                api::create_or_update_user_session,
+                api::delete_user_session,
+                api::delete_user_session_unlogged,
+                api::list_sessions,
+                api::create_or_update_session,
+                api::create_or_update_session_unlogged,
+                api::delete_session,
                 // Users
                 api::list_users,
                 api::create_or_update_user,
                 api::delete_user,
+                // Login
+                api::github_login,
+                api::post_install_callback,
+                api::logout,
             ],
         )
         .mount("/metrics", prometheus)
