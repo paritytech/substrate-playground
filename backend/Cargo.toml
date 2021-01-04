@@ -21,7 +21,7 @@ rocket_prometheus = "0.7.0"
 serde = { version = "1.0.118", features = ["derive"] }
 serde_json = "1.0.61"
 serde_yaml = "0.8.14"
-kube = "0.45.0"
+kube = "0.46.0"
 k8s-openapi = { version = "0.10.0", default-features = false, features = ["v1_15"] }
 tokio = {version = "0.2.22", features = ["macros"] }
 time = "0.1" # Matches the version used by `cookie`
