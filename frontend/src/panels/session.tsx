@@ -183,7 +183,7 @@ export function SessionDetails({ session }) {
     );
 }
 
-function ExistingISession({session, onStop, onConnect}) {
+function ExistingSession({session, onStop, onConnect}) {
     const status = session?.pod?.details?.status;
     return (
     <React.Fragment>

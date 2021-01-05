@@ -1,7 +1,7 @@
 import crypto from 'crypto';
 import { assign, Machine } from 'xstate';
 import { useMachine } from '@xstate/react';
-import { Client } from '@substrate/playground-api';
+import { Client } from '@substrate/playground-client';
 import { PanelId } from './index';
 import terms from 'bundle-text:./terms.md';
 
@@ -75,14 +75,8 @@ function lifecycle(client: Client) {
         invoke: {
           src: (context, _event) => async (callback) => {
             // Retrieve initial data
-            const response = (await client.getDetails());
-            if (response.error) {
-              console.error(response);
-              throw response;
-            }
-
-            const res = response.result;
-            if (!res.user) {
+            const { templates, user, session } = (await client.get());
+            if (!user) {
               // Keep track of query params while unlogged. Will be restored after login.
               const query = new URLSearchParams(window.location.search).toString();
               localStorage.setItem(pathParam, query);
@@ -90,34 +84,25 @@ function lifecycle(client: Client) {
 
             // If an existing template is provided as part of the URL, directly deploy it
             // Otherwise advance to `logged` state
-            if (res) {
-              const templates = res.templates;
-              const user = res.user;
-              const template = context.template;
-              const indexedTemplates = Object.entries(templates).map(([k, v]) => {v["id"] = k; return v;});
-              const indexedUsers = Object.entries(res.users || []).map(([k, v]) => {v["id"] = k; return v;});
-              const data = {details: { ...res, ...{templates: indexedTemplates, users: indexedUsers } }};
-              if (user && template) {
-                if (templates[template]) {
-                  const instance = res.instance;
-                  if (instance) {
-                    throw {error: `Instance running`, data: {instance: instance}};
-                  } else {
-                    callback({type: deploy, template: template, data: data});
-                  }
+            const template = context.template;
+            const data = {details: {templates: templates }};
+            if (user && template) {
+            if (templates[template]) {
+                if (session) {
+                throw {error: `Session running`, data: {session: session}};
                 } else {
-                  throw {error: `Unknown template ${template}`, data: data};
+                callback({type: deploy, template: template, data: data});
                 }
-              }
-  
-              callback({type: check, data: data});
             } else {
-              callback({type: check});
+                throw {error: `Unknown template ${template}`, data: data};
             }
+            }
+
+            callback({type: check, data: data});
           },
           /*onError: {
             target: failed,
-            actions: assign({ error: (_context, event) => event.data.error || event.data, data: (_context, event) => event.data.data,  details: (_context, event) => event.data?.details})
+            actions: assign({ error: (_context, event) => event.data.error || event.data, data: (_context, event) => event.data.data})
           }*/
         },
         on: {

@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "lint": "npx eslint ./src/ --ext .js,.jsx,.jsx,.ts,.tsx",
-    "dev": "parcel public/index.html --port 80",
+    "dev": "NODE_ENV=dev parcel public/index.html --port 80",
     "watch": "parcel watch public/index.html",
     "build": "parcel build public/index.html && mkdir -p dist/assets/ && cp -R public/assets/* dist/assets/ && cp public/robots.txt dist/",
     "start": "yarn build && cd dist/ && npx http-server",

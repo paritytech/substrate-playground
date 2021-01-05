@@ -15,7 +15,7 @@ const description = `#frdsfd
 * dsfds
 * dsfdsf
 
-dsfds dsfdsf dsf dsf dsf dsf dsf dsf dsfdsf dsf ds fds fdsf ds fds fds 
+dsfds dsfdsf dsf dsf dsf dsf dsf dsf dsfdsf dsf ds fds fdsf ds fds fds
 
 ## erez`;
 const runtime = {env: [{name: "SOME_ENV", value: "1234"}], ports: [{name: "web", protocol: "TCP", path: "/", port: 123, target: 123}]};
@@ -52,13 +52,7 @@ export function intercept({logged = false, noInstance = true, delay = 100}: {log
         admin: true
       } : null;
     res.status(200).json({result: {
-      templates: templates,
       instance: noInstance? null: instance,
-      "all_instances": {"instance1": instance,
-                        "instance2": instance,
-                        "instance3": instance,
-                        "instance4": instance,
-                        "instance5": instance},
       user: user,
       users: {"id1": user}
     }});

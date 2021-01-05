@@ -1,7 +1,7 @@
 # Publish
 
 ```shell
-yarn build
-npm add-user
-npm publish --access public
+git pull --rebase
+yarn login
+yarn publish
 ```

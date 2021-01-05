@@ -14,7 +14,7 @@ import StepLabel from '@material-ui/core/StepLabel';
 import Skeleton from '@material-ui/lab/Skeleton';
 import Typography from '@material-ui/core/Typography';
 import { makeStyles, Theme, createStyles } from '@material-ui/core/styles';
-import { Client } from "@substrate/playground-api";
+import { Client } from "@substrate/playground-client";
 import { startNode } from "../commands";
 import { Instance } from "../connect";
 import { TheiaInstance } from "../theia";
@@ -59,19 +59,19 @@ function createSpecs(instance: Instance): object {
 function VerticalLinearStepper({ steps }) {
     const classes = useStyles();
     const [activeStep, setActiveStep] = useState(0);
-  
+
     const handleNext = () => {
       setActiveStep((prevActiveStep) => prevActiveStep + 1);
     };
-  
+
     const handleBack = () => {
       setActiveStep((prevActiveStep) => prevActiveStep - 1);
     };
-  
+
     const handleReset = () => {
       setActiveStep(0);
     };
-  
+
     if (steps.length == 0) {
       return (
         <div style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
@@ -226,7 +226,7 @@ export function TutorialPanel({ client, user }) {
                   {user
                   ? <Button onClick={() => createInstance(specs.template)}>GO</Button>
                   : <Button onClick={login}>LOGIN</Button>}
-              </Container> 
+              </Container>
           </Cartouche>
           }
         </div>

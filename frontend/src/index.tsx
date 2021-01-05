@@ -1,6 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom";
-import { Client } from '@substrate/playground-api';
+import { Client } from '@substrate/playground-client';
 import { createMuiTheme, ThemeProvider } from '@material-ui/core/styles';
 import { createBrowserHistory } from "history";
 import { Redirect, Route, Router, Switch } from "react-router-dom";
@@ -14,26 +14,26 @@ import { Wrapper } from './components';
 import { useLifecycle, logged, logout, restart, select, termsApproval, termsUnapproved } from './lifecycle';
 import { intercept } from './server';
 
-const base = process.env.BASE_URL;
-if (base) {
-  console.log(`Using custom base URL: ${base}`);
-} else {
-  if (devMode()) {
-    console.log("Installing HTTP interceptor");
-    intercept({noInstance: true, logged: true});
-  }
+// https://dev.to/annlin/consolelog-with-css-style-1mmp
+// https://github.com/circul8/console.ascii
+// https://gist.github.com/IAmJulianAcosta/fb1813926c2fa3adefc0
+const base = process.env.BASE || "/api";
+console.log(`Connected to: ${base}`);
+const version = process.env.GITHUB_SHA;
+console.log(`Version ${version}`);
+if (devMode()) {
+  console.log("Installing HTTP interceptor");
+  intercept({noInstance: true, logged: true});
 }
-
-function apiBaseURL(base: string | undefined) {
-  if (base) {
-      return `${base}/api`;
-  }
-  return "/api";
+// Set domain to root DNS so that they share the same origin and communicate
+const members = document.domain.split(".");
+if (members.length > 1) {
+  document.domain = members.slice(members.length-2).join(".");
 }
 
 export enum PanelId {Session, Admin, Stats, Theia}
 
-function MainPanelComponent({ client, send, state, restartAction, id }: {id: PanelId}) {
+function MainPanelComponent({ client, send, state, restartAction, id }: {client: Client, id: PanelId}) {
   if (state.matches(logged)) {
     switch(id) {
       case PanelId.Session:
@@ -56,7 +56,7 @@ function MainPanelComponent({ client, send, state, restartAction, id }: {id: Pan
 }
 
 function Panel() {
-  const client = new Client({base: apiBaseURL(base)});
+  const client = new Client({base: base}, {credentials: "include"});
   const [state, send] = useLifecycle(client);
 
   function restartAction() {
@@ -109,19 +109,10 @@ function devMode() {
   if (param) {
     return param === "true";
   }
-  return process.env.NODE_ENV === 'development';
-}
-
-const version = process.env.GITHUB_SHA;
-if (version) {
-  console.log(`Version ${version}`);
+  return process.env.NODE_ENV === 'dev';
 }
 
 ReactDOM.render(
     <App />,
     document.querySelector("main")
 );
-
-// Set domain to root DNS so that they share the same origin and communicate
-const members = document.domain.split(".");
-document.domain = members.slice(members.length-2).join(".");

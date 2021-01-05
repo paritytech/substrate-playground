@@ -1,5 +1,5 @@
 import test from 'ava';
-import pkg from '@substrate/playground-api';
+import pkg from '@substrate/playground-client';
 const { Client } = pkg;
 
 const env = process.env.ENV || "dev";

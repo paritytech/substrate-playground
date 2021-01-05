@@ -1,5 +1,5 @@
 export interface Playground {
-    templates: Array<Template>,
+    templates: Map<string, Template>,
     session?: Session,
     user?: PlaygroundUser,
 }
@@ -11,7 +11,6 @@ export interface PlaygroundUser {
 }
 
 export interface User {
-    id: string,
     admin: boolean,
 }
 

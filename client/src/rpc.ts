@@ -40,8 +40,8 @@ async function fetchWithTimeout<T>(input: RequestInfo, init: RequestInit, timeou
             return Promise.reject({code: RpcErrorCode.SERVER_ERROR, message: response.statusText});
         }
     } catch (e) {
-        console.log(e)
-        return Promise.reject({code: RpcErrorCode.TIMEOUT_ERROR, message: `Failed `});
+        console.error(e);
+        return Promise.reject({code: RpcErrorCode.TIMEOUT_ERROR, message: `Failed to fetch`});
     }
 }
 

@@ -16,7 +16,7 @@ import TableRow from '@material-ui/core/TableRow';
 import Tooltip from '@material-ui/core/Tooltip';
 import Toolbar from '@material-ui/core/Toolbar';
 import Typography from '@material-ui/core/Typography';
-import { Client, User } from '@substrate/playground-api';
+import { Client, User } from '@substrate/playground-client';
 
 const useStyles = makeStyles({
     table: {
@@ -155,7 +155,7 @@ function Users({ client, users }: { client: Client, users: Array<User> }) {
     const handleClick = (event: React.MouseEvent<unknown>, name: string) => {
         const selectedIndex = selected.indexOf(name);
         let newSelected: string[] = [];
-    
+
         if (selectedIndex === -1) {
           newSelected = newSelected.concat(selected, name);
         } else if (selectedIndex === 0) {
@@ -168,7 +168,7 @@ function Users({ client, users }: { client: Client, users: Array<User> }) {
             selected.slice(selectedIndex + 1),
           );
         }
-    
+
         setSelected(newSelected);
       };
     return (

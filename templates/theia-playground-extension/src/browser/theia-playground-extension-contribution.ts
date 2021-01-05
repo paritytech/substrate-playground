@@ -1,5 +1,5 @@
 import { injectable, inject } from "inversify";
-import { Client } from "@substrate/playground-api";
+import { Client } from "@substrate/playground-client";
 import { MAIN_MENU_BAR, CommandContribution, CommandRegistry, MenuContribution, MenuModelRegistry } from "@theia/core/lib/common";
 import { ConnectionStatusService, ConnectionStatus } from '@theia/core/lib/browser/connection-status-service';
 import { MessageService } from '@theia/core/lib/common/message-service';

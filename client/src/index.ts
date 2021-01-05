@@ -25,7 +25,7 @@ export class Client {
 
     // Users
 
-    async listUsers(init: RequestInit = this.defaultInit): Promise<Record<string, User>> {
+    async listUsers(init: RequestInit = this.defaultInit): Promise<Map<string, User>> {
         return rpc(this.path(Client.usersResource), init);
     }
 
