@@ -2,11 +2,11 @@
   "name": "@substrate/playground-client",
   "version": "1.0.4",
   "description": "An isomorphic client for Substrate Playground",
-  "main": "dist/index.js",
-  "browser": "dist.browser/index.js",
+  "main": "dist/main/index.js",
+  "browser": "dist/browser/index.js",
   "scripts": {
-    "build": "tsc && tsc -p tsconfig.browser.json",
-    "clean": "rm -rf dist/ dist.browser/ node_modules/ yarn.lock",
+    "build": "tsc --declaration && tsc --declaration -p tsconfig.browser.json",
+    "clean": "rm -rf dist/ node_modules/ yarn.lock",
     "preversion": "test -z \"$(git diff-index --name-only HEAD --)\"",
     "postversion": "git push --tags && git push && echo \"Successfully released version $npm_package_version!\"",
     "release": "yarn version"
@@ -23,9 +23,6 @@
   },
   "bugs": {
     "url": "https://github.com/paritytech/substrate-playground/issues"
-  },
-  "dependencies": {
-    "cross-fetch": "3.0.6"
   },
   "devDependencies": {
     "typescript": "4.1.3"
