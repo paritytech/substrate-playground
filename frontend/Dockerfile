@@ -1,7 +1,4 @@
 # Dockerfile for `frontend`. Compiles the frontend then serve it via nginx on port 80.
-#
-# A multi-stage docker image (https://docs.docker.com/develop/develop-images/multistage-build/)
-# Based on https://github.com/bjornmolin/rust-minimal-docker
 
 ##########################
 #         Frontend       #
