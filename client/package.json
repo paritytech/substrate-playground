@@ -15,7 +15,13 @@
     "dist"
   ],
   "homepage": "https://github.com/paritytech/substrate-playground/tree/master/backend/node-client",
-  "author": "Julien Eluard <julien@parity.io>",
+  "author": {
+    "name": "Julien Eluard",
+    "email": "julien@parity.io"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
