@@ -1,14 +1,13 @@
 {
-  "declaration":"true",
   "compilerOptions": {
     "baseUrl": ".",
-    "outDir": "./dist",
+    "outDir": "./dist/main",
     "target": "es5",
     "module": "CommonJS",
     "moduleResolution": "node",
     "lib": ["es2016", "dom", "es5"]
   },
   "include": [
-    "./index.ts"
+    "src/index.ts"
   ]
 }
