@@ -2,8 +2,10 @@
 # yarn lockfile v1
 
 
-"@substrate/playground-client@../client":
-  version "1.0.4"
+"@substrate/playground-client@1.1.4":
+  version "1.1.4"
+  resolved "https://registry.yarnpkg.com/@substrate/playground-client/-/playground-client-1.1.4.tgz#c75e91023fdcd076fdfc00faa9534bed7f80d34c"
+  integrity sha512-1ciKX6e8Nsb4uWaoP4O1SLjndyg9ZdiDfkVsq9DRo/wljtl/zPCbGc3mLOSXPu8j4r/Kk2dQ8S9mt0Brofi3Lw==
 
 "@types/node@14.14.19":
   version "14.14.19"
