@@ -422,7 +422,7 @@ impl Engine {
         Ok(Session {
             username: username.clone(),
             template,
-            url: format!("//{}.{}", username, self.configuration.host),
+            url: subdomain(&self.configuration.host, &username),
             pod: Self::pod_to_details(self, pod)?,
             session_duration,
         })
@@ -431,7 +431,12 @@ impl Engine {
     fn pod_to_details(self, pod: &Pod) -> Result<PodDetails, String> {
         let status = pod.status.as_ref().ok_or("No status")?;
         Ok(PodDetails {
-            phase: Phase::from_str(&status.clone().phase.unwrap_or_else(|| "Unknown".to_string()))?,
+            phase: Phase::from_str(
+                &status
+                    .clone()
+                    .phase
+                    .unwrap_or_else(|| "Unknown".to_string()),
+            )?,
             reason: status.clone().reason.unwrap_or_else(|| "".to_string()),
             message: status.clone().message.unwrap_or_else(|| "".to_string()),
             start_time: status
