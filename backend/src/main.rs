@@ -47,9 +47,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
     manager.clone().spawn_background_thread();
 
     log::info!(
-        "Configuration: host {}, namespace {}",
+        "Configuration: host {}, namespace {}, client_id {}, session_duration {:?}",
         configuration.host,
-        configuration.namespace
+        configuration.namespace,
+        configuration.client_id,
+        configuration.session_duration
     );
 
     // Configure CORS
@@ -90,6 +92,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             routes![
                 api::get,
                 api::get_unlogged,
+                api::update,
                 // Sessions
                 api::get_user_session,
                 api::create_or_update_user_session,
