@@ -50,7 +50,7 @@ const argv: Arguments = yargs(process.argv.slice(2))
 
 async function fetchTemplates(base: string): Promise<Template[]> {
     const client = new Client(base);
-    return (await client.get()).templates;
+    return Object.values((await client.get()).templates);
 }
 
 async function listTemplates(web: boolean): Promise<Template[]> {
@@ -65,7 +65,7 @@ async function listTemplates(web: boolean): Promise<Template[]> {
                 const [_, name] = regexp.exec(template);
                 // Only add the first version of a template
                 if (!templates.find(t => t.name == name)) {
-                    templates.push({name: name, image: image, description: template, tags: new Map([["public", "true"]])});
+                    templates.push({name: name, image: image, description: template, tags: {public: "true"}});
                 }
             });
         });

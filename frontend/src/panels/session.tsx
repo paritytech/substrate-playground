@@ -17,7 +17,7 @@ import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
 import Typography from '@material-ui/core/Typography';
 import { makeStyles, createStyles, Theme } from '@material-ui/core/styles';
-import { NameValuePair, Port, Session, Template } from '@substrate/playground-client';
+import { NameValuePair, Phase, Port, Session, Template } from '@substrate/playground-client';
 import { ErrorMessage } from "../components";
 
 const useStyles = makeStyles((theme: Theme) =>
@@ -137,27 +137,20 @@ function PortsTable({ ports }: {ports?: Port[]}): JSX.Element {
 export function SessionDetails({ session }: {session: Session}): JSX.Element {
     const { pod, template } = session;
     const { name, runtime } = template;
-    const status = pod?.details?.status;
-    const containerStatuses = status?.containerStatuses;
-    let reason;
-    if (containerStatuses?.length > 0) {
-        const state = containerStatuses[0].state;
-        reason = state?.waiting?.reason;
-    }
-
+    const { phase, reason, startTime } = pod;
     return (
         <Card style={{ margin: 20 }} variant="outlined">
             <CardContent>
                 <Typography>
                     {name}
                 </Typography>
-                {status?.startTime &&
+                {startTime &&
                 <Typography color="textSecondary" gutterBottom>
-                Started at {status?.startTime}
+                Started at {startTime}
                 </Typography>
                 }
                 <Typography color="textSecondary" gutterBottom>
-                Phase: <em>{status?.phase}</em> {reason && `(${reason})`}
+                Phase: <em>{phase}</em> {reason && `(${reason})`}
                 </Typography>
                 {runtime &&
                     <div style={{display: "flex", paddingTop: 20}}>
@@ -181,7 +174,6 @@ export function SessionDetails({ session }: {session: Session}): JSX.Element {
 }
 
 function ExistingSession({session, onStop, onConnect}: {session: Session, onStop: () => void, onConnect: (session: Session) => void}): JSX.Element {
-    const status = session.pod?.details?.status;
     return (
     <React.Fragment>
         <Typography variant="h5" style={{padding: 20}}>Existing session</Typography>
@@ -195,7 +187,7 @@ function ExistingSession({session, onStop, onConnect}: {session: Session, onStop
                 <Button style={{marginRight: 10}} onClick={onStop} color="secondary" variant="outlined" disableElevation>
                     Stop
                 </Button>
-                <Button onClick={() => onConnect(session)} disabled={status?.phase != "Running"} color="primary" variant="contained" disableElevation>
+                <Button onClick={() => onConnect(session)} disabled={session.pod.phase != Phase.Running} color="primary" variant="contained" disableElevation>
                     Connect
                 </Button>
                 </div>

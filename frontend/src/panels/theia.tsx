@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import Container from "@material-ui/core/Container";
 import Paper from '@material-ui/core/Paper';
-import { Client } from '@substrate/playground-client';
+import { Client, Phase } from '@substrate/playground-client';
 import { ErrorMessage, Loading } from '../components';
 import { fetchWithTimeout } from '../utils';
 
@@ -70,16 +70,12 @@ export function TheiaPanel({ client, onMissingSession, onSessionFailing, onSessi
                 return;
             }
 
-            const phase = session.pod?.details?.status?.phase;
-            if (phase == "Running" || phase == "Pending") {
-                const containerStatuses = session.pod?.details?.status?.containerStatuses;
-                if (containerStatuses?.length > 0) {
-                    const state = containerStatuses[0].state;
-                    const reason = state?.waiting?.reason;
-                    if (reason === "CrashLoopBackOff" || reason === "ErrImagePull" || reason === "ImagePullBackOff" || reason === "InvalidImageName") {
-                        setData({ type: "ERROR", value: state?.waiting?.message, action: onSessionFailing });
-                        return;
-                    }
+            const phase = session.pod.phase;
+            if (phase == Phase.Running || phase == Phase.Pending) {
+                const reason = session.pod.reason;
+                if (reason === "CrashLoopBackOff" || reason === "ErrImagePull" || reason === "ImagePullBackOff" || reason === "InvalidImageName") {
+                    setData({ type: "ERROR", value: session.pod.message, action: onSessionFailing });
+                    return;
                 }
                 // Check URL is fine
                 const url = session.url;
