@@ -1,5 +1,5 @@
 import { injectable, inject } from "inversify";
-import { Client } from "@substrate/playground-client";
+import { Client, Environment, playgroundBaseURL } from "@substrate/playground-client";
 import { MAIN_MENU_BAR, CommandContribution, CommandRegistry, MenuContribution, MenuModelRegistry } from "@theia/core/lib/common";
 import { ConnectionStatusService, ConnectionStatus } from '@theia/core/lib/browser/connection-status-service';
 import { MessageService } from '@theia/core/lib/common/message-service';
@@ -100,21 +100,23 @@ function registerBridge(registry, connectionStatusService, messageService) {
     answer("extension-advertise", "", {online: online});
 }
 
-function envFromDomain(domain: string) {
+function envFromDomain(domain: string): Environment {
     switch(domain) {
         case "playground":
-            return "production";
+            return Environment.production;
         case "playground-staging":
-            return "staging";
+            return Environment.staging;
         case "playground-dev":
-            return "dev";
+            return Environment.dev;
+        default:
+            throw Error(`Unknown domain ${domain}`);
     }
 }
 
-function instanceDetails() {
+function sessionDetails() {
     const [id, domain] = window.location.host.split(".");
     return {
-        instance: id,
+        session: id,
         env: envFromDomain(domain)
     };
 }
@@ -193,14 +195,14 @@ export class TheiaSubstrateExtensionCommandContribution implements CommandContri
     protected readonly fileService: FileService;
 
     registerCommands(registry: CommandRegistry): void {
-        const {env, instance} = instanceDetails();
+        const {env, session} = sessionDetails();
         registry.registerCommand(SendFeedbackCommand, {
             execute: () => window.open('https://docs.google.com/forms/d/e/1FAIpQLSdXpq_fHqS_ow4nC7EpGmrC_XGX_JCIRzAqB1vaBtoZrDW-ZQ/viewform?edit_requested=true')
         });
         registry.registerCommand(StopInstanceCommand, {
             execute: async () => {
-                const client = new Client({env: env}, {credentials: "include"});
-                client.stopInstance(instance);
+                const client = new Client(playgroundBaseURL(env), {credentials: "include"});
+                client.deleteSession(session);
             }
         });
 
