@@ -16,6 +16,7 @@ import MenuItem from '@material-ui/core/MenuItem';
 import MoreVertIcon from '@material-ui/icons/MoreVert';
 import Toolbar from '@material-ui/core/Toolbar';
 import Typography from '@material-ui/core/Typography';
+import { PlaygroundUser } from "@substrate/playground-client";
 import { useInterval } from './hooks';
 
 function wrapAction(action: (() => void) | Promise<void>, call: (boolean) => void):(() => void) | Promise<void> {
@@ -116,8 +117,8 @@ function login(): void {
     window.location.href = "/api/login/github";
 }
 
-function Nav({ onPlayground, onStatsClick, onAdminClick, onLogout, details }: { onPlayground: () => void, onStatsClick: () => void, onAdminClick: () => void, onLogout: () => void, details }): JSX.Element  {
-    const user = details?.user;
+function Nav({ onPlayground, onStatsClick, onAdminClick, onLogout, user }: { onPlayground: () => void, onStatsClick: () => void, onAdminClick: () => void, onLogout: () => void, user: PlaygroundUser }): JSX.Element  {
+    console.log(user)
     const [anchorEl, setAnchorEl] = React.useState(null);
     const open = Boolean(anchorEl);
     const handleMenu = (event) => setAnchorEl(event.currentTarget);
@@ -126,8 +127,6 @@ function Nav({ onPlayground, onStatsClick, onAdminClick, onLogout, details }: { 
     const openAdmin = Boolean(anchorElAdmin);
     const handleMenuAdmin = (event) => setAnchorElAdmin(event.currentTarget);
     const handleCloseAdmin = () => setAnchorElAdmin(null);
-
-    const logged = details != null && user;
     return (
         <AppBar position="sticky">
             <Toolbar style={{ justifyContent: "space-between" }} variant="dense">
@@ -166,63 +165,62 @@ function Nav({ onPlayground, onStatsClick, onAdminClick, onLogout, details }: { 
                             <MenuItem onClick={async () => {handleCloseAdmin(); onAdminClick();}}>ADMIN</MenuItem>
                         </Menu>
                     </div>}
-                    {logged
-                        ? <div style={{paddingLeft: 12}}>
-                            <IconButton
-                                aria-label="account of current user"
-                                aria-controls="menu-appbar"
-                                aria-haspopup="true"
-                                onClick={handleMenu}
-                                color="inherit"
-                                size="small"
-                            >
-                                <Avatar alt={user.id} src={user.avatar} />
-                            </IconButton>
-                            <Menu
-                                id="menu-appbar"
-                                anchorEl={anchorEl}
-                                anchorOrigin={{
-                                vertical: 'top',
-                                horizontal: 'right',
-                                }}
-                                keepMounted
-                                transformOrigin={{
-                                vertical: 'top',
-                                horizontal: 'right',
-                                }}
-                                open={open}
-                                onClose={handleClose}
-                            >
-                                <MenuItem onClick={() => window.open("https://docs.google.com/forms/d/e/1FAIpQLSdXpq_fHqS_ow4nC7EpGmrC_XGX_JCIRzAqB1vaBtoZrDW-ZQ/viewform?edit_requested=true")}>FEEDBACK</MenuItem>
-                                <MenuItem onClick={async () => {handleClose(); onLogout()}}>LOGOUT</MenuItem>
-                            </Menu>
-                        </div>
-                        : (user === null
-                            ? <Button onClick={login} startIcon={<GitHubIcon />}>LOGIN</Button>
-                            : <div style={{paddingLeft: 12}}>
-                                <IconButton
-                                    aria-label="account of current user"
-                                    aria-controls="menu-appbar"
-                                    aria-haspopup="true"
-                                    color="inherit"
-                                    size="small"
-                                >
-                                    <Avatar alt="Not logged">
-                                        <GitHubIcon />
-                                    </Avatar>
-                                </IconButton>
-                              </div>)}
+                    {user
+                     ? <div style={{paddingLeft: 12}}>
+                     <IconButton
+                         aria-label="account of current user"
+                         aria-controls="menu-appbar"
+                         aria-haspopup="true"
+                         onClick={handleMenu}
+                         color="inherit"
+                         size="small"
+                     >
+                         <Avatar alt={user.id} src={user.avatar} />
+                     </IconButton>
+                     <Menu
+                         id="menu-appbar"
+                         anchorEl={anchorEl}
+                         anchorOrigin={{
+                         vertical: 'top',
+                         horizontal: 'right',
+                         }}
+                         keepMounted
+                         transformOrigin={{
+                         vertical: 'top',
+                         horizontal: 'right',
+                         }}
+                         open={open}
+                         onClose={handleClose}
+                     >
+                         <MenuItem onClick={() => window.open("https://docs.google.com/forms/d/e/1FAIpQLSdXpq_fHqS_ow4nC7EpGmrC_XGX_JCIRzAqB1vaBtoZrDW-ZQ/viewform?edit_requested=true")}>FEEDBACK</MenuItem>
+                         <MenuItem onClick={async () => {handleClose(); onLogout()}}>LOGOUT</MenuItem>
+                     </Menu>
+                 </div>
+                        :
+                        <div style={{paddingLeft: 12}}>
+                        <IconButton
+                            aria-label="account of current user"
+                            aria-controls="menu-appbar"
+                            aria-haspopup="true"
+                            color="inherit"
+                            size="small"
+                        >
+                            <Avatar alt="Not logged">
+                                <GitHubIcon />
+                            </Avatar>
+                        </IconButton>
+                        </div>}
                 </div>
             </Toolbar>
         </AppBar>
     );
 }
 
-export function Wrapper({ onPlayground, onStatsClick, onAdminClick, onLogout, details, children}: { onPlayground: () => void, onStatsClick: () => void, onAdminClick: () => void, onLogout: () => void, details, children: React.ReactElement}): JSX.Element {
+export function Wrapper({ onPlayground, onStatsClick, onAdminClick, onLogout, user, children}: { onPlayground: () => void, onStatsClick: () => void, onAdminClick: () => void, onLogout: () => void, user: PlaygroundUser, children: React.ReactElement}): JSX.Element {
     return (
         <div style={{display: "flex", flexDirection: "column", width: "inherit", height: "inherit"}}>
 
-            <Nav onPlayground={onPlayground} onStatsClick={onStatsClick} onAdminClick={onAdminClick} onLogout={onLogout} details={details} />
+            <Nav onPlayground={onPlayground} onStatsClick={onStatsClick} onAdminClick={onAdminClick} onLogout={onLogout} user={user} />
 
             <Fade in appear>
                 {children}
