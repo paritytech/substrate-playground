@@ -1,5 +1,5 @@
 export interface Playground {
-    templates: Map<string, Template>,
+    templates: Record<string, Template>,
     session?: Session,
     user?: PlaygroundUser,
 }
@@ -29,7 +29,10 @@ export interface NameValuePair {
 
 export interface Port {
     name: string,
-    value: string,
+    protocol?: string,
+    path: string,
+    port: number,
+    target?: number
 }
 
 export interface RuntimeConfiguration {
@@ -41,13 +44,16 @@ export interface Template {
     name: string,
     image: string,
     description: string,
-    tags: Map<string, string>,
+    tags: Record<string, string>,
     runtime?: RuntimeConfiguration,
 }
 
+export enum Phase {Pending, Running, Succeeded, Failed, Unknown};
 export interface PodDetails {
-    name: string,
-    value: string,
+    phase: Phase,
+    reason: String,
+    message: String,
+    startTime: number,
 }
 
 export interface Session {
@@ -57,6 +63,3 @@ export interface Session {
     pod: PodDetails,
     sessionDuration: number,
 }
-
-// See https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#pod-phase
-export type Phase = "Pending" | "Running" | "Succeeded" | "Failed" | "Unknown";
