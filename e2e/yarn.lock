@@ -56,12 +56,10 @@
   resolved "https://registry.yarnpkg.com/@sindresorhus/is/-/is-0.14.0.tgz#9fb3a3cf3132328151f353de4632e01e52102bea"
   integrity sha512-9NET910DNaIPngYnLLPeg+Ogzqsi9uM4mSboU5y6p8S5DzMTVEsJZrawi+BoDNUVBa2DhJqQYUFvMDfgU062LQ==
 
-"@substrate/playground-api@1.0.4":
-  version "1.0.4"
-  resolved "https://registry.yarnpkg.com/@substrate/playground-api/-/playground-api-1.0.4.tgz#ae4bc46a912763c9e297730f66e537d7aba7e95c"
-  integrity sha512-2flggn3ckUu5LLQ8IjFUBaktzRlKyvMzjJzzgNhuCbTrv/V4F+HQtoI4x0lkrmIpQKo845ZYEtGNYd1gJJqTTA==
-  dependencies:
-    cross-fetch "3.0.6"
+"@substrate/playground-client@1.1.2":
+  version "1.1.2"
+  resolved "https://registry.yarnpkg.com/@substrate/playground-client/-/playground-client-1.1.2.tgz#44c1593696163d970f56fc0cf9f9eaee4c87ae53"
+  integrity sha512-4S6LGjR9JwmNxX/dcSjlq97lwgDCwtQmXYhTfI4y6a3tFYApG+UwaxHS9diMNnvLJNInBhH4loevvojyEUzGkw==
 
 "@szmarczak/http-timer@^1.1.2":
   version "1.1.2"
@@ -538,13 +536,6 @@ convert-to-spaces@^1.0.1:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/convert-to-spaces/-/convert-to-spaces-1.0.2.tgz#7e3e48bbe6d997b1417ddca2868204b4d3d85715"
   integrity sha1-fj5Iu+bZl7FBfdyihoIEtNPYVxU=
-
-cross-fetch@3.0.6:
-  version "3.0.6"
-  resolved "https://registry.yarnpkg.com/cross-fetch/-/cross-fetch-3.0.6.tgz#3a4040bc8941e653e0e9cf17f29ebcd177d3365c"
-  integrity sha512-KBPUbqgFjzWlVcURG+Svp9TlhA5uliYtiNx/0r8nv0pdypeQCRJ9IaSIc3q/x3q8t3F75cHuwxVql1HFGHCNJQ==
-  dependencies:
-    node-fetch "2.6.1"
 
 crypto-random-string@^2.0.0:
   version "2.0.0"
@@ -1265,11 +1256,6 @@ mute-stream@0.0.8:
   version "0.0.8"
   resolved "https://registry.yarnpkg.com/mute-stream/-/mute-stream-0.0.8.tgz#1630c42b2251ff81e2a283de96a5497ea92e5e0d"
   integrity sha512-nnbWWOkoWyUsTjKrhgD0dcz22mdkSnpYqbEjIm2nhwhuxlSkpywJmBo8h0ZqJdkp73mb90SssHkN4rsRaBAfAA==
-
-node-fetch@2.6.1:
-  version "2.6.1"
-  resolved "https://registry.yarnpkg.com/node-fetch/-/node-fetch-2.6.1.tgz#045bd323631f76ed2e2b55573394416b639a0052"
-  integrity sha512-V4aYg89jEoVRxRb2fJdAg8FHvI7cEyYdVAh94HH0UIK8oJxUfkjlDQN9RbMx+bEjP7+ggMiFRprSti032Oipxw==
 
 normalize-package-data@^2.5.0:
   version "2.5.0"
