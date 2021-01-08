@@ -431,9 +431,9 @@ impl Engine {
     fn pod_to_details(self, pod: &Pod) -> Result<PodDetails, String> {
         let status = pod.status.as_ref().ok_or("No status")?;
         Ok(PodDetails {
-            phase: Phase::from_str(&status.clone().phase.unwrap_or("Unknown".to_string()))?,
-            reason: status.clone().reason.unwrap_or("".to_string()),
-            message: status.clone().message.unwrap_or("".to_string()),
+            phase: Phase::from_str(&status.clone().phase.unwrap_or_else(|| "Unknown".to_string()))?,
+            reason: status.clone().reason.unwrap_or_else(|| "".to_string()),
+            message: status.clone().message.unwrap_or_else(|| "".to_string()),
             start_time: status
                 .clone()
                 .start_time
