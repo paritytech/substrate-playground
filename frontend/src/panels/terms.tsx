@@ -8,7 +8,7 @@ import DialogContentText from '@material-ui/core/DialogContentText';
 import DialogTitle from '@material-ui/core/DialogTitle';
 import Typography from '@material-ui/core/Typography';
 
-function TermsDialog({ terms, show, onHide, onTermsApproved }) {
+function TermsDialog({ terms, show, onHide, onTermsApproved }: { terms: string, show: boolean, onHide: () => void, onTermsApproved: () => void }) {
     return (
     <Dialog open={show} maxWidth="md">
         <DialogTitle>Terms</DialogTitle>

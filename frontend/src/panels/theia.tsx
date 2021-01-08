@@ -5,10 +5,10 @@ import { Client } from '@substrate/playground-client';
 import { ErrorMessage, Loading } from '../components';
 import { fetchWithTimeout } from '../utils';
 
-export function TheiaPanel({ client, onMissingSession, onSessionFailing, onSessionTimeout }: { client: Client }) {
+export function TheiaPanel({ client, onMissingSession, onSessionFailing, onSessionTimeout }: { client: Client, onMissingSession: () => void, onSessionFailing: () => void, onSessionTimeout: () => void }) {
     const maxRetries = 5*60;
-    const ref = useRef();
-    const [data, setData] = useState({ type: "LOADING", phase: "Preparing" });
+    const ref = useRef(null);
+    const [data, setData] = useState({ type: "LOADING", phase: "Preparing", retry: 0, value: "", url: "" });
 
     /*
     useEffect(() => {
@@ -17,7 +17,7 @@ export function TheiaPanel({ client, onMissingSession, onSessionFailing, onSessi
             if (el) {
                 el.contentWindow.postMessage(o, "*")
             } else {
-                console.error("No accessible iframe instance");
+                console.error("No accessible iframe session");
             }
         });
 
@@ -38,18 +38,18 @@ export function TheiaPanel({ client, onMissingSession, onSessionFailing, onSessi
                 case "extension-offline":
                     responder.setStatus(false);
                     // TODO ignore offline for now, too trigger happy
-                    // setData({type: "ERROR", value: "Instance went offline", action: () => });
+                    // setData({type: "ERROR", value: "session went offline", action: () => });
                     // responder.unannounce();
                     break;
                 case "extension-answer-offline":
                 case "extension-answer-error":
                     console.error("Error while processing message", o);
                 case "extension-answer":
-                    // Got an answer from the instance, respond back
+                    // Got an answer from the session, respond back
                     responder.respond(o.data);
                     break;
                 default:
-                    console.error(`Unknown instance message type ${type}`, o);
+                    console.error(`Unknown session message type ${type}`, o);
                     break;
             }
         };
@@ -63,17 +63,16 @@ export function TheiaPanel({ client, onMissingSession, onSessionFailing, onSessi
 
     useEffect(() => {
         async function fetchData() {
-            const { result } = await client.getDetails();
-            const instance = result.instance;
-            if (!instance) {
-                // This instance doesn't exist
-                setData({ type: "ERROR", value: "Couldn't locate the theia instance", action: onMissingSession});
+            const { session } = await client.get();
+            if (!session) {
+                // No session exist, this state shouldn't be reached
+                setData({ type: "ERROR", value: "Couldn't locate the theia session", action: onMissingSession});
                 return;
             }
 
-            const phase = instance.pod?.details?.status?.phase;
+            const phase = session.pod?.details?.status?.phase;
             if (phase == "Running" || phase == "Pending") {
-                const containerStatuses = instance.pod?.details?.status?.containerStatuses;
+                const containerStatuses = session.pod?.details?.status?.containerStatuses;
                 if (containerStatuses?.length > 0) {
                     const state = containerStatuses[0].state;
                     const reason = state?.waiting?.reason;
@@ -83,7 +82,7 @@ export function TheiaPanel({ client, onMissingSession, onSessionFailing, onSessi
                     }
                 }
                 // Check URL is fine
-                const url = instance.url;
+                const url = session.url;
                 if ((await fetchWithTimeout(url)).ok) {
                     setData({ type: "SUCCESS", url: url });
                     return;

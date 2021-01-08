@@ -1878,12 +1878,10 @@
   resolved "https://registry.yarnpkg.com/@sindresorhus/is/-/is-0.14.0.tgz#9fb3a3cf3132328151f353de4632e01e52102bea"
   integrity sha512-9NET910DNaIPngYnLLPeg+Ogzqsi9uM4mSboU5y6p8S5DzMTVEsJZrawi+BoDNUVBa2DhJqQYUFvMDfgU062LQ==
 
-"@substrate/playground-api@1.0.4":
-  version "1.0.4"
-  resolved "https://registry.yarnpkg.com/@substrate/playground-api/-/playground-api-1.0.4.tgz#ae4bc46a912763c9e297730f66e537d7aba7e95c"
-  integrity sha512-2flggn3ckUu5LLQ8IjFUBaktzRlKyvMzjJzzgNhuCbTrv/V4F+HQtoI4x0lkrmIpQKo845ZYEtGNYd1gJJqTTA==
-  dependencies:
-    cross-fetch "3.0.6"
+"@substrate/playground-client@1.1.4":
+  version "1.1.4"
+  resolved "https://registry.yarnpkg.com/@substrate/playground-client/-/playground-client-1.1.4.tgz#c75e91023fdcd076fdfc00faa9534bed7f80d34c"
+  integrity sha512-1ciKX6e8Nsb4uWaoP4O1SLjndyg9ZdiDfkVsq9DRo/wljtl/zPCbGc3mLOSXPu8j4r/Kk2dQ8S9mt0Brofi3Lw==
 
 "@szmarczak/http-timer@^1.1.2":
   version "1.1.2"
@@ -3166,13 +3164,6 @@ create-require@^1.1.0:
   version "1.1.1"
   resolved "https://registry.yarnpkg.com/create-require/-/create-require-1.1.1.tgz#c1d7e8f1e5f6cfc9ff65f9cd352d37348756c333"
   integrity sha512-dcKFX3jn0MpIaXjisoRvexIJVEKzaq7z2rZKxf+MSr9TkdmHmsU4m2lcLojrj/FHl8mk5VxMmYA+ftRkP/3oKQ==
-
-cross-fetch@3.0.6:
-  version "3.0.6"
-  resolved "https://registry.yarnpkg.com/cross-fetch/-/cross-fetch-3.0.6.tgz#3a4040bc8941e653e0e9cf17f29ebcd177d3365c"
-  integrity sha512-KBPUbqgFjzWlVcURG+Svp9TlhA5uliYtiNx/0r8nv0pdypeQCRJ9IaSIc3q/x3q8t3F75cHuwxVql1HFGHCNJQ==
-  dependencies:
-    node-fetch "2.6.1"
 
 cross-spawn@^6.0.4, cross-spawn@^6.0.5:
   version "6.0.5"
@@ -5884,11 +5875,6 @@ node-addon-api@^3.0.0:
   version "3.1.0"
   resolved "https://registry.yarnpkg.com/node-addon-api/-/node-addon-api-3.1.0.tgz#98b21931557466c6729e51cb77cd39c965f42239"
   integrity sha512-flmrDNB06LIl5lywUz7YlNGZH/5p0M7W28k8hzd9Lshtdh1wshD2Y+U4h9LD6KObOy1f+fEVdgprPrEymjM5uw==
-
-node-fetch@2.6.1:
-  version "2.6.1"
-  resolved "https://registry.yarnpkg.com/node-fetch/-/node-fetch-2.6.1.tgz#045bd323631f76ed2e2b55573394416b639a0052"
-  integrity sha512-V4aYg89jEoVRxRb2fJdAg8FHvI7cEyYdVAh94HH0UIK8oJxUfkjlDQN9RbMx+bEjP7+ggMiFRprSti032Oipxw==
 
 node-forge@^0.10.0:
   version "0.10.0"

@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { createStyles, lighten, makeStyles, Theme } from '@material-ui/core/styles';
 import Checkbox from '@material-ui/core/Checkbox';
 import Container from "@material-ui/core/Container";
@@ -16,7 +16,7 @@ import TableRow from '@material-ui/core/TableRow';
 import Tooltip from '@material-ui/core/Tooltip';
 import Toolbar from '@material-ui/core/Toolbar';
 import Typography from '@material-ui/core/Typography';
-import { Client, User } from '@substrate/playground-client';
+import { Client, Session, Template, User } from '@substrate/playground-client';
 
 const useStyles = makeStyles({
     table: {
@@ -24,35 +24,50 @@ const useStyles = makeStyles({
     },
 });
 
-function Instances({ instances }) {
+function Sessions({ client }: { client: Client }) {
     const classes = useStyles();
-    return (
-        <TableContainer component={Paper}>
-            <Table className={classes.table} aria-label="simple table">
-                <TableHead>
-                    <TableRow>
-                        <TableCell>ID</TableCell>
-                        <TableCell align="right">Template</TableCell>
-                        <TableCell align="right">URL</TableCell>
+    const [sessions, setSessions] = useState<Record<string, Session>>();
+
+    useEffect(() => {
+        async function fetchData() {
+            const sessions = await client.listSessions();
+            setSessions(sessions);
+        }
+
+        fetchData();
+    }, []);
+
+    if (sessions) {
+        return (
+            <TableContainer component={Paper}>
+                <Table className={classes.table} aria-label="simple table">
+                    <TableHead>
+                        <TableRow>
+                            <TableCell>ID</TableCell>
+                            <TableCell align="right">Template</TableCell>
+                            <TableCell align="right">URL</TableCell>
+                        </TableRow>
+                    </TableHead>
+                    <TableBody>
+                    {Object.entries(sessions).map(([id, session]) => (
+                    <TableRow key={id}>
+                        <TableCell component="th" scope="row">
+                            {id}
+                        </TableCell>
+                        <TableCell align="right">{session.template.name}</TableCell>
+                        <TableCell align="right"><a href={session.url}>{session.url}</a></TableCell>
                     </TableRow>
-                </TableHead>
-                <TableBody>
-                {instances.map((instance) => (
-                <TableRow key={instance[0]}>
-                    <TableCell component="th" scope="row">
-                        {instance[0]}
-                    </TableCell>
-                    <TableCell align="right">{instance[1].template.name}</TableCell>
-                    <TableCell align="right"><a href={instance[1].url}>{instance[1].url}</a></TableCell>
-                </TableRow>
-                ))}
-                </TableBody>
-            </Table>
-        </TableContainer>
-    );
+                    ))}
+                    </TableBody>
+                </Table>
+            </TableContainer>
+        );
+    } else {
+        return <div>No sessions</div>
+    }
 }
 
-function Templates({ templates }) {
+function Templates({ templates }: {templates: Record<string, Template>}) {
     const classes = useStyles();
     return (
         <TableContainer component={Paper}>
@@ -65,10 +80,10 @@ function Templates({ templates }) {
                     </TableRow>
                 </TableHead>
                 <TableBody>
-                {templates.map((template) => (
-                <TableRow key={template.id}>
+                {Object.entries(templates).map(([id, template]) => (
+                <TableRow key={id}>
                     <TableCell component="th" scope="row">
-                        {template.id}
+                        {template.name}
                     </TableCell>
                     <TableCell align="right">{template.name}</TableCell>
                     <TableCell align="right">{template.image}</TableCell>
@@ -80,11 +95,11 @@ function Templates({ templates }) {
     );
 }
 
-async function createOrUpdateUser(client: Client, id: String, admin: boolean): Promise<void> {
+async function createOrUpdateUser(client: Client, id: string, admin: boolean): Promise<void> {
     await client.createOrUpdateUser(id, {admin: admin});
 }
 
-async function deleteUser(client: Client, id: String, admin: boolean): Promise<void> {
+async function deleteUser(client: Client, id: string): Promise<void> {
     await client.deleteUser(id);
 }
 
@@ -148,9 +163,10 @@ function EnhancedTableToolbar({ client, selected }: { client: Client, selected: 
     );
 }
 
-function Users({ client, users }: { client: Client, users: Array<User> }) {
+function Users({ client }: { client: Client }) {
     const classes = useStyles();
     const [selected, setSelected] = useState<string[]>([]);
+    const [users, setUsers] = useState<Record<string, User>>();
     const isSelected = (name: string) => selected.indexOf(name) !== -1;
     const handleClick = (event: React.MouseEvent<unknown>, name: string) => {
         const selectedIndex = selected.indexOf(name);
@@ -171,78 +187,78 @@ function Users({ client, users }: { client: Client, users: Array<User> }) {
 
         setSelected(newSelected);
       };
-    return (
-        <>
-            <EnhancedTableToolbar client={client} selected={selected} />
-            <TableContainer component={Paper}>
-                <Table className={classes.table} aria-label="simple table">
-                    <TableHead>
-                        <TableRow>
-                            <TableCell>ID</TableCell>
-                            <TableCell align="right">Admin</TableCell>
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                    {users.map((user, index) => {
-                        const isItemSelected = isSelected(user.id);
-                        const labelId = `enhanced-table-checkbox-${index}`;
-                        return (
-                    <TableRow
-                        key={user.id}
-                        hover
-                        onClick={(event) => handleClick(event, user.id)}
-                        role="checkbox"
-                        aria-checked={isItemSelected}
-                        tabIndex={-1}
-                        selected={isItemSelected}>
-                        <TableCell padding="checkbox">
-                            <Checkbox
-                                checked={isItemSelected}
-                                inputProps={{ 'aria-labelledby': labelId }}
-                            />
-                        </TableCell>
-                        <TableCell component="th" scope="row">
-                            {user.id}
-                        </TableCell>
-                        <TableCell align="right">{user.admin.toString()}</TableCell>
-                    </TableRow>
-                    )})}
-                    </TableBody>
-                </Table>
-            </TableContainer>
-        </>
-    );
+
+    useEffect(() => {
+        async function fetchData() {
+            const users = await client.listUsers();
+            setUsers(users);
+        }
+
+        fetchData();
+    }, []);
+
+    if (users) {
+        return (
+            <>
+                <EnhancedTableToolbar client={client} selected={selected} />
+                <TableContainer component={Paper}>
+                    <Table className={classes.table} aria-label="simple table">
+                        <TableHead>
+                            <TableRow>
+                                <TableCell>ID</TableCell>
+                                <TableCell align="right">Admin</TableCell>
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
+                            {Object.entries(users).map(([id, user], index) => {
+                                    const isItemSelected = isSelected(id);
+                                    const labelId = `enhanced-table-checkbox-${index}`;
+                                    return (
+                                <TableRow
+                                    key={id}
+                                    hover
+                                    onClick={(event) => handleClick(event, id)}
+                                    role="checkbox"
+                                    aria-checked={isItemSelected}
+                                    tabIndex={-1}
+                                    selected={isItemSelected}>
+                                    <TableCell padding="checkbox">
+                                        <Checkbox
+                                            checked={isItemSelected}
+                                            inputProps={{ 'aria-labelledby': labelId }}
+                                        />
+                                    </TableCell>
+                                    <TableCell component="th" scope="row">
+                                        {id}
+                                    </TableCell>
+                                    <TableCell align="right">{user.admin.toString()}</TableCell>
+                                </TableRow>
+                                )})}
+                        </TableBody>
+                    </Table>
+                </TableContainer>
+            </>
+        );
+    } else {
+        return <div />;
+    }
 }
 
-export function AdminPanel({ client, state }: { client: Client }) {
-    const details = state.context.details;
-    const instances = Object.entries(details ? details["all_instances"] : {});
+export function AdminPanel({ client, templates }: { client: Client, templates: Record<string, Template> }) {
     return (
         <Container style={{ display: "flex", flex: 1, justifyContent: "center", alignItems: "center" }}>
             <Paper style={{ display: "flex", overflowY: "auto", flexDirection: "column", marginTop: 20, justifyContent: "center", width: "80vw", height: "80vh"}} elevation={3}>
-                {details?.users?.length > 0
-                ? <div style={{margin: 20}}>
-                        <Users client={client} users={details.users} />
-                    </div>
-                : <Container style={{display: "flex", flex: 1, flexDirection: "column", padding: 0, justifyContent: "center", alignItems: "center", overflowY: "auto"}}>
-                        <Typography variant="h5">No users</Typography>
-                    </Container>}
-                {details?.templates.length > 0
-                ? <div style={{margin: 20}}>
+                <div style={{margin: 20}}>
+                    <Users client={client} />
+                </div>
+                <div style={{margin: 20}}>
                     <Typography variant="h5">Templates</Typography>
-                    <Templates templates={details?.templates} />
-                    </div>
-                : <Container style={{display: "flex", flex: 1, flexDirection: "column", padding: 0, justifyContent: "center", alignItems: "center", overflowY: "auto"}}>
-                    <Typography variant="h5">No templates</Typography>
-                    </Container>}
-                {instances.length > 0
-                ? <div style={{margin: 20}}>
-                    <Typography variant="h5">Instances</Typography>
-                    <Instances instances={instances} />
-                    </div>
-                : <Container style={{display: "flex", flex: 1, flexDirection: "column", padding: 0, justifyContent: "center", alignItems: "center", overflowY: "auto"}}>
-                    <Typography variant="h5">No instance currently running</Typography>
-                </Container>}
+                    <Templates templates={templates} />
+                </div>
+                <div style={{margin: 20}}>
+                    <Typography variant="h5">Sessions</Typography>
+                    <Sessions client={client} />
+                </div>
             </Paper>
         </Container>
     );

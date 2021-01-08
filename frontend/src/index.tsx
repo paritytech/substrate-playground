@@ -14,37 +14,24 @@ import { Wrapper } from './components';
 import { useLifecycle, logged, logout, restart, select, termsApproval, termsUnapproved } from './lifecycle';
 import { intercept } from './server';
 
-// https://dev.to/annlin/consolelog-with-css-style-1mmp
-// https://github.com/circul8/console.ascii
-// https://gist.github.com/IAmJulianAcosta/fb1813926c2fa3adefc0
-const base = process.env.BASE || "/api";
-console.log(`Connected to: ${base}`);
-const version = process.env.GITHUB_SHA;
-console.log(`Version ${version}`);
-if (devMode()) {
-  console.log("Installing HTTP interceptor");
-  intercept({noInstance: true, logged: true});
-}
-// Set domain to root DNS so that they share the same origin and communicate
-const members = document.domain.split(".");
-if (members.length > 1) {
-  document.domain = members.slice(members.length-2).join(".");
-}
-
 export enum PanelId {Session, Admin, Stats, Theia}
 
-function MainPanelComponent({ client, send, state, restartAction, id }: {client: Client, id: PanelId}) {
+function MainPanelComponent({ client, send, state, restartAction, id }: {client: Client, id: PanelId, restartAction: () => void}): JSX.Element {
   if (state.matches(logged)) {
+    const {session, templates} = state.context.details;
     switch(id) {
       case PanelId.Session:
-        return <SessionPanel state={state} onRetry={restartAction}
-                onStopSession={() => client.stopInstance()}
-                onDeployed={() => send(select, {panel: PanelId.Theia})}
+        return <SessionPanel templates={templates} session={session} onRetry={restartAction}
+                onStopSession={() => client.deleteUserSession()}
+                onDeployed={async template => {
+                    await client.createOrUpdateUserSession({template: template});
+                    send(select, {panel: PanelId.Theia});
+                }}
                 onConnect={() => send(select, {panel: PanelId.Theia})} />;
       case PanelId.Stats:
         return <StatsPanel />;
       case PanelId.Admin:
-        return <AdminPanel client={client} state={state} />;
+        return <AdminPanel client={client} templates={templates} />;
       case PanelId.Theia:
         return <TheiaPanel client={client} onMissingSession={restartAction} onSessionFailing={restartAction} onSessionTimeout={restartAction} />;
     }
@@ -55,8 +42,8 @@ function MainPanelComponent({ client, send, state, restartAction, id }: {client:
   }
 }
 
-function Panel() {
-  const client = new Client({base: base}, {credentials: "include"});
+function Panel(): JSX.Element {
+  const client = new Client(base, {credentials: "include"});
   const [state, send] = useLifecycle(client);
 
   function restartAction() {
@@ -72,7 +59,7 @@ function Panel() {
     );
 }
 
-function App() {
+function App(): JSX.Element {
   const history = createBrowserHistory();
   const theme = createMuiTheme({
     palette: {
@@ -104,12 +91,29 @@ function App() {
   );
 }
 
-function devMode() {
+function devMode(): boolean {
   const param = new URLSearchParams(window.location.search).get('devMode');
   if (param) {
     return param === "true";
   }
   return process.env.NODE_ENV === 'dev';
+}
+
+// https://dev.to/annlin/consolelog-with-css-style-1mmp
+// https://github.com/circul8/console.ascii
+// https://gist.github.com/IAmJulianAcosta/fb1813926c2fa3adefc0
+const base = process.env.BASE || "/api";
+console.log(`Connected to: ${base}`);
+const version = process.env.GITHUB_SHA;
+console.log(`Version ${version}`);
+if (devMode()) {
+  console.log("Installing HTTP interceptor");
+  intercept({noInstance: true, logged: true});
+}
+// Set domain to root DNS so that they share the same origin and communicate
+const members = document.domain.split(".");
+if (members.length > 1) {
+  document.domain = members.slice(members.length-2).join(".");
 }
 
 ReactDOM.render(

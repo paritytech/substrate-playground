@@ -5,7 +5,6 @@ import Card from '@material-ui/core/Card';
 import CardContent from '@material-ui/core/CardContent';
 import Container from "@material-ui/core/Container";
 import Divider from '@material-ui/core/Divider';
-import Link from '@material-ui/core/Link';
 import List from '@material-ui/core/List';
 import ListItem from '@material-ui/core/ListItem';
 import ListItemText from '@material-ui/core/ListItemText';
@@ -18,6 +17,7 @@ import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
 import Typography from '@material-ui/core/Typography';
 import { makeStyles, createStyles, Theme } from '@material-ui/core/styles';
+import { NameValuePair, Port, Session, Template } from '@substrate/playground-client';
 import { ErrorMessage } from "../components";
 
 const useStyles = makeStyles((theme: Theme) =>
@@ -30,59 +30,55 @@ const useStyles = makeStyles((theme: Theme) =>
     }),
 );
 
-function TemplateSelector({templates, onDeployed, onRetry}) {
-    const publicTemplates = templates.filter(t => t.public);
-    const [selection, select] = useState(publicTemplates[0]);
-    const templatesAvailable = templates?.length > 0;
+function TemplateSelector({templates, onDeployed, onRetry}: {templates: Record<string, Template>, onDeployed: (name: string) => void, onRetry: () => void}): JSX.Element {
+    const publicTemplates = Object.entries(templates).filter(([k, v]) => v.tags.public == "true");
+    const templatesAvailable = publicTemplates.length > 0;
+    const [selection, select] = useState(templatesAvailable ? publicTemplates[0] : null);
     const classes = useStyles();
-    const imageName = selection.image.split(":")[0];
-    return (
-    <React.Fragment>
-        <Typography variant="h5" style={{padding: 20}}>Select a template</Typography>
-        <Divider orientation="horizontal" />
-        <Container style={{display: "flex", flex: 1, padding: 0, alignItems: "center", overflowY: "auto"}}>
-            {templatesAvailable
-                ? <div style={{display: "flex", flex: 1, flexDirection: "row", minHeight: 0, height: "100%"}}>
-                    <List style={{paddingTop: 0, paddingBottom: 0, overflowY: "auto"}}>
-                        {publicTemplates.map((template, index: number) => (
-                        <ListItem button key={index} selected={selection.id === template.id} onClick={() => select(template)}>
-                            <ListItemText primary={template.name} />
-                        </ListItem>
-                        ))}
-                    </List>
-                    <Divider flexItem={true} orientation={"vertical"} light={true} />
-                    {selection &&
-                    <div style={{flex: 1, marginLeft: 20, paddingRight: 20, overflow: "auto", textAlign: "left"}}>
-                        <Typography>
-                            <span dangerouslySetInnerHTML={{__html:marked(selection.description)}}></span>
-                        </Typography>
-                        <Divider orientation={"horizontal"} light={true} />
-                        <Typography className={classes.root} variant="overline">
-                            Built using the following
-                            <Link
-                                        href={`https://hub.docker.com/r/${imageName}/tags`}
-                                        rel="noreferrer"
-                                        variant="inherit"
-                                        style={{ margin: 5 }}>
-                                        image
-                            </Link>
+    if (selection) {
+        return (
+            <React.Fragment>
+                <Typography variant="h5" style={{padding: 20}}>Select a template</Typography>
+                <Divider orientation="horizontal" />
+                <Container style={{display: "flex", flex: 1, padding: 0, alignItems: "center", overflowY: "auto"}}>
+                    <div style={{display: "flex", flex: 1, flexDirection: "row", minHeight: 0, height: "100%"}}>
+                            <List style={{paddingTop: 0, paddingBottom: 0, overflowY: "auto"}}>
+                                {publicTemplates.map(([id, template], index: number) => (
+                                <ListItem button key={index} selected={selection[1].name === template.name} onClick={() => select([id, template])}>
+                                    <ListItemText primary={template.name} />
+                                </ListItem>
+                                ))}
+                            </List>
+                            <Divider flexItem={true} orientation={"vertical"} light={true} />
+                            <div style={{flex: 1, marginLeft: 20, paddingRight: 20, overflow: "auto", textAlign: "left"}}>
+                                <Typography>
+                                    <span dangerouslySetInnerHTML={{__html:marked(selection[1].description)}}></span>
                                 </Typography>
-                            </div>}
-                    </div>
-                    : <ErrorMessage reason="Can't find any template. Is the templates configuration incorrect." action={onRetry} />
-                }
+                                <Divider orientation={"horizontal"} light={true} />
+                                <Typography className={classes.root} variant="overline">
+                                    Built using image {selection[1].image}
+                                </Typography>
+                            </div>
+                        </div>
+                </Container>
+                <Divider orientation="horizontal" />
+                <Container style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", paddingTop: 10, paddingBottom: 10 }}>
+                    <Button onClick={() => onDeployed(selection[0])} color="primary" variant="contained" disableElevation disabled={!templatesAvailable}>
+                        Create
+                    </Button>
+                </Container>
+            </React.Fragment>
+        );
+    } else {
+        return (
+            <Container style={{display: "flex", flex: 1, padding: 0, alignItems: "center", overflowY: "auto"}}>
+                <ErrorMessage reason="Can't find any public template. The templates configuration might be incorrect." action={onRetry} />
             </Container>
-            <Divider orientation="horizontal" />
-            <Container style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", paddingTop: 10, paddingBottom: 10 }}>
-                <Button onClick={() => onDeployed(selection.id)} color="primary" variant="contained" disableElevation disabled={!templatesAvailable}>
-                    Create
-                </Button>
-            </Container>
-        </React.Fragment>
-    );
+        );
+    }
 }
 
-function EnvTable({ envs }) {
+function EnvTable({ env }: {env?: NameValuePair[]}): JSX.Element {
     return (
         <TableContainer component={Paper}>
             <Table size="small" aria-label="a dense table">
@@ -92,14 +88,14 @@ function EnvTable({ envs }) {
                         <TableCell align="right">Value</TableCell>
                     </TableRow>
                 </TableHead>
-                {envs &&
+                {env &&
                     <TableBody>
-                        {envs.map((env) => (
-                            <TableRow key={env.name}>
+                        {env.map(e => (
+                            <TableRow key={e.name}>
                                 <TableCell component="th" scope="row">
-                                    {env.name}
+                                    {e.name}
                                 </TableCell>
-                                <TableCell align="right">{env.value}</TableCell>
+                                <TableCell align="right">{e.value}</TableCell>
                             </TableRow>
                         ))}
                     </TableBody>
@@ -109,7 +105,7 @@ function EnvTable({ envs }) {
     );
 }
 
-function PortsTable({ ports }) {
+function PortsTable({ ports }: {ports?: Port[]}): JSX.Element {
     return (
         <TableContainer component={Paper}>
             <Table size="small" aria-label="a dense table">
@@ -122,7 +118,7 @@ function PortsTable({ ports }) {
                 </TableHead>
                 {ports &&
                     <TableBody>
-                        {ports.map((port) => (
+                        {ports.map(port => (
                             <TableRow key={port.name}>
                                 <TableCell component="th" scope="row">
                                     {port.name}
@@ -138,10 +134,9 @@ function PortsTable({ ports }) {
     );
 }
 
-export function SessionDetails({ session }) {
+export function SessionDetails({ session }: {session: Session}): JSX.Element {
     const { pod, template } = session;
     const { name, runtime } = template;
-    const { env, ports } = runtime;
     const status = pod?.details?.status;
     const containerStatuses = status?.containerStatuses;
     let reason;
@@ -164,27 +159,29 @@ export function SessionDetails({ session }) {
                 <Typography color="textSecondary" gutterBottom>
                 Phase: <em>{status?.phase}</em> {reason && `(${reason})`}
                 </Typography>
-                <div style={{display: "flex", paddingTop: 20}}>
-                    <div style={{flex: 1, paddingRight: 10}}>
-                        <Typography variant="h6" id="tableTitle" component="div">
-                        Environment
-                        </Typography>
-                        <EnvTable envs={env} />
+                {runtime &&
+                    <div style={{display: "flex", paddingTop: 20}}>
+                        <div style={{flex: 1, paddingRight: 10}}>
+                            <Typography variant="h6" id="tableTitle" component="div">
+                            Environment
+                            </Typography>
+                            <EnvTable env={runtime.env} />
+                        </div>
+                        <div style={{ flex: 1 }}>
+                            <Typography variant="h6" id="tableTitle" component="div">
+                                Ports
+                            </Typography>
+                            <PortsTable ports={runtime.ports} />
+                        </div>
                     </div>
-                    <div style={{ flex: 1 }}>
-                        <Typography variant="h6" id="tableTitle" component="div">
-                            Ports
-                        </Typography>
-                        <PortsTable ports={ports} />
-                    </div>
-                </div>
+                }
             </CardContent>
         </Card>
     );
 }
 
-function ExistingSession({session, onStop, onConnect}) {
-    const status = session?.pod?.details?.status;
+function ExistingSession({session, onStop, onConnect}: {session: Session, onStop: () => void, onConnect: (session: Session) => void}): JSX.Element {
+    const status = session.pod?.details?.status;
     return (
     <React.Fragment>
         <Typography variant="h5" style={{padding: 20}}>Existing session</Typography>
@@ -207,8 +204,7 @@ function ExistingSession({session, onStop, onConnect}) {
     );
 }
 
-export function SessionPanel({ state, onDeployed, onConnect, onRetry, onStopSession }) {
-    const {session, templates} = state.context.details; // TODO use direct templates endpoint
+export function SessionPanel({ templates, session, onDeployed, onConnect, onRetry, onStopSession }: {templates: Record<string, Template>, session: Session, onStopSession: () => void, onConnect: (session: Session) => void, onDeployed: (name: string) => void, onRetry: () => void}): JSX.Element {
     return (
         <Container style={{ display: "flex", flex: 1, justifyContent: "center", alignItems: "center" }}>
             <Paper style={{ display: "flex", flexDirection: "column", height: "60vh", width: "60vw", justifyContent: "center"}} elevation={3}>
