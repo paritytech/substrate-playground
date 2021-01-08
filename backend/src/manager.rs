@@ -160,7 +160,7 @@ impl Manager {
             user: Some(PlaygroundUser {
                 id: user.id,
                 avatar: user.avatar,
-                admin: false,
+                admin: user.admin,
             }),
             configuration: self.engine.configuration,
         })
