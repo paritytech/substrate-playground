@@ -437,7 +437,7 @@ impl Engine {
             start_time: status
                 .clone()
                 .start_time
-                .ok_or("No start_time".to_string())?
+                .ok_or_else(|| "No start_time".to_string())?
                 .0
                 .into(),
         })
