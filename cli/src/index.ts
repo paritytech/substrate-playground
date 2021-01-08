@@ -60,7 +60,6 @@ async function listTemplates(web: boolean): Promise<Template[]> {
         const regexp = web ? /paritytech\/substrate-playground-template-(.*?)-theia/ : /paritytech\/substrate-playground-template-(.*)/;
         const p = spawn('docker', ['images', filter, '--format' , '{{.Repository}}:{{.Tag}}']);
         p.stdout.on('data', data => {
-            console.log(data)
             data.toString().split("\n").forEach(image => {
                 const [template] = image.split(":");
                 const [_, name] = regexp.exec(template);
