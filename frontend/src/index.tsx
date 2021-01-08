@@ -18,7 +18,7 @@ export enum PanelId {Session, Admin, Stats, Theia}
 
 function MainPanelComponent({ client, send, state, restartAction, id }: {client: Client, id: PanelId, restartAction: () => void}): JSX.Element {
   if (state.matches(logged)) {
-    const {session, templates} = state.context.details;
+    const {session, templates} = state.context;
     switch(id) {
       case PanelId.Session:
         return <SessionPanel templates={templates} session={session} onRetry={restartAction}
@@ -49,10 +49,10 @@ function Panel(): JSX.Element {
   function restartAction() {
     send(restart);
   }
-  const {panel, details} = state.context;
+  const {panel, user} = state.context;
   return (
       <div style={{ display: "flex", width: "100vw", height: "100vh", alignItems: "center", justifyContent: "center" }}>
-          <Wrapper onPlayground={() => send(select, {panel: PanelId.Session})} onAdminClick={() => send(select, {panel: PanelId.Admin})} onStatsClick={() => send(select, {panel: PanelId.Stats})} onLogout={() => send(logout)} details={details}>
+          <Wrapper onPlayground={() => send(select, {panel: PanelId.Session})} onAdminClick={() => send(select, {panel: PanelId.Admin})} onStatsClick={() => send(select, {panel: PanelId.Stats})} onLogout={() => send(logout)} user={user}>
               <MainPanelComponent client={client} restartAction={restartAction} send={send} state={state} id={panel || PanelId.Session} />
           </Wrapper>
       </div>
