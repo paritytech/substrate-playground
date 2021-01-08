@@ -9,7 +9,7 @@ data:
     name: Test
     description: 'A stock template'
     tags:
-      - public: true
+      public: true
     runtime:
       ports:
         - name: wss
