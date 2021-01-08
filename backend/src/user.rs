@@ -4,7 +4,6 @@ use std::fmt::{self, Display, Formatter};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct User {
-    pub id: String,
     pub admin: bool,
 }
 

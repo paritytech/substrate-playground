@@ -1,8 +1,8 @@
-use crate::template::Template;
-use crate::user::{User, UserConfiguration};
+use crate::{kubernetes::Configuration, template::Template};
+use crate::{kubernetes::Engine, session::SessionConfiguration};
 use crate::{
-    kubernetes::{Engine, PodDetails},
-    session::SessionConfiguration,
+    kubernetes::Phase,
+    user::{User, UserConfiguration},
 };
 use crate::{metrics::Metrics, session::Session, user::LoggedUser};
 use log::{error, info, warn};
@@ -12,36 +12,14 @@ use std::{
     error::Error,
     sync::{Arc, Mutex},
     thread::{self, JoinHandle},
-    time::{Duration, SystemTime},
+    time::Duration,
 };
 use tokio::runtime::Runtime;
-
-fn phase(pod: &PodDetails) -> Option<String> {
-    pod.details
-        .status
-        .as_ref()
-        .and_then(|status| status.phase.clone())
-}
-
-fn elapsed(pod: &PodDetails) -> Option<Duration> {
-    pod.details
-        .status
-        .as_ref()
-        .and_then(|status| status.start_time.as_ref())
-        .and_then(|time| {
-            let time: SystemTime = time.0.into();
-            time.elapsed().ok()
-        })
-}
-
-fn is_running(pod: &PodDetails) -> bool {
-    phase(pod).map_or(false, |phase| phase == "Running")
-}
 
 fn running_sessions(sessions: Vec<Session>) -> Vec<Session> {
     sessions
         .into_iter()
-        .filter(|session| is_running(&session.pod))
+        .filter(|session| session.pod.phase == Phase::Running)
         .collect()
 }
 
@@ -61,9 +39,10 @@ pub struct PlaygroundUser {
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct PlaygroundDetails {
-    pub templates: Vec<Template>,
+    pub templates: BTreeMap<String, Template>,
     pub session: Option<Session>,
     pub user: Option<PlaygroundUser>,
+    pub configuration: Configuration,
 }
 
 impl Manager {
@@ -108,15 +87,13 @@ impl Manager {
                 for id in instances3 {
                     match self.clone().get_session(&id.0) {
                         Ok(session) => {
-                            let phase =
-                                phase(&session.pod).unwrap_or_else(|| "Unknown".to_string());
                             // Deployed instances are removed from the set
                             // Additionally the deployment time is tracked
-                            match phase.as_str() {
-                                "Running" | "Failed" => {
+                            match session.pod.phase {
+                                Phase::Running | Phase::Failed => {
                                     instances2.remove(&session.username);
                                     // TODO track success / failure
-                                    if let Some(duration) = elapsed(&session.pod) {
+                                    if let Ok(duration) = &session.pod.start_time.elapsed() {
                                         self.clone()
                                             .metrics
                                             .observe_deploy_duration(&id.0, duration.as_secs_f64());
@@ -140,8 +117,8 @@ impl Manager {
             match self.clone().list_sessions() {
                 Ok(sessions) => {
                     for session in running_sessions(sessions) {
-                        if let Some(duration) = elapsed(&session.pod) {
-                            if duration > session.session_duration {
+                        if let Ok(duration) = &session.pod.start_time.elapsed() {
+                            if duration > &session.session_duration {
                                 info!(
                                     "Undeploying {} {:?} {:?}",
                                     session.username, duration, session.session_duration
@@ -178,28 +155,34 @@ impl Manager {
         Ok(PlaygroundDetails {
             templates,
             session: new_runtime()?
-                .block_on(self.engine.get_session(user.id.as_str()))
+                .block_on(self.clone().engine.get_session(user.id.as_str()))
                 .ok(),
             user: Some(PlaygroundUser {
                 id: user.id,
                 avatar: user.avatar,
                 admin: false,
             }),
+            configuration: self.engine.configuration,
         })
     }
 
     pub fn get_unlogged(self) -> Result<PlaygroundDetails, String> {
-        let templates = new_runtime()?.block_on(self.engine.list_templates())?;
+        let templates = new_runtime()?.block_on(self.clone().engine.list_templates())?;
         Ok(PlaygroundDetails {
             templates,
             session: None,
             user: None,
+            configuration: self.engine.configuration,
         })
+    }
+
+    pub fn update(self, conf: Configuration) -> Result<(), String> {
+        new_runtime()?.block_on(self.engine.update(conf))
     }
 
     // Users
 
-    pub fn list_users(self) -> Result<Vec<User>, String> {
+    pub fn list_users(self) -> Result<BTreeMap<String, User>, String> {
         new_runtime()?.block_on(self.engine.list_users())
     }
 

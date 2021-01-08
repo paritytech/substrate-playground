@@ -18,9 +18,10 @@ use kube::{
     config::KubeConfigOptions,
     Client, Config,
 };
+use log::warn;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
-use std::env;
 use std::{collections::BTreeMap, error::Error, time::Duration};
+use std::{env, str::FromStr, time::SystemTime};
 
 const APP_LABEL: &str = "app.kubernetes.io/part-of";
 const APP_VALUE: &str = "playground";
@@ -295,11 +296,12 @@ async fn list_users(client: Client, namespace: &str) -> Result<BTreeMap<String, 
     get_config_map(client, namespace, "playground-users").await
 }
 
-#[derive(Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Configuration {
     pub host: String,
     pub namespace: String,
     pub client_id: String,
+    #[serde(skip_serializing)]
     pub client_secret: String,
     pub session_duration: Duration,
 }
@@ -314,23 +316,35 @@ pub struct Engine {
     pub configuration: Configuration,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct PodDetails {
-    pub details: Pod,
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+pub enum Phase {
+    Pending,
+    Running,
+    Succeeded,
+    Failed,
+    Unknown,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct PlaygroundDetails {
-    pub github_client_id: Option<String>,
-    pub pod: PodDetails,
-}
-
-impl Default for PodDetails {
-    fn default() -> Self {
-        Self {
-            details: Pod { ..Pod::default() },
+impl FromStr for Phase {
+    type Err = String;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "Pending" => Ok(Phase::Pending),
+            "Running" => Ok(Phase::Running),
+            "Succeeded" => Ok(Phase::Succeeded),
+            "Failed" => Ok(Phase::Failed),
+            "Unknown" => Ok(Phase::Unknown),
+            _ => Err(format!("'{}' is not a valid value for Phase", s)),
         }
     }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct PodDetails {
+    pub phase: Phase,
+    pub reason: String,
+    pub message: String,
+    pub start_time: SystemTime,
 }
 
 const DEFAULT_SESSION_DURATION: u64 = 60 * 3; // 3 hours in minutes
@@ -361,11 +375,20 @@ impl Engine {
         let client_id = env::var("GITHUB_CLIENT_ID").map_err(|_| "GITHUB_CLIENT_ID must be set")?;
         let client_secret =
             env::var("GITHUB_CLIENT_SECRET").map_err(|_| "GITHUB_CLIENT_SECRET must be set")?;
-        let session_duration = Duration::from_secs(
-            env::var("PLAYGROUND_DEFAULT_SESSION_DURATION").map_or(DEFAULT_SESSION_DURATION, |d| {
-                60 * d.parse::<u64>().unwrap_or(DEFAULT_SESSION_DURATION)
-            }),
-        );
+        // TODO load session duration dynamically from ConfigMap
+        let session_duration =
+            Duration::from_secs(env::var("PLAYGROUND_DEFAULT_SESSION_DURATION").map_or(
+                60 * DEFAULT_SESSION_DURATION,
+                |d| {
+                    60 * d.parse::<u64>().unwrap_or_else(|_| {
+                        warn!(
+                            "Failed to parse default session_duration {}, Using {}",
+                            d, DEFAULT_SESSION_DURATION
+                        );
+                        DEFAULT_SESSION_DURATION
+                    })
+                },
+            ));
 
         Ok(Engine {
             configuration: Configuration {
@@ -400,30 +423,56 @@ impl Engine {
             username: username.clone(),
             template,
             url: format!("//{}.{}", username, self.configuration.host),
-            pod: Self::pod_to_details(self, pod),
+            pod: Self::pod_to_details(self, pod)?,
             session_duration,
         })
     }
 
-    fn pod_to_details(self, pod: &Pod) -> PodDetails {
-        PodDetails {
-            details: pod.clone(),
-            ..Default::default()
-        }
+    fn pod_to_details(self, pod: &Pod) -> Result<PodDetails, String> {
+        let status = pod.status.as_ref().ok_or("No status")?;
+        Ok(PodDetails {
+            phase: Phase::from_str(&status.clone().phase.unwrap_or("Unknown".to_string()))?,
+            reason: status.clone().reason.unwrap_or("".to_string()),
+            message: status.clone().message.unwrap_or("".to_string()),
+            start_time: status
+                .clone()
+                .start_time
+                .ok_or("No start_time".to_string())?
+                .0
+                .into(),
+        })
     }
 
-    pub async fn list_templates(self) -> Result<Vec<Template>, String> {
+    pub async fn update(self, conf: Configuration) -> Result<(), String> {
+        let config = config().await?;
+        let client = Client::new(config);
+
+        if conf.session_duration != self.configuration.session_duration {
+            add_config_map_value(
+                client,
+                &self.configuration.namespace,
+                "playground-config",
+                "defaultSessionDuration",
+                &conf.session_duration.as_secs().to_string(),
+            )
+            .await?
+        }
+
+        Ok(())
+    }
+
+    pub async fn list_templates(self) -> Result<BTreeMap<String, Template>, String> {
         let config = config().await?;
         let client = Client::new(config);
 
         Ok(get_templates(client, &self.configuration.namespace)
             .await?
             .into_iter()
-            .map(|(_, v)| Template::parse(&v))
-            .collect::<Result<Vec<Template>, String>>()?)
+            .map(|(k, v)| Template::parse(&v).map(|v2| (k, v2)))
+            .collect::<Result<BTreeMap<String, Template>, String>>()?)
     }
 
-    pub async fn list_users(self) -> Result<Vec<User>, String> {
+    pub async fn list_users(self) -> Result<BTreeMap<String, User>, String> {
         let config = config().await?;
         let client = Client::new(config);
 
@@ -432,12 +481,14 @@ impl Engine {
             .into_iter()
             .map(|(k, v)| {
                 let user_configuration = UserConfiguration::parse(&v)?;
-                Ok(User {
-                    id: k,
-                    admin: user_configuration.admin,
-                })
+                Ok((
+                    k,
+                    User {
+                        admin: user_configuration.admin,
+                    },
+                ))
             })
-            .collect::<Result<Vec<User>, String>>()?)
+            .collect::<Result<BTreeMap<String, User>, String>>()?)
     }
 
     pub async fn create_or_update_user(

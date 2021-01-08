@@ -1,8 +1,11 @@
 //! HTTP endpoints exposed in /api context
-use crate::github::{token_validity, GitHubUser};
 use crate::session::SessionConfiguration;
-use crate::user::{LoggedAdmin, LoggedUser, User, UserConfiguration};
+use crate::user::{LoggedAdmin, LoggedUser, UserConfiguration};
 use crate::Context;
+use crate::{
+    github::{token_validity, GitHubUser},
+    kubernetes::Configuration,
+};
 use rocket::request::{self, FromRequest, Request};
 use rocket::response::{content, status, Redirect};
 use rocket::{
@@ -26,8 +29,8 @@ fn request_to_user<'a, 'r>(request: &'a Request<'r>) -> request::Outcome<LoggedU
         .map_failure(|_f| (Status::BadRequest, "Can't access state"))?
         .manager
         .engine;
-    let cookies = request.cookies();
-    if let Some(token) = cookies.get(COOKIE_TOKEN) {
+    let mut cookies = request.cookies();
+    if let Some(token) = cookies.get_private(COOKIE_TOKEN) {
         let token_value = token.value();
         if let Ok(gh_user) = token_validity(
             token_value,
@@ -35,13 +38,13 @@ fn request_to_user<'a, 'r>(request: &'a Request<'r>) -> request::Outcome<LoggedU
             engine.configuration.client_secret.as_str(),
         ) {
             let id = gh_user.login;
-            let users: Vec<User> = Runtime::new()
+            let users = Runtime::new()
                 .map_err(|_| Err((Status::ExpectationFailed, "Failed to execute async fn")))?
                 .block_on(engine.clone().list_users())
                 .map_err(|_| Err((Status::FailedDependency, "Missing users ConfiMap")))?;
-            let user = users.clone().into_iter().find(|user| id == user.id);
-            // If at least one non-admin user is defined, then users are only allowed if whitelisted
-            let filtered = users.iter().any(|user| !user.admin);
+            let user = users.get(&id); //clone().into_iter().find(|user| id == user.id);
+                                       // If at least one non-admin user is defined, then users are only allowed if whitelisted
+            let filtered = users.values().any(|user| !user.admin);
             if !filtered || user.is_some() {
                 Outcome::Success(LoggedUser {
                     id: id.clone(),
@@ -108,6 +111,16 @@ pub fn get(state: State<'_, Context>, user: LoggedUser) -> JsonValue {
 pub fn get_unlogged(state: State<'_, Context>) -> JsonValue {
     let manager = state.manager.clone();
     result_to_jsonrpc(manager.get_unlogged())
+}
+
+#[put("/", data = "<conf>")]
+pub fn update(
+    state: State<'_, Context>,
+    _admin: LoggedAdmin,
+    conf: Json<Configuration>,
+) -> JsonValue {
+    let manager = state.manager.clone();
+    result_to_jsonrpc(manager.update(conf.0))
 }
 
 // User resources. Only accessible to Admins.
@@ -224,7 +237,7 @@ pub fn post_install_callback(
     token: TokenResponse<GitHubUser>,
     mut cookies: Cookies<'_>,
 ) -> Result<Redirect, String> {
-    cookies.add(
+    cookies.add_private(
         Cookie::build(COOKIE_TOKEN, token.access_token().to_string())
             .same_site(SameSite::Lax)
             .finish(),
@@ -240,7 +253,7 @@ pub fn logout(cookies: Cookies<'_>) -> Redirect {
 }
 
 fn clear(mut cookies: Cookies<'_>) {
-    cookies.remove(Cookie::named(COOKIE_TOKEN));
+    cookies.remove_private(Cookie::named(COOKIE_TOKEN));
 }
 
 #[allow(dead_code)]
