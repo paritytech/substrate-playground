@@ -42,8 +42,8 @@ fn request_to_user<'a, 'r>(request: &'a Request<'r>) -> request::Outcome<LoggedU
                 .map_err(|_| Err((Status::ExpectationFailed, "Failed to execute async fn")))?
                 .block_on(engine.clone().list_users())
                 .map_err(|_| Err((Status::FailedDependency, "Missing users ConfiMap")))?;
-            let user = users.get(&id); //clone().into_iter().find(|user| id == user.id);
-                                       // If at least one non-admin user is defined, then users are only allowed if whitelisted
+            let user = users.get(&id);
+            // If at least one non-admin user is defined, then users are only allowed if whitelisted
             let filtered = users.values().any(|user| !user.admin);
             if !filtered || user.is_some() {
                 Outcome::Success(LoggedUser {
