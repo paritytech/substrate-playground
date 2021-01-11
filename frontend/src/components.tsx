@@ -112,13 +112,7 @@ export function Loading({ phase, retry = 0 }: { phase?: string, retry?: number }
     );
 }
 
-function login(): void {
-    localStorage.setItem('login', "true");
-    window.location.href = "/api/login/github";
-}
-
 function Nav({ onPlayground, onStatsClick, onAdminClick, onLogout, user }: { onPlayground: () => void, onStatsClick: () => void, onAdminClick: () => void, onLogout: () => void, user: PlaygroundUser }): JSX.Element  {
-    console.log(user)
     const [anchorEl, setAnchorEl] = React.useState(null);
     const open = Boolean(anchorEl);
     const handleMenu = (event) => setAnchorEl(event.currentTarget);
