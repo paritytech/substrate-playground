@@ -417,7 +417,7 @@ impl Engine {
                 .get(TEMPLATE_ANNOTATION)
                 .ok_or("no template annotation")?,
         )?;
-        let session_duration = Duration::from_secs(
+        let duration = Duration::from_secs(
             annotations
                 .get(SESSION_DURATION_ANNOTATION)
                 .ok_or("no session_duration annotation")?
@@ -430,7 +430,7 @@ impl Engine {
             template,
             url: subdomain(&self.configuration.host, &username),
             pod: Self::pod_to_details(self, pod)?,
-            session_duration,
+            duration,
         })
     }
 
@@ -653,7 +653,7 @@ impl Engine {
         session: Session,
         conf: SessionConfiguration,
     ) -> Result<Session, String> {
-        if conf.session_duration != session.session_duration {
+        if conf.duration != session.duration {
             let config = config().await?;
             let client = Client::new(config);
             let pod_api: Api<Pod> = Api::namespaced(client, &self.configuration.namespace);
@@ -664,14 +664,14 @@ impl Engine {
             let patch = serde_yaml::to_vec(&serde_json::json!({
                 "op": "add",
                 "path": format!("/metadata/annotations/{}", SESSION_DURATION_ANNOTATION.to_string()),
-                "value": session_duration_annotation(conf.session_duration),
+                "value": session_duration_annotation(conf.duration),
             }))
             .unwrap();
             pod_api.patch(&pod_name(&session.username), &params, patch).await.map_err(error_to_string)?;
         }
 
         Ok(Session {
-            session_duration: conf.session_duration,
+            duration: conf.duration,
             ..session
         })
     }

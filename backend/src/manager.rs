@@ -118,10 +118,10 @@ impl Manager {
                 Ok(sessions) => {
                     for session in running_sessions(sessions) {
                         if let Ok(duration) = &session.pod.start_time.elapsed() {
-                            if duration > &session.session_duration {
+                            if duration > &session.duration {
                                 info!(
                                     "Undeploying {} {:?} {:?}",
-                                    session.username, duration, session.session_duration
+                                    session.username, duration, session.duration
                                 );
 
                                 match self.clone().delete_session(&session.username) {

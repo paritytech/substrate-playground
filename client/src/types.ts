@@ -23,11 +23,11 @@ export interface Session {
     url: string,
     template: Template,
     pod: PodDetails,
-    sessionDuration: number,
+    duration: number,
 }
 export interface SessionConfiguration {
     template: string,
-    sessionDuration: number,
+    duration: number,
 }
 
 export interface NameValuePair {

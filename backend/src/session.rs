@@ -11,7 +11,7 @@ pub struct Session {
     pub template: Template,
     pub url: String,
     pub pod: PodDetails,
-    pub session_duration: Duration,
+    pub duration: Duration,
 }
 
 impl Display for Session {
@@ -27,7 +27,7 @@ impl Display for Session {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct SessionConfiguration {
     pub template: String,
-    pub session_duration: Duration,
+    pub duration: Duration,
 }
 
 impl Display for SessionConfiguration {
