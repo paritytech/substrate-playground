@@ -8,21 +8,21 @@ import DialogContentText from '@material-ui/core/DialogContentText';
 import DialogTitle from '@material-ui/core/DialogTitle';
 import Typography from '@material-ui/core/Typography';
 
-function TermsDialog({ terms, show, onHide, onTermsApproved }: { terms: string, show: boolean, onHide: () => void, onTermsApproved: () => void }) {
+function TermsDialog({ terms, show, onHide, onTermsApproved }: { terms: string, show: boolean, onHide: () => void, onTermsApproved: () => void }): JSX.Element {
     return (
-    <Dialog open={show} maxWidth="md">
-        <DialogTitle>Terms</DialogTitle>
-        <DialogContent>
-            <DialogContentText id="alert-dialog-description">
-                <span dangerouslySetInnerHTML={{__html:marked(terms)}}></span>
-            </DialogContentText>
-            <Button onClick={() => {onTermsApproved(); onHide();}}>ACCEPT</Button>
-            <Button onClick={onHide}>CLOSE</Button>
-        </DialogContent>
-    </Dialog>);
+        <Dialog open={show} maxWidth="md">
+            <DialogTitle>Terms</DialogTitle>
+            <DialogContent>
+                <DialogContentText id="alert-dialog-description">
+                    <span dangerouslySetInnerHTML={{__html:marked(terms)}}></span>
+                </DialogContentText>
+                <Button onClick={() => {onTermsApproved(); onHide();}}>ACCEPT</Button>
+                <Button onClick={onHide}>CLOSE</Button>
+            </DialogContent>
+        </Dialog>);
 }
 
-export function TermsPanel({ terms, onTermsApproved }: { terms: string, onTermsApproved: () => void }) {
+export function TermsPanel({ terms, onTermsApproved }: { terms: string, onTermsApproved: () => void }): JSX.Element {
     const [showTerms, setTermsVisible] = useState(false);
     return (
         <Container style={{display: "flex", flex: 1, padding: 0, alignItems: "center", justifyContent: "center", flexDirection: "column"}}>
