@@ -5,11 +5,11 @@ import GitHubIcon from '@material-ui/icons/GitHub';
 import Typography from '@material-ui/core/Typography';
 
 function login(): void {
-    localStorage.setItem('login', "true");
+    // TODO propagate deploy and files params
     window.location.href = "/api/login/github";
 }
 
-export function LoginPanel() {
+export function LoginPanel(): JSX.Element {
     return (
         <Container style={{display: "flex", flex: 1, padding: 0, alignItems: "center", justifyContent: "center", flexDirection: "column"}}>
             <Typography variant="h3" style= {{ textAlign: "center" }}>
