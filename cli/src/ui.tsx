@@ -107,7 +107,13 @@ enum State {
 
 function App({web, port, env, template, templates, debug}: {web: boolean, port: number, env: Environment, template: string, templates: Template[], debug: boolean}): JSX.Element {
 	const defaultemplate = templates.find(t => t.name == template);
-	const [state, setState] = useState((template && !defaultemplate) ? State.ERROR_UNKNOWN_TEMPLATE : (templates.length > 0 ? null : State.ERROR_NO_TEMPLATE));
+	const [state, setState] = useState(() => {
+        if (template && !defaultemplate) {
+            return State.ERROR_UNKNOWN_TEMPLATE;
+        } else {
+            return !templates.length ? State.ERROR_NO_TEMPLATE : null;
+        };
+    });
 	const [selectedTemplate, setTemplate] = useState(defaultemplate);
 
 	useEffect(() => {
