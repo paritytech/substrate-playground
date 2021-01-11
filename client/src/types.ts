@@ -18,8 +18,16 @@ export interface UserConfiguration {
     admin: boolean,
 }
 
+export interface Session {
+    user: String,
+    url: string,
+    template: Template,
+    pod: PodDetails,
+    sessionDuration: number,
+}
 export interface SessionConfiguration {
     template: string,
+    sessionDuration: number,
 }
 
 export interface NameValuePair {
@@ -54,12 +62,4 @@ export interface PodDetails {
     reason: String,
     message: String,
     startTime: number,
-}
-
-export interface Session {
-    user: String,
-    url: string,
-    template: Template,
-    pod: PodDetails,
-    sessionDuration: number,
 }

@@ -3,6 +3,7 @@ import { Playground, Session, SessionConfiguration, User, UserConfiguration, } f
 
 export class Client {
 
+    static userResource = 'user';
     static usersResource = 'users';
     static sessionResource = 'session';
     static sessionsResource = 'sessions';
@@ -23,15 +24,30 @@ export class Client {
         return rpc(this.path(), init);
     }
 
+    // Current User
+
+    async getCurrentUser(init: RequestInit = this.defaultInit): Promise<User> {
+        return rpc(this.path(Client.userResource), {
+            ...init
+        });
+    }
+
     // Users
+
+    async getUser(id: string, init: RequestInit = this.defaultInit): Promise<User> {
+        return rpc(this.path(Client.usersResource, id), {
+            ...init
+        });
+    }
 
     async listUsers(init: RequestInit = this.defaultInit): Promise<Record<string, User>> {
         return rpc(this.path(Client.usersResource), init);
     }
 
-    async createOrUpdateUser(id: string, user: UserConfiguration, init: RequestInit = this.defaultInit): Promise<void> {
+    async createOrUpdateUser(id: string, conf: UserConfiguration, init: RequestInit = this.defaultInit): Promise<User> {
         return rpc(this.path(Client.usersResource, id), {
-            body: JSON.stringify(user),
+            method: 'PUT',
+            body: JSON.stringify(conf),
             ...init
         });
     }
@@ -43,21 +59,21 @@ export class Client {
         });
     }
 
-    // User Session
+    // Current Session
 
-    async getUserSession(init: RequestInit = this.defaultInit): Promise<Session> {
+    async getCurrentSession(init: RequestInit = this.defaultInit): Promise<Session> {
         return rpc(this.path(Client.sessionResource), init);
     }
 
-    async createOrUpdateUserSession(session: SessionConfiguration, init: RequestInit = this.defaultInit): Promise<void> {
+    async createOrUpdateCurrentSession(conf: SessionConfiguration, init: RequestInit = this.defaultInit): Promise<Session> {
         return rpc(this.path(Client.sessionResource), {
             method: 'PUT',
-            body: JSON.stringify(session),
+            body: JSON.stringify(conf),
             ...init
         });
     }
 
-    async deleteUserSession(init: RequestInit = this.defaultInit): Promise<void> {
+    async deleteCurrentSession(init: RequestInit = this.defaultInit): Promise<void> {
         return rpc(this.path(Client.sessionResource), {
             method: 'DELETE',
             ...init
@@ -70,10 +86,10 @@ export class Client {
         return rpc(this.path(Client.sessionsResource), init);
     }
 
-    async createOrUpdateSession(id: string, session: SessionConfiguration, init: RequestInit = this.defaultInit): Promise<void> {
+    async createOrUpdateSession(id: string, conf: SessionConfiguration, init: RequestInit = this.defaultInit): Promise<Session> {
         return rpc(this.path(Client.sessionsResource, id), {
             method: 'PUT',
-            body: JSON.stringify(session),
+            body: JSON.stringify(conf),
             ...init
         });
     }
