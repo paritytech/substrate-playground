@@ -93,19 +93,20 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 api::get,
                 api::get_unlogged,
                 api::update,
-                // Sessions
-                api::get_user_session,
-                api::create_or_update_user_session,
-                api::delete_user_session,
-                api::delete_user_session_unlogged,
-                api::list_sessions,
-                api::create_or_update_session,
-                api::create_or_update_session_unlogged,
-                api::delete_session,
                 // Users
                 api::list_users,
                 api::create_or_update_user,
                 api::delete_user,
+                // Current Session
+                api::get_current_session,
+                api::create_or_update_current_session,
+                api::delete_current_session,
+                api::delete_current_session_unlogged,
+                // Sessions
+                api::list_sessions,
+                api::create_or_update_session,
+                api::create_or_update_session_unlogged,
+                api::delete_session,
                 // Login
                 api::github_login,
                 api::post_install_callback,

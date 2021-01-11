@@ -27,6 +27,7 @@ impl Display for Session {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct SessionConfiguration {
     pub template: String,
+    pub session_duration: Duration,
 }
 
 impl Display for SessionConfiguration {

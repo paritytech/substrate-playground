@@ -148,10 +148,10 @@ pub fn delete_user(state: State<'_, Context>, _admin: LoggedAdmin, id: String) -
     result_to_jsonrpc(manager.delete_user(id))
 }
 
-// User Session
+// Current Session
 
 #[get("/session")]
-pub fn get_user_session(state: State<'_, Context>, user: LoggedUser) -> JsonValue {
+pub fn get_current_session(state: State<'_, Context>, user: LoggedUser) -> JsonValue {
     let manager = state.manager.clone();
     result_to_jsonrpc(manager.get_session(&user.id))
 }
@@ -160,7 +160,7 @@ pub fn get_user_session(state: State<'_, Context>, user: LoggedUser) -> JsonValu
 // Depending on users attributes, assign the right pod affinity
 
 #[put("/session", data = "<conf>")]
-pub fn create_or_update_user_session(
+pub fn create_or_update_current_session(
     state: State<'_, Context>,
     user: LoggedUser,
     conf: Json<SessionConfiguration>,
@@ -172,13 +172,13 @@ pub fn create_or_update_user_session(
 }
 
 #[delete("/session")]
-pub fn delete_user_session(state: State<'_, Context>, user: LoggedUser) -> JsonValue {
+pub fn delete_current_session(state: State<'_, Context>, user: LoggedUser) -> JsonValue {
     let manager = state.manager.clone();
     result_to_jsonrpc(manager.delete_session(&user.id))
 }
 
 #[delete("/session", rank = 2)]
-pub fn delete_user_session_unlogged() -> status::Unauthorized<()> {
+pub fn delete_current_session_unlogged() -> status::Unauthorized<()> {
     status::Unauthorized::<()>(None)
 }
 
@@ -225,15 +225,40 @@ pub fn delete_session(
 
 // GitHub login logic
 
-#[get("/login/github")]
-pub fn github_login(oauth2: OAuth2<GitHubUser>, mut cookies: Cookies<'_>) -> Redirect {
-    oauth2.get_redirect(&mut cookies, &["user:read"]).unwrap()
+fn query_params(deploy: Option<String>) -> String {
+    if let Some(d) = deploy {
+        return format!("?deploy={}", d);
+    }
+    "".to_string()
 }
 
-/// Callback to handle the authenticated token recieved from GitHub
+// Gets called from UI. Then redirects to the GitHub `auth_uri` which itself redirects to `/auth/github`
+#[get("/login/github?<deploy>")]
+pub fn github_login(
+    deploy: Option<String>,
+    oauth2: OAuth2<GitHubUser>,
+    mut cookies: Cookies<'_>,
+) -> Redirect {
+    oauth2
+        .get_redirect_extras(
+            &mut cookies,
+            &["user:read"],
+            &[(
+                "redirect_uri",
+                &format!(
+                    "http://playground-dev.substrate.test/api/auth/github{}",
+                    &query_params(deploy)
+                ),
+            )],
+        )
+        .unwrap()
+}
+
+/// Callback to handle the authenticated token received from GitHub
 /// and store it as a cookie
-#[get("/auth/github")]
+#[get("/auth/github?<deploy>")]
 pub fn post_install_callback(
+    deploy: Option<String>,
     token: TokenResponse<GitHubUser>,
     mut cookies: Cookies<'_>,
 ) -> Result<Redirect, String> {
@@ -243,7 +268,7 @@ pub fn post_install_callback(
             .finish(),
     );
 
-    Ok(Redirect::to("/logged"))
+    Ok(Redirect::to(format!("/{}", query_params(deploy))))
 }
 
 #[get("/logout")]

@@ -27,7 +27,7 @@ fn running_sessions(sessions: Vec<Session>) -> Vec<Session> {
 pub struct Manager {
     pub engine: Engine,
     pub metrics: Metrics,
-    instances: Arc<Mutex<BTreeMap<String, String>>>,
+    sessions: Arc<Mutex<BTreeMap<String, Session>>>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -72,7 +72,7 @@ impl Manager {
         Ok(Manager {
             engine,
             metrics,
-            instances: Arc::new(Mutex::new(BTreeMap::new())), // Temp map used to track instance deployment time
+            sessions: Arc::new(Mutex::new(BTreeMap::new())), // Temp map used to track session deployment time
         })
     }
 
@@ -81,24 +81,24 @@ impl Manager {
             thread::sleep(Manager::FIVE_SECONDS);
 
             // Track some deployments metrics
-            let instances_thread = self.clone().instances.clone();
-            if let Ok(mut instances2) = instances_thread.lock() {
-                let instances3 = &mut instances2.clone();
-                for id in instances3 {
+            let sessions_thread = self.clone().sessions.clone();
+            if let Ok(mut sessions2) = sessions_thread.lock() {
+                let sessions3 = &mut sessions2.clone();
+                for id in sessions3 {
                     match self.clone().get_session(&id.0) {
                         Ok(session) => {
-                            // Deployed instances are removed from the set
+                            // Deployed sessions are removed from the set
                             // Additionally the deployment time is tracked
                             match session.pod.phase {
                                 Phase::Running | Phase::Failed => {
-                                    instances2.remove(&session.username);
+                                    sessions2.remove(&session.username);
                                     // TODO track success / failure
                                     if let Ok(duration) = &session.pod.start_time.elapsed() {
                                         self.clone()
                                             .metrics
                                             .observe_deploy_duration(&id.0, duration.as_secs_f64());
                                     } else {
-                                        error!("Failed to compute this instance lifetime");
+                                        error!("Failed to compute this session lifetime");
                                     }
                                 }
                                 _ => {}
@@ -110,7 +110,7 @@ impl Manager {
                     }
                 }
             } else {
-                error!("Failed to acquire instances lock");
+                error!("Failed to acquire sessions lock");
             }
 
             // Go through all Running pods and figure out if they have to be undeployed
@@ -186,7 +186,11 @@ impl Manager {
         new_runtime()?.block_on(self.engine.list_users())
     }
 
-    pub fn create_or_update_user(self, id: String, user: UserConfiguration) -> Result<(), String> {
+    pub fn create_or_update_user(
+        self,
+        id: String,
+        user: UserConfiguration,
+    ) -> Result<User, String> {
         new_runtime()?.block_on(self.engine.create_or_update_user(id, user))
     }
 
@@ -207,17 +211,16 @@ impl Manager {
     pub fn create_or_update_session(
         self,
         username: &str,
-        session: SessionConfiguration,
-    ) -> Result<String, String> {
-        let template = session.clone().template;
-        let result =
-            new_runtime()?.block_on(self.engine.create_or_update_session(&username, session));
+        conf: SessionConfiguration,
+    ) -> Result<Session, String> {
+        let template = conf.clone().template;
+        let result = new_runtime()?.block_on(self.engine.create_or_update_session(&username, conf));
         match result.clone() {
-            Ok(instance_uuid) => {
-                if let Ok(mut instances) = self.instances.lock() {
-                    instances.insert(username.into(), instance_uuid);
+            Ok(session) => {
+                if let Ok(mut sessions) = self.sessions.lock() {
+                    sessions.insert(username.into(), session);
                 } else {
-                    error!("Failed to acquire instances lock");
+                    error!("Failed to acquire sessions lock");
                 }
                 self.metrics.inc_deploy_counter(&username, &template);
             }
