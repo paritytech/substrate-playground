@@ -87,6 +87,20 @@ fn pod_env_variables(template: &Template, host: &str, instance_uuid: &str) -> Ve
 
 // TODO detect when ingress is restarted, then re-sync theia instances
 
+fn session_duration_annotation(session_duration: Duration) -> String {
+    session_duration.as_secs().to_string()
+}
+
+fn create_pod_annotations(template: &Template, session_duration: Duration) -> BTreeMap<String, String> {
+    let mut annotations = BTreeMap::new();
+    annotations.insert(TEMPLATE_ANNOTATION.to_string(), template.to_string());
+    annotations.insert(
+        SESSION_DURATION_ANNOTATION.to_string(),
+        session_duration_annotation(session_duration),
+    );
+    annotations
+}
+
 fn create_pod(
     host: &str,
     instance_uuid: &str,
@@ -99,18 +113,12 @@ fn create_pod(
     labels.insert(APP_LABEL.to_string(), APP_VALUE.to_string());
     labels.insert(COMPONENT_LABEL.to_string(), COMPONENT_VALUE.to_string());
     labels.insert(OWNER_LABEL.to_string(), instance_uuid.to_string());
-    let mut annotations = BTreeMap::new();
-    annotations.insert(TEMPLATE_ANNOTATION.to_string(), template.to_string());
-    annotations.insert(
-        SESSION_DURATION_ANNOTATION.to_string(),
-        session_duration.as_secs().to_string(),
-    );
 
     Pod {
         metadata: ObjectMeta {
             name: Some(pod_name(instance_uuid)),
             labels: Some(labels),
-            annotations: Some(annotations),
+            annotations: Some(create_pod_annotations(template, session_duration)),
             ..Default::default()
         },
         spec: Some(PodSpec {
@@ -500,17 +508,20 @@ impl Engine {
         self,
         id: String,
         user: UserConfiguration,
-    ) -> Result<(), String> {
+    ) -> Result<User, String> {
         let config = config().await?;
         let client = Client::new(config);
-        Ok(add_config_map_value(
+
+        add_config_map_value(
             client,
             &self.configuration.namespace,
             "playground-users",
             id.as_str(),
             format!("admin: {}", user.admin).as_str(),
         )
-        .await?)
+        .await?;
+
+        Ok(User { admin: user.admin })
     }
 
     pub async fn delete_user(self, id: String) -> Result<(), String> {
@@ -588,31 +599,18 @@ impl Engine {
         Ok(())
     }
 
-    pub async fn create_or_update_session(
+    pub async fn create_session(
         self,
-        username: &str,
-        session: SessionConfiguration,
-    ) -> Result<String, String> {
-        // TODO check if already exists, update if yes
-        // TODO template can't be updated
-        // Create a unique ID for this instance. Use lowercase to make sure the result can be used as part of a DNS
-        let instance_uuid = username.to_string().to_lowercase();
-        if self
-            .clone()
-            .get_session(&instance_uuid.clone())
-            .await
-            .is_ok()
-        {
-            return Err("One instance is already running".to_string());
-        }
-
+        session_uuid: String,
+        conf: SessionConfiguration,
+    ) -> Result<Session, String> {
         let config = config().await?;
         let client = Client::new(config);
         // Access the right image id
         let templates = get_templates(client.clone(), &self.configuration.namespace).await?;
         let template = templates
-            .get(&session.template.to_string())
-            .ok_or_else(|| format!("Unknow image {}", session.template))?;
+            .get(&conf.template.to_string())
+            .ok_or_else(|| format!("Unknow image {}", conf.template))?;
         let instance_template = &Template::parse(&template)?;
 
         let namespace = &self.configuration.namespace;
@@ -623,17 +621,17 @@ impl Engine {
         // With the proper mapping
         // Define the correct route
         // Also deploy proper tcp mapping configmap https://kubernetes.github.io/ingress-nginx/user-guide/exposing-tcp-udp-services/
-        let mut instances = BTreeMap::new();
-        instances.insert(instance_uuid.clone(), instance_template);
-        self.patch_ingress(instances).await?;
+        let mut sessions = BTreeMap::new();
+        sessions.insert(session_uuid.clone(), instance_template);
+        self.patch_ingress(sessions).await?;
 
         // Deploy a new pod for this image
-        pod_api
+        let pod = pod_api
             .create(
                 &PostParams::default(),
                 &create_pod(
                     &self.configuration.host,
-                    &instance_uuid.clone(),
+                    &session_uuid.clone(),
                     instance_template,
                     self.configuration.session_duration,
                 ),
@@ -643,13 +641,55 @@ impl Engine {
 
         // Deploy the associated service
         let service_api: Api<Service> = Api::namespaced(client.clone(), namespace);
-        let service = create_service(&instance_uuid.clone(), instance_template);
+        let service = create_service(&session_uuid.clone(), instance_template);
         service_api
             .create(&PostParams::default(), &service)
             .await
             .map_err(error_to_string)?;
 
-        Ok(instance_uuid)
+        Ok(self.pod_to_session(&pod)?)
+    }
+
+    pub async fn update_session(
+        self,
+        session: Session,
+        conf: SessionConfiguration,
+    ) -> Result<Session, String> {
+        if conf.session_duration != session.session_duration {
+            let config = config().await?;
+            let client = Client::new(config);
+            let pod_api: Api<Pod> = Api::namespaced(client, &self.configuration.namespace);
+            let params = PatchParams {
+                patch_strategy: PatchStrategy::JSON,
+                ..PatchParams::default()
+            };
+            let patch = serde_yaml::to_vec(&serde_json::json!({
+                "op": "add",
+                "path": format!("/metadata/annotations/{}", SESSION_DURATION_ANNOTATION.to_string()),
+                "value": session_duration_annotation(conf.session_duration),
+            }))
+            .unwrap();
+            pod_api.patch(&pod_name(&session.username), &params, patch).await.map_err(error_to_string)?;
+        }
+
+        Ok(Session {
+            session_duration: conf.session_duration,
+            ..session
+        })
+    }
+
+    pub async fn create_or_update_session(
+        self,
+        username: &str,
+        conf: SessionConfiguration,
+    ) -> Result<Session, String> {
+        // Create a unique ID for this instance. Use lowercase to make sure the result can be used as part of a DNS
+        let instance_uuid = username.to_string().to_lowercase();
+        if let Ok(session) = self.clone().get_session(&instance_uuid.clone()).await {
+            self.update_session(session, conf).await
+        } else {
+            self.create_session(instance_uuid, conf).await
+        }
     }
 
     pub async fn delete_session(self, username: &str) -> Result<(), String> {
