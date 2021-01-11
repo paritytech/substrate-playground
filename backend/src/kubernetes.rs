@@ -31,6 +31,9 @@ const OWNER_LABEL: &str = "app.kubernetes.io/owner";
 const INGRESS_NAME: &str = "ingress";
 const TEMPLATE_ANNOTATION: &str = "playground.substrate.io/template";
 const SESSION_DURATION_ANNOTATION: &str = "playground.substrate.io/session_duration";
+const CONFIG_CONFIG_MAP: &str = "playground-config";
+const USERS_CONFIG_MAP: &str = "playground-users";
+const TEMPLATES_CONFIG_MAP: &str = "playground-templates";
 const THEIA_WEB_PORT: i32 = 3000;
 
 fn error_to_string<T: std::fmt::Display>(err: T) -> String {
@@ -297,11 +300,11 @@ async fn get_templates(
     client: Client,
     namespace: &str,
 ) -> Result<BTreeMap<String, String>, String> {
-    get_config_map(client, namespace, "playground-templates").await
+    get_config_map(client, namespace, TEMPLATES_CONFIG_MAP).await
 }
 
 async fn list_users(client: Client, namespace: &str) -> Result<BTreeMap<String, String>, String> {
-    get_config_map(client, namespace, "playground-users").await
+    get_config_map(client, namespace, USERS_CONFIG_MAP).await
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -459,7 +462,7 @@ impl Engine {
             add_config_map_value(
                 client,
                 &self.configuration.namespace,
-                "playground-config",
+                CONFIG_CONFIG_MAP,
                 "defaultSessionDuration",
                 &conf.session_duration.as_secs().to_string(),
             )
@@ -510,7 +513,7 @@ impl Engine {
         add_config_map_value(
             client,
             &self.configuration.namespace,
-            "playground-users",
+            USERS_CONFIG_MAP,
             id.as_str(),
             format!("admin: {}", user.admin).as_str(),
         )
@@ -525,7 +528,7 @@ impl Engine {
         Ok(delete_config_map_value(
             client,
             &self.configuration.namespace,
-            "playground-users",
+            USERS_CONFIG_MAP,
             id.as_str(),
         )
         .await?)
