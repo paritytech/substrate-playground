@@ -67,10 +67,10 @@ fn create_env_var(name: &str, value: &str) -> EnvVar {
     }
 }
 
-fn pod_env_variables(template: &Template, host: &str, instance_uuid: &str) -> Vec<EnvVar> {
+fn pod_env_variables(template: &Template, host: &str, session_uuid: &str) -> Vec<EnvVar> {
     let mut envs = vec![
         create_env_var("SUBSTRATE_PLAYGROUND", ""),
-        create_env_var("SUBSTRATE_PLAYGROUND_INSTANCE", instance_uuid),
+        create_env_var("SUBSTRATE_PLAYGROUND_SESSION", session_uuid),
         create_env_var("SUBSTRATE_PLAYGROUND_HOSTNAME", host),
     ];
     if let Some(mut template_envs) = template.runtime.as_ref().and_then(|r| {
@@ -85,7 +85,7 @@ fn pod_env_variables(template: &Template, host: &str, instance_uuid: &str) -> Ve
     envs
 }
 
-// TODO detect when ingress is restarted, then re-sync theia instances
+// TODO detect when ingress is restarted, then re-sync theia sessions
 
 fn session_duration_annotation(session_duration: Duration) -> String {
     session_duration.as_secs().to_string()
@@ -103,7 +103,7 @@ fn create_pod_annotations(template: &Template, session_duration: Duration) -> BT
 
 fn create_pod(
     host: &str,
-    instance_uuid: &str,
+    session_uuid: &str,
     template: &Template,
     session_duration: Duration,
 ) -> Pod {
@@ -112,11 +112,11 @@ fn create_pod(
     // Can be done by querying dockerhub (https://docs.docker.com/registry/spec/api/)
     labels.insert(APP_LABEL.to_string(), APP_VALUE.to_string());
     labels.insert(COMPONENT_LABEL.to_string(), COMPONENT_VALUE.to_string());
-    labels.insert(OWNER_LABEL.to_string(), instance_uuid.to_string());
+    labels.insert(OWNER_LABEL.to_string(), session_uuid.to_string());
 
     Pod {
         metadata: ObjectMeta {
-            name: Some(pod_name(instance_uuid)),
+            name: Some(pod_name(session_uuid)),
             labels: Some(labels),
             annotations: Some(create_pod_annotations(template, session_duration)),
             ..Default::default()
@@ -125,7 +125,7 @@ fn create_pod(
             containers: vec![Container {
                 name: format!("{}-container", COMPONENT_VALUE),
                 image: Some(template.image.to_string()),
-                env: Some(pod_env_variables(template, host, instance_uuid)),
+                env: Some(pod_env_variables(template, host, session_uuid)),
                 ..Default::default()
             }],
             ..Default::default()
@@ -134,13 +134,13 @@ fn create_pod(
     }
 }
 
-fn create_service(instance_uuid: &str, template: &Template) -> Service {
+fn create_service(session_uuid: &str, template: &Template) -> Service {
     let mut labels = BTreeMap::new();
     labels.insert(APP_LABEL.to_string(), APP_VALUE.to_string());
     labels.insert(COMPONENT_LABEL.to_string(), COMPONENT_VALUE.to_string());
-    labels.insert(OWNER_LABEL.to_string(), instance_uuid.to_string());
+    labels.insert(OWNER_LABEL.to_string(), session_uuid.to_string());
     let mut selectors = BTreeMap::new();
-    selectors.insert(OWNER_LABEL.to_string(), instance_uuid.to_string());
+    selectors.insert(OWNER_LABEL.to_string(), session_uuid.to_string());
 
     // The theia port itself is mandatory
     let mut ports = vec![ServicePort {
@@ -168,7 +168,7 @@ fn create_service(instance_uuid: &str, template: &Template) -> Service {
 
     Service {
         metadata: ObjectMeta {
-            name: Some(service_name(instance_uuid)),
+            name: Some(service_name(session_uuid)),
             labels: Some(labels),
             ..Default::default()
         },
@@ -209,8 +209,8 @@ fn create_ingress_paths(service_name: String, template: &Template) -> Vec<HTTPIn
     paths
 }
 
-fn subdomain(host: &str, instance_uuid: &str) -> String {
-    format!("{}.{}", instance_uuid, host)
+fn subdomain(host: &str, session_uuid: &str) -> String {
+    format!("{}.{}", session_uuid, host)
 }
 
 async fn config() -> Result<Config, String> {
@@ -313,11 +313,6 @@ pub struct Configuration {
     pub client_secret: String,
     pub session_duration: Duration,
 }
-
-//pub users: Vec<String>, // if empty, anybody is a user. If not, only listed. Only user can create new instance. Non-user should have limited UI
-// TODO Deployment time should be modifiable, extendable
-// At deployment time, some config can be provided (per template, custom duration depending on rights, ..)
-// How to export / connect workspace to GH?
 
 #[derive(Clone)]
 pub struct Engine {
@@ -567,7 +562,7 @@ impl Engine {
 
     pub async fn patch_ingress(
         &self,
-        instances: BTreeMap<String, &Template>,
+        templates: BTreeMap<String, &Template>,
     ) -> Result<(), String> {
         let config = config().await?;
         let client = Client::new(config);
@@ -579,7 +574,7 @@ impl Engine {
             .clone();
         let mut spec = ingress.clone().spec.ok_or("No spec")?.clone();
         let mut rules: Vec<IngressRule> = spec.clone().rules.ok_or("No rules")?;
-        for (uuid, template) in instances {
+        for (uuid, template) in templates {
             let subdomain = subdomain(&self.configuration.host, &uuid);
             rules.push(IngressRule {
                 host: Some(subdomain.clone()),
@@ -608,10 +603,10 @@ impl Engine {
         let client = Client::new(config);
         // Access the right image id
         let templates = get_templates(client.clone(), &self.configuration.namespace).await?;
-        let template = templates
+        let template_str = templates
             .get(&conf.template.to_string())
             .ok_or_else(|| format!("Unknow image {}", conf.template))?;
-        let instance_template = &Template::parse(&template)?;
+        let template = &Template::parse(&template_str)?;
 
         let namespace = &self.configuration.namespace;
 
@@ -622,7 +617,7 @@ impl Engine {
         // Define the correct route
         // Also deploy proper tcp mapping configmap https://kubernetes.github.io/ingress-nginx/user-guide/exposing-tcp-udp-services/
         let mut sessions = BTreeMap::new();
-        sessions.insert(session_uuid.clone(), instance_template);
+        sessions.insert(session_uuid.clone(), template);
         self.patch_ingress(sessions).await?;
 
         // Deploy a new pod for this image
@@ -632,7 +627,7 @@ impl Engine {
                 &create_pod(
                     &self.configuration.host,
                     &session_uuid.clone(),
-                    instance_template,
+                    template,
                     self.configuration.session_duration,
                 ),
             )
@@ -641,7 +636,7 @@ impl Engine {
 
         // Deploy the associated service
         let service_api: Api<Service> = Api::namespaced(client.clone(), namespace);
-        let service = create_service(&session_uuid.clone(), instance_template);
+        let service = create_service(&session_uuid.clone(), template);
         service_api
             .create(&PostParams::default(), &service)
             .await
@@ -683,12 +678,12 @@ impl Engine {
         username: &str,
         conf: SessionConfiguration,
     ) -> Result<Session, String> {
-        // Create a unique ID for this instance. Use lowercase to make sure the result can be used as part of a DNS
-        let instance_uuid = username.to_string().to_lowercase();
-        if let Ok(session) = self.clone().get_session(&instance_uuid.clone()).await {
+        // Create a unique ID for this session. Use lowercase to make sure the result can be used as part of a DNS
+        let session_uuid = username.to_string().to_lowercase();
+        if let Ok(session) = self.clone().get_session(&session_uuid.clone()).await {
             self.update_session(session, conf).await
         } else {
-            self.create_session(instance_uuid, conf).await
+            self.create_session(session_uuid, conf).await
         }
     }
 

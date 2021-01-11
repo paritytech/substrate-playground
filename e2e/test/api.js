@@ -5,7 +5,7 @@ const { Client } = pkg;
 const env = process.env.ENV || "dev";
 const client = new Client({env: env});
 
-test('unauthenticated - should not be able to create a new instance', async (t) => {
+test('unauthenticated - should not be able to create a new session', async (t) => {
   const res = await client.deployInstance('node-template');
   t.is(res.error, 'User unauthorized');
 });

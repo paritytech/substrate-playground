@@ -1,13 +1,13 @@
 import { v4 as uuidv4 } from 'uuid';
 import { BroadcastChannel } from 'broadcast-channel';
 
-const GLOBAL_CHANNEL = "paritytech#playground-instance";
+const GLOBAL_CHANNEL = "paritytech#playground-session";
 const TYPE_DISCOVERY = "discovery";
 const TYPE_INSTANCE_ANNOUNCED = "instanceAnnounced";
 const TYPE_INSTANCE_LEFT = "instanceLeft";
 
 function instanceChannelId(uuid: string) {
-    return `paritytech#playground-instance-${uuid}`;
+    return `${GLOBAL_CHANNEL}-${uuid}`;
 }
 
 export class Discoverer {
