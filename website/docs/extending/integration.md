@@ -9,7 +9,7 @@ Use a URL that once accessed trigger an instance deployment and redirects to the
 
 ### Query parameters
 
-* deploy=`id` where id is a recoiognized template id
+* deploy=`id` where id is a valid template id
 * files=%2Fsome%2FfileA,%2Fsome%2FfileB opens some files
 
 
