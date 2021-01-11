@@ -1,7 +1,7 @@
 import crypto from 'crypto';
-import { assign, Machine } from 'xstate';
+import { assign, EventObject, Machine } from 'xstate';
 import { useMachine } from '@xstate/react';
-import { Client, Template, User } from '@substrate/playground-client';
+import { Client, PlaygroundUser, Session, Template } from '@substrate/playground-client';
 import { PanelId } from './index';
 import terms from 'bundle-text:./terms.md';
 
@@ -10,25 +10,49 @@ const termsHash = crypto.createHash('md5').update(terms).digest('hex');
 export interface Context {
   terms: string,
   panel: PanelId,
-  user: User,
+  user: PlaygroundUser,
   templates: Record<string, Template>,
-  instance?: string
+  session?: Session
 }
 
-export const termsUnapproved = "@state/TERMS_UNAPPROVED";
-export const setup = "@state/SETUP";
-export const logged = "@state/LOGGED";
-export const unlogged = "@state/UNLOGGED";
+export enum States {
+    TERMS_UNAPPROVED = '@state/TERMS_UNAPPROVED',
+    SETUP = '@state/SETUP',
+    LOGGED = '@state/LOGGED',
+    UNLOGGED = '@state/UNLOGGED'
+}
 
-export const success = "@event/SUCCESS";
-export const failure = "@event/FAILURE";
+interface UserDataMachineStates {
+    states: {
+        [States.TERMS_UNAPPROVED]: {},
+        [States.SETUP]: {},
+        [States.LOGGED]: {},
+        [States.UNLOGGED]: {},
+    }
+  }
 
-export const termsApproval = "@action/TERMS_APPROVAL";
-export const check = "@action/CHECK";
-export const stop = "@action/STOP";
-export const select = "@action/SELECT";
-export const restart = "@action/RESTART";
-export const logout = "@action/LOGOUT";
+export enum Events {
+    TERMS_APPROVAL = '@event/TERMS_APPROVAL',
+    CHECK = '@action/CHECK',
+    SELECT = '@action/SELECT',
+    RESTART = '@action/RESTART',
+    LOGOUT = '@action/LOGOUT',
+}
+
+type EventTypesSchema =
+    | Events.TERMS_APPROVAL
+    | Events.CHECK
+    | Events.SELECT
+    | Events.RESTART
+    | Events.LOGOUT;
+
+export interface UserDataMachineEvents extends EventObject {
+    type: EventTypesSchema;
+}
+
+export enum Actions {
+    STORE_TERMS_HASH = '@action/STORE_TERMS_HASH',
+}
 
 const termsApprovedKey = 'termsApproved';
 
@@ -38,58 +62,54 @@ function termsApproved(): boolean {
 }
 
 function lifecycle(client: Client) {
-  const pathParam = 'path';
-  return Machine<Context>({
-    id: 'lifecycle',
-    initial: termsApproved() ? setup: termsUnapproved,
+  return Machine<Context, UserDataMachineStates, UserDataMachineEvents>({
+    initial: termsApproved() ? States.SETUP: States.TERMS_UNAPPROVED,
     context: {
         terms: terms,
         panel: PanelId.Session,
     },
     states: {
-        [termsUnapproved]: {
+        [States.TERMS_UNAPPROVED]: {
             on: {
-            [termsApproval]: {target: setup,
-                              actions: ['storeTermsHash']},
+                [Events.TERMS_APPROVAL]:
+                    {target: States.SETUP,
+                     actions: [Actions.STORE_TERMS_HASH]},
             }
         },
-        [setup]: {
+        [States.SETUP]: {
             invoke: {
-            src: () => async (callback) => {
-                const { templates, user, session } = (await client.get());
-                if (user) {
-                    // TODO restore auto deployment
-                    callback({type: check, data: {templates: templates, user: user}});
-                } else {
-                    // TODO Keep track of query params while unlogged. Will be restored after login.
-                    const query = new URLSearchParams(window.location.search).toString();
-                    localStorage.setItem(pathParam, query);
-                }
-            },
+                src: () => async (callback) => {
+                    const { templates, user, session } = (await client.get());
+                    if (user) {
+                        // TODO restore auto deployment
+                        callback({type: Events.CHECK, data: {templates: templates, user: user, session: session}});
+                    }
+                },
             },
             on: {
-            [check]: { target: logged,
-                        actions: assign({templates: (_context, event) => event.data.templates, user: (_context, event) => event.data.user}) }
+            [Events.CHECK]:
+                {target: States.LOGGED,
+                 actions: assign({templates: (_, event) => event.data.templates, user: (_, event) => event.data.user, session: (_, event) => event.data.session}) }
             }
         },
-        [logged]: {
-            on: {[restart]: setup,
-                [logout]: unlogged,
-                [select]: {actions: assign({ panel: (_, event) => event.panel})},}
+        [States.LOGGED]: {
+            on: {[Events.RESTART]: States.SETUP,
+                 [Events.LOGOUT]: States.UNLOGGED,
+                 [Events.SELECT]: {actions: assign({ panel: (_, event) => event.panel})},}
         },
-        [unlogged]: {
+        [States.UNLOGGED]: {
             invoke: {
-            src: async () => {
-                await client.logout();
-            },
-            onDone: {target: setup}
+                src: async () => {
+                    await client.logout();
+                },
+                onDone: {target: States.SETUP}
             }
         },
     }
   },
   {
     actions: {
-      storeTermsHash: () => {
+      [Actions.STORE_TERMS_HASH]: () => {
         localStorage.setItem(termsApprovedKey, termsHash);
       },
     }

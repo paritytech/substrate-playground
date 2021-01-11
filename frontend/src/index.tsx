@@ -1,9 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom";
-import { Client } from '@substrate/playground-client';
+import { Client, Session, Template } from '@substrate/playground-client';
 import { createMuiTheme, ThemeProvider } from '@material-ui/core/styles';
-import { createBrowserHistory } from "history";
-import { Redirect, Route, Router, Switch } from "react-router-dom";
 import { AdminPanel } from './panels/admin';
 import { LoginPanel } from './panels/login';
 import { SessionPanel } from './panels/session';
@@ -11,56 +9,51 @@ import { StatsPanel } from './panels/stats';
 import { TermsPanel } from './panels/terms';
 import { TheiaPanel } from './panels/theia';
 import { Wrapper } from './components';
-import { useLifecycle, logged, logout, restart, select, termsApproval, termsUnapproved } from './lifecycle';
+import { useLifecycle, Events, States } from './lifecycle';
 import { intercept } from './server';
 
 export enum PanelId {Session, Admin, Stats, Theia}
 
-function MainPanelComponent({ client, send, state, restartAction, id }: {client: Client, id: PanelId, restartAction: () => void}): JSX.Element {
-  if (state.matches(logged)) {
-    const {session, templates} = state.context;
+function MainPanel({ client, id, templates, session, onConnect, onDeployed, restartAction }: { client: Client, id: PanelId, templates: Record<string, Template>, session: Session, restartAction: () => void, onConnect: () => void, onDeployed: () => void}): JSX.Element {
     switch(id) {
-      case PanelId.Session:
-        return <SessionPanel templates={templates} session={session} onRetry={restartAction}
-                onStopSession={() => client.deleteUserSession()}
-                onDeployed={async template => {
-                    await client.createOrUpdateUserSession({template: template});
-                    send(select, {panel: PanelId.Theia});
-                }}
-                onConnect={() => send(select, {panel: PanelId.Theia})} />;
-      case PanelId.Stats:
-        return <StatsPanel />;
-      case PanelId.Admin:
-        return <AdminPanel client={client} templates={templates} />;
-      case PanelId.Theia:
-        return <TheiaPanel client={client} onMissingSession={restartAction} onSessionFailing={restartAction} onSessionTimeout={restartAction} />;
-    }
-  } else if (state.matches(termsUnapproved)) {
-    return <TermsPanel terms={state.context.terms} onTermsApproved={() => send(termsApproval)} />
-  } else {
-    return <LoginPanel />;
-  }
+        case PanelId.Session:
+          return <SessionPanel templates={templates} session={session} onRetry={restartAction}
+                  onStopSession={() => client.deleteUserSession()}
+                  onDeployed={async template => {
+                      await client.createOrUpdateUserSession({template: template});
+                      onDeployed();
+                  }}
+                  onConnect={onConnect} />;
+        case PanelId.Stats:
+          return <StatsPanel />;
+        case PanelId.Admin:
+          return <AdminPanel client={client} templates={templates} />;
+        case PanelId.Theia:
+          return <TheiaPanel client={client} onMissingSession={restartAction} onSessionFailing={restartAction} onSessionTimeout={restartAction} />;
+      }
 }
 
 function Panel(): JSX.Element {
   const client = new Client(base, {credentials: "include"});
   const [state, send] = useLifecycle(client);
 
-  function restartAction() {
-    send(restart);
-  }
-  const {panel, user} = state.context;
+  const restartAction = send(Events.RESTART);
+
+  const {panel, session, templates, terms, user} = state.context;
   return (
       <div style={{ display: "flex", width: "100vw", height: "100vh", alignItems: "center", justifyContent: "center" }}>
-          <Wrapper onPlayground={() => send(select, {panel: PanelId.Session})} onAdminClick={() => send(select, {panel: PanelId.Admin})} onStatsClick={() => send(select, {panel: PanelId.Stats})} onLogout={() => send(logout)} user={user}>
-              <MainPanelComponent client={client} restartAction={restartAction} send={send} state={state} id={panel || PanelId.Session} />
+          <Wrapper onPlayground={() => send(Events.SELECT, {panel: PanelId.Session})} onAdminClick={() => send(Events.SELECT, {panel: PanelId.Admin})} onStatsClick={() => send(Events.SELECT, {panel: PanelId.Stats})} onLogout={() => send(Events.LOGOUT)} user={user}>
+              {state.matches(States.LOGGED)
+               ? <MainPanel client={client} id={panel} templates={templates} session={session} onConnect={() => send(Events.SELECT, {panel: PanelId.Theia})} onDeployed={() => send(Events.SELECT, {panel: PanelId.Theia})} restartAction={restartAction} />
+               : state.matches(States.TERMS_UNAPPROVED)
+                ? <TermsPanel terms={terms} onTermsApproved={() => send(Events.TERMS_APPROVAL)} />
+                : <LoginPanel />}
           </Wrapper>
       </div>
     );
 }
 
 function App(): JSX.Element {
-  const history = createBrowserHistory();
   const theme = createMuiTheme({
     palette: {
       type: 'dark',
@@ -71,22 +64,7 @@ function App(): JSX.Element {
 
   return (
     <ThemeProvider theme={theme}>
-      <Router history={history}>
-        <Switch>
-          <Route path={"/"} component={() =>
-            <Panel />
-            }
-          />
-          <Route exact path={"/logged"}>
-            <Redirect
-              to={{
-                pathname: "/",
-                state: { freshLog: true }
-              }}
-            />
-          </Route>
-        </Switch>
-      </Router>
+      <Panel />
     </ThemeProvider>
   );
 }
@@ -99,9 +77,6 @@ function devMode(): boolean {
   return process.env.NODE_ENV === 'dev';
 }
 
-// https://dev.to/annlin/consolelog-with-css-style-1mmp
-// https://github.com/circul8/console.ascii
-// https://gist.github.com/IAmJulianAcosta/fb1813926c2fa3adefc0
 const base = process.env.BASE || "/api";
 console.log(`Connected to: ${base}`);
 const version = process.env.GITHUB_SHA;
