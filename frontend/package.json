@@ -19,7 +19,7 @@
     "@substrate/playground-client": "1.1.5",
     "@xstate/react": "1.2.2",
     "broadcast-channel": "3.3.0",
-    "jpeg-js": "0.4.2",
+    "jpeg-js": "0.4.3",
     "marked": "1.2.7",
     "react": "17.0.1",
     "react-dom": "17.0.1",
