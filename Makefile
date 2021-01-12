@@ -119,7 +119,7 @@ requires-env:
 
 ##@ Kubernetes deployment
 
-k8s-setup: requires-env
+requires-k8s: requires-env
 	$(eval CURRENT_CONTEXT=$(shell kubectl config current-context))
 	$(eval CURRENT_NAMESPACE=$(shell kubectl config view --minify --output 'jsonpath={..namespace}'))
 	@echo "(namespace: ${COLOR_GREEN}${CURRENT_NAMESPACE}${COLOR_RESET}, context: ${COLOR_GREEN}${CURRENT_CONTEXT}${COLOR_RESET})"
@@ -143,33 +143,58 @@ ifeq ($(SKIP_ACK), )
 	@read -p $$'Ok to proceed? [yN]' answer; if [ "$${answer}" != "Y" ] ;then exit 1; fi
 endif
 
-k8s-status: k8s-setup
+k8s-create-cluster: requires-k8s
+	# See https://cloud.google.com/compute/docs/machine-types
+	@read -p "Client ID?" CLIENT_ID; \
+	read -p "Client secret?" CLIENT_SECRET; \
+	gcloud container clusters create ${GKE_CLUSTER} \
+        --release-channel regular \
+        --zone us-central1-a \
+        --node-locations us-central1-a \
+        --machine-type n2d-standard-32 \
+        --preemptible \
+        --enable-autoscaling \
+        --num-nodes 2 \
+        --min-nodes 2 \
+        --max-nodes 10 \
+	kubectl create ns ${NAMESPACE} \
+	kubectl create configmap playground-config --namespace=playground --from-literal=github.clientId="$${CLIENT_ID}" \
+	kubectl create secret generic playground-secrets --namespace=playground --from-literal=github.clientSecret="$${CLIENT_SECRET}" --from-literal=rocket.secretKey=`openssl rand -base64 32` \
+	kubectl create configmap playground-templates --namespace=${NAMESPACE} --from-file=conf/k8s/overlays/${ENV}/templates/ --dry-run=client -o yaml | kubectl apply -f - \
+	kubectl create configmap playground-users --namespace=${NAMESPACE} --from-file=conf/k8s/overlays/${ENV}/users/ --dry-run=client -o yaml | kubectl apply -f -
+
+k8s-cluster-status: requires-k8s
 	@kubectl get configmap playground-config &> /dev/null && [ $$? -eq 0 ] || (echo "Missing config 'playground-config'"; exit 1)
 	@#TODO check proper content: @kubectl get configmap playground-config -o json | jq -r '.data'
 	@kubectl get configmap playground-templates &> /dev/null && [ $$? -eq 0 ] || (echo "Missing config 'playground-templates'"; exit 1)
 	@kubectl get configmap playground-users &> /dev/null && [ $$? -eq 0 ] || (echo "Missing config 'playground-users'"; exit 1)
 	@kubectl get secrets playground-secrets &> /dev/null && [ $$? -eq 0 ] || (echo "Missing secrets 'playground-secrets'"; exit 1)
-	@#TODO check deployment is correctly running
+	$(eval CURRENT_IP=$(shell kubectl get services ingress-nginx -o json | jq -r .status.loadBalancer.ingress[0].ip))
+	$(eval EXPECTED_IP=$(shell yq .patchesStrategicMerge[0] conf/k8s/overlays/berkeley-sp21/kustomization.yaml | sed 's/.*loadBalancerIP: \([^"]*\).*/\1/'))
+	@if [ "${CURRENT_IP}" != "${EXPECTED_IP}" ] ;then \
+	  echo Incorrect IP \
+	  exit 1; \
+	fi
 
-k8s-gke-static-ip: k8s-setup
+k8s-gke-static-ip: requires-k8s
 	gcloud compute addresses describe ${NAMESPACE} --region=${GKE_REGION} --format="value(address)"
 
-k8s-dev: k8s-setup
+k8s-dev: requires-k8s
 	@cd conf/k8s; skaffold dev
 
-k8s-deploy-playground: k8s-setup ## Deploy playground on kubernetes
+k8s-deploy-playground: requires-k8s ## Deploy playground on kubernetes
 	kustomize build conf/k8s/overlays/${ENV}/ | kubectl apply --record -f -
 
-k8s-undeploy-playground: k8s-setup ## Undeploy playground from kubernetes
+k8s-undeploy-playground: requires-k8s ## Undeploy playground from kubernetes
 	kustomize build conf/k8s/overlays/${ENV}/ | kubectl delete -f -
 
-k8s-undeploy-theia: k8s-setup ## Undeploy all theia pods and services from kubernetes
+k8s-undeploy-theia: requires-k8s ## Undeploy all theia pods and services from kubernetes
 	kubectl delete pods,services -l app.kubernetes.io/component=theia --namespace=${NAMESPACE}
 
-k8s-update-templates-config: k8s-setup ## Creates or replaces the `templates` config map from `conf/k8s/overlays/ENV/templates`
+k8s-update-templates-config: requires-k8s ## Creates or replaces the `templates` config map from `conf/k8s/overlays/ENV/templates`
 	kubectl create configmap playground-templates --namespace=${NAMESPACE} --from-file=conf/k8s/overlays/${ENV}/templates/ --dry-run=client -o yaml | kubectl apply -f -
 
-k8s-update-users-config: k8s-setup ## Creates or replaces the `users` config map from `conf/k8s/overlays/ENV/users`
+k8s-update-users-config: requires-k8s ## Creates or replaces the `users` config map from `conf/k8s/overlays/ENV/users`
 	kubectl create configmap playground-users --namespace=${NAMESPACE} --from-file=conf/k8s/overlays/${ENV}/users/ --dry-run=client -o yaml | kubectl apply -f -
 
 ##@ DNS certificates
@@ -180,5 +205,5 @@ generate-challenge: requires-env
 get-challenge: requires-env
 	dig +short TXT _acme-challenge.${PLAYGROUND_ID}.substrate.dev @8.8.8.8
 
-k8s-update-certificate: k8s-setup
+k8s-update-certificate: requires-k8s
 	sudo kubectl create secret tls playground-tls --save-config --key /etc/letsencrypt/live/${PLAYGROUND_ID}.substrate.dev/privkey.pem --cert /etc/letsencrypt/live/${PLAYGROUND_ID}.substrate.dev/fullchain.pem --namespace=playground --dry-run=true -o yaml | sudo kubectl apply -f -
