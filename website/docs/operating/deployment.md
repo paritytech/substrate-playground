@@ -32,31 +32,6 @@ See https://kubernetes.io/docs/tasks/tools/install-kubectl/
 #### kustomize
 
 See https://github.com/kubernetes-sigs/kustomize
-### Cluster creation
-
-```shell
-gcloud container clusters create substrate-playground \
-    --release-channel regular \
-    --zone us-central1-a \
-    --node-locations us-central1-a \
-    --machine-type n2d-standard-32 \
-    --preemptible \
-    --enable-autoscaling \
-    --num-nodes 2 \
-    --min-nodes 2 \
-    --max-nodes 10
-```
-
-Find more details about machines:
-
-* https://cloud.google.com/compute/docs/machine-types
-* https://cloud.google.com/compute/vm-instance-pricing
-
-Then go ahead and create the `playground` namespace:
-
-```shell
-kubectl create ns playground
-```
 
 ### Custom overlay
 
@@ -77,6 +52,14 @@ Make sure to use regional addresses, matching your cluster region. Global addres
 gcloud compute addresses create playground --region us-central1
 gcloud compute addresses list --filter="region:( us-central1 )"
 gcloud compute addresses describe playground --region=us-central1 --format="value(address)"
+```
+
+Then update `loadBalancerIP` with the newly created IP in `conf/k8s/overlays/$ENV/kustomization.yaml`
+
+### Cluster creation
+
+```shell
+make create-cluster
 ```
 
 ### DNS
@@ -131,7 +114,6 @@ openssl s_client -connect playground.substrate.dev:443 -servername playground.su
 # Or for client with no SNI support
 openssl s_client -connect  playground.substrate.dev:443 -showcerts
 ```
-
 # Nginx twist ? TODO check
 
 
@@ -140,17 +122,6 @@ kubectl create clusterrolebinding cluster-admin-binding \
   --user $(gcloud config get-value account)
 
 From https://kubernetes.github.io/ingress-nginx/deploy/#gce-gke
-### Configuration
-
-Set required ConfigMap and Secret as defined in the newly created OAuth app:
-
-```shell
-# WARNING Make sure all needed info are set before running those commands
-kubectl create configmap playground-config --namespace=playground --from-literal=github.clientId="???"
-kubectl create secret generic playground-secrets --namespace=playground --from-literal=github.clientSecret="???" --from-literal=rocket.secretKey=`openssl rand -base64 32`
-ENV=production make k8s-update-templates-config
-# Also make sure playground-users is defined
-```
 
 ### Deployment
 
@@ -158,11 +129,4 @@ Finally, deploy the playground infrastructure:
 
 ```
 ENV=XXX make k8s-deploy-playground
-```
-### Sanity checks
-
-After deployment, the external facing IP can be found using:
-
-```
-kubectl get services ingress-nginx
 ```
