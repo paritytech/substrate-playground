@@ -7,7 +7,7 @@ updates:
     time: "03:00"
     timezone: Europe/Berlin
 - package-ecosystem: npm
-  directory: "/backend/api"
+  directory: "/client"
   schedule:
     interval: daily
     time: "03:00"
@@ -40,6 +40,22 @@ updates:
   rebase-strategy: disabled
 - package-ecosystem: npm
   directory: "/frontend"
+  schedule:
+    interval: daily
+    time: "03:00"
+    timezone: Europe/Berlin
+  open-pull-requests-limit: 20
+  rebase-strategy: disabled
+- package-ecosystem: npm
+  directory: "/e2e"
+  schedule:
+    interval: daily
+    time: "03:00"
+    timezone: Europe/Berlin
+  open-pull-requests-limit: 20
+  rebase-strategy: disabled
+- package-ecosystem: npm
+  directory: "/website"
   schedule:
     interval: daily
     time: "03:00"
