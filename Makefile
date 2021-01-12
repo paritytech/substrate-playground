@@ -36,7 +36,8 @@ PLAYGROUND_BACKEND_API_DOCKER_IMAGE_NAME=${DOCKER_ORG}/substrate-playground-back
 PLAYGROUND_BACKEND_UI_DOCKER_IMAGE_NAME=${DOCKER_ORG}/substrate-playground-backend-ui
 TEMPLATE_BASE=${DOCKER_ORG}/substrate-playground-template-base
 TEMPLATE_THEIA_BASE=${DOCKER_ORG}/substrate-playground-template-theia-base
-GKE_CLUSTER=substrate-playground-${ENV}
+PLAYGROUND_ID=playground-${ENV}
+GKE_CLUSTER=substrate-${PLAYGROUND_ID}
 
 # Derive CONTEXT from ENV
 ifeq ($(ENV), dev)
@@ -113,12 +114,14 @@ push-backend-docker-images: build-backend-docker-images ## Push newly built back
 	docker push ${PLAYGROUND_BACKEND_API_DOCKER_IMAGE_NAME}:sha-${PLAYGROUND_DOCKER_IMAGE_VERSION}
 	docker push ${PLAYGROUND_BACKEND_UI_DOCKER_IMAGE_NAME}:sha-${PLAYGROUND_DOCKER_IMAGE_VERSION}
 
+requires-env:
+	@echo "You are about to interact with the ${COLOR_GREEN}${ENV}${COLOR_RESET} environment. (Modify the environment by setting the ${COLOR_BOLD}'ENV'${COLOR_RESET} variable)"
+
 ##@ Kubernetes deployment
 
-k8s-setup:
+k8s-setup: requires-env
 	$(eval CURRENT_CONTEXT=$(shell kubectl config current-context))
 	$(eval CURRENT_NAMESPACE=$(shell kubectl config view --minify --output 'jsonpath={..namespace}'))
-	@echo "You are about to interact with the ${COLOR_GREEN}${ENV}${COLOR_RESET} environment. (Modify the environment by setting the ${COLOR_BOLD}'ENV'${COLOR_RESET} variable)"
 	@echo "(namespace: ${COLOR_GREEN}${CURRENT_NAMESPACE}${COLOR_RESET}, context: ${COLOR_GREEN}${CURRENT_CONTEXT}${COLOR_RESET})"
 	@if [ "${CURRENT_CONTEXT}" != "${CONTEXT}" ] ;then \
 	  read -p "Current context (${COLOR_GREEN}${CURRENT_CONTEXT}${COLOR_RESET}) doesn't match environment. Update to ${COLOR_RED}${CONTEXT}${COLOR_RESET}? [yN]" proceed; \
@@ -168,3 +171,14 @@ k8s-update-templates-config: k8s-setup ## Creates or replaces the `templates` co
 
 k8s-update-users-config: k8s-setup ## Creates or replaces the `users` config map from `conf/k8s/overlays/ENV/users`
 	kubectl create configmap playground-users --namespace=${NAMESPACE} --from-file=conf/k8s/overlays/${ENV}/users/ --dry-run=client -o yaml | kubectl apply -f -
+
+##@ DNS certificates
+
+generate-challenge: requires-env
+	sudo certbot certonly --manual --preferred-challenges dns --server https://acme-v02.api.letsencrypt.org/directory --manual-public-ip-logging-ok --agree-tos -m admin@parity.io -d *.${PLAYGROUND_ID}.substrate.dev -d ${PLAYGROUND_ID}.substrate.dev
+
+get-challenge: requires-env
+	dig +short TXT _acme-challenge.${PLAYGROUND_ID}.substrate.dev @8.8.8.8
+
+k8s-update-certificate: k8s-setup
+	sudo kubectl create secret tls playground-tls --save-config --key /etc/letsencrypt/live/${PLAYGROUND_ID}.substrate.dev/privkey.pem --cert /etc/letsencrypt/live/${PLAYGROUND_ID}.substrate.dev/fullchain.pem --namespace=playground --dry-run=true -o yaml | sudo kubectl apply -f -

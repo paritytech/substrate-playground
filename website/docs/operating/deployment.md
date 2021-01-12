@@ -83,9 +83,14 @@ gcloud compute addresses describe playground --region=us-central1 --format="valu
 
 Create a new [CloudDNS zone](https://console.cloud.google.com/net-services/dns/zones/new/create?authuser=1&project=substrateplayground-252112).
 
-Fill a DevOps [request](https://github.com/paritytech/devops/issues/732) to redirect the new substrate.dev subdomain to CloudDNS.
+* Zone name: playground-*
+* DNS name: playground-*.substrate.dev
+* DNSSec: off
 
-Add two `A` record set (one with ``, one with `*` as DNS name) pointing to the newly created fixed IP.
+Fill a DevOps [request](https://github.com/paritytech/devops/issues/732) to redirect the new substrate.dev subdomain to CloudDNS.
+Can be checked with `dig +short playground-XX.substrate.dev NS`
+
+Add two `A` record set (one with ``, one with `*` as DNS name) pointing to the newly created fixed IP (see previous step).
 
 Another record set will be added during the TLS certificate generation.
 ### TLS certificate
@@ -98,47 +103,26 @@ First make sure that certbot is installed: `brew install certbot`
 
 Then request new challenges. Two DNS entries will have to be updated.
 
-#### Staging
+#### Update
 
 ```
-sudo certbot certonly --manual --preferred-challenges dns --server https://acme-v02.api.letsencrypt.org/directory --manual-public-ip-logging-ok --agree-tos -m admin@parity.io -d *.playground-staging.substrate.dev -d playground-staging.substrate.dev
+make generate-challenge
 
 # Update CloudDNS by adding a new TXT record as detailed by certbot
 
-# Make sure to check it's been propagated 
-dig +short TXT _acme-challenge.playground-staging.substrate.dev @8.8.8.8
+# Make sure to check it's been propagated
+make get-challenge
 ```
 
 Then update the tls secret:
 
 ```
-gcloud container clusters get-credentials substrate-playground-staging --region us-central1-a
-ENV=staging make k8s-setup
-sudo kubectl create secret tls playground-tls --save-config --key /etc/letsencrypt/live/playground-staging.substrate.dev/privkey.pem --cert /etc/letsencrypt/live/playground-staging.substrate.dev/fullchain.pem --namespace=playground --dry-run=true -o yaml | sudo kubectl apply -f -
+make k8s-update-certificate
 ```
 
 The new secret will be automatically picked up.
 
-#### Production
-
-```
-sudo certbot certonly --manual --preferred-challenges dns --server https://acme-v02.api.letsencrypt.org/directory --manual-public-ip-logging-ok --agree-tos -m admin@parity.io -d *.playground.substrate.dev -d playground.substrate.dev
-
-# Update CloudDNS by adding a new TXT record as detailed by certbot
-
-# Make sure to check it's been propagated 
-dig +short TXT _acme-challenge.playground.substrate.dev @8.8.8.8
-```
-
-Then update the tls secret:
-
-```
-gcloud container clusters get-credentials substrate-playground --region us-central1-a
-ENV=production make k8s-setup
-sudo kubectl create secret tls playground-tls --save-config --key /etc/letsencrypt/live/playground.substrate.dev/privkey.pem --cert /etc/letsencrypt/live/playground.substrate.dev/fullchain.pem --namespace=playground --dry-run=true -o yaml | sudo kubectl apply -f -
-```
-
-The new secret will be auomatically picked up.
+#### Check
 
 Certificates can be checked using openssl:
 
@@ -173,7 +157,7 @@ ENV=production make k8s-update-templates-config
 Finally, deploy the playground infrastructure:
 
 ```
-ENV=production make k8s-deploy-playground
+ENV=XXX make k8s-deploy-playground
 ```
 ### Sanity checks
 
