@@ -46,14 +46,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let configuration = manager.clone().engine.configuration;
     manager.clone().spawn_background_thread();
 
-    log::info!(
-        "Configuration: host {}, namespace {}, client_id {}, session_duration {:?}",
-        configuration.host,
-        configuration.namespace,
-        configuration.client_id,
-        configuration.session_duration
-    );
-
     // Configure CORS
     let cors = CorsOptions {
         allowed_origins: AllowedOrigins::all(),
@@ -69,7 +61,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let prometheus = PrometheusMetrics::with_registry(manager.clone().metrics.create_registry()?);
     let error = rocket::ignite()
         .register(catchers![api::bad_request_catcher])
-        .manage(configuration.clone())
         .attach(prometheus.clone())
         .attach(cors)
         .attach(AdHoc::on_attach("github", |rocket| {
