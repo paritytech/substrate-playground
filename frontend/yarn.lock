@@ -1930,6 +1930,33 @@
   resolved "https://registry.yarnpkg.com/@types/parse-json/-/parse-json-4.0.0.tgz#2f8bb441434d163b35fb8ffdccd7138927ffb8c0"
   integrity sha512-//oorEZjL6sbPcKUaCdIGlIUeH26mgzimjBB77G6XRgnDl/L5wOnpyBGRe/Mmf5CVW3PwEBE1NjiMZ/ssFh4wA==
 
+"@types/pollyjs__adapter-fetch@2.0.1":
+  version "2.0.1"
+  resolved "https://registry.yarnpkg.com/@types/pollyjs__adapter-fetch/-/pollyjs__adapter-fetch-2.0.1.tgz#e6c1b287e180e1da3dee413663f7739600dbf5ca"
+  integrity sha512-XoeDvYzB8Rhcf5ZNdZvfeqvSAQXcVjVMNgmeBHNgKIz71eiMMEb+OUEgFIpPIpdWOuXTTgVmo1RstCLpZYqilg==
+  dependencies:
+    "@types/pollyjs__adapter" "*"
+
+"@types/pollyjs__adapter@*":
+  version "4.3.1"
+  resolved "https://registry.yarnpkg.com/@types/pollyjs__adapter/-/pollyjs__adapter-4.3.1.tgz#5be1c522f0351ae6f1001a38fb1f355737b0d371"
+  integrity sha512-aQXE2CDxaNV/doHMBaYMsGTj1Xn6GihD7owLRN2kd+rCw6YBRSWXEirtkwuutJYquWU2lbBl2m4usTQearpr6Q==
+  dependencies:
+    "@types/pollyjs__core" "*"
+
+"@types/pollyjs__core@*", "@types/pollyjs__core@4.3.1":
+  version "4.3.1"
+  resolved "https://registry.yarnpkg.com/@types/pollyjs__core/-/pollyjs__core-4.3.1.tgz#374c62ef87b1a582cf448615860ecc2dbb15c309"
+  integrity sha512-YxAH9Ms9A2jStQKko/wnCCLN6VYQHfrSPvHRC8YlVXuZVoVx56tz8I88QyBxrNO9ZEC4o2dvQqkDO1A8neOQZQ==
+  dependencies:
+    "@types/pollyjs__adapter" "*"
+    "@types/pollyjs__persister" "*"
+
+"@types/pollyjs__persister@*":
+  version "4.3.1"
+  resolved "https://registry.yarnpkg.com/@types/pollyjs__persister/-/pollyjs__persister-4.3.1.tgz#4d2491bea42846ad60b2fde796396de13d8c4c18"
+  integrity sha512-h8MNPbBGM5fRCXGA/xAw6bFZT1oJhnPaoTpDp07PHN63YZvRR0NdeJYphFod+PX1GOhDHrIXxtB912JlwJwGHw==
+
 "@types/prop-types@*":
   version "15.7.3"
   resolved "https://registry.yarnpkg.com/@types/prop-types/-/prop-types-15.7.3.tgz#2ab0d5da2e5815f94b0b9d4b95d1e5f243ab2ca7"
