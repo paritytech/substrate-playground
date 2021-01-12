@@ -39,10 +39,10 @@ pub struct PlaygroundUser {
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct PlaygroundDetails {
+    pub configuration: Configuration,
     pub templates: BTreeMap<String, Template>,
     pub session: Option<Session>,
     pub user: Option<PlaygroundUser>,
-    pub configuration: Configuration,
 }
 
 impl Manager {
