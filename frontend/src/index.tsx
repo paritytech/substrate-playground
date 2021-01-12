@@ -37,7 +37,7 @@ function Panel(): JSX.Element {
   const client = new Client(base, {credentials: "include"});
   const [state, send] = useLifecycle(client);
 
-  const restartAction = send(Events.RESTART);
+  const restartAction = () => send(Events.RESTART);
 
   const {panel, session, templates, terms, user} = state.context;
   return (
