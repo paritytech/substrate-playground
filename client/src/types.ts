@@ -1,7 +1,15 @@
 export interface Playground {
+    configuration: Configuration,
     templates: Record<string, Template>,
     session?: Session,
     user?: PlaygroundUser,
+}
+
+export interface Configuration {
+    host: string,
+    namespace: string,
+    clientId: string,
+    sessionDuration: number,
 }
 
 export interface PlaygroundUser {
