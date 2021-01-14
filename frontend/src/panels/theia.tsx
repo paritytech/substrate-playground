@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import Container from "@material-ui/core/Container";
 import Paper from '@material-ui/core/Paper';
-import { Client, Phase } from '@substrate/playground-client';
+import { Client } from '@substrate/playground-client';
 import { ErrorMessage, Loading } from '../components';
 import { fetchWithTimeout } from '../utils';
 

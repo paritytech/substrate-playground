@@ -17,7 +17,7 @@ import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
 import Typography from '@material-ui/core/Typography';
 import { makeStyles, createStyles, Theme } from '@material-ui/core/styles';
-import { NameValuePair, Phase, Port, Session, Template } from '@substrate/playground-client';
+import { NameValuePair, Port, Session, Template } from '@substrate/playground-client';
 import { ErrorMessage } from "../components";
 
 const useStyles = makeStyles((theme: Theme) =>
