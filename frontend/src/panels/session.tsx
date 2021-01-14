@@ -219,18 +219,13 @@ export function SessionPanel({ client, templates, onDeployed, onConnect, onRetry
 
     useEffect(() => {
         async function fetchSession() {
-            const session = await client.getCurrentSession();
-            if (session) {
-                setSession(session);
-            }
-
+            setSession(await client.getCurrentSession());
             setTimeout(() => fetchSession(), 1000);
         }
 
         fetchSession();
     }, []);
 
-    client.getCurrentSession
     return (
         <Container style={{ display: "flex", flex: 1, justifyContent: "center", alignItems: "center" }}>
             <Paper style={{ display: "flex", flexDirection: "column", height: "60vh", width: "60vw", justifyContent: "center"}} elevation={3}>

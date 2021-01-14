@@ -11,31 +11,12 @@ import { TheiaPanel } from './panels/theia';
 import { Wrapper } from './components';
 import { useLifecycle, Events, PanelId, States } from './lifecycle';
 
-async function deleteSession(client: Client): Promise<void> {
-    await client.deleteCurrentSession();
-    return new Promise(async (resolve, reject) => {
-        async function checkSession() {
-            console.log("checking..")
-            try {
-                await client.getCurrentSession();
-                const id = setTimeout(async () => {
-                    checkSession();
-                }, 1000);
-            } catch {
-                resolve();
-            }
-        }
-
-        await checkSession();
-    });
-}
-
 function MainPanel({ client, id, templates, onConnect, onDeployed, restartAction }: { client: Client, id: PanelId, templates: Record<string, Template>, restartAction: () => void, onConnect: () => void, onDeployed: () => void}): JSX.Element {
     switch(id) {
         case PanelId.Session:
           return <SessionPanel client={client} templates={templates} onRetry={restartAction}
                     onStop={async () => {
-                        await deleteSession(client);
+                        await client.deleteCurrentSession();
                     }}
                     onDeployed={async template => {
                         await client.createOrUpdateCurrentSession({template: template});
