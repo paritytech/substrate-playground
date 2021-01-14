@@ -1,7 +1,7 @@
 import crypto from 'crypto';
 import { assign, EventObject, Machine } from 'xstate';
 import { useMachine } from '@xstate/react';
-import { Client, PlaygroundUser, Session, Template } from '@substrate/playground-client';
+import { Client, PlaygroundUser, Template } from '@substrate/playground-client';
 import terms from 'bundle-text:./terms.md';
 
 
@@ -12,8 +12,8 @@ const termsHash = crypto.createHash('md5').update(terms).digest('hex');
 export interface Context {
   terms: string,
   panel: PanelId,
-  user: PlaygroundUser,
-  templates: Record<string, Template>,
+  user?: PlaygroundUser,
+  templates?: Record<string, Template>,
 }
 
 export enum States {
@@ -23,15 +23,6 @@ export enum States {
     UNLOGGED = '@state/UNLOGGED'
 }
 
-interface UserDataMachineStates {
-    states: {
-        [States.TERMS_UNAPPROVED]: {},
-        [States.SETUP]: {},
-        [States.LOGGED]: {},
-        [States.UNLOGGED]: {},
-    }
-  }
-
 export enum Events {
     TERMS_APPROVAL = '@event/TERMS_APPROVAL',
     LOGIN = '@action/LOGIN',
@@ -39,18 +30,6 @@ export enum Events {
     RESTART = '@action/RESTART',
     UNLOGIN = '@action/UNLOGIN',
     LOGOUT = '@action/LOGOUT',
-}
-
-type EventTypesSchema =
-    | Events.TERMS_APPROVAL
-    | Events.LOGIN
-    | Events.SELECT
-    | Events.RESTART
-    | Events.UNLOGIN
-    | Events.LOGOUT;
-
-export interface UserDataMachineEvents extends EventObject {
-    type: EventTypesSchema;
 }
 
 export enum Actions {
@@ -66,7 +45,7 @@ function termsApproved(): boolean {
 }
 
 function lifecycle(client: Client) {
-  return Machine<Context, UserDataMachineStates, UserDataMachineEvents>({
+  return Machine<Context>({
     initial: termsApproved() ? States.SETUP: States.TERMS_UNAPPROVED,
     context: {
         terms: terms,
@@ -85,15 +64,14 @@ function lifecycle(client: Client) {
                 src: () => async (callback) => {
                     const { templates, user } = (await client.get());
                     if (user) {
-                        // TODO restore auto deployment
-                        callback({type: Events.LOGIN, data: {templates: templates, user: user}});
+                        callback({type: Events.LOGIN, templates: templates, user: user});
                     } else {
-                        callback({type: Events.UNLOGIN, data: {templates: templates}});
+                        callback({type: Events.UNLOGIN, templates: templates});
                     }
                 },
             },
             on: {[Events.LOGIN]: {target: States.LOGGED,
-                                  actions: assign({templates: (_, event) => event.data.templates, user: (_, event) => event.data.user})},
+                                  actions: assign({templates: (_, event) => event.templates, user: (_, event) => event.user})},
                  [Events.UNLOGIN]: {target: States.UNLOGGED}}
         },
         [States.UNLOGGED]: {
