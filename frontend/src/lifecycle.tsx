@@ -2,8 +2,10 @@ import crypto from 'crypto';
 import { assign, EventObject, Machine } from 'xstate';
 import { useMachine } from '@xstate/react';
 import { Client, PlaygroundUser, Session, Template } from '@substrate/playground-client';
-import { PanelId } from './index';
 import terms from 'bundle-text:./terms.md';
+
+
+export enum PanelId {Session, Admin, Stats, Theia}
 
 const termsHash = crypto.createHash('md5').update(terms).digest('hex');
 

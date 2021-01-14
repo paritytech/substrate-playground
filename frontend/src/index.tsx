@@ -9,9 +9,7 @@ import { StatsPanel } from './panels/stats';
 import { TermsPanel } from './panels/terms';
 import { TheiaPanel } from './panels/theia';
 import { Wrapper } from './components';
-import { useLifecycle, Events, States } from './lifecycle';
-
-export enum PanelId {Session, Admin, Stats, Theia}
+import { useLifecycle, Events, PanelId, States } from './lifecycle';
 
 function MainPanel({ client, id, templates, session, onConnect, onDeployed, restartAction }: { client: Client, id: PanelId, templates: Record<string, Template>, session: Session, restartAction: () => void, onConnect: () => void, onDeployed: () => void}): JSX.Element {
     switch(id) {
