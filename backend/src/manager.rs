@@ -45,7 +45,6 @@ pub struct PlaygroundDetails {
     pub env: Environment,
     pub configuration: Configuration,
     pub templates: BTreeMap<String, Template>,
-    pub session: Option<Session>,
     pub user: Option<PlaygroundUser>,
 }
 
@@ -162,9 +161,6 @@ impl Manager {
         let templates = new_runtime()?.block_on(self.clone().engine.list_templates())?;
         Ok(PlaygroundDetails {
             templates,
-            session: new_runtime()?
-                .block_on(self.clone().engine.get_session(user.id.as_str()))
-                .ok(),
             user: Some(PlaygroundUser {
                 id: user.id,
                 avatar: user.avatar,
@@ -179,7 +175,6 @@ impl Manager {
         let templates = new_runtime()?.block_on(self.clone().engine.list_templates())?;
         Ok(PlaygroundDetails {
             templates,
-            session: None,
             user: None,
             env: self.engine.env,
             configuration: self.engine.configuration,
