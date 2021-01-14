@@ -2,7 +2,6 @@ export interface Playground {
     env: Environment,
     configuration: Configuration,
     templates: Record<string, Template>,
-    session?: Session,
     user?: PlaygroundUser,
 }
 
