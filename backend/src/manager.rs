@@ -87,9 +87,9 @@ impl Manager {
             let sessions_thread = self.clone().sessions.clone();
             if let Ok(mut sessions2) = sessions_thread.lock() {
                 let sessions3 = &mut sessions2.clone();
-                for id in sessions3 {
-                    match self.clone().get_session(&id.0) {
-                        Ok(session) => {
+                for (id,_) in sessions3 {
+                    match self.clone().get_session(&id) {
+                        Ok(Some(session)) => {
                             // Deployed sessions are removed from the set
                             // Additionally the deployment time is tracked
                             match session.pod.phase {
@@ -101,7 +101,7 @@ impl Manager {
                                     {
                                         self.clone()
                                             .metrics
-                                            .observe_deploy_duration(&id.0, duration.as_secs_f64());
+                                            .observe_deploy_duration(&id, duration.as_secs_f64());
                                     } else {
                                         error!("Failed to compute this session lifetime");
                                     }
@@ -110,8 +110,9 @@ impl Manager {
                             }
                             // Ignore "Unknown"
                             // "Succeeded" can't happen
-                        }
+                        },
                         Err(err) => warn!("Failed to call get: {}", err),
+                        Ok(None) => warn!("No matching pod: {}", id),
                     }
                 }
             } else {
@@ -201,7 +202,7 @@ impl Manager {
 
     // Sessions
 
-    pub fn get_session(self, username: &str) -> Result<Session, String> {
+    pub fn get_session(self, username: &str) -> Result<Option<Session>, String> {
         new_runtime()?.block_on(self.engine.get_session(&username))
     }
 

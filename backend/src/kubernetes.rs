@@ -552,16 +552,16 @@ impl Engine {
         )
     }
 
-    pub async fn get_session(self, username: &str) -> Result<Session, String> {
+    pub async fn get_session(self, username: &str) -> Result<Option<Session>, String> {
         let config = config().await?;
         let client = Client::new(config);
         let pod_api: Api<Pod> = Api::namespaced(client, &self.env.namespace);
-        let pod = pod_api
-            .get(&pod_name(username))
-            .await
-            .map_err(error_to_string)?;
+        let pod = pod_api.get(&pod_name(username)).await.ok();
 
-        Ok(self.clone().pod_to_session(&self.env, &pod)?)
+        match pod.map(|pod| self.clone().pod_to_session(&self.env, &pod)) {
+            Some(session) => session.map(|session| Some(session)),
+            None => Ok(None)
+        }
     }
 
     /// Lists all currently running sessions
@@ -705,7 +705,7 @@ impl Engine {
     ) -> Result<Session, String> {
         // Create a unique ID for this session. Use lowercase to make sure the result can be used as part of a DNS
         let session_uuid = username.to_string().to_lowercase();
-        if let Ok(session) = self.clone().get_session(&session_uuid.clone()).await {
+        if let Ok(Some(session)) = self.clone().get_session(&session_uuid.clone()).await {
             self.update_session(session, conf).await
         } else {
             self.create_session(session_uuid, conf).await
