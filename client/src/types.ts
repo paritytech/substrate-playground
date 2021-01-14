@@ -1,15 +1,23 @@
 export interface Playground {
+    env: Environment,
     configuration: Configuration,
     templates: Record<string, Template>,
     session?: Session,
     user?: PlaygroundUser,
 }
 
-export interface Configuration {
+export interface Environment {
     host: string,
     namespace: string,
-    clientId: string,
-    sessionDuration: number,
+}
+
+export interface Configuration {
+    githubClientId: string,
+    sessionDefaults: SessionDefaults,
+}
+
+export interface SessionDefaults {
+    duration: number,
 }
 
 export interface PlaygroundUser {
@@ -33,9 +41,10 @@ export interface Session {
     pod: PodDetails,
     duration: number,
 }
+
 export interface SessionConfiguration {
     template: string,
-    duration: number,
+    duration?: number,
 }
 
 export interface NameValuePair {
@@ -64,10 +73,10 @@ export interface Template {
     runtime?: RuntimeConfiguration,
 }
 
-export enum Phase {Pending, Running, Succeeded, Failed, Unknown};
+export type Phase = 'Pending' | 'Running' | 'Succeeded' | 'Failed' | 'Unknown';
 export interface PodDetails {
     phase: Phase,
     reason: String,
     message: String,
-    startTime: number,
+    startTime?: number,
 }
