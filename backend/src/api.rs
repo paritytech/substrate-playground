@@ -1,11 +1,8 @@
 //! HTTP endpoints exposed in /api context
+use crate::github::{token_validity, GitHubUser};
 use crate::session::SessionConfiguration;
 use crate::user::{LoggedAdmin, LoggedUser, UserConfiguration};
 use crate::Context;
-use crate::{
-    github::{token_validity, GitHubUser},
-    kubernetes::Configuration,
-};
 use rocket::request::{self, FromRequest, Request};
 use rocket::response::{content, status, Redirect};
 use rocket::{
@@ -34,8 +31,8 @@ fn request_to_user<'a, 'r>(request: &'a Request<'r>) -> request::Outcome<LoggedU
         let token_value = token.value();
         if let Ok(gh_user) = token_validity(
             token_value,
-            engine.configuration.client_id.as_str(),
-            engine.configuration.client_secret.as_str(),
+            engine.configuration.github_client_id.as_str(),
+            engine.secrets.github_client_secret.as_str(),
         ) {
             let id = gh_user.login;
             let users = Runtime::new()
@@ -111,16 +108,6 @@ pub fn get(state: State<'_, Context>, user: LoggedUser) -> JsonValue {
 pub fn get_unlogged(state: State<'_, Context>) -> JsonValue {
     let manager = state.manager.clone();
     result_to_jsonrpc(manager.get_unlogged())
-}
-
-#[put("/", data = "<conf>")]
-pub fn update(
-    state: State<'_, Context>,
-    _admin: LoggedAdmin,
-    conf: Json<Configuration>,
-) -> JsonValue {
-    let manager = state.manager.clone();
-    result_to_jsonrpc(manager.update(conf.0))
 }
 
 // User resources. Only accessible to Admins.

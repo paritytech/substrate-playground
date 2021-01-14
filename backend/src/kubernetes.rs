@@ -3,7 +3,7 @@
 //! * https://docs.rs/k8s-openapi/0.5.1/k8s_openapi/api/core/v1/struct.ServiceSpec.html
 use crate::user::{User, UserConfiguration};
 use crate::{
-    session::{Session, SessionConfiguration},
+    session::{Session, SessionConfiguration, SessionDefaults},
     template::Template,
 };
 use k8s_openapi::api::core::v1::{
@@ -18,7 +18,6 @@ use kube::{
     config::KubeConfigOptions,
     Client, Config,
 };
-use log::warn;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::{collections::BTreeMap, error::Error, time::Duration};
 use std::{env, str::FromStr, time::SystemTime};
@@ -31,7 +30,6 @@ const OWNER_LABEL: &str = "app.kubernetes.io/owner";
 const INGRESS_NAME: &str = "ingress";
 const TEMPLATE_ANNOTATION: &str = "playground.substrate.io/template";
 const SESSION_DURATION_ANNOTATION: &str = "playground.substrate.io/session_duration";
-const CONFIG_CONFIG_MAP: &str = "playground-config";
 const USERS_CONFIG_MAP: &str = "playground-users";
 const TEMPLATES_CONFIG_MAP: &str = "playground-templates";
 const THEIA_WEB_PORT: i32 = 3000;
@@ -94,21 +92,27 @@ fn session_duration_annotation(session_duration: Duration) -> String {
     session_duration.as_secs().to_string()
 }
 
-fn create_pod_annotations(template: &Template, session_duration: Duration) -> BTreeMap<String, String> {
+fn str_to_session_duration_minutes(str: &str) -> Result<Duration, String> {
+    Ok(Duration::from_secs(
+        str.parse::<u64>().map_err(error_to_string)? * 60,
+    ))
+}
+
+fn create_pod_annotations(template: &Template, duration: &Duration) -> BTreeMap<String, String> {
     let mut annotations = BTreeMap::new();
     annotations.insert(TEMPLATE_ANNOTATION.to_string(), template.to_string());
     annotations.insert(
         SESSION_DURATION_ANNOTATION.to_string(),
-        session_duration_annotation(session_duration),
+        session_duration_annotation(*duration),
     );
     annotations
 }
 
 fn create_pod(
-    host: &str,
+    env: &Environment,
     session_uuid: &str,
     template: &Template,
-    session_duration: Duration,
+    duration: &Duration,
 ) -> Pod {
     let mut labels = BTreeMap::new();
     // TODO fetch docker image labels and add them to the pod.
@@ -121,14 +125,14 @@ fn create_pod(
         metadata: ObjectMeta {
             name: Some(pod_name(session_uuid)),
             labels: Some(labels),
-            annotations: Some(create_pod_annotations(template, session_duration)),
+            annotations: Some(create_pod_annotations(template, duration)),
             ..Default::default()
         },
         spec: Some(PodSpec {
             containers: vec![Container {
                 name: format!("{}-container", COMPONENT_VALUE),
                 image: Some(template.image.to_string()),
-                env: Some(pod_env_variables(template, host, session_uuid)),
+                env: Some(pod_env_variables(template, &env.host, session_uuid)),
                 ..Default::default()
             }],
             ..Default::default()
@@ -308,18 +312,28 @@ async fn list_users(client: Client, namespace: &str) -> Result<BTreeMap<String, 
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct Configuration {
+pub struct Environment {
     pub host: String,
     pub namespace: String,
-    pub client_id: String,
-    #[serde(skip_serializing)]
-    pub client_secret: String,
-    pub session_duration: Duration,
+}
+
+#[derive(Serialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct Configuration {
+    pub github_client_id: String,
+    pub session_defaults: SessionDefaults,
+}
+
+#[derive(Clone)]
+pub struct Secrets {
+    pub github_client_secret: String,
 }
 
 #[derive(Clone)]
 pub struct Engine {
+    pub env: Environment,
     pub configuration: Configuration,
+    pub secrets: Secrets,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
@@ -345,15 +359,36 @@ impl FromStr for Phase {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct PodDetails {
     pub phase: Phase,
     pub reason: String,
     pub message: String,
-    pub start_time: SystemTime,
+    #[serde(with = "system_time")]
+    pub start_time: Option<SystemTime>,
 }
 
-const DEFAULT_SESSION_DURATION: u64 = 60 * 3; // 3 hours in minutes
+mod system_time {
+    use serde::{self, Serializer};
+    use std::time::SystemTime;
+
+    pub fn serialize<S>(date: &Option<SystemTime>, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match date.and_then(|v| v.elapsed().ok()) {
+            Some(value) => serializer.serialize_some(&value.as_secs()),
+            None => serializer.serialize_none(),
+        }
+    }
+}
+
+fn get_session_duration(conf: Configuration, session_conf: SessionConfiguration) -> Duration {
+    session_conf
+        .duration
+        .unwrap_or(conf.session_defaults.duration)
+}
 
 impl Engine {
     pub async fn new() -> Result<Self, Box<dyn Error>> {
@@ -378,37 +413,46 @@ impl Engine {
         };
 
         // Retrieve 'static' configuration from Env variables
-        let client_id = env::var("GITHUB_CLIENT_ID").map_err(|_| "GITHUB_CLIENT_ID must be set")?;
-        let client_secret =
+        let github_client_id =
+            env::var("GITHUB_CLIENT_ID").map_err(|_| "GITHUB_CLIENT_ID must be set")?;
+        let github_client_secret =
             env::var("GITHUB_CLIENT_SECRET").map_err(|_| "GITHUB_CLIENT_SECRET must be set")?;
-        // TODO load session duration dynamically from ConfigMap
+        let session_default_duration = env::var("SESSION_DEFAULT_DURATION")
+            .map_err(|_| "SESSION_DEFAULT_DURATION must be set")?;
+        /*TODO
         let session_duration =
-            Duration::from_secs(env::var("PLAYGROUND_DEFAULT_SESSION_DURATION").map_or(
-                60 * DEFAULT_SESSION_DURATION,
-                |d| {
-                    60 * d.parse::<u64>().unwrap_or_else(|_| {
-                        warn!(
-                            "Failed to parse default session_duration {}, Using {}",
-                            d, DEFAULT_SESSION_DURATION
-                        );
-                        DEFAULT_SESSION_DURATION
-                    })
-                },
-            ));
+          Duration::from_secs(env::var("PLAYGROUND_DEFAULT_SESSION_DURATION").map_or(
+              60 * DEFAULT_SESSION_DURATION,
+              |d| {
+                  60 * d.parse::<u64>().unwrap_or_else(|_| {
+                      warn!(
+                          "Failed to parse default session_duration {}, Using {}",
+                          d, DEFAULT_SESSION_DURATION
+                      );
+                      DEFAULT_SESSION_DURATION
+                  })
+              },
+          ));*/
 
         Ok(Engine {
-            configuration: Configuration {
+            env: Environment {
                 host,
-                namespace,
-                client_id,
-                client_secret,
-                session_duration,
+                namespace: namespace.clone(),
+            },
+            configuration: Configuration {
+                github_client_id,
+                session_defaults: SessionDefaults {
+                    duration: str_to_session_duration_minutes(&session_default_duration)?,
+                },
+            },
+            secrets: Secrets {
+                github_client_secret,
             },
         })
     }
 
     // Creates a Session from a Pod annotations
-    fn pod_to_session(self, pod: &Pod) -> Result<Session, String> {
+    fn pod_to_session(self, env: &Environment, pod: &Pod) -> Result<Session, String> {
         let labels = pod.metadata.labels.clone().ok_or("no labels")?;
         let username = labels.get(OWNER_LABEL).ok_or("no owner label")?.to_string();
         let annotations = &pod.metadata.annotations.clone().ok_or("no annotations")?;
@@ -417,18 +461,15 @@ impl Engine {
                 .get(TEMPLATE_ANNOTATION)
                 .ok_or("no template annotation")?,
         )?;
-        let duration = Duration::from_secs(
+        let duration = str_to_session_duration_minutes(
             annotations
                 .get(SESSION_DURATION_ANNOTATION)
-                .ok_or("no session_duration annotation")?
-                .to_string()
-                .parse::<u64>()
-                .map_err(|err| err.to_string())?,
-        );
+                .ok_or("no session_duration annotation")?,
+        )?;
         Ok(Session {
             username: username.clone(),
             template,
-            url: subdomain(&self.configuration.host, &username),
+            url: subdomain(&env.host, &username),
             pod: Self::pod_to_details(self, pod)?,
             duration,
         })
@@ -448,35 +489,15 @@ impl Engine {
             start_time: status
                 .clone()
                 .start_time
-                .ok_or_else(|| "No start_time".to_string())?
-                .0
-                .into(),
+                .map_or(None, |dt| Some(dt.0.into())),
         })
-    }
-
-    pub async fn update(self, conf: Configuration) -> Result<(), String> {
-        let config = config().await?;
-        let client = Client::new(config);
-
-        if conf.session_duration != self.configuration.session_duration {
-            add_config_map_value(
-                client,
-                &self.configuration.namespace,
-                CONFIG_CONFIG_MAP,
-                "defaultSessionDuration",
-                &conf.session_duration.as_secs().to_string(),
-            )
-            .await?
-        }
-
-        Ok(())
     }
 
     pub async fn list_templates(self) -> Result<BTreeMap<String, Template>, String> {
         let config = config().await?;
         let client = Client::new(config);
 
-        Ok(get_templates(client, &self.configuration.namespace)
+        Ok(get_templates(client, &self.env.namespace)
             .await?
             .into_iter()
             .map(|(k, v)| Template::parse(&v).map(|v2| (k, v2)))
@@ -487,7 +508,7 @@ impl Engine {
         let config = config().await?;
         let client = Client::new(config);
 
-        Ok(list_users(client, &self.configuration.namespace)
+        Ok(list_users(client, &self.env.namespace)
             .await?
             .into_iter()
             .map(|(k, v)| {
@@ -512,7 +533,7 @@ impl Engine {
 
         add_config_map_value(
             client,
-            &self.configuration.namespace,
+            &self.env.namespace,
             USERS_CONFIG_MAP,
             id.as_str(),
             format!("admin: {}", user.admin).as_str(),
@@ -525,32 +546,29 @@ impl Engine {
     pub async fn delete_user(self, id: String) -> Result<(), String> {
         let config = config().await?;
         let client = Client::new(config);
-        Ok(delete_config_map_value(
-            client,
-            &self.configuration.namespace,
-            USERS_CONFIG_MAP,
-            id.as_str(),
+        Ok(
+            delete_config_map_value(client, &self.env.namespace, USERS_CONFIG_MAP, id.as_str())
+                .await?,
         )
-        .await?)
     }
 
     pub async fn get_session(self, username: &str) -> Result<Session, String> {
         let config = config().await?;
         let client = Client::new(config);
-        let pod_api: Api<Pod> = Api::namespaced(client, &self.configuration.namespace);
+        let pod_api: Api<Pod> = Api::namespaced(client, &self.env.namespace);
         let pod = pod_api
             .get(&pod_name(username))
             .await
             .map_err(error_to_string)?;
 
-        Ok(self.pod_to_session(&pod)?)
+        Ok(self.clone().pod_to_session(&self.env, &pod)?)
     }
 
     /// Lists all currently running sessions
     pub async fn list_sessions(&self) -> Result<Vec<Session>, String> {
         let config = config().await?;
         let client = Client::new(config);
-        let pod_api: Api<Pod> = Api::namespaced(client, &self.configuration.namespace);
+        let pod_api: Api<Pod> = Api::namespaced(client, &self.env.namespace);
         let pods = list_by_selector(
             &pod_api,
             format!("{}={}", COMPONENT_LABEL, COMPONENT_VALUE).to_string(),
@@ -559,7 +577,7 @@ impl Engine {
 
         Ok(pods
             .iter()
-            .flat_map(|pod| self.clone().pod_to_session(pod).ok())
+            .flat_map(|pod| self.clone().pod_to_session(&self.env, pod).ok())
             .collect())
     }
 
@@ -569,7 +587,7 @@ impl Engine {
     ) -> Result<(), String> {
         let config = config().await?;
         let client = Client::new(config);
-        let ingress_api: Api<Ingress> = Api::namespaced(client, &self.configuration.namespace);
+        let ingress_api: Api<Ingress> = Api::namespaced(client, &self.env.namespace);
         let mut ingress: Ingress = ingress_api
             .get(INGRESS_NAME)
             .await
@@ -578,7 +596,7 @@ impl Engine {
         let mut spec = ingress.clone().spec.ok_or("No spec")?.clone();
         let mut rules: Vec<IngressRule> = spec.clone().rules.ok_or("No rules")?;
         for (uuid, template) in templates {
-            let subdomain = subdomain(&self.configuration.host, &uuid);
+            let subdomain = subdomain(&self.env.host, &uuid);
             rules.push(IngressRule {
                 host: Some(subdomain.clone()),
                 http: Some(HTTPIngressRuleValue {
@@ -605,13 +623,13 @@ impl Engine {
         let config = config().await?;
         let client = Client::new(config);
         // Access the right image id
-        let templates = get_templates(client.clone(), &self.configuration.namespace).await?;
+        let templates = get_templates(client.clone(), &self.env.namespace).await?;
         let template_str = templates
             .get(&conf.template.to_string())
             .ok_or_else(|| format!("Unknow image {}", conf.template))?;
         let template = &Template::parse(&template_str)?;
 
-        let namespace = &self.configuration.namespace;
+        let namespace = &self.env.namespace;
 
         let pod_api: Api<Pod> = Api::namespaced(client.clone(), namespace);
 
@@ -628,10 +646,10 @@ impl Engine {
             .create(
                 &PostParams::default(),
                 &create_pod(
-                    &self.configuration.host,
+                    &self.env,
                     &session_uuid.clone(),
                     template,
-                    self.configuration.session_duration,
+                    &get_session_duration(self.clone().configuration, conf),
                 ),
             )
             .await
@@ -645,7 +663,7 @@ impl Engine {
             .await
             .map_err(error_to_string)?;
 
-        Ok(self.pod_to_session(&pod)?)
+        Ok(self.clone().pod_to_session(&self.env, &pod)?)
     }
 
     pub async fn update_session(
@@ -653,25 +671,29 @@ impl Engine {
         session: Session,
         conf: SessionConfiguration,
     ) -> Result<Session, String> {
-        if conf.duration != session.duration {
+        let duration = get_session_duration(self.configuration, conf);
+        if duration != session.duration {
             let config = config().await?;
             let client = Client::new(config);
-            let pod_api: Api<Pod> = Api::namespaced(client, &self.configuration.namespace);
+            let pod_api: Api<Pod> = Api::namespaced(client, &self.env.namespace);
             let params = PatchParams {
                 patch_strategy: PatchStrategy::JSON,
                 ..PatchParams::default()
             };
             let patch = serde_yaml::to_vec(&serde_json::json!({
                 "op": "add",
-                "path": format!("/metadata/annotations/{}", SESSION_DURATION_ANNOTATION.to_string()),
-                "value": session_duration_annotation(conf.duration),
+                "path": format!("/metadata/annotations/{}", SESSION_DURATION_ANNOTATION),
+                "value": session_duration_annotation(duration),
             }))
             .unwrap();
-            pod_api.patch(&pod_name(&session.username), &params, patch).await.map_err(error_to_string)?;
+            pod_api
+                .patch(&pod_name(&session.username), &params, patch)
+                .await
+                .map_err(error_to_string)?;
         }
 
         Ok(Session {
-            duration: conf.duration,
+            duration,
             ..session
         })
     }
@@ -694,21 +716,20 @@ impl Engine {
         // Undeploy the service by its id
         let config = config().await?;
         let client = Client::new(config);
-        let service_api: Api<Service> =
-            Api::namespaced(client.clone(), &self.configuration.namespace);
+        let service_api: Api<Service> = Api::namespaced(client.clone(), &self.env.namespace);
         service_api
             .delete(&service_name(username), &DeleteParams::default())
             .await
             .map_err(|s| format!("Error {}", s))?;
 
-        let pod_api: Api<Pod> = Api::namespaced(client.clone(), &self.configuration.namespace);
+        let pod_api: Api<Pod> = Api::namespaced(client.clone(), &self.env.namespace);
         pod_api
             .delete(&pod_name(username), &DeleteParams::default())
             .await
             .map_err(|s| format!("Error {}", s))?;
 
-        let subdomain = subdomain(&self.configuration.host, username);
-        let ingress_api: Api<Ingress> = Api::namespaced(client, &self.configuration.namespace);
+        let subdomain = subdomain(&self.env.host, username);
+        let ingress_api: Api<Ingress> = Api::namespaced(client, &self.env.namespace);
         let mut ingress: Ingress = ingress_api
             .get(INGRESS_NAME)
             .await

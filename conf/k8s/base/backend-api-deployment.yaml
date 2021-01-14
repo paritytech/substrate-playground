@@ -33,12 +33,11 @@ spec:
             value: "normal"
           - name: ROCKET_ADDRESS
             value: "0.0.0.0"
-          - name: PLAYGROUND_DEFAULT_SESSION_DURATION
+          - name: SESSION_DEFAULT_DURATION
             valueFrom:
               configMapKeyRef:
                 name: playground-config
-                key: defaultSessionDuration
-                optional: true
+                key: session.defaultDuration
           - name: GITHUB_CLIENT_ID
             valueFrom:
               configMapKeyRef:

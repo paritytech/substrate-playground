@@ -43,7 +43,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     }
 
     let manager = Manager::new().await?;
-    let configuration = manager.clone().engine.configuration;
+    let engine = manager.clone().engine;
     manager.clone().spawn_background_thread();
 
     // Configure CORS
@@ -69,8 +69,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     auth_uri: "https://github.com/login/oauth/authorize".into(),
                     token_uri: "https://github.com/login/oauth/access_token".into(),
                 },
-                configuration.client_id,
-                configuration.client_secret,
+                engine.configuration.github_client_id,
+                engine.secrets.github_client_secret,
                 None,
             );
             Ok(rocket.attach(OAuth2::<GitHubUser>::custom(
@@ -83,7 +83,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
             routes![
                 api::get,
                 api::get_unlogged,
-                api::update,
                 // Users
                 api::list_users,
                 api::create_or_update_user,

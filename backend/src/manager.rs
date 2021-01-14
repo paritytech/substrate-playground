@@ -1,8 +1,11 @@
-use crate::{kubernetes::Configuration, template::Template};
 use crate::{kubernetes::Engine, session::SessionConfiguration};
 use crate::{
     kubernetes::Phase,
     user::{User, UserConfiguration},
+};
+use crate::{
+    kubernetes::{Configuration, Environment},
+    template::Template,
 };
 use crate::{metrics::Metrics, session::Session, user::LoggedUser};
 use log::{error, info, warn};
@@ -37,8 +40,9 @@ pub struct PlaygroundUser {
     pub admin: bool,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Clone, Debug)]
 pub struct PlaygroundDetails {
+    pub env: Environment,
     pub configuration: Configuration,
     pub templates: BTreeMap<String, Template>,
     pub session: Option<Session>,
@@ -93,7 +97,9 @@ impl Manager {
                                 Phase::Running | Phase::Failed => {
                                     sessions2.remove(&session.username);
                                     // TODO track success / failure
-                                    if let Ok(duration) = &session.pod.start_time.elapsed() {
+                                    if let Some(duration) =
+                                        &session.pod.start_time.and_then(|p| p.elapsed().ok())
+                                    {
                                         self.clone()
                                             .metrics
                                             .observe_deploy_duration(&id.0, duration.as_secs_f64());
@@ -117,7 +123,9 @@ impl Manager {
             match self.clone().list_sessions() {
                 Ok(sessions) => {
                     for session in running_sessions(sessions) {
-                        if let Ok(duration) = &session.pod.start_time.elapsed() {
+                        if let Some(duration) =
+                            &session.pod.start_time.and_then(|p| p.elapsed().ok())
+                        {
                             if duration > &session.duration {
                                 info!(
                                     "Undeploying {} {:?} {:?}",
@@ -162,6 +170,7 @@ impl Manager {
                 avatar: user.avatar,
                 admin: user.admin,
             }),
+            env: self.engine.env,
             configuration: self.engine.configuration,
         })
     }
@@ -172,12 +181,9 @@ impl Manager {
             templates,
             session: None,
             user: None,
+            env: self.engine.env,
             configuration: self.engine.configuration,
         })
-    }
-
-    pub fn update(self, conf: Configuration) -> Result<(), String> {
-        new_runtime()?.block_on(self.engine.update(conf))
     }
 
     // Users

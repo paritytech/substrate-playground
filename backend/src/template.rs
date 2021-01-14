@@ -58,6 +58,7 @@ pub struct NameURLPair {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct Command {
     pub name: String,
     pub run: String,
