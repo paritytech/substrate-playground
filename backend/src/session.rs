@@ -15,6 +15,7 @@ pub struct Session {
 #[derive(Deserialize, Clone, Debug)]
 pub struct SessionConfiguration {
     pub template: String,
+    #[serde(default)]
     #[serde(with = "option_duration")]
     pub duration: Option<Duration>,
 }
