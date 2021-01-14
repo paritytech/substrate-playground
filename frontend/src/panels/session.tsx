@@ -134,6 +134,23 @@ function PortsTable({ ports }: {ports?: Port[]}): JSX.Element {
     );
 }
 
+function formatDuration(s: number): string {
+    const date = new Date(0);
+    date.setSeconds(s);
+    const hours = date.getHours();
+    const minutes = date.getMinutes();
+    const seconds = date.getMinutes();
+    const withSeconds = `${seconds}s`;
+    const withMinutes = `${minutes}min ${withSeconds}`;
+    if (hours) {
+        return `${hours}h ${withMinutes} ago`;
+    } else if (minutes) {
+        return `${withMinutes} ago`;
+    } else {
+        return `${withSeconds} ago`;
+    }
+}
+
 export function SessionDetails({ session }: {session: Session}): JSX.Element {
     const { pod, template } = session;
     const { name, runtime } = template;
@@ -146,7 +163,7 @@ export function SessionDetails({ session }: {session: Session}): JSX.Element {
                 </Typography>
                 {startTime &&
                 <Typography color="textSecondary" gutterBottom>
-                Started at {startTime}
+                Started {formatDuration(startTime)}
                 </Typography>
                 }
                 <Typography color="textSecondary" gutterBottom>
@@ -174,6 +191,7 @@ export function SessionDetails({ session }: {session: Session}): JSX.Element {
 }
 
 function ExistingSession({session, onStop, onConnect}: {session: Session, onStop: () => void, onConnect: (session: Session) => void}): JSX.Element {
+    const [stopping, setStopping] = useState(false);
     return (
         <React.Fragment>
             <Typography variant="h5" style={{padding: 20}}>Existing session</Typography>
@@ -184,7 +202,7 @@ function ExistingSession({session, onStop, onConnect}: {session: Session, onStop
             <Divider orientation="horizontal" />
             <Container style={{display: "flex", flexDirection: "column", alignItems: "flex-end", paddingTop: 10, paddingBottom: 10}}>
                 <div>
-                <Button style={{marginRight: 10}} onClick={onStop} color="secondary" variant="outlined" disableElevation>
+                <Button style={{marginRight: 10}} onClick={() => { setStopping(true); onStop();}} disabled={stopping} color="secondary" variant="outlined" disableElevation>
                     Stop
                 </Button>
                 <Button onClick={() => onConnect(session)} disabled={session.pod.phase !== 'Running'} color="primary" variant="contained" disableElevation>
