@@ -11,11 +11,34 @@ import { TheiaPanel } from './panels/theia';
 import { Wrapper } from './components';
 import { useLifecycle, Events, PanelId, States } from './lifecycle';
 
+async function deleteSession(client: Client): Promise<void> {
+    await client.deleteCurrentSession();
+    return new Promise(async (resolve, reject) => {
+        async function checkSession() {
+            console.log("checking..")
+            try {
+                await client.getCurrentSession();
+                const id = setTimeout(async () => {
+                    checkSession();
+                }, 1000);
+            } catch {
+                resolve();
+            }
+        }
+
+        await checkSession();
+    });
+}
+
 function MainPanel({ client, id, templates, session, onConnect, onDeployed, onStopped, restartAction }: { client: Client, id: PanelId, templates: Record<string, Template>, session: Session, restartAction: () => void, onConnect: () => void, onDeployed: () => void, onStopped: () => void}): JSX.Element {
     switch(id) {
         case PanelId.Session:
           return <SessionPanel templates={templates} session={session} onRetry={restartAction}
-                    onStop={async () => {await client.deleteCurrentSession(); onStopped(); }}
+                    onStop={async () => {
+                        await deleteSession(client);
+
+                        onStopped();
+                    }}
                     onDeployed={async template => {
                         await client.createOrUpdateCurrentSession({template: template});
                         onDeployed();
@@ -41,7 +64,7 @@ function Panel(): JSX.Element {
       <div style={{ display: "flex", width: "100vw", height: "100vh", alignItems: "center", justifyContent: "center" }}>
           <Wrapper onPlayground={() => send(Events.SELECT, {panel: PanelId.Session})} onAdminClick={() => send(Events.SELECT, {panel: PanelId.Admin})} onStatsClick={() => send(Events.SELECT, {panel: PanelId.Stats})} onLogout={() => send(Events.LOGOUT)} user={user}>
               {state.matches(States.LOGGED)
-               ? <MainPanel client={client} id={panel} templates={templates} session={session} onConnect={() => send(Events.SELECT, {panel: PanelId.Theia})} onDeployed={() => send(Events.SELECT, {panel: PanelId.Theia})} onStopped={() => send(Events.SELECT, {panel: PanelId.Session})} restartAction={restartAction} />
+               ? <MainPanel client={client} id={panel} templates={templates} session={session} onConnect={() => send(Events.SELECT, {panel: PanelId.Theia})} onDeployed={() => send(Events.SELECT, {panel: PanelId.Theia})} onStopped={() => send(Events.RESTART)} restartAction={restartAction} />
                : state.matches(States.TERMS_UNAPPROVED)
                 ? <TermsPanel terms={terms} onTermsApproved={() => send(Events.TERMS_APPROVAL)} />
                 : <LoginPanel />}
