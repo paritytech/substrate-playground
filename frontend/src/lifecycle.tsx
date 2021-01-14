@@ -81,10 +81,10 @@ function lifecycle(client: Client) {
         [States.SETUP]: {
             invoke: {
                 src: () => async (callback) => {
-                    const { templates, user, session } = (await client.get());
+                    const { templates, user } = (await client.get());
                     if (user) {
                         // TODO restore auto deployment
-                        callback({type: Events.CHECK, data: {templates: templates, user: user, session: session}});
+                        callback({type: Events.CHECK, data: {templates: templates, user: user}});
                     }
                 },
             },
