@@ -37,8 +37,6 @@ const useStyles = makeStyles((theme: Theme) =>
   }),
 );
 
-//Array<object>
-
 function createSpecs(instance: Instance): object {
   const url = `wss://${instance.uuid}.playground-staging.substrate.dev/wss`;
   return {template: "node-template",
