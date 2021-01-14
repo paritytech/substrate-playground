@@ -196,12 +196,12 @@ function ExistingSession({session, onStop, onConnect}: {session: Session, onStop
     );
 }
 
-export function SessionPanel({ templates, session, onDeployed, onConnect, onRetry, onStopSession }: {templates: Record<string, Template>, session: Session, onStopSession: () => void, onConnect: (session: Session) => void, onDeployed: (name: string) => void, onRetry: () => void}): JSX.Element {
+export function SessionPanel({ templates, session, onDeployed, onConnect, onRetry, onStop }: {templates: Record<string, Template>, session: Session, onStop: () => void, onConnect: (session: Session) => void, onDeployed: (name: string) => void, onRetry: () => void}): JSX.Element {
     return (
         <Container style={{ display: "flex", flex: 1, justifyContent: "center", alignItems: "center" }}>
             <Paper style={{ display: "flex", flexDirection: "column", height: "60vh", width: "60vw", justifyContent: "center"}} elevation={3}>
                 {session
-                 ? <ExistingSession onConnect={onConnect} onStop={onStopSession} session={session} />
+                 ? <ExistingSession onConnect={onConnect} onStop={onStop} session={session} />
                  : <TemplateSelector templates={templates} onRetry={onRetry} onDeployed={onDeployed} />}
             </Paper>
         </Container>

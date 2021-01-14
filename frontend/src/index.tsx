@@ -11,16 +11,16 @@ import { TheiaPanel } from './panels/theia';
 import { Wrapper } from './components';
 import { useLifecycle, Events, PanelId, States } from './lifecycle';
 
-function MainPanel({ client, id, templates, session, onConnect, onDeployed, restartAction }: { client: Client, id: PanelId, templates: Record<string, Template>, session: Session, restartAction: () => void, onConnect: () => void, onDeployed: () => void}): JSX.Element {
+function MainPanel({ client, id, templates, session, onConnect, onDeployed, onStopped, restartAction }: { client: Client, id: PanelId, templates: Record<string, Template>, session: Session, restartAction: () => void, onConnect: () => void, onDeployed: () => void, onStopped: () => void}): JSX.Element {
     switch(id) {
         case PanelId.Session:
           return <SessionPanel templates={templates} session={session} onRetry={restartAction}
-                  onStopSession={async () => await client.deleteCurrentSession()}
-                  onDeployed={async template => {
-                      await client.createOrUpdateCurrentSession({template: template});
-                      onDeployed();
-                  }}
-                  onConnect={onConnect} />;
+                    onStop={async () => {await client.deleteCurrentSession(); onStopped(); }}
+                    onDeployed={async template => {
+                        await client.createOrUpdateCurrentSession({template: template});
+                        onDeployed();
+                    }}
+                    onConnect={onConnect} />;
         case PanelId.Stats:
           return <StatsPanel />;
         case PanelId.Admin:
@@ -41,7 +41,7 @@ function Panel(): JSX.Element {
       <div style={{ display: "flex", width: "100vw", height: "100vh", alignItems: "center", justifyContent: "center" }}>
           <Wrapper onPlayground={() => send(Events.SELECT, {panel: PanelId.Session})} onAdminClick={() => send(Events.SELECT, {panel: PanelId.Admin})} onStatsClick={() => send(Events.SELECT, {panel: PanelId.Stats})} onLogout={() => send(Events.LOGOUT)} user={user}>
               {state.matches(States.LOGGED)
-               ? <MainPanel client={client} id={panel} templates={templates} session={session} onConnect={() => send(Events.SELECT, {panel: PanelId.Theia})} onDeployed={() => send(Events.SELECT, {panel: PanelId.Theia})} restartAction={restartAction} />
+               ? <MainPanel client={client} id={panel} templates={templates} session={session} onConnect={() => send(Events.SELECT, {panel: PanelId.Theia})} onDeployed={() => send(Events.SELECT, {panel: PanelId.Theia})} onStopped={() => send(Events.SELECT, {panel: PanelId.Session})} restartAction={restartAction} />
                : state.matches(States.TERMS_UNAPPROVED)
                 ? <TermsPanel terms={terms} onTermsApproved={() => send(Events.TERMS_APPROVAL)} />
                 : <LoginPanel />}
