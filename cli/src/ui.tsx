@@ -1,4 +1,4 @@
-import { Environment, Template } from '@substrate/playground-client';
+import { EnvironmentType, Template } from '@substrate/playground-client';
 import React, {useState, useEffect} from 'react';
 import { spawn, ChildProcessWithoutNullStreams } from 'child_process';
 import {render, Box, Text} from 'ink';
@@ -105,7 +105,7 @@ enum State {
     ERROR_PORT_ALREADY_USED
 }
 
-function App({web, port, env, template, templates, debug}: {web: boolean, port: number, env: Environment, template: string, templates: Template[], debug: boolean}): JSX.Element {
+function App({web, port, env, template, templates, debug}: {web: boolean, port: number, env: EnvironmentType, template: string, templates: Template[], debug: boolean}): JSX.Element {
 	const defaultemplate = templates.find(t => t.name == template);
 	const [state, setState] = useState(() => {
         if (template && !defaultemplate) {
