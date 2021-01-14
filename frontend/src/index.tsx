@@ -30,14 +30,12 @@ async function deleteSession(client: Client): Promise<void> {
     });
 }
 
-function MainPanel({ client, id, templates, session, onConnect, onDeployed, onStopped, restartAction }: { client: Client, id: PanelId, templates: Record<string, Template>, session: Session, restartAction: () => void, onConnect: () => void, onDeployed: () => void, onStopped: () => void}): JSX.Element {
+function MainPanel({ client, id, templates, onConnect, onDeployed, restartAction }: { client: Client, id: PanelId, templates: Record<string, Template>, restartAction: () => void, onConnect: () => void, onDeployed: () => void}): JSX.Element {
     switch(id) {
         case PanelId.Session:
-          return <SessionPanel templates={templates} session={session} onRetry={restartAction}
+          return <SessionPanel client={client} templates={templates} onRetry={restartAction}
                     onStop={async () => {
                         await deleteSession(client);
-
-                        onStopped();
                     }}
                     onDeployed={async template => {
                         await client.createOrUpdateCurrentSession({template: template});
@@ -59,12 +57,12 @@ function Panel(): JSX.Element {
 
   const restartAction = () => send(Events.RESTART);
 
-  const {panel, session, templates, terms, user} = state.context;
+  const {panel, templates, terms, user} = state.context;
   return (
       <div style={{ display: "flex", width: "100vw", height: "100vh", alignItems: "center", justifyContent: "center" }}>
           <Wrapper onPlayground={() => send(Events.SELECT, {panel: PanelId.Session})} onAdminClick={() => send(Events.SELECT, {panel: PanelId.Admin})} onStatsClick={() => send(Events.SELECT, {panel: PanelId.Stats})} onLogout={() => send(Events.LOGOUT)} user={user}>
               {state.matches(States.LOGGED)
-               ? <MainPanel client={client} id={panel} templates={templates} session={session} onConnect={() => send(Events.SELECT, {panel: PanelId.Theia})} onDeployed={() => send(Events.SELECT, {panel: PanelId.Theia})} onStopped={() => send(Events.RESTART)} restartAction={restartAction} />
+               ? <MainPanel client={client} id={panel} templates={templates} onConnect={() => send(Events.SELECT, {panel: PanelId.Theia})} onDeployed={() => send(Events.SELECT, {panel: PanelId.Theia})} restartAction={restartAction} />
                : state.matches(States.TERMS_UNAPPROVED)
                 ? <TermsPanel terms={terms} onTermsApproved={() => send(Events.TERMS_APPROVAL)} />
                 : <LoginPanel />}

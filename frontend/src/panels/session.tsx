@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import marked from 'marked';
 import Button from '@material-ui/core/Button';
 import Card from '@material-ui/core/Card';
@@ -17,7 +17,7 @@ import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
 import Typography from '@material-ui/core/Typography';
 import { makeStyles, createStyles, Theme } from '@material-ui/core/styles';
-import { NameValuePair, Port, Session, Template } from '@substrate/playground-client';
+import { Client, NameValuePair, Port, Session, Template } from '@substrate/playground-client';
 import { ErrorMessage } from "../components";
 
 const useStyles = makeStyles((theme: Theme) =>
@@ -137,9 +137,9 @@ function PortsTable({ ports }: {ports?: Port[]}): JSX.Element {
 function formatDuration(s: number): string {
     const date = new Date(0);
     date.setSeconds(s);
-    const hours = date.getHours();
-    const minutes = date.getMinutes();
-    const seconds = date.getMinutes();
+    const hours = date.getUTCHours();
+    const minutes = date.getUTCMinutes();
+    const seconds = date.getUTCSeconds();
     const withSeconds = `${seconds}s`;
     const withMinutes = `${minutes}min ${withSeconds}`;
     if (hours) {
@@ -154,7 +154,7 @@ function formatDuration(s: number): string {
 export function SessionDetails({ session }: {session: Session}): JSX.Element {
     const { pod, template } = session;
     const { name, runtime } = template;
-    const { phase, reason, startTime } = pod;
+    const { phase, reason, message, startTime } = pod;
     return (
         <Card style={{ margin: 20 }} variant="outlined">
             <CardContent>
@@ -167,7 +167,7 @@ export function SessionDetails({ session }: {session: Session}): JSX.Element {
                 </Typography>
                 }
                 <Typography color="textSecondary" gutterBottom>
-                Phase: <em>{phase}</em> {reason && `(${reason})`}
+                Phase: <em>{phase}</em> {message} {reason && `(${reason})`}
                 </Typography>
                 {runtime &&
                     <div style={{display: "flex", paddingTop: 20}}>
@@ -214,12 +214,28 @@ function ExistingSession({session, onStop, onConnect}: {session: Session, onStop
     );
 }
 
-export function SessionPanel({ templates, session, onDeployed, onConnect, onRetry, onStop }: {templates: Record<string, Template>, session: Session, onStop: () => void, onConnect: (session: Session) => void, onDeployed: (name: string) => void, onRetry: () => void}): JSX.Element {
+export function SessionPanel({ client, templates, onDeployed, onConnect, onRetry, onStop }: {client: Client, templates: Record<string, Template>, onStop: () => void, onConnect: (session: Session) => void, onDeployed: (name: string) => void, onRetry: () => void}): JSX.Element {
+    const [session, setSession] = useState<Session | null>(null);
+
+    useEffect(() => {
+        async function fetchSession() {
+            const session = await client.getCurrentSession();
+            if (session) {
+                setSession(session);
+            }
+
+            setTimeout(() => fetchSession(), 1000);
+        }
+
+        fetchSession();
+    }, []);
+
+    client.getCurrentSession
     return (
         <Container style={{ display: "flex", flex: 1, justifyContent: "center", alignItems: "center" }}>
             <Paper style={{ display: "flex", flexDirection: "column", height: "60vh", width: "60vw", justifyContent: "center"}} elevation={3}>
                 {session
-                 ? <ExistingSession onConnect={onConnect} onStop={onStop} session={session} />
+                 ? <ExistingSession session={session} onConnect={onConnect} onStop={onStop} />
                  : <TemplateSelector templates={templates} onRetry={onRetry} onDeployed={onDeployed} />}
             </Paper>
         </Container>
