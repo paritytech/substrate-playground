@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { Client, Environment, Template, playgroundBaseURL } from '@substrate/playground-client';
+import { Client, EnvironmentType, Template, playgroundBaseURL } from '@substrate/playground-client';
 import { spawn } from 'child_process';
 import 'cross-fetch/polyfill';
 import 'abort-controller/polyfill';
@@ -79,7 +79,7 @@ async function listTemplates(web: boolean): Promise<Template[]> {
 		process.exit(1);
 	}
 
-    const env = Environment[argv.env];
+    const env = EnvironmentType[argv.env];
     const templates = argv.env == 'local' ? await listTemplates(argv.web) : await fetchTemplates(playgroundBaseURL(env));
 	ui(Object.assign({templates: templates}, argv));
   }().catch(e => {

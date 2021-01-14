@@ -1,5 +1,5 @@
 import { injectable, inject } from "inversify";
-import { Client, Environment, playgroundBaseURL } from "@substrate/playground-client";
+import { Client, EnvironmentType, playgroundBaseURL } from "@substrate/playground-client";
 import { MAIN_MENU_BAR, CommandContribution, CommandRegistry, MenuContribution, MenuModelRegistry } from "@theia/core/lib/common";
 import { ConnectionStatusService, ConnectionStatus } from '@theia/core/lib/browser/connection-status-service';
 import { MessageService } from '@theia/core/lib/common/message-service';
@@ -100,14 +100,14 @@ function registerBridge(registry, connectionStatusService, messageService) {
     answer("extension-advertise", "", {online: online});
 }
 
-function envFromDomain(domain: string): Environment {
+function envFromDomain(domain: string): EnvironmentType {
     switch(domain) {
         case "playground":
-            return Environment.production;
+            return EnvironmentType.production;
         case "playground-staging":
-            return Environment.staging;
+            return EnvironmentType.staging;
         case "playground-dev":
-            return Environment.dev;
+            return EnvironmentType.dev;
         default:
             throw Error(`Unknown domain ${domain}`);
     }

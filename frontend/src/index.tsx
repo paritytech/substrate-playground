@@ -18,9 +18,9 @@ function MainPanel({ client, id, templates, session, onConnect, onDeployed, rest
     switch(id) {
         case PanelId.Session:
           return <SessionPanel templates={templates} session={session} onRetry={restartAction}
-                  onStopSession={async () => await client.deleteUserSession()}
+                  onStopSession={async () => await client.deleteCurrentSession()}
                   onDeployed={async template => {
-                      await client.createOrUpdateUserSession({template: template});
+                      await client.createOrUpdateCurrentSession({template: template});
                       onDeployed();
                   }}
                   onConnect={onConnect} />;
