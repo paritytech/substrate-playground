@@ -218,12 +218,10 @@ export function SessionPanel({ client, templates, onDeployed, onConnect, onRetry
     const [session, setSession] = useState<Session | null>(null);
 
     useEffect(() => {
-        async function fetchSession() {
-            setSession(await client.getCurrentSession());
-            setTimeout(() => fetchSession(), 1000);
-        }
-
-        fetchSession();
+        const refresh = async () => setSession(await client.getCurrentSession());
+        const id = setInterval(refresh, 1000);
+        refresh();
+        return () => clearInterval(id);
     }, []);
 
     return (
