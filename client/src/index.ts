@@ -34,12 +34,6 @@ export class Client {
 
     // Users
 
-    async getUser(id: string, init: RequestInit = this.defaultInit): Promise<User> {
-        return rpc(this.path(Client.usersResource, id), {
-            ...init
-        });
-    }
-
     async listUsers(init: RequestInit = this.defaultInit): Promise<Record<string, User>> {
         return rpc(this.path(Client.usersResource), init);
     }
@@ -61,7 +55,7 @@ export class Client {
 
     // Current Session
 
-    async getCurrentSession(init: RequestInit = this.defaultInit): Promise<Session> {
+    async getCurrentSession(init: RequestInit = this.defaultInit): Promise<Session | null> {
         return rpc(this.path(Client.sessionResource), init);
     }
 
