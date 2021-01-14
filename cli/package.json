@@ -24,7 +24,7 @@
     "clean": "rm -rf dist/ node_modules/ yarn.lock"
   },
   "dependencies": {
-    "@substrate/playground-client": "1.1.6",
+    "@substrate/playground-client": "1.1.7",
     "abort-controller": "3.0.0",
     "cross-fetch": "3.0.6",
     "ink": "3.0.8",
