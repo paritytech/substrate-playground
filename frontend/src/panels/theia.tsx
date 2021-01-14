@@ -63,7 +63,7 @@ export function TheiaPanel({ client, onMissingSession, onSessionFailing, onSessi
 
     useEffect(() => {
         async function fetchData() {
-            const { session } = await client.get();
+            const session = await client.getCurrentSession();
             if (!session) {
                 // No session exist, this state shouldn't be reached
                 setData({ type: "ERROR", value: "Couldn't locate the theia session", action: onMissingSession});
