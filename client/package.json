@@ -1,6 +1,6 @@
 {
   "name": "@substrate/playground-client",
-  "version": "1.1.5",
+  "version": "1.1.6",
   "description": "An isomorphic client for Substrate Playground",
   "main": "dist/main/index.js",
   "browser": "dist/browser/index.js",
