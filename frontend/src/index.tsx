@@ -1,6 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom";
-import { Client, Session, Template } from '@substrate/playground-client';
+import { Client, Template } from '@substrate/playground-client';
 import { createMuiTheme, ThemeProvider } from '@material-ui/core/styles';
 import { AdminPanel } from './panels/admin';
 import { LoginPanel } from './panels/login';
@@ -8,7 +8,7 @@ import { SessionPanel } from './panels/session';
 import { StatsPanel } from './panels/stats';
 import { TermsPanel } from './panels/terms';
 import { TheiaPanel } from './panels/theia';
-import { Wrapper } from './components';
+import { LoadingPanel, Wrapper } from './components';
 import { useLifecycle, Events, PanelId, States } from './lifecycle';
 
 function MainPanel({ client, id, templates, onConnect, onDeployed, restartAction }: { client: Client, id: PanelId, templates: Record<string, Template>, restartAction: () => void, onConnect: () => void, onDeployed: () => void}): JSX.Element {
@@ -46,7 +46,9 @@ function Panel(): JSX.Element {
                ? <MainPanel client={client} id={panel} templates={templates} onConnect={() => send(Events.SELECT, {panel: PanelId.Theia})} onDeployed={() => send(Events.SELECT, {panel: PanelId.Theia})} restartAction={restartAction} />
                : state.matches(States.TERMS_UNAPPROVED)
                 ? <TermsPanel terms={terms} onTermsApproved={() => send(Events.TERMS_APPROVAL)} />
-                : <LoginPanel />}
+                : state.matches(States.UNLOGGED)
+                 ? <LoginPanel />
+                 : <LoadingPanel />}
           </Wrapper>
       </div>
     );

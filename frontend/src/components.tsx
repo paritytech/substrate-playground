@@ -19,7 +19,7 @@ import Typography from '@material-ui/core/Typography';
 import { PlaygroundUser } from "@substrate/playground-client";
 import { useInterval } from './hooks';
 
-function wrapAction(action: (() => void) | Promise<void>, call: (boolean) => void):(() => void) | Promise<void> {
+function wrapAction(action: (() => void) | Promise<void>, call: (flag: boolean) => void):(() => void) | Promise<void> {
     if (action instanceof Promise) {
         call(true);
         return new Promise<void>((resolve, reject) => {
@@ -231,5 +231,16 @@ export function Wrapper({ onPlayground, onStatsClick, onAdminClick, onLogout, us
             </Container>
 
         </div>
+    );
+}
+
+export function LoadingPanel() {
+    return (
+        <Container style={{ display: "flex", flex: 1, flexDirection: "column", justifyContent: "center", alignItems: "center" }}>
+            <Typography variant="h6">
+                Loading
+            </Typography>
+            <CircularProgress />
+        </Container>
     );
 }

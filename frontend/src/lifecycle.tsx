@@ -14,7 +14,6 @@ export interface Context {
   panel: PanelId,
   user: PlaygroundUser,
   templates: Record<string, Template>,
-  session?: Session
 }
 
 export enum States {
@@ -35,17 +34,19 @@ interface UserDataMachineStates {
 
 export enum Events {
     TERMS_APPROVAL = '@event/TERMS_APPROVAL',
-    CHECK = '@action/CHECK',
+    LOGIN = '@action/LOGIN',
     SELECT = '@action/SELECT',
     RESTART = '@action/RESTART',
+    UNLOGIN = '@action/UNLOGIN',
     LOGOUT = '@action/LOGOUT',
 }
 
 type EventTypesSchema =
     | Events.TERMS_APPROVAL
-    | Events.CHECK
+    | Events.LOGIN
     | Events.SELECT
     | Events.RESTART
+    | Events.UNLOGIN
     | Events.LOGOUT;
 
 export interface UserDataMachineEvents extends EventObject {
@@ -54,6 +55,7 @@ export interface UserDataMachineEvents extends EventObject {
 
 export enum Actions {
     STORE_TERMS_HASH = '@action/STORE_TERMS_HASH',
+    LOGOUT = '@action/LOGOUT',
 }
 
 const termsApprovedKey = 'termsApproved';
@@ -84,35 +86,34 @@ function lifecycle(client: Client) {
                     const { templates, user } = (await client.get());
                     if (user) {
                         // TODO restore auto deployment
-                        callback({type: Events.CHECK, data: {templates: templates, user: user}});
+                        callback({type: Events.LOGIN, data: {templates: templates, user: user}});
+                    } else {
+                        callback({type: Events.UNLOGIN, data: {templates: templates}});
                     }
                 },
             },
-            on: {
-            [Events.CHECK]:
-                {target: States.LOGGED,
-                 actions: assign({templates: (_, event) => event.data.templates, user: (_, event) => event.data.user, session: (_, event) => event.data.session}) }
-            }
+            on: {[Events.LOGIN]: {target: States.LOGGED,
+                                  actions: assign({templates: (_, event) => event.data.templates, user: (_, event) => event.data.user})},
+                 [Events.UNLOGIN]: {target: States.UNLOGGED}}
+        },
+        [States.UNLOGGED]: {
+            on: {[Events.RESTART]: States.SETUP,}
         },
         [States.LOGGED]: {
             on: {[Events.RESTART]: States.SETUP,
-                 [Events.LOGOUT]: States.UNLOGGED,
-                 [Events.SELECT]: {actions: assign({ panel: (_, event) => event.panel})},}
-        },
-        [States.UNLOGGED]: {
-            invoke: {
-                src: async () => {
-                    await client.logout();
-                },
-                onDone: {target: States.SETUP}
-            }
-        },
+                 [Events.LOGOUT]: {target: States.SETUP,
+                                   actions: [Actions.LOGOUT]},
+                 [Events.SELECT]: {actions: assign({ panel: (_, event) => event.panel})}}
+        }
     }
   },
   {
     actions: {
       [Actions.STORE_TERMS_HASH]: () => {
         localStorage.setItem(termsApprovedKey, termsHash);
+      },
+      [Actions.LOGOUT]: async () => {
+        await client.logout();
       },
     }
   });
