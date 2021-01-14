@@ -10,7 +10,6 @@ import { TermsPanel } from './panels/terms';
 import { TheiaPanel } from './panels/theia';
 import { Wrapper } from './components';
 import { useLifecycle, Events, States } from './lifecycle';
-import { intercept } from './server';
 
 export enum PanelId {Session, Admin, Stats, Theia}
 
@@ -69,22 +68,11 @@ function App(): JSX.Element {
   );
 }
 
-function devMode(): boolean {
-  const param = new URLSearchParams(window.location.search).get('devMode');
-  if (param) {
-    return param === "true";
-  }
-  return process.env.NODE_ENV === 'dev';
-}
-
 const base = process.env.BASE || "/api";
 console.log(`Connected to: ${base}`);
 const version = process.env.GITHUB_SHA;
 console.log(`Version ${version}`);
-if (devMode()) {
-  console.log("Installing HTTP interceptor");
-  intercept({noInstance: true, logged: true});
-}
+
 // Set domain to root DNS so that they share the same origin and communicate
 const members = document.domain.split(".");
 if (members.length > 1) {
