@@ -22,7 +22,7 @@ async function fetchWithTimeout<T>(input: RequestInfo, init: RequestInit, timeou
                 const { result, error } = await response.json();
                 if (result) {
                     return Promise.resolve(result);
-                } else {
+                } else if (error) {
                     return Promise.reject(error);
                 }
             } catch (e) {
