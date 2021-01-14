@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import marked from 'marked';
 import Button from '@material-ui/core/Button';
 import Card from '@material-ui/core/Card';
@@ -19,6 +19,7 @@ import Typography from '@material-ui/core/Typography';
 import { makeStyles, createStyles, Theme } from '@material-ui/core/styles';
 import { Client, NameValuePair, Port, Session, Template } from '@substrate/playground-client';
 import { ErrorMessage } from "../components";
+import { useInterval } from "../hooks";
 
 const useStyles = makeStyles((theme: Theme) =>
     createStyles({
@@ -217,12 +218,7 @@ function ExistingSession({session, onStop, onConnect}: {session: Session, onStop
 export function SessionPanel({ client, templates, onDeployed, onConnect, onRetry, onStop }: {client: Client, templates: Record<string, Template>, onStop: () => void, onConnect: (session: Session) => void, onDeployed: (name: string) => void, onRetry: () => void}): JSX.Element {
     const [session, setSession] = useState<Session | null>(null);
 
-    useEffect(() => {
-        const refresh = async () => setSession(await client.getCurrentSession());
-        const id = setInterval(refresh, 1000);
-        refresh();
-        return () => clearInterval(id);
-    }, []);
+    useInterval(async () => setSession(await client.getCurrentSession()), 1000);
 
     return (
         <Container style={{ display: "flex", flex: 1, justifyContent: "center", alignItems: "center" }}>
