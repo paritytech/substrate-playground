@@ -20,10 +20,10 @@ async function fetchWithTimeout<T>(input: RequestInfo, init: RequestInit, timeou
         if (response.ok) {
             try {
                 const { result, error } = await response.json();
-                if (result) {
-                    return Promise.resolve(result);
-                } else if (error) {
+                if (error) {
                     return Promise.reject(error);
+                } else {
+                    return Promise.resolve(result);
                 }
             } catch (e) {
                 try {
