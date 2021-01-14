@@ -14,7 +14,7 @@
   "dependencies": {
     "@docusaurus/core": "2.0.0-alpha.68",
     "@docusaurus/preset-classic": "2.0.0-alpha.68",
-    "@mdx-js/react": "1.6.21",
+    "@mdx-js/react": "1.6.22",
     "clsx": "1.1.1",
     "mermaid": "8.8.4",
     "react": "17.0.1",
