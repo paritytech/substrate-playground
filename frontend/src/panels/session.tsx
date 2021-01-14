@@ -175,19 +175,19 @@ export function SessionDetails({ session }: {session: Session}): JSX.Element {
 
 function ExistingSession({session, onStop, onConnect}: {session: Session, onStop: () => void, onConnect: (session: Session) => void}): JSX.Element {
     return (
-    <React.Fragment>
-        <Typography variant="h5" style={{padding: 20}}>Existing session</Typography>
-        <Divider orientation="horizontal" />
-        <Container style={{display: "flex", flex: 1, padding: 0, justifyContent: "center", alignItems: "center", overflowY: "auto"}}>
-            <SessionDetails session={session} />
-        </Container>
-        <Divider orientation="horizontal" />
-        <Container style={{display: "flex", flexDirection: "column", alignItems: "flex-end", paddingTop: 10, paddingBottom: 10}}>
-            <div>
+        <React.Fragment>
+            <Typography variant="h5" style={{padding: 20}}>Existing session</Typography>
+            <Divider orientation="horizontal" />
+            <Container style={{display: "flex", flex: 1, padding: 0, justifyContent: "center", alignItems: "center", overflowY: "auto"}}>
+                <SessionDetails session={session} />
+            </Container>
+            <Divider orientation="horizontal" />
+            <Container style={{display: "flex", flexDirection: "column", alignItems: "flex-end", paddingTop: 10, paddingBottom: 10}}>
+                <div>
                 <Button style={{marginRight: 10}} onClick={onStop} color="secondary" variant="outlined" disableElevation>
                     Stop
                 </Button>
-                <Button onClick={() => onConnect(session)} disabled={session.pod.phase != Phase.Running} color="primary" variant="contained" disableElevation>
+                <Button onClick={() => onConnect(session)} disabled={session.pod.phase !== 'Running'} color="primary" variant="contained" disableElevation>
                     Connect
                 </Button>
                 </div>

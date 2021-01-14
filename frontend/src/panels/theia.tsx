@@ -64,6 +64,7 @@ export function TheiaPanel({ client, onMissingSession, onSessionFailing, onSessi
     useEffect(() => {
         async function fetchData() {
             const { session } = await client.get();
+            console.log("session", session)
             if (!session) {
                 // No session exist, this state shouldn't be reached
                 setData({ type: "ERROR", value: "Couldn't locate the theia session", action: onMissingSession});
@@ -71,7 +72,7 @@ export function TheiaPanel({ client, onMissingSession, onSessionFailing, onSessi
             }
 
             const phase = session.pod.phase;
-            if (phase == Phase.Running || phase == Phase.Pending) {
+            if (phase == 'Running' || phase == 'Pending') {
                 const reason = session.pod.reason;
                 if (reason === "CrashLoopBackOff" || reason === "ErrImagePull" || reason === "ImagePullBackOff" || reason === "InvalidImageName") {
                     setData({ type: "ERROR", value: session.pod.message, action: onSessionFailing });
