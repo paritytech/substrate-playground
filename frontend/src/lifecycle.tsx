@@ -71,7 +71,12 @@ function lifecycle(client: Client) {
                 },
             },
             on: {[Events.LOGIN]: {target: States.LOGGED,
-                                  actions: assign({templates: (_, event) => event.templates, user: (_, event) => event.user})},
+                                  actions: assign((_, event) => {
+                                    return {
+                                      templates: event.templates,
+                                      user: event.user,
+                                    }
+                                  })},
                  [Events.UNLOGIN]: {target: States.UNLOGGED}}
         },
         [States.UNLOGGED]: {
