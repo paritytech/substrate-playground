@@ -75,7 +75,6 @@ export function TheiaPanel({ client, autoDeploy, templates, onMissingSession, on
                     {data.type == 'ERROR'
                      ? <ErrorMessage reason={data.value} action={data.action} />
                      : <Loading phase={data.phase} retry={data.retry} />}
-                    <Content data={data} />
                 </Paper>
             </Container>
         );
