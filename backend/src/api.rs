@@ -3,7 +3,7 @@ use crate::github::{token_validity, GitHubUser};
 use crate::session::SessionConfiguration;
 use crate::user::{LoggedAdmin, LoggedUser, UserConfiguration};
 use crate::Context;
-use rocket::request::{self, FromRequest, Request};
+use rocket::{http::uri::Origin, request::{self, FromRequest, Request}};
 use rocket::response::{content, status, Redirect};
 use rocket::{
     catch, delete, get,
@@ -212,20 +212,18 @@ pub fn delete_session(
 
 // GitHub login logic
 
-fn query_params(deploy: Option<String>) -> String {
-    if let Some(d) = deploy {
-        return format!("?deploy={}", d);
-    }
-    "".to_string()
+fn query_segment(origin: &Origin) -> String {
+    origin.query().map_or("".to_string(), |query| format!("?{}", query))
 }
 
 // Gets called from UI. Then redirects to the GitHub `auth_uri` which itself redirects to `/auth/github`
-#[get("/login/github?<deploy>")]
+#[get("/login/github")]
 pub fn github_login(
-    deploy: Option<String>,
+    origin: &Origin,
     oauth2: OAuth2<GitHubUser>,
     mut cookies: Cookies<'_>,
 ) -> Redirect {
+    log::info!("params {:?}", origin.query());
     oauth2
         .get_redirect_extras(
             &mut cookies,
@@ -234,7 +232,7 @@ pub fn github_login(
                 "redirect_uri",
                 &format!(
                     "http://playground-dev.substrate.test/api/auth/github{}",
-                    &query_params(deploy)
+                    query_segment(origin)
                 ),
             )],
         )
@@ -243,9 +241,9 @@ pub fn github_login(
 
 /// Callback to handle the authenticated token received from GitHub
 /// and store it as a cookie
-#[get("/auth/github?<deploy>")]
+#[get("/auth/github")]
 pub fn post_install_callback(
-    deploy: Option<String>,
+    origin: &Origin,
     token: TokenResponse<GitHubUser>,
     mut cookies: Cookies<'_>,
 ) -> Result<Redirect, String> {
@@ -255,7 +253,7 @@ pub fn post_install_callback(
             .finish(),
     );
 
-    Ok(Redirect::to(format!("/{}", query_params(deploy))))
+    Ok(Redirect::to(format!("/{}", query_segment(origin))))
 }
 
 #[get("/logout")]
