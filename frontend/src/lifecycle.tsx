@@ -1,16 +1,14 @@
-import crypto from 'crypto';
-import { assign, EventObject, Machine } from 'xstate';
+import { assign, Machine } from 'xstate';
 import { useMachine } from '@xstate/react';
 import { Client, PlaygroundUser, Template } from '@substrate/playground-client';
-import terms from 'bundle-text:./terms.md';
-
+import { approve, approved } from './terms';
 
 export enum PanelId {Session, Admin, Stats, Theia}
-
-const termsHash = crypto.createHash('md5').update(terms).digest('hex');
+export interface Params {
+    deploy?: string,
+}
 
 export interface Context {
-  terms: string,
   panel: PanelId,
   user?: PlaygroundUser,
   templates?: Record<string, Template>,
@@ -37,19 +35,11 @@ export enum Actions {
     LOGOUT = '@action/LOGOUT',
 }
 
-const termsApprovedKey = 'termsApproved';
-
-function termsApproved(): boolean {
-  const approvedTermsHash = localStorage.getItem(termsApprovedKey);
-  return termsHash == approvedTermsHash;
-}
-
-function lifecycle(client: Client) {
+function lifecycle(client: Client, id: PanelId) {
   return Machine<Context>({
-    initial: termsApproved() ? States.SETUP: States.TERMS_UNAPPROVED,
+    initial: approved()? States.SETUP: States.TERMS_UNAPPROVED,
     context: {
-        terms: terms,
-        panel: PanelId.Session,
+        panel: id,
     },
     states: {
         [States.TERMS_UNAPPROVED]: {
@@ -93,7 +83,7 @@ function lifecycle(client: Client) {
   {
     actions: {
       [Actions.STORE_TERMS_HASH]: () => {
-        localStorage.setItem(termsApprovedKey, termsHash);
+        approve();
       },
       [Actions.LOGOUT]: async () => {
         await client.logout();
@@ -102,6 +92,6 @@ function lifecycle(client: Client) {
   });
 }
 
-export function useLifecycle(client: Client) {
-    return useMachine(lifecycle(client), { devTools: true });
+export function useLifecycle(client: Client, id: PanelId) {
+    return useMachine(lifecycle(client, id), { devTools: true });
 }

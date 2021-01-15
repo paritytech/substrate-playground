@@ -9,9 +9,10 @@ import { StatsPanel } from './panels/stats';
 import { TermsPanel } from './panels/terms';
 import { TheiaPanel } from './panels/theia';
 import { LoadingPanel, Wrapper } from './components';
-import { useLifecycle, Events, PanelId, States } from './lifecycle';
+import { useLifecycle, Events, PanelId, Params, States } from './lifecycle';
+import { terms } from "./terms";
 
-function MainPanel({ client, id, templates, onConnect, onDeployed, restartAction }: { client: Client, id: PanelId, templates: Record<string, Template>, restartAction: () => void, onConnect: () => void, onDeployed: () => void}): JSX.Element {
+function MainPanel({ client, params, id, templates, onConnect, onDeployed, restartAction }: { client: Client, params: Params, id: PanelId, templates: Record<string, Template>, restartAction: () => void, onConnect: () => void, onDeployed: () => void}): JSX.Element {
     switch(id) {
         case PanelId.Session:
           return <SessionPanel client={client} templates={templates} onRetry={restartAction}
@@ -28,60 +29,61 @@ function MainPanel({ client, id, templates, onConnect, onDeployed, restartAction
         case PanelId.Admin:
           return <AdminPanel client={client} templates={templates} />;
         case PanelId.Theia:
-          return <TheiaPanel client={client} onMissingSession={restartAction} onSessionFailing={restartAction} onSessionTimeout={restartAction} />;
+          return <TheiaPanel client={client} autoDeploy={params.deploy} templates={templates} onMissingSession={restartAction} onSessionFailing={restartAction} onSessionTimeout={restartAction} />;
       }
 }
 
-function Panel(): JSX.Element {
-  const client = new Client(base, {credentials: "include"});
-  const [state, send] = useLifecycle(client);
+function App({ base, params }: { base: string, params: Params }): JSX.Element {
+    const client = new Client(base, {credentials: "include"});
+    const { deploy } = params;
+    const [state, send] = useLifecycle(client, deploy? PanelId.Theia: PanelId.Session);
+    const { panel, templates, user } = state.context;
 
-  const restartAction = () => send(Events.RESTART);
+    const restartAction = () => send(Events.RESTART);
+    const selectPanel = (id: PanelId) => send(Events.SELECT, {panel: id});
+    const theme = createMuiTheme({
+        palette: {
+          type: 'dark',
+        },
+    });
 
-  const {panel, templates, terms, user} = state.context;
-  return (
-      <div style={{ display: "flex", width: "100vw", height: "100vh", alignItems: "center", justifyContent: "center" }}>
-          <Wrapper onPlayground={() => send(Events.SELECT, {panel: PanelId.Session})} onAdminClick={() => send(Events.SELECT, {panel: PanelId.Admin})} onStatsClick={() => send(Events.SELECT, {panel: PanelId.Stats})} onLogout={() => send(Events.LOGOUT)} user={user}>
-              {state.matches(States.LOGGED)
-               ? <MainPanel client={client} id={panel} templates={templates} onConnect={() => send(Events.SELECT, {panel: PanelId.Theia})} onDeployed={() => send(Events.SELECT, {panel: PanelId.Theia})} restartAction={restartAction} />
-               : state.matches(States.TERMS_UNAPPROVED)
-                ? <TermsPanel terms={terms} onTermsApproved={() => send(Events.TERMS_APPROVAL)} />
-                : state.matches(States.UNLOGGED)
-                 ? <LoginPanel />
-                 : <LoadingPanel />}
-          </Wrapper>
-      </div>
+    return (
+        <ThemeProvider theme={theme}>
+            <div style={{ display: "flex", width: "100vw", height: "100vh", alignItems: "center", justifyContent: "center" }}>
+                <Wrapper onPlayground={() => selectPanel(PanelId.Session)} onAdminClick={() => selectPanel(PanelId.Admin)} onStatsClick={() => selectPanel(PanelId.Stats)} onLogout={() => send(Events.LOGOUT)} user={user}>
+                    {state.matches(States.LOGGED)
+                    ? <MainPanel client={client} params={params} id={panel} templates={templates} onConnect={() => selectPanel(PanelId.Theia)} onDeployed={() => selectPanel(PanelId.Theia)} restartAction={restartAction} />
+                    : state.matches(States.TERMS_UNAPPROVED)
+                        ? <TermsPanel terms={terms} onTermsApproved={() => send(Events.TERMS_APPROVAL)} />
+                        : state.matches(States.UNLOGGED)
+                        ? <LoginPanel />
+                        : <LoadingPanel />}
+                </Wrapper>
+            </div>
+        </ThemeProvider>
     );
 }
 
-function App(): JSX.Element {
-  const theme = createMuiTheme({
-    palette: {
-      type: 'dark',
-    },
-  });
-
-  // TODO: handle URL parameters. deploy, .., propagate to Theia. Survive GH login.
-
-  return (
-    <ThemeProvider theme={theme}>
-      <Panel />
-    </ThemeProvider>
-  );
+function extractParams(): Params {
+    const params = new URLSearchParams(window.location.search);
+    return {deploy: params.get('deploy')};
 }
 
-const base = process.env.BASE || "/api";
-console.log(`Connected to: ${base}`);
-const version = process.env.GITHUB_SHA;
-console.log(`Version ${version}`);
+function main(): void {
+    const base = process.env.BASE || "/api";
+    console.log(`Connected to: ${base}`);
+    console.log(`Version ${process.env.GITHUB_SHA}`);
 
-// Set domain to root DNS so that they share the same origin and communicate
-const members = document.domain.split(".");
-if (members.length > 1) {
-  document.domain = members.slice(members.length-2).join(".");
+    // Set domain to root DNS so that they share the same origin and communicate
+    const members = document.domain.split(".");
+    if (members.length > 1) {
+      document.domain = members.slice(members.length-2).join(".");
+    }
+
+    ReactDOM.render(
+        <App base={base} params={extractParams()} />,
+        document.querySelector("main")
+    );
 }
 
-ReactDOM.render(
-    <App />,
-    document.querySelector("main")
-);
+main();

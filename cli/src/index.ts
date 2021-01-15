@@ -11,7 +11,7 @@ import { ui } from './ui';
 interface Arguments {
     web: boolean;
     env: string;
-    template: string | undefined;
+    template?: string;
     debug: boolean;
     port: number;
 }
