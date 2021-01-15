@@ -87,7 +87,7 @@ impl Manager {
             let sessions_thread = self.clone().sessions.clone();
             if let Ok(mut sessions2) = sessions_thread.lock() {
                 let sessions3 = &mut sessions2.clone();
-                for (id,_) in sessions3 {
+                for (id, _) in sessions3 {
                     match self.clone().get_session(&id) {
                         Ok(Some(session)) => {
                             // Deployed sessions are removed from the set
@@ -110,7 +110,7 @@ impl Manager {
                             }
                             // Ignore "Unknown"
                             // "Succeeded" can't happen
-                        },
+                        }
                         Err(err) => warn!("Failed to call get: {}", err),
                         Ok(None) => warn!("No matching pod: {}", id),
                     }

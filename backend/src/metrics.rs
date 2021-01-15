@@ -1,7 +1,5 @@
 use prometheus::Registry;
-use prometheus::{
-    exponential_buckets, histogram_opts, opts, HistogramVec, IntCounterVec,
-};
+use prometheus::{exponential_buckets, histogram_opts, opts, HistogramVec, IntCounterVec};
 use std::error::Error;
 
 #[derive(Debug, Clone)]

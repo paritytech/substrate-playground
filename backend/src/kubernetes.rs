@@ -560,7 +560,7 @@ impl Engine {
 
         match pod.map(|pod| self.clone().pod_to_session(&self.env, &pod)) {
             Some(session) => session.map(|session| Some(session)),
-            None => Ok(None)
+            None => Ok(None),
         }
     }
 

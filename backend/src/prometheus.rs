@@ -16,9 +16,7 @@ pub struct PrometheusMetrics {
 impl PrometheusMetrics {
     /// Create a new `PrometheusMetrics` with a custom `Registry`.
     pub fn with_registry(registry: Registry) -> Self {
-        PrometheusMetrics {
-            registry,
-        }
+        PrometheusMetrics { registry }
     }
 }
 
