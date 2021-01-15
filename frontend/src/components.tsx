@@ -56,7 +56,7 @@ function ErrorMessageAction({action, actionTitle = "TRY AGAIN"}: {action: (() =>
 
 export function ErrorMessage({ title = "Oops! Looks like something went wrong :(", reason, action, actionTitle }: { title?: string, reason?: string, action: (() => void) | Promise<void> , actionTitle?: string}): JSX.Element {
     return (
-        <Alert severity="error" style={{ flex: 1, margin: 20, alignItems: "center" }}
+        <Alert severity="error" style={{ margin: 20, alignItems: "center" }}
             action={<ErrorMessageAction action={action} actionTitle={actionTitle} />}>
             <AlertTitle style={{margin: "unset"}}>{title}</AlertTitle>
             {reason &&
@@ -112,7 +112,7 @@ export function Loading({ phase, retry = 0 }: { phase?: string, retry?: number }
     );
 }
 
-function Nav({ onPlayground, onStatsClick, onAdminClick, onLogout, user }: { onPlayground: () => void, onStatsClick: () => void, onAdminClick: () => void, onLogout: () => void, user: PlaygroundUser }): JSX.Element  {
+function Nav({ onPlayground, onStatsClick, onAdminClick, onLogout, user }: { onPlayground: () => void, onStatsClick: () => void, onAdminClick: () => void, onLogout: () => void, user?: PlaygroundUser }): JSX.Element  {
     const [anchorEl, setAnchorEl] = React.useState(null);
     const open = Boolean(anchorEl);
     const handleMenu = (event) => setAnchorEl(event.currentTarget);
@@ -210,7 +210,7 @@ function Nav({ onPlayground, onStatsClick, onAdminClick, onLogout, user }: { onP
     );
 }
 
-export function Wrapper({ onPlayground, onStatsClick, onAdminClick, onLogout, user, children}: { onPlayground: () => void, onStatsClick: () => void, onAdminClick: () => void, onLogout: () => void, user: PlaygroundUser, children: React.ReactElement}): JSX.Element {
+export function Wrapper({ onPlayground, onStatsClick, onAdminClick, onLogout, user, children}: { onPlayground: () => void, onStatsClick: () => void, onAdminClick: () => void, onLogout: () => void, user?: PlaygroundUser, children: React.ReactElement}): JSX.Element {
     return (
         <div style={{display: "flex", flexDirection: "column", width: "inherit", height: "inherit"}}>
 
