@@ -1418,7 +1418,6 @@ dependencies = [
  "rocket_contrib",
  "rocket_cors",
  "rocket_oauth2",
- "rocket_prometheus",
  "serde",
  "serde_json",
  "serde_yaml",
@@ -1748,16 +1747,6 @@ dependencies = [
  "rocket",
  "serde_json",
  "url 2.2.0",
-]
-
-[[package]]
-name = "rocket_prometheus"
-version = "0.7.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b15b33edbbade4a2b478d6c42f81b7db48185e441d0050492906789f01300127"
-dependencies = [
- "prometheus",
- "rocket",
 ]
 
 [[package]]

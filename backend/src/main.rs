@@ -6,17 +6,18 @@ mod github;
 mod kubernetes;
 mod manager;
 mod metrics;
+mod prometheus;
 mod session;
 mod template;
 mod user;
 
 use crate::manager::Manager;
+use crate::prometheus::PrometheusMetrics;
 use github::GitHubUser;
 use rocket::fairing::AdHoc;
 use rocket::{catchers, config::Environment, http::Method, routes};
 use rocket_cors::{AllowedOrigins, CorsOptions};
 use rocket_oauth2::{HyperSyncRustlsAdapter, OAuth2, OAuthConfig, StaticProvider};
-use rocket_prometheus::PrometheusMetrics;
 use std::{env, error::Error};
 
 pub struct Context {
@@ -61,7 +62,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let prometheus = PrometheusMetrics::with_registry(manager.clone().metrics.create_registry()?);
     let error = rocket::ignite()
         .register(catchers![api::bad_request_catcher])
-        .attach(prometheus.clone())
         .attach(cors)
         .attach(AdHoc::on_attach("github", |rocket| {
             let config = OAuthConfig::new(

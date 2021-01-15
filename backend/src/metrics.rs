@@ -1,5 +1,5 @@
 use prometheus::Registry;
-use rocket_prometheus::prometheus::{
+use prometheus::{
     exponential_buckets, histogram_opts, opts, HistogramVec, IntCounterVec,
 };
 use std::error::Error;
