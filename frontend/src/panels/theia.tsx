@@ -1,8 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
-import Container from "@material-ui/core/Container";
 import Paper from '@material-ui/core/Paper';
 import { Client, Template } from '@substrate/playground-client';
-import { ErrorMessage, Loading } from '../components';
+import { CenteredContainer, ErrorMessage, Loading } from '../components';
 import { fetchWithTimeout } from '../utils';
 
 export function TheiaPanel({ client, autoDeploy, templates, onMissingSession, onSessionFailing, onSessionTimeout }: { client: Client, autoDeploy?: string, templates: Record<string, Template>, onMissingSession: () => void, onSessionFailing: () => void, onSessionTimeout: () => void }): JSX.Element {
@@ -70,13 +69,13 @@ export function TheiaPanel({ client, autoDeploy, templates, onMissingSession, on
         return <iframe ref={ref} src={data.url} frameBorder="0" width="100%" height="100%"></iframe>
     } else {
         return (
-            <Container style={{ display: "flex", flex: 1, justifyContent: "center", alignItems: "center" }}>
+            <CenteredContainer>
                 <Paper style={{ display: "flex", flexDirection: "column", height: "60vh", width: "60vw", justifyContent: "center"}} elevation={3}>
                     {data.type == 'ERROR'
                      ? <ErrorMessage reason={data.value} action={data.action} />
                      : <Loading phase={data.phase} retry={data.retry} />}
                 </Paper>
-            </Container>
+            </CenteredContainer>
         );
     }
 }

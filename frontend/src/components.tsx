@@ -236,11 +236,19 @@ export function Wrapper({ onPlayground, onStatsClick, onAdminClick, onLogout, us
 
 export function LoadingPanel() {
     return (
-        <Container style={{ display: "flex", flex: 1, flexDirection: "column", justifyContent: "center", alignItems: "center" }}>
+        <CenteredContainer>
             <Typography variant="h6">
                 Loading
             </Typography>
             <CircularProgress />
+        </CenteredContainer>
+    );
+}
+
+export function CenteredContainer({ children }: { children: React.ReactElement }): JSX.Element {
+    return (
+        <Container style={{ display: "flex", flex: 1, flexDirection: "column", justifyContent: "center", alignItems: "center" }}>
+            ${children}
         </Container>
     );
 }

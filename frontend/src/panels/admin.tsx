@@ -17,6 +17,7 @@ import Tooltip from '@material-ui/core/Tooltip';
 import Toolbar from '@material-ui/core/Toolbar';
 import Typography from '@material-ui/core/Typography';
 import { Client, Session, Template, User } from '@substrate/playground-client';
+import { CenteredContainer } from '../components';
 
 const useStyles = makeStyles({
     table: {
@@ -246,7 +247,7 @@ function Users({ client }: { client: Client }) {
 
 export function AdminPanel({ client, templates }: { client: Client, templates: Record<string, Template> }) {
     return (
-        <Container style={{ display: "flex", flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <CenteredContainer>
             <Paper style={{ display: "flex", overflowY: "auto", flexDirection: "column", marginTop: 20, justifyContent: "center", width: "80vw", height: "80vh"}} elevation={3}>
                 <div style={{margin: 20}}>
                     <Users client={client} />
@@ -260,6 +261,6 @@ export function AdminPanel({ client, templates }: { client: Client, templates: R
                     <Sessions client={client} />
                 </div>
             </Paper>
-        </Container>
+        </CenteredContainer>
     );
 }
