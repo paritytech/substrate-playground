@@ -3,12 +3,16 @@ use crate::github::{token_validity, GitHubUser};
 use crate::session::SessionConfiguration;
 use crate::user::{LoggedAdmin, LoggedUser, UserConfiguration};
 use crate::Context;
-use rocket::{http::uri::Origin, request::{self, FromRequest, Request}};
+use request::FormItems;
 use rocket::response::{content, status, Redirect};
 use rocket::{
     catch, delete, get,
     http::{Cookie, Cookies, SameSite, Status},
     put, Outcome, State,
+};
+use rocket::{
+    http::uri::Origin,
+    request::{self, FromRequest, Request},
 };
 use rocket_contrib::{
     json,
@@ -213,7 +217,14 @@ pub fn delete_session(
 // GitHub login logic
 
 fn query_segment(origin: &Origin) -> String {
-    origin.query().map_or("".to_string(), |query| format!("?{}", query))
+    origin.query().map_or("".to_string(), |query| {
+        let v: Vec<String> = FormItems::from(query)
+            .map(|i| i.key_value_decoded())
+            .filter(|(k, _)| k != "code" && k != "state")
+            .map(|(k, v)| format!("{}={}", k, v))
+            .collect();
+        format!("?{}", v.join("&"))
+    })
 }
 
 // Gets called from UI. Then redirects to the GitHub `auth_uri` which itself redirects to `/auth/github`
@@ -223,7 +234,6 @@ pub fn github_login(
     oauth2: OAuth2<GitHubUser>,
     mut cookies: Cookies<'_>,
 ) -> Redirect {
-    log::info!("params {:?}", origin.query());
     oauth2
         .get_redirect_extras(
             &mut cookies,
@@ -253,6 +263,7 @@ pub fn post_install_callback(
             .finish(),
     );
 
+    // TODO drop code and state from query
     Ok(Redirect::to(format!("/{}", query_segment(origin))))
 }
 
