@@ -66,20 +66,15 @@ export function TheiaPanel({ client, autoDeploy, templates, onMissingSession, on
         }
     }, [data]);
 
-    function Content({data}) {
-        if (data.type == 'ERROR') {
-            return <ErrorMessage reason={data.value} action={data.action} />;
-        } else {
-            return <Loading phase={data.phase} retry={data.retry} />;
-        }
-    }
-
     if (data.type == "SUCCESS") {
         return <iframe ref={ref} src={data.url} frameBorder="0" width="100%" height="100%"></iframe>
     } else {
         return (
             <Container style={{ display: "flex", flex: 1, justifyContent: "center", alignItems: "center" }}>
                 <Paper style={{ display: "flex", flexDirection: "column", height: "60vh", width: "60vw", justifyContent: "center"}} elevation={3}>
+                    {data.type == 'ERROR'
+                     ? <ErrorMessage reason={data.value} action={data.action} />
+                     : <Loading phase={data.phase} retry={data.retry} />}
                     <Content data={data} />
                 </Paper>
             </Container>
