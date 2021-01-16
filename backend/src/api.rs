@@ -268,9 +268,9 @@ pub fn post_install_callback(
 }
 
 #[get("/logout")]
-pub fn logout(cookies: Cookies<'_>) -> Redirect {
+pub fn logout(cookies: Cookies<'_>) -> JsonValue {
     clear(cookies);
-    Redirect::to("/")
+    result_to_jsonrpc(Ok(()))
 }
 
 fn clear(mut cookies: Cookies<'_>) {
