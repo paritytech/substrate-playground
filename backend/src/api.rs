@@ -1,5 +1,5 @@
 //! HTTP endpoints exposed in /api context
-use crate::github::{token_validity, GitHubUser};
+use crate::{github::{token_validity, GitHubUser}, kubernetes::Environment};
 use crate::session::SessionConfiguration;
 use crate::user::{LoggedAdmin, LoggedUser, UserConfiguration};
 use crate::Context;
@@ -147,17 +147,12 @@ pub fn get_current_session(state: State<'_, Context>, user: LoggedUser) -> JsonV
     result_to_jsonrpc(manager.get_session(&user.id))
 }
 
-// TODO Can provide extra data that will override defaults (sessionDuration, template details, )
-// Depending on users attributes, assign the right pod affinity
-
 #[put("/session", data = "<conf>")]
 pub fn create_or_update_current_session(
     state: State<'_, Context>,
     user: LoggedUser,
     conf: Json<SessionConfiguration>,
 ) -> JsonValue {
-    // TODO template can't be updated
-    // allow to update sessionDuration
     let manager = state.manager.clone();
     result_to_jsonrpc(manager.create_or_update_session(&user.id, conf.0))
 }
@@ -227,13 +222,23 @@ fn query_segment(origin: &Origin) -> String {
     })
 }
 
+fn protocol(env: &Environment) -> String {
+    if env.secure {
+        return "https".to_string()
+    } else {
+        return "http".to_string()
+    }
+}
+
 // Gets called from UI. Then redirects to the GitHub `auth_uri` which itself redirects to `/auth/github`
 #[get("/login/github")]
 pub fn github_login(
+    state: State<'_, Context>,
     origin: &Origin,
     oauth2: OAuth2<GitHubUser>,
     mut cookies: Cookies<'_>,
 ) -> Redirect {
+    let manager = state.manager.clone();
     oauth2
         .get_redirect_extras(
             &mut cookies,
@@ -241,7 +246,9 @@ pub fn github_login(
             &[(
                 "redirect_uri",
                 &format!(
-                    "http://playground-dev.substrate.test/api/auth/github{}",
+                    "{}://{}/api/auth/github{}",
+                    protocol(&manager.engine.env),
+                    manager.engine.env.host,
                     query_segment(origin)
                 ),
             )],
@@ -263,7 +270,6 @@ pub fn post_install_callback(
             .finish(),
     );
 
-    // TODO drop code and state from query
     Ok(Redirect::to(format!("/{}", query_segment(origin))))
 }
 

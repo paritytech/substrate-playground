@@ -313,6 +313,7 @@ async fn list_users(client: Client, namespace: &str) -> Result<BTreeMap<String, 
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Environment {
+    pub secure: bool,
     pub host: String,
     pub namespace: String,
 }
@@ -396,6 +397,12 @@ impl Engine {
         let namespace = config.clone().default_ns.to_string();
         let client = Client::new(config);
         let ingress_api: Api<Ingress> = Api::namespaced(client.clone(), &namespace);
+        let secure = if let Ok(ingress) =  ingress_api.get(INGRESS_NAME).await {
+            ingress.spec.ok_or("No spec")?.tls.is_some()
+        } else {
+            false
+        };
+
         let host = if let Ok(ingress) = ingress_api.get(INGRESS_NAME).await {
             ingress
                 .spec
@@ -419,23 +426,10 @@ impl Engine {
             env::var("GITHUB_CLIENT_SECRET").map_err(|_| "GITHUB_CLIENT_SECRET must be set")?;
         let session_default_duration = env::var("SESSION_DEFAULT_DURATION")
             .map_err(|_| "SESSION_DEFAULT_DURATION must be set")?;
-        /*TODO
-        let session_duration =
-          Duration::from_secs(env::var("PLAYGROUND_DEFAULT_SESSION_DURATION").map_or(
-              60 * DEFAULT_SESSION_DURATION,
-              |d| {
-                  60 * d.parse::<u64>().unwrap_or_else(|_| {
-                      warn!(
-                          "Failed to parse default session_duration {}, Using {}",
-                          d, DEFAULT_SESSION_DURATION
-                      );
-                      DEFAULT_SESSION_DURATION
-                  })
-              },
-          ));*/
 
         Ok(Engine {
             env: Environment {
+                secure,
                 host,
                 namespace: namespace.clone(),
             },
