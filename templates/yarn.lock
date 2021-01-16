@@ -1847,10 +1847,10 @@
   resolved "https://registry.yarnpkg.com/@stroncium/procfs/-/procfs-1.2.1.tgz#6b9be6fd20fb0a4c20e99a8695e083c699bb2b45"
   integrity sha512-X1Iui3FUNZP18EUvysTHxt+Avu2nlVzyf90YM8OYgP6SGzTzzX/0JgObfO1AQQDzuZtNNz29bVh8h5R97JrjxA==
 
-"@substrate/playground-client@1.1.8":
-  version "1.1.8"
-  resolved "https://registry.yarnpkg.com/@substrate/playground-client/-/playground-client-1.1.8.tgz#d0220b06202dd5cefb604dcb0f5c15e8f048c7d6"
-  integrity sha512-u4Vaz7RUU0z8j57ccgcBDJw+p7kOiuWX1L9hqsc0zObxwn1mNu8HkIIaIxUe9o249aLlN5M/4LJtB51/VnoFvw==
+"@substrate/playground-client@1.1.9":
+  version "1.1.9"
+  resolved "https://registry.yarnpkg.com/@substrate/playground-client/-/playground-client-1.1.9.tgz#a19616e2a66ad5141dd2994c6587f56cc9d1f37d"
+  integrity sha512-u8tvbFeFRUqs2SPN0fGa5FoRjdsBjNCTpllrsjBR1koCCqSDZeafsar1cEJr0JxBh7aErpSqbWO9lVoA/ZyIsQ==
 
 "@theia/application-manager@^1.9.0":
   version "1.9.0"
