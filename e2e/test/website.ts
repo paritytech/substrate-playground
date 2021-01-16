@@ -1,19 +1,20 @@
 import test from 'ava';
 import { chromium } from 'playwright';
+import 'cross-fetch/polyfill';
+import 'abort-controller/polyfill';
 
-function playgroundDomain() {
-  const env = process.env.ENV || "dev";
-  switch (env) {
-    case "dev":
-      return "http://playground-dev.substrate.test";
-    case "staging":
-      return "https://playground-staging.substrate.dev";
-    case "production":
-      return "https://playground.substrate.dev";
-    default:
-      throw new Error(`Unrecognized env ${env}`);
+function playgroundDomain(env: string): string {
+    switch (env) {
+      case "dev":
+        return "http://playground-dev.substrate.test";
+      case "staging":
+        return "https://playground-staging.substrate.dev";
+      case "production":
+        return "https://playground.substrate.dev";
+      default:
+        throw new Error(`Unrecognized env ${env}`);
+    }
   }
-}
 
 test('should return 200', async function (t) {
 
@@ -28,7 +29,8 @@ test('should return 200', async function (t) {
     route.continue();
   });
 
-  const res = await page.goto(playgroundDomain());
+  const env = process.env.ENV || "dev";
+  const res = await page.goto(playgroundDomain(env));
   t.is(res.status(), 200);
 
   return browser.close();
