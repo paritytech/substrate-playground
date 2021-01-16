@@ -20,10 +20,19 @@ jobs:
         with:
           node-version: "14"
 
+      - name: Set environment
+        id: env
+        run: |
+          if [[ ${{ matrix.env }} == 'refs/heads/master' ]]; then
+              echo ::set-output name=domain::playground
+          elif [[ ${{ matrix.env }} == 'refs/heads/develop' ]]; then
+              echo ::set-output name=domain::playground-staging
+          fi
+
       - name: Audit URLs using Lighthouse
         uses: treosh/lighthouse-ci-action@v3
         with:
-          urls: https://${{ matrix.env }}.substrate.dev/
+          urls: https://${{ steps.env.outputs.domain }}.substrate.dev/
 
       - uses: microsoft/playwright-github-action@v1
 
