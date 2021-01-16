@@ -251,7 +251,7 @@ export function LoadingPanel() {
 export function CenteredContainer({ children }: { children: React.ReactElement }): JSX.Element {
     return (
         <Container style={{ display: "flex", flex: 1, flexDirection: "column", justifyContent: "center", alignItems: "center" }}>
-            ${children}
+            {children}
         </Container>
     );
 }
