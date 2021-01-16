@@ -67,7 +67,13 @@ function lifecycle(client: Client, id: PanelId) {
                                       user: event.user,
                                     }
                                   })},
-                 [Events.UNLOGIN]: {target: States.UNLOGGED}}
+                 [Events.UNLOGIN]: {target: States.UNLOGGED,
+                                    actions: assign((_, event) => {
+                                      return {
+                                        templates: event.templates,
+                                        user: null,
+                                      }
+                                    })}}
         },
         [States.UNLOGGED]: {
             on: {[Events.RESTART]: States.SETUP,}
