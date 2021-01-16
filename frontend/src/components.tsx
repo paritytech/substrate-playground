@@ -210,7 +210,7 @@ function Nav({ onPlayground, onStatsClick, onAdminClick, onLogout, user }: { onP
     );
 }
 
-export function Wrapper({ onPlayground, onStatsClick, onAdminClick, onLogout, user, children}: { onPlayground: () => void, onStatsClick: () => void, onAdminClick: () => void, onLogout: () => void, user?: PlaygroundUser, children: React.ReactElement}): JSX.Element {
+export function Wrapper({ thin = false, onPlayground, onStatsClick, onAdminClick, onLogout, user, children}: { thin?: boolean, onPlayground: () => void, onStatsClick: () => void, onAdminClick: () => void, onLogout: () => void, user?: PlaygroundUser, children: React.ReactElement}): JSX.Element {
     return (
         <div style={{display: "flex", flexDirection: "column", width: "inherit", height: "inherit"}}>
 
@@ -220,6 +220,7 @@ export function Wrapper({ onPlayground, onStatsClick, onAdminClick, onLogout, us
                 {children}
             </Fade>
 
+            {!thin &&
             <Container style={{display: "flex", justifyContent: "center"}} component="footer" maxWidth={false}>
                 <Link
                     href="https://www.parity.io/privacy/"
@@ -228,7 +229,7 @@ export function Wrapper({ onPlayground, onStatsClick, onAdminClick, onLogout, us
                     style={{ margin: 15 }}>
                     Privacy Policy
                 </Link>
-            </Container>
+            </Container>}
 
         </div>
     );
@@ -237,10 +238,12 @@ export function Wrapper({ onPlayground, onStatsClick, onAdminClick, onLogout, us
 export function LoadingPanel() {
     return (
         <CenteredContainer>
-            <Typography variant="h6">
-                Loading
-            </Typography>
-            <CircularProgress />
+            <>
+                <Typography variant="h6">
+                    Loading
+                </Typography>
+                <CircularProgress />
+            </>
         </CenteredContainer>
     );
 }
