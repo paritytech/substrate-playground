@@ -68,7 +68,7 @@ export interface Template {
     name: string,
     image: string,
     description: string,
-    tags: Record<string, string>,
+    tags?: Record<string, string>,
     runtime?: RuntimeConfiguration,
 }
 

@@ -32,7 +32,7 @@ const useStyles = makeStyles((theme: Theme) =>
 );
 
 function TemplateSelector({templates, onDeployed, onRetry}: {templates: Record<string, Template>, onDeployed: (name: string) => void, onRetry: () => void}): JSX.Element {
-    const publicTemplates = Object.entries(templates).filter(([k, v]) => v.tags.public == "true");
+    const publicTemplates = Object.entries(templates).filter(([k, v]) => v.tags?.public == "true");
     const templatesAvailable = publicTemplates.length > 0;
     const [selection, select] = useState(templatesAvailable ? publicTemplates[0] : null);
     const classes = useStyles();

@@ -18,7 +18,7 @@ function dockerRun(image: string, web: boolean, port: number): ChildProcessWitho
 }
 
 function TemplateSelector({ templates, onSelect }: {templates: Template[], onSelect: (item) => void}): JSX.Element {
-	const items = templates.filter(t => t.tags.public).map(t => {return {label: t.name, value: t.name, template: t}});
+	const items = templates.filter(t => t.tags?.public).map(t => {return {label: t.name, value: t.name, template: t}});
 	const [description, setDescription] = useState(templates[0].description);
 	const handleHighlight = item => setDescription(item.template.description);
 	return (
