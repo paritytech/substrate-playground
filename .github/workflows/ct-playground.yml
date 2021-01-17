@@ -23,9 +23,9 @@ jobs:
       - name: Set environment
         id: env
         run: |
-          if [[ $ENV == 'refs/heads/master' ]]; then
+          if [[ $ENV == 'production' ]]; then
               echo ::set-output name=domain::playground
-          elif [[ $ENV == 'refs/heads/develop' ]]; then
+          elif [[ $ENV == 'staging' ]]; then
               echo ::set-output name=domain::playground-staging
           fi
         env:
