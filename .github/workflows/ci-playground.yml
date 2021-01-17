@@ -7,6 +7,7 @@ on:
       - 'conf/**'
       - 'e2e/**'
       - 'templates/**'
+      - 'website/**'
 
 jobs:
   frontend:
