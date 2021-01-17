@@ -26,7 +26,7 @@ export function TheiaPanel({ client, autoDeploy, templates, onMissingSession, on
                     return;
                 }
                 // Check URL is fine
-                const url = session.url;
+                const url = `//${session.url}`;
                 if ((await fetchWithTimeout(url)).ok) {
                     setData({ type: "SUCCESS", url: url });
                     return;
