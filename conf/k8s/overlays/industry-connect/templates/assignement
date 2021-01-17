@@ -3,7 +3,7 @@ repository: SubstrateDevAcademy/assignment-1-template
 name: Assignement
 description: '## Industry connect assignement'
 tags:
-    - public: true
+    public: true
 runtime:
   ports:
     - name: wss

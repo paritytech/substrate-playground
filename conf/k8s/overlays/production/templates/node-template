@@ -3,7 +3,7 @@ repository: substrate-developer-hub/substrate-node-template
 name: Node template
 description: '## The Node template you know and love'
 tags:
-    - public: true
+    public: true
 runtime:
   ports:
     - name: wss
