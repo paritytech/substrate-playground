@@ -10,9 +10,9 @@ resources:
 
 images:
 - name: paritytech/substrate-playground-backend-api
-  newTag: sha-23a8636
+  newTag: sha-8dba930
 - name: paritytech/substrate-playground-backend-ui
-  newTag: sha-23a8636
+  newTag: sha-8dba930
 
 patches:
 - patch: |-
