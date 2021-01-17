@@ -23,11 +23,13 @@ jobs:
       - name: Set environment
         id: env
         run: |
-          if [[ ${{ matrix.env }} == 'refs/heads/master' ]]; then
+          if [[ $ENV == 'refs/heads/master' ]]; then
               echo ::set-output name=domain::playground
-          elif [[ ${{ matrix.env }} == 'refs/heads/develop' ]]; then
+          elif [[ $ENV == 'refs/heads/develop' ]]; then
               echo ::set-output name=domain::playground-staging
           fi
+        env:
+          ENV: ${{ matrix.env }}
 
       - name: Audit URLs using Lighthouse
         uses: treosh/lighthouse-ci-action@v3
