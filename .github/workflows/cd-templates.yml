@@ -44,7 +44,7 @@ jobs:
       - run: gcloud container clusters get-credentials "${{ steps.env.outputs.cluster }}" --zone "${{ steps.env.outputs.zone }}"
 
       - name: Deploy templates
-        run: kubectl create configmap templates --namespace=${{ steps.env.outputs.namespace }} --from-file=conf/k8s/overlays/${{ steps.env.outputs.environment }}/templates/ --dry-run=client -o yaml | kubectl apply -f -
+        run: kubectl create configmap playground-templates --namespace=${{ steps.env.outputs.namespace }} --from-file=conf/k8s/overlays/${{ steps.env.outputs.environment }}/templates/ --dry-run=client -o yaml | kubectl apply -f -
 
 # TODO test image, rollback commit if fails
 # Do not rollback the rollback itself
