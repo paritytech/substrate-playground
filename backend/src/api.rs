@@ -218,7 +218,7 @@ fn query_segment(origin: &Origin) -> String {
             .filter(|(k, _)| k != "code" && k != "state")
             .map(|(k, v)| format!("{}={}", k, v))
             .collect();
-        format!("?{}", v.join("&"))
+        return if v.is_empty() { "".to_string() } else { format!("?{}", v.join("&")) }
     })
 }
 
