@@ -184,6 +184,10 @@ impl Manager {
 
     // Users
 
+    pub fn get_user(self, id: &str) -> Result<Option<User>, String> {
+        new_runtime()?.block_on(self.clone().engine.get_user(&id))
+    }
+
     pub fn list_users(self) -> Result<BTreeMap<String, User>, String> {
         new_runtime()?.block_on(self.engine.list_users())
     }
@@ -219,8 +223,9 @@ impl Manager {
         username: &str,
         conf: SessionConfiguration,
     ) -> Result<Session, String> {
-        let user = new_runtime()?
-            .block_on(self.clone().engine.get_user(&username))?
+        let user = self
+            .clone()
+            .get_user(username)?
             .ok_or_else(|| format!("No user {}", username))?;
         if conf.duration.is_some() && !self.can_update_duration(user) {
             return Err("Only admin can customize a session duration".to_string());

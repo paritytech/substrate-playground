@@ -84,6 +84,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 api::get,
                 api::get_unlogged,
                 // Users
+                api::get_user,
                 api::list_users,
                 api::create_or_update_user,
                 api::delete_user,

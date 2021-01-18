@@ -119,6 +119,12 @@ pub fn get_unlogged(state: State<'_, Context>) -> JsonValue {
 
 // User resources. Only accessible to Admins.
 
+#[get("/users/<id>")]
+pub fn get_user(state: State<'_, Context>, _admin: LoggedAdmin, id: String) -> JsonValue {
+    let manager = state.manager.clone();
+    result_to_jsonrpc(manager.get_user(&id))
+}
+
 #[get("/users")]
 pub fn list_users(state: State<'_, Context>, _admin: LoggedAdmin) -> JsonValue {
     let manager = state.manager.clone();
