@@ -2,7 +2,6 @@ import clsx from 'clsx';
 import React, { useEffect, useState } from "react";
 import { createStyles, lighten, makeStyles, Theme } from '@material-ui/core/styles';
 import Checkbox from '@material-ui/core/Checkbox';
-import Container from "@material-ui/core/Container";
 import IconButton from '@material-ui/core/IconButton';
 import DeleteIcon from '@material-ui/icons/Delete';
 import FilterListIcon from '@material-ui/icons/FilterList';
@@ -16,8 +15,9 @@ import TableRow from '@material-ui/core/TableRow';
 import Tooltip from '@material-ui/core/Tooltip';
 import Toolbar from '@material-ui/core/Toolbar';
 import Typography from '@material-ui/core/Typography';
-import { Client, Session, Template, User } from '@substrate/playground-client';
+import { Client, Configuration, Session, Template, User } from '@substrate/playground-client';
 import { CenteredContainer } from '../components';
+import { useInterval } from '../hooks';
 
 const useStyles = makeStyles({
     table: {
@@ -245,10 +245,22 @@ function Users({ client }: { client: Client }) {
     }
 }
 
-export function AdminPanel({ client, templates }: { client: Client, templates: Record<string, Template> }) {
+export function AdminPanel({ client }: { client: Client }) {
+    const [templates, setTemplates] = useState<Record<string, Template>>({});
+    const [configuration, setConfiguration] = useState<Configuration | null>(null);
+
+    useInterval(async () => {
+        const { configuration, templates } = await client.get();
+        setConfiguration(configuration);
+        setTemplates(templates);
+    }, 1000);
+
     return (
         <CenteredContainer>
             <Paper style={{ display: "flex", overflowY: "auto", flexDirection: "column", marginTop: 20, justifyContent: "center", width: "80vw", height: "80vh"}} elevation={3}>
+                <div style={{margin: 20}}>
+                    Default duration: {configuration?.sessionDefaults.duration} minutes
+                </div>
                 <div style={{margin: 20}}>
                     <Users client={client} />
                 </div>

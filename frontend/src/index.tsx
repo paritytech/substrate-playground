@@ -27,7 +27,7 @@ function MainPanel({ client, params, id, templates, onConnect, onDeployed, resta
         case PanelId.Stats:
           return <StatsPanel />;
         case PanelId.Admin:
-          return <AdminPanel client={client} templates={templates} />;
+          return <AdminPanel client={client} />;
         case PanelId.Theia:
           return <TheiaPanel client={client} autoDeploy={params.deploy} templates={templates} onMissingSession={restartAction} onSessionFailing={restartAction} onSessionTimeout={restartAction} />;
       }
