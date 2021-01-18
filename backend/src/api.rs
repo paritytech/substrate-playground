@@ -230,7 +230,7 @@ fn query_segment(origin: &Origin) -> String {
 }
 
 fn protocol(env: &Environment) -> String {
-    if env.secure {
+    if env.secured {
         return "https".to_string();
     } else {
         return "http".to_string();

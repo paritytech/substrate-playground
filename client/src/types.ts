@@ -6,6 +6,7 @@ export interface Playground {
 }
 
 export interface Environment {
+    secured: boolean,
     host: string,
     namespace: string,
 }

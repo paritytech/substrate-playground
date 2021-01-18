@@ -313,7 +313,7 @@ async fn list_users(client: Client, namespace: &str) -> Result<BTreeMap<String, 
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Environment {
-    pub secure: bool,
+    pub secured: bool,
     pub host: String,
     pub namespace: String,
 }
@@ -397,7 +397,7 @@ impl Engine {
         let namespace = config.clone().default_ns.to_string();
         let client = Client::new(config);
         let ingress_api: Api<Ingress> = Api::namespaced(client.clone(), &namespace);
-        let secure = if let Ok(ingress) = ingress_api.get(INGRESS_NAME).await {
+        let secured = if let Ok(ingress) = ingress_api.get(INGRESS_NAME).await {
             ingress.spec.ok_or("No spec")?.tls.is_some()
         } else {
             false
@@ -429,7 +429,7 @@ impl Engine {
 
         Ok(Engine {
             env: Environment {
-                secure,
+                secured,
                 host,
                 namespace: namespace.clone(),
             },

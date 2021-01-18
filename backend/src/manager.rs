@@ -210,11 +210,22 @@ impl Manager {
         new_runtime()?.block_on(self.clone().engine.list_sessions())
     }
 
+    fn can_update_duration(&self, user: User) -> bool {
+        user.admin
+    }
+
     pub fn create_or_update_session(
         self,
         username: &str,
         conf: SessionConfiguration,
     ) -> Result<Session, String> {
+        let user = new_runtime()?
+            .block_on(self.clone().engine.get_user(&username))?
+            .ok_or_else(|| format!("No user {}", username))?;
+        if conf.duration.is_some() && !self.can_update_duration(user) {
+            return Err("Only admin can customize a session duration".to_string());
+        }
+
         let template = conf.clone().template;
         let result = new_runtime()?.block_on(self.engine.create_or_update_session(&username, conf));
         match result.clone() {
