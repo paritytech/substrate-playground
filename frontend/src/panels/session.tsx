@@ -144,16 +144,16 @@ function formatDuration(s: number): string {
     const withSeconds = `${seconds}s`;
     const withMinutes = `${minutes}min ${withSeconds}`;
     if (hours) {
-        return `${hours}h ${withMinutes} ago`;
+        return `${hours}h ${withMinutes}`;
     } else if (minutes) {
-        return `${withMinutes} ago`;
+        return `${withMinutes}`;
     } else {
-        return `${withSeconds} ago`;
+        return `${withSeconds}`;
     }
 }
 
 export function SessionDetails({ session }: {session: Session}): JSX.Element {
-    const { pod, template } = session;
+    const { pod, template, duration } = session;
     const { name, runtime } = template;
     const { phase, reason, message, startTime } = pod;
     return (
@@ -164,7 +164,7 @@ export function SessionDetails({ session }: {session: Session}): JSX.Element {
                 </Typography>
                 {startTime &&
                 <Typography color="textSecondary" gutterBottom>
-                Started {formatDuration(startTime)}
+                Started {formatDuration(startTime)} ago ({formatDuration(duration*60-startTime)} left)
                 </Typography>
                 }
                 <Typography color="textSecondary" gutterBottom>
