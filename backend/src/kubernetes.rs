@@ -487,6 +487,13 @@ impl Engine {
         })
     }
 
+    fn yaml_to_user(self, s: &str) -> Result<User, String> {
+        let user_configuration = UserConfiguration::parse(s)?;
+        Ok(User {
+            admin: user_configuration.admin,
+        })
+    }
+
     pub async fn list_templates(self) -> Result<BTreeMap<String, Template>, String> {
         let config = config().await?;
         let client = Client::new(config);
@@ -498,6 +505,19 @@ impl Engine {
             .collect::<Result<BTreeMap<String, Template>, String>>()?)
     }
 
+    pub async fn get_user(self, id: &str) -> Result<Option<User>, String> {
+        let config = config().await?;
+        let client = Client::new(config);
+
+        let users = list_users(client, &self.env.namespace).await?;
+        let user = users.get(id);
+
+        match user.map(|user| self.clone().yaml_to_user(&user)) {
+            Some(user) => user.map(|user| Some(user)),
+            None => Ok(None),
+        }
+    }
+
     pub async fn list_users(self) -> Result<BTreeMap<String, User>, String> {
         let config = config().await?;
         let client = Client::new(config);
@@ -506,12 +526,9 @@ impl Engine {
             .await?
             .into_iter()
             .map(|(k, v)| {
-                let user_configuration = UserConfiguration::parse(&v)?;
                 Ok((
                     k,
-                    User {
-                        admin: user_configuration.admin,
-                    },
+                    self.clone().yaml_to_user(&v)?,
                 ))
             })
             .collect::<Result<BTreeMap<String, User>, String>>()?)
