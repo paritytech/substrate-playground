@@ -63,10 +63,10 @@
   resolved "https://registry.yarnpkg.com/@sindresorhus/is/-/is-0.14.0.tgz#9fb3a3cf3132328151f353de4632e01e52102bea"
   integrity sha512-9NET910DNaIPngYnLLPeg+Ogzqsi9uM4mSboU5y6p8S5DzMTVEsJZrawi+BoDNUVBa2DhJqQYUFvMDfgU062LQ==
 
-"@substrate/playground-client@1.1.9":
-  version "1.1.9"
-  resolved "https://registry.yarnpkg.com/@substrate/playground-client/-/playground-client-1.1.9.tgz#a19616e2a66ad5141dd2994c6587f56cc9d1f37d"
-  integrity sha512-u8tvbFeFRUqs2SPN0fGa5FoRjdsBjNCTpllrsjBR1koCCqSDZeafsar1cEJr0JxBh7aErpSqbWO9lVoA/ZyIsQ==
+"@substrate/playground-client@1.2.0":
+  version "1.2.0"
+  resolved "https://registry.yarnpkg.com/@substrate/playground-client/-/playground-client-1.2.0.tgz#bb5967141613e085eee53a6bfbba01219b20d070"
+  integrity sha512-f8B2NOvmJP1P1RfYKH7y6tePmGnnsjjjkkdEvgRUShWRkG/vL6VXkPhzZ1KfgE9LPp96brCPqpenoX6YwKfU/w==
 
 "@szmarczak/http-timer@^1.1.2":
   version "1.1.2"
