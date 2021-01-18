@@ -88,8 +88,9 @@ fn pod_env_variables(template: &Template, host: &str, session_uuid: &str) -> Vec
 
 // TODO detect when ingress is restarted, then re-sync theia sessions
 
-fn session_duration_annotation(session_duration: Duration) -> String {
-    session_duration.as_secs().to_string()
+fn session_duration_annotation(duration: Duration) -> String {
+    let duration_min = duration.as_secs() / 60;
+    duration_min.to_string()
 }
 
 fn str_to_session_duration_minutes(str: &str) -> Result<Duration, String> {
