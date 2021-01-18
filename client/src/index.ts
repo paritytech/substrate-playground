@@ -34,6 +34,10 @@ export class Client {
 
     // Users
 
+    async getUser(id: string, init: RequestInit = this.defaultInit): Promise<User | null> {
+        return rpc(this.path(Client.usersResource, id), init);
+    }
+
     async listUsers(init: RequestInit = this.defaultInit): Promise<Record<string, User>> {
         return rpc(this.path(Client.usersResource), init);
     }
