@@ -18,7 +18,8 @@ export enum States {
     TERMS_UNAPPROVED = '@state/TERMS_UNAPPROVED',
     SETUP = '@state/SETUP',
     LOGGED = '@state/LOGGED',
-    UNLOGGED = '@state/UNLOGGED'
+    UNLOGGED = '@state/UNLOGGED',
+    UNLOGGING = '@state/UNLOGGING',
 }
 
 export enum Events {
@@ -32,7 +33,6 @@ export enum Events {
 
 export enum Actions {
     STORE_TERMS_HASH = '@action/STORE_TERMS_HASH',
-    LOGOUT = '@action/LOGOUT',
 }
 
 function lifecycle(client: Client, id: PanelId) {
@@ -80,19 +80,23 @@ function lifecycle(client: Client, id: PanelId) {
         },
         [States.LOGGED]: {
             on: {[Events.RESTART]: States.SETUP,
-                 [Events.LOGOUT]: {target: States.SETUP,
-                                   actions: [Actions.LOGOUT]},
+                 [Events.LOGOUT]: {target: States.UNLOGGING},
                  [Events.SELECT]: {actions: assign({ panel: (_, event) => event.panel})}}
-        }
+        },
+        [States.UNLOGGING]: {
+            invoke: {
+                src: async () => {
+                    await client.logout();
+                },
+                onDone: {target: States.SETUP}
+            }
+        },
     }
   },
   {
     actions: {
       [Actions.STORE_TERMS_HASH]: () => {
         approve();
-      },
-      [Actions.LOGOUT]: async () => {
-        await client.logout();
       },
     }
   });
