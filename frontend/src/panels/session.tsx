@@ -57,7 +57,7 @@ function TemplateSelector({templates, onDeployed, onRetry}: {templates: Record<s
                                 </Typography>
                                 <Divider orientation={"horizontal"} light={true} />
                                 <Typography className={classes.root} variant="overline">
-                                    Built using image {selection[1].image}
+                                    #{selection[1].image}
                                 </Typography>
                             </div>
                         </div>
