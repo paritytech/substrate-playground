@@ -6,18 +6,21 @@ import IconButton from '@material-ui/core/IconButton';
 import DeleteIcon from '@material-ui/icons/Delete';
 import FilterListIcon from '@material-ui/icons/FilterList';
 import Paper from '@material-ui/core/Paper';
+import Tab from '@material-ui/core/Tab';
 import Table from '@material-ui/core/Table';
 import TableBody from '@material-ui/core/TableBody';
 import TableCell from '@material-ui/core/TableCell';
 import TableContainer from '@material-ui/core/TableContainer';
 import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
+import Tabs from '@material-ui/core/Tabs';
 import Tooltip from '@material-ui/core/Tooltip';
 import Toolbar from '@material-ui/core/Toolbar';
 import Typography from '@material-ui/core/Typography';
 import { Client, Configuration, Session, Template, User } from '@substrate/playground-client';
 import { CenteredContainer } from '../components';
 import { useInterval } from '../hooks';
+import { Container } from '@material-ui/core';
 
 const useStyles = makeStyles({
     table: {
@@ -25,75 +28,97 @@ const useStyles = makeStyles({
     },
 });
 
-function Sessions({ client }: { client: Client }) {
+function EmptyPanel({ label }: { label: string}): JSX.Element {
+    return (
+        <Container>
+            <Typography variant="h6">
+                {label}
+            </Typography>
+        </Container>
+    );
+}
+
+function Sessions({ client }: { client: Client }): JSX.Element {
     const classes = useStyles();
-    const [sessions, setSessions] = useState<Record<string, Session>>();
+    const [sessions, setSessions] = useState<Record<string, Session>>({});
 
-    useEffect(() => {
-        async function fetchData() {
-            const sessions = await client.listSessions();
-            setSessions(sessions);
-        }
+    useInterval(async () => {
+        setSessions(await client.listSessions());
+    }, 5000);
 
-        fetchData();
-    }, []);
-
-    if (sessions) {
+    if (Object.keys(sessions).length > 0) {
         return (
-            <TableContainer component={Paper}>
-                <Table className={classes.table} aria-label="simple table">
-                    <TableHead>
-                        <TableRow>
-                            <TableCell>ID</TableCell>
-                            <TableCell align="right">Template</TableCell>
-                            <TableCell align="right">URL</TableCell>
+            <Container>
+                <EnhancedTableToolbar label="sessions" />
+                <TableContainer component={Paper}>
+                    <Table className={classes.table} aria-label="simple table">
+                        <TableHead>
+                            <TableRow>
+                                <TableCell>ID</TableCell>
+                                <TableCell align="right">Template</TableCell>
+                                <TableCell align="right">URL</TableCell>
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
+                        {Object.entries(sessions).map(([id, session]) => (
+                        <TableRow key={id}>
+                            <TableCell component="th" scope="row">
+                                {id}
+                            </TableCell>
+                            <TableCell align="right">{session.template.name}</TableCell>
+                            <TableCell align="right"><a href={session.url}>{session.url}</a></TableCell>
                         </TableRow>
-                    </TableHead>
-                    <TableBody>
-                    {Object.entries(sessions).map(([id, session]) => (
-                    <TableRow key={id}>
-                        <TableCell component="th" scope="row">
-                            {id}
-                        </TableCell>
-                        <TableCell align="right">{session.template.name}</TableCell>
-                        <TableCell align="right"><a href={session.url}>{session.url}</a></TableCell>
-                    </TableRow>
-                    ))}
-                    </TableBody>
-                </Table>
-            </TableContainer>
+                        ))}
+                        </TableBody>
+                    </Table>
+                </TableContainer>
+            </Container>
         );
     } else {
-        return <div>No sessions</div>
+        return <EmptyPanel label="No sessions" />;
     }
 }
 
-function Templates({ templates }: {templates: Record<string, Template>}) {
+function Templates({ client }: { client: Client }): JSX.Element {
     const classes = useStyles();
-    return (
-        <TableContainer component={Paper}>
-            <Table className={classes.table} aria-label="simple table">
-                <TableHead>
-                    <TableRow>
-                        <TableCell>ID</TableCell>
-                        <TableCell align="right">Name</TableCell>
-                        <TableCell align="right">Image</TableCell>
-                    </TableRow>
-                </TableHead>
-                <TableBody>
-                {Object.entries(templates).map(([id, template]) => (
-                <TableRow key={id}>
-                    <TableCell component="th" scope="row">
-                        {template.name}
-                    </TableCell>
-                    <TableCell align="right">{template.name}</TableCell>
-                    <TableCell align="right">{template.image}</TableCell>
-                </TableRow>
-                ))}
-                </TableBody>
-            </Table>
-        </TableContainer>
-    );
+    const [templates, setTemplates] = useState<Record<string, Template>>({});
+
+    useInterval(async () => {
+        const { templates } = await client.get();
+        setTemplates(templates);
+    }, 5000);
+
+    if (Object.keys(templates).length > 0) {
+        return (
+            <Container>
+                <EnhancedTableToolbar label="templates" />
+                <TableContainer component={Paper}>
+                    <Table className={classes.table} aria-label="simple table">
+                        <TableHead>
+                            <TableRow>
+                                <TableCell>ID</TableCell>
+                                <TableCell align="right">Name</TableCell>
+                                <TableCell align="right">Image</TableCell>
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
+                        {Object.entries(templates).map(([id, template]) => (
+                        <TableRow key={id}>
+                            <TableCell component="th" scope="row">
+                                {template.name}
+                            </TableCell>
+                            <TableCell align="right">{template.name}</TableCell>
+                            <TableCell align="right">{template.image}</TableCell>
+                        </TableRow>
+                        ))}
+                        </TableBody>
+                    </Table>
+                </TableContainer>
+            </Container>
+        );
+    } else {
+        return <EmptyPanel label="No templates" />;
+    }
 }
 
 async function createOrUpdateUser(client: Client, id: string, admin: boolean): Promise<void> {
@@ -130,7 +155,7 @@ async function handleUsersDelete(o) {
     console.log(o)
 }
 
-function EnhancedTableToolbar({ client, selected }: { client: Client, selected: Array<String>}) {
+function EnhancedTableToolbar({ label, selected = [] }: { label: string, selected?: Array<String>}): JSX.Element {
     const classes = useToolbarStyles();
     return (
         <Toolbar
@@ -144,7 +169,7 @@ function EnhancedTableToolbar({ client, selected }: { client: Client, selected: 
             </Typography>
         ) : (
             <Typography className={classes.title} variant="h6" id="tableTitle" component="div">
-            Users
+            {label}
             </Typography>
         )}
         {selected.length > 0 ? (
@@ -164,10 +189,10 @@ function EnhancedTableToolbar({ client, selected }: { client: Client, selected: 
     );
 }
 
-function Users({ client }: { client: Client }) {
+function Users({ client }: { client: Client }): JSX.Element {
     const classes = useStyles();
     const [selected, setSelected] = useState<string[]>([]);
-    const [users, setUsers] = useState<Record<string, User>>();
+    const [users, setUsers] = useState<Record<string, User>>({});
     const isSelected = (name: string) => selected.indexOf(name) !== -1;
     const handleClick = (event: React.MouseEvent<unknown>, name: string) => {
         const selectedIndex = selected.indexOf(name);
@@ -189,19 +214,14 @@ function Users({ client }: { client: Client }) {
         setSelected(newSelected);
       };
 
-    useEffect(() => {
-        async function fetchData() {
-            const users = await client.listUsers();
-            setUsers(users);
-        }
+    useInterval(async () => {
+        setUsers(await client.listUsers());
+    }, 5000);
 
-        fetchData();
-    }, []);
-
-    if (users) {
+    if (Object.keys(users).length > 0) {
         return (
-            <>
-                <EnhancedTableToolbar client={client} selected={selected} />
+            <Container>
+                <EnhancedTableToolbar label="users" selected={selected} />
                 <TableContainer component={Paper}>
                     <Table className={classes.table} aria-label="simple table">
                         <TableHead>
@@ -238,40 +258,52 @@ function Users({ client }: { client: Client }) {
                         </TableBody>
                     </Table>
                 </TableContainer>
-            </>
+            </Container>
         );
     } else {
-        return <div />;
+        return <EmptyPanel label="No users" />;
     }
 }
 
-export function AdminPanel({ client }: { client: Client }) {
-    const [templates, setTemplates] = useState<Record<string, Template>>({});
+function DetailsPanel({ client }: { client: Client }): JSX.Element {
     const [configuration, setConfiguration] = useState<Configuration | null>(null);
 
     useInterval(async () => {
-        const { configuration, templates } = await client.get();
+        const { configuration } = await client.get();
         setConfiguration(configuration);
-        setTemplates(templates);
     }, 10000);
 
     return (
+        <Container>
+            Default duration: {configuration?.sessionDefaults.duration} minutes
+        </Container>
+    );
+}
+
+export function AdminPanel({ client }: { client: Client }): JSX.Element {
+    const [value, setValue] = React.useState(0);
+
+    const handleChange = (_: React.ChangeEvent<{}>, newValue: number) => {
+        setValue(newValue);
+    };
+
+    return (
         <CenteredContainer>
-            <Paper style={{ display: "flex", overflowY: "auto", flexDirection: "column", marginTop: 20, justifyContent: "center", width: "80vw", height: "80vh"}} elevation={3}>
-                <div style={{margin: 20}}>
-                    Default duration: {configuration?.sessionDefaults.duration} minutes
-                </div>
-                <div style={{margin: 20}}>
-                    <Users client={client} />
-                </div>
-                <div style={{margin: 20}}>
-                    <Typography variant="h5">Templates</Typography>
-                    <Templates templates={templates} />
-                </div>
-                <div style={{margin: 20}}>
-                    <Typography variant="h5">Sessions</Typography>
-                    <Sessions client={client} />
-                </div>
+            <Tabs value={value} onChange={handleChange} aria-label="wrapped label tabs example">
+                <Tab label="Details" />
+                <Tab label="Templates" />
+                <Tab label="Users" />
+                <Tab label="Sessions" />
+            </Tabs>
+
+            <Paper style={{ display: "flex", overflowY: "auto", flexDirection: "column", alignItems: 'center', justifyContent: 'center', textAlign: 'center', marginTop: 20, width: "80vw", height: "80vh"}} elevation={3}>
+                {value == 0
+                ? <DetailsPanel client={client} />
+                : value == 1
+                ? <Templates client={client} />
+                : value == 2
+                ? <Users client={client} />
+                : <Sessions client={client} />}
             </Paper>
         </CenteredContainer>
     );
