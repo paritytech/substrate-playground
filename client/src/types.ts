@@ -17,6 +17,7 @@ export interface Configuration {
 }
 
 export interface SessionDefaults {
+    /* The default number of minutes sessions can last */
     duration: number,
 }
 
@@ -39,11 +40,13 @@ export interface Session {
     url: string,
     template: Template,
     pod: PodDetails,
+    /* The number of minutes this session can last */
     duration: number,
 }
 
 export interface SessionConfiguration {
     template: string,
+    /* The number of minutes this session will be able to last */
     duration?: number,
 }
 
@@ -78,5 +81,6 @@ export interface PodDetails {
     phase: Phase,
     reason: String,
     message: String,
+    /* The number of seconds since this session started */
     startTime?: number,
 }
