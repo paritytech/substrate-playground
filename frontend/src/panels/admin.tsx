@@ -253,7 +253,7 @@ export function AdminPanel({ client }: { client: Client }) {
         const { configuration, templates } = await client.get();
         setConfiguration(configuration);
         setTemplates(templates);
-    }, 1000);
+    }, 10000);
 
     return (
         <CenteredContainer>
