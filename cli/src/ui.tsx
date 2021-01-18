@@ -36,7 +36,7 @@ function TemplateSelector({ templates, onSelect }: {templates: Template[], onSel
 	);
 }
 
-function Cartouche({borderColor, children}: {borderColor: string, children: React.ReactNode}): JSX.Element {
+function Cartouche({borderColor, children}: {borderColor: string, children: NonNullable<React.ReactNode>}): JSX.Element {
 	return (
 		<Box borderStyle="double" borderColor={borderColor} flexDirection="column" margin={2}>
 			<Box flexDirection="column" alignItems="center" justifyContent="center" margin={1}>

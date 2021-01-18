@@ -11,12 +11,10 @@ function login(): void {
 export function LoginPanel(): JSX.Element {
     return (
         <CenteredContainer>
-            <>
-                <Typography variant="h3" style= {{ textAlign: "center" }}>
-                    You must log in to use Playground
-                </Typography>
-                <Button style={{ marginTop: 40 }} startIcon={<GitHubIcon />} onClick={login} color="primary" variant="contained" disableElevation>LOGIN</Button>
-            </>
+            <Typography variant="h3" style= {{ textAlign: "center" }}>
+                You must log in to use Playground
+            </Typography>
+            <Button style={{ marginTop: 40 }} startIcon={<GitHubIcon />} onClick={login} color="primary" variant="contained" disableElevation>LOGIN</Button>
         </CenteredContainer>
     );
 }

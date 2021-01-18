@@ -210,7 +210,7 @@ function Nav({ onPlayground, onStatsClick, onAdminClick, onLogout, user }: { onP
     );
 }
 
-export function Wrapper({ thin = false, onPlayground, onStatsClick, onAdminClick, onLogout, user, children}: { thin?: boolean, onPlayground: () => void, onStatsClick: () => void, onAdminClick: () => void, onLogout: () => void, user?: PlaygroundUser, children: React.ReactElement}): JSX.Element {
+export function Wrapper({ thin = false, onPlayground, onStatsClick, onAdminClick, onLogout, user, children}: { thin?: boolean, onPlayground: () => void, onStatsClick: () => void, onAdminClick: () => void, onLogout: () => void, user?: PlaygroundUser, children: NonNullable<React.ReactNode>}): JSX.Element {
     return (
         <div style={{display: "flex", flexDirection: "column", width: "inherit", height: "inherit"}}>
 
@@ -238,17 +238,15 @@ export function Wrapper({ thin = false, onPlayground, onStatsClick, onAdminClick
 export function LoadingPanel() {
     return (
         <CenteredContainer>
-            <>
-                <Typography variant="h6">
-                    Loading
-                </Typography>
-                <CircularProgress />
-            </>
+            <Typography variant="h6">
+                Loading
+            </Typography>
+            <CircularProgress />
         </CenteredContainer>
     );
 }
 
-export function CenteredContainer({ children }: { children: React.ReactElement }): JSX.Element {
+export function CenteredContainer({ children }: { children: NonNullable<React.ReactNode> }): JSX.Element {
     return (
         <Container style={{ display: "flex", flex: 1, flexDirection: "column", justifyContent: "center", alignItems: "center" }}>
             {children}
