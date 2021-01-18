@@ -1,8 +1,11 @@
 //! HTTP endpoints exposed in /api context
-use crate::{github::{token_validity, GitHubUser}, kubernetes::Environment};
 use crate::session::SessionConfiguration;
 use crate::user::{LoggedAdmin, LoggedUser, UserConfiguration};
 use crate::Context;
+use crate::{
+    github::{token_validity, GitHubUser},
+    kubernetes::Environment,
+};
 use request::FormItems;
 use rocket::response::{content, status, Redirect};
 use rocket::{
@@ -218,15 +221,19 @@ fn query_segment(origin: &Origin) -> String {
             .filter(|(k, _)| k != "code" && k != "state")
             .map(|(k, v)| format!("{}={}", k, v))
             .collect();
-        return if v.is_empty() { "".to_string() } else { format!("?{}", v.join("&")) }
+        return if v.is_empty() {
+            "".to_string()
+        } else {
+            format!("?{}", v.join("&"))
+        };
     })
 }
 
 fn protocol(env: &Environment) -> String {
     if env.secure {
-        return "https".to_string()
+        return "https".to_string();
     } else {
-        return "http".to_string()
+        return "http".to_string();
     }
 }
 

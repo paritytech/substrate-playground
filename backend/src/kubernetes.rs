@@ -397,7 +397,7 @@ impl Engine {
         let namespace = config.clone().default_ns.to_string();
         let client = Client::new(config);
         let ingress_api: Api<Ingress> = Api::namespaced(client.clone(), &namespace);
-        let secure = if let Ok(ingress) =  ingress_api.get(INGRESS_NAME).await {
+        let secure = if let Ok(ingress) = ingress_api.get(INGRESS_NAME).await {
             ingress.spec.ok_or("No spec")?.tls.is_some()
         } else {
             false
@@ -525,12 +525,7 @@ impl Engine {
         Ok(list_users(client, &self.env.namespace)
             .await?
             .into_iter()
-            .map(|(k, v)| {
-                Ok((
-                    k,
-                    self.clone().yaml_to_user(&v)?,
-                ))
-            })
+            .map(|(k, v)| Ok((k, self.clone().yaml_to_user(&v)?)))
             .collect::<Result<BTreeMap<String, User>, String>>()?)
     }
 
