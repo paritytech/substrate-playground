@@ -247,7 +247,7 @@ async fn get_config_map(
 // Adds a value to a ConfigMap, specified by a `key`.
 // Err if provided `key` doesn't exist
 //
-// Equivalent to `kubectl patch configmap $name --type=json -p='[{"op": "remove", "path": "/data/$key"}]'`
+// Equivalent to `kubectl patch configmap $name --type=json -p='[{"op": "add", "path": "/data/$key", "value": "$value"}]'`
 async fn add_config_map_value(
     client: Client,
     namespace: &str,
@@ -260,12 +260,12 @@ async fn add_config_map_value(
         patch_strategy: PatchStrategy::JSON,
         ..PatchParams::default()
     };
-    let patch = serde_yaml::to_vec(&serde_json::json!({
+    let patch = serde_json::to_vec(&serde_json::json!([{
         "op": "add",
         "path": format!("/data/{}", key),
         "value": value,
-    }))
-    .unwrap();
+    }]))
+    .map_err(error_to_string)?;
     config_map_api
         .patch(name, &params, patch)
         .await
@@ -289,11 +289,10 @@ async fn delete_config_map_value(
         patch_strategy: PatchStrategy::JSON,
         ..PatchParams::default()
     };
-    let patch = serde_yaml::to_vec(&serde_json::json!({
+    let patch = serde_json::to_vec(&serde_json::json!([{
         "op": "remove",
         "path": format!("/data/{}", key),
-    }))
-    .unwrap();
+    }])).map_err(error_to_string)?;
     config_map_api
         .patch(name, &params, patch)
         .await
@@ -553,10 +552,8 @@ impl Engine {
     pub async fn delete_user(self, id: String) -> Result<(), String> {
         let config = config().await?;
         let client = Client::new(config);
-        Ok(
-            delete_config_map_value(client, &self.env.namespace, USERS_CONFIG_MAP, id.as_str())
-                .await?,
-        )
+        delete_config_map_value(client, &self.env.namespace, USERS_CONFIG_MAP, id.as_str())
+            .await
     }
 
     pub async fn get_session(self, username: &str) -> Result<Option<Session>, String> {
@@ -687,12 +684,12 @@ impl Engine {
                 patch_strategy: PatchStrategy::JSON,
                 ..PatchParams::default()
             };
-            let patch = serde_yaml::to_vec(&serde_json::json!({
+            let patch = serde_json::to_vec(&serde_json::json!([{
                 "op": "add",
                 "path": format!("/metadata/annotations/{}", SESSION_DURATION_ANNOTATION),
                 "value": session_duration_annotation(duration),
-            }))
-            .unwrap();
+            }]))
+            .map_err(error_to_string)?;
             pod_api
                 .patch(&pod_name(&session.username), &params, patch)
                 .await
