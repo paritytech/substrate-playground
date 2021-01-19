@@ -52,11 +52,15 @@ function lifecycle(client: Client, id: PanelId) {
         [States.SETUP]: {
             invoke: {
                 src: () => async (callback) => {
-                    const { templates, user } = (await client.get());
-                    if (user) {
-                        callback({type: Events.LOGIN, templates: templates, user: user});
-                    } else {
-                        callback({type: Events.UNLOGIN, templates: templates});
+                    try {
+                        const { templates, user } = (await client.get());
+                        if (user) {
+                            callback({type: Events.LOGIN, templates: templates, user: user});
+                        } else {
+                            callback({type: Events.UNLOGIN, templates: templates});
+                        }
+                    } catch {
+                        callback({type: Events.UNLOGIN});
                     }
                 },
             },
