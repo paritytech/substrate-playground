@@ -20,7 +20,7 @@ import Typography from '@material-ui/core/Typography';
 import { Client, Configuration, PlaygroundUser, Session, Template, User } from '@substrate/playground-client';
 import { CenteredContainer, ErrorSnackbar } from '../components';
 import { useInterval } from '../hooks';
-import { Container } from '@material-ui/core';
+import { Button, ButtonGroup, Container, Dialog, DialogContent, DialogContentText, DialogTitle, TextField } from '@material-ui/core';
 
 const useStyles = makeStyles({
     table: {
@@ -121,10 +121,6 @@ function Templates({ client }: { client: Client }): JSX.Element {
     }
 }
 
-async function createOrUpdateUser(client: Client, id: string, admin: boolean): Promise<void> {
-    await client.createOrUpdateUser(id, {admin: admin});
-}
-
 async function deleteUser(client: Client, id: string): Promise<void> {
     await client.deleteUser(id);
 }
@@ -151,7 +147,7 @@ const useToolbarStyles = makeStyles((theme: Theme) =>
   }),
 );
 
-function EnhancedTableToolbar({ label, selected = null, onDelete }: { label: string, selected?: string | null, onDelete?: () => void}): JSX.Element {
+function EnhancedTableToolbar({ label, selected = null, onCreate, onDelete }: { label: string, selected?: string | null, onCreate?: () => void, onDelete?: () => void}): JSX.Element {
     const classes = useToolbarStyles();
     return (
         <Toolbar
@@ -170,7 +166,7 @@ function EnhancedTableToolbar({ label, selected = null, onDelete }: { label: str
             </Tooltip>
         ) : (
             <Tooltip title="Create">
-            <IconButton aria-label="create">
+            <IconButton aria-label="create" onClick={onCreate}>
                 <CreateIcon />
             </IconButton>
             </Tooltip>
@@ -179,10 +175,40 @@ function EnhancedTableToolbar({ label, selected = null, onDelete }: { label: str
     );
 }
 
+function UserCreationDialog({ show, onCreate, onHide }: { show: boolean, onCreate: (id: string) => void, onHide: () => void }): JSX.Element {
+    const [value, setValue] = React.useState('');
+
+    const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+      setValue(event.target.value);
+    };
+    return (
+        <Dialog open={show} maxWidth="md">
+            <DialogTitle>User details</DialogTitle>
+            <DialogContent>
+                <div style={{display: "flex", flexDirection: "column"}}>
+                    <TextField
+                        style={{marginBottom: 20}}
+                        value={value}
+                        onChange={handleChange}
+                        required
+                        label="GitHub ID"
+                        autoFocus
+                        />
+                    <ButtonGroup style={{alignSelf: "flex-end"}} size="small">
+                        <Button disabled={!value} onClick={() => {onCreate(value.toLowerCase()); onHide();}}>CREATE</Button>
+                        <Button onClick={onHide}>CLOSE</Button>
+                    </ButtonGroup>
+                </div>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
 function Users({ client, user }: { client: Client, user: PlaygroundUser }): JSX.Element {
     const classes = useStyles();
     const [selected, setSelected] = useState<string | null>(null);
     const [users, setUsers] = useState<Record<string, User>>({});
+    const [showCreationDialog, setShowCreationDialog] = useState(false);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const isSelected = (name: string) => selected == name;
     const handleClick = (_event: React.MouseEvent<unknown>, name: string) => {
@@ -197,13 +223,24 @@ function Users({ client, user }: { client: Client, user: PlaygroundUser }): JSX.
         setUsers(await client.listUsers());
     }, 5000);
 
+    async function onCreate(id: string): Promise<void> {
+        try {
+            const details = {admin: false};
+            await client.createOrUpdateUser(id, details);
+            users[id] = details;
+            setUsers({...users});
+        } catch {
+            setErrorMessage("Failed to create user");
+        }
+    }
+
     async function onDelete(): Promise<void> {
         if (selected && selected != user.id) {
-            delete users[selected];
-            setUsers({...users});
-            setSelected(null);
             try {
                 await deleteUser(client, selected);
+                delete users[selected];
+                setUsers({...users});
+                setSelected(null);
             } catch {
                 setErrorMessage("Failed to delete user");
             }
@@ -215,7 +252,7 @@ function Users({ client, user }: { client: Client, user: PlaygroundUser }): JSX.
     if (Object.keys(users).length > 0) {
         return (
             <Container>
-                <EnhancedTableToolbar label="Users" selected={selected} onDelete={onDelete} />
+                <EnhancedTableToolbar label="Users" selected={selected} onCreate={() => setShowCreationDialog(true)} onDelete={onDelete} />
                 <TableContainer component={Paper}>
                     <Table className={classes.table} aria-label="simple table">
                         <TableHead>
@@ -254,6 +291,7 @@ function Users({ client, user }: { client: Client, user: PlaygroundUser }): JSX.
                 </TableContainer>
                 {errorMessage &&
                 <ErrorSnackbar open={true} message={errorMessage} onClose={() => setErrorMessage(null)} />}
+                <UserCreationDialog show={showCreationDialog} onCreate={onCreate} onHide={() => setShowCreationDialog(false)} />
             </Container>
         );
     } else {
