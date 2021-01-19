@@ -36,7 +36,7 @@ mod option_duration {
     {
         let s = String::deserialize(deserializer)?;
         match s.parse() {
-            Ok(res) => Ok(Some(Duration::from_secs(res)/60)),
+            Ok(res) => Ok(Some(Duration::from_secs(res) / 60)),
             Err(e) => Err(Error::custom(format!(
                 "Failed to deserialize duration: {}",
                 e
@@ -53,6 +53,6 @@ mod duration {
     where
         S: Serializer,
     {
-        serializer.serialize_u64(date.as_secs()/60)
+        serializer.serialize_u64(date.as_secs() / 60)
     }
 }
