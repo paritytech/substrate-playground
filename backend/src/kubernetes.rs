@@ -260,14 +260,8 @@ async fn add_config_map_value(
         patch_strategy: PatchStrategy::JSON,
         ..PatchParams::default()
     };
-    let patch = serde_json::to_vec(&serde_json::json!([{
-        "op": "add",
-        "path": format!("/data/{}", key),
-        "value": value,
-    }]))
-    .map_err(error_to_string)?;
     config_map_api
-        .patch(name, &params, patch)
+        .patch(name, &params, patch_to_vec("add", format!("/data/{}", key).as_str(), Some(value))?)
         .await
         .map_err(error_to_string)?;
     Ok(())
@@ -289,12 +283,8 @@ async fn delete_config_map_value(
         patch_strategy: PatchStrategy::JSON,
         ..PatchParams::default()
     };
-    let patch = serde_json::to_vec(&serde_json::json!([{
-        "op": "remove",
-        "path": format!("/data/{}", key),
-    }])).map_err(error_to_string)?;
     config_map_api
-        .patch(name, &params, patch)
+        .patch(name, &params, patch_to_vec("remove", format!("/data/{}", key).as_str(), None)?)
         .await
         .map_err(error_to_string)?;
     Ok(())
@@ -389,6 +379,21 @@ fn get_session_duration(conf: Configuration, session_conf: SessionConfiguration)
     session_conf
         .duration
         .unwrap_or(conf.session_defaults.duration)
+}
+
+fn patch_to_vec(op: &str, path: &str, value: Option<&str>) -> Result<Vec<u8>, String> {
+    let json = match value {
+        Some(value) => serde_json::json!([{
+            "op": op,
+            "path": path,
+            "value": value,
+        }]),
+        None => serde_json::json!([{
+            "op": op,
+            "path": path,
+        }])
+    };
+    serde_json::to_vec(&json).map_err(error_to_string)
 }
 
 impl Engine {
@@ -684,14 +689,8 @@ impl Engine {
                 patch_strategy: PatchStrategy::JSON,
                 ..PatchParams::default()
             };
-            let patch = serde_json::to_vec(&serde_json::json!([{
-                "op": "add",
-                "path": format!("/metadata/annotations/{}", SESSION_DURATION_ANNOTATION),
-                "value": session_duration_annotation(duration),
-            }]))
-            .map_err(error_to_string)?;
             pod_api
-                .patch(&pod_name(&session.username), &params, patch)
+                .patch(&pod_name(&session.username), &params, patch_to_vec("add", format!("/metadata/annotations/{}", SESSION_DURATION_ANNOTATION).as_str(), Some(session_duration_annotation(duration).as_str()))?)
                 .await
                 .map_err(error_to_string)?;
         }
