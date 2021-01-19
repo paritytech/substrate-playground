@@ -1,10 +1,10 @@
 import clsx from 'clsx';
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { createStyles, lighten, makeStyles, Theme } from '@material-ui/core/styles';
 import Checkbox from '@material-ui/core/Checkbox';
 import IconButton from '@material-ui/core/IconButton';
+import CreateIcon from '@material-ui/icons/Create';
 import DeleteIcon from '@material-ui/icons/Delete';
-import FilterListIcon from '@material-ui/icons/FilterList';
 import Paper from '@material-ui/core/Paper';
 import Tab from '@material-ui/core/Tab';
 import Table from '@material-ui/core/Table';
@@ -49,7 +49,7 @@ function Sessions({ client }: { client: Client }): JSX.Element {
     if (Object.keys(sessions).length > 0) {
         return (
             <Container>
-                <EnhancedTableToolbar label="sessions" />
+                <EnhancedTableToolbar label="Sessions" />
                 <TableContainer component={Paper}>
                     <Table className={classes.table} aria-label="simple table">
                         <TableHead>
@@ -91,7 +91,7 @@ function Templates({ client }: { client: Client }): JSX.Element {
     if (Object.keys(templates).length > 0) {
         return (
             <Container>
-                <EnhancedTableToolbar label="templates" />
+                <EnhancedTableToolbar label="Templates" />
                 <TableContainer component={Paper}>
                     <Table className={classes.table} aria-label="simple table">
                         <TableHead>
@@ -151,37 +151,27 @@ const useToolbarStyles = makeStyles((theme: Theme) =>
   }),
 );
 
-async function handleUsersDelete(o) {
-    console.log(o)
-}
-
-function EnhancedTableToolbar({ label, selected = [] }: { label: string, selected?: Array<String>}): JSX.Element {
+function EnhancedTableToolbar({ label, selected = null, onDelete }: { label: string, selected?: string | null, onDelete: () => void}): JSX.Element {
     const classes = useToolbarStyles();
     return (
         <Toolbar
         className={clsx(classes.root, {
-            [classes.highlight]: selected.length > 0,
+            [classes.highlight]: selected != null,
         })}
         >
-        {selected.length > 0 ? (
-            <Typography className={classes.title} color="inherit" variant="subtitle1" component="div">
-            {selected.length} selected
-            </Typography>
-        ) : (
-            <Typography className={classes.title} variant="h6" id="tableTitle" component="div">
+        <Typography className={classes.title} variant="h6" id="tableTitle" component="div">
             {label}
-            </Typography>
-        )}
-        {selected.length > 0 ? (
+        </Typography>
+        {selected ? (
             <Tooltip title="Delete">
-            <IconButton aria-label="delete" onClick={() => handleUsersDelete(selected)}>
+            <IconButton aria-label="delete" onClick={onDelete}>
                 <DeleteIcon />
             </IconButton>
             </Tooltip>
         ) : (
-            <Tooltip title="Filter list">
-            <IconButton aria-label="filter list">
-                <FilterListIcon />
+            <Tooltip title="Create">
+            <IconButton aria-label="create">
+                <CreateIcon />
             </IconButton>
             </Tooltip>
         )}
@@ -191,37 +181,37 @@ function EnhancedTableToolbar({ label, selected = [] }: { label: string, selecte
 
 function Users({ client }: { client: Client }): JSX.Element {
     const classes = useStyles();
-    const [selected, setSelected] = useState<string[]>([]);
+    const [selected, setSelected] = useState<string | null>(null);
     const [users, setUsers] = useState<Record<string, User>>({});
-    const isSelected = (name: string) => selected.indexOf(name) !== -1;
-    const handleClick = (event: React.MouseEvent<unknown>, name: string) => {
-        const selectedIndex = selected.indexOf(name);
-        let newSelected: string[] = [];
-
-        if (selectedIndex === -1) {
-          newSelected = newSelected.concat(selected, name);
-        } else if (selectedIndex === 0) {
-          newSelected = newSelected.concat(selected.slice(1));
-        } else if (selectedIndex === selected.length - 1) {
-          newSelected = newSelected.concat(selected.slice(0, -1));
-        } else if (selectedIndex > 0) {
-          newSelected = newSelected.concat(
-            selected.slice(0, selectedIndex),
-            selected.slice(selectedIndex + 1),
-          );
+    const isSelected = (name: string) => selected == name;
+    const handleClick = (_event: React.MouseEvent<unknown>, name: string) => {
+        if (selected == name) {
+            setSelected(null);
+        } else {
+            setSelected(name);
         }
+   };
 
-        setSelected(newSelected);
-      };
+   console.log("users", users)
 
     useInterval(async () => {
         setUsers(await client.listUsers());
     }, 5000);
 
+    async function onDelete(): Promise<void> {
+        // TODO disallow deleting current user
+        if (selected) {
+            delete users[selected];
+            setUsers({...users});
+            setSelected(null);
+            await deleteUser(client, selected);
+        }
+    }
+
     if (Object.keys(users).length > 0) {
         return (
             <Container>
-                <EnhancedTableToolbar label="users" selected={selected} />
+                <EnhancedTableToolbar label="Users" selected={selected} onDelete={onDelete} />
                 <TableContainer component={Paper}>
                     <Table className={classes.table} aria-label="simple table">
                         <TableHead>
