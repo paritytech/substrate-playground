@@ -8,12 +8,14 @@ import Box from '@material-ui/core/Box';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import Container from "@material-ui/core/Container";
 import Fade from '@material-ui/core/Fade';
+import CloseIcon from '@material-ui/icons/Close';
 import GitHubIcon from '@material-ui/icons/GitHub';
 import IconButton from '@material-ui/core/IconButton';
 import Link from '@material-ui/core/Link';
 import Menu from '@material-ui/core/Menu';
 import MenuItem from '@material-ui/core/MenuItem';
 import MoreVertIcon from '@material-ui/icons/MoreVert';
+import Snackbar from "@material-ui/core/Snackbar";
 import Toolbar from '@material-ui/core/Toolbar';
 import Typography from '@material-ui/core/Typography';
 import { PlaygroundUser } from "@substrate/playground-client";
@@ -62,6 +64,31 @@ export function ErrorMessage({ title = "Oops! Looks like something went wrong :(
             {reason &&
             <Box component="span" display="block">{reason}</Box>}
         </Alert>
+    );
+}
+
+export function ErrorSnackbar({ message, open, onClose }: { message: string, open: boolean, onClose: () => void }): JSX.Element {
+    return (
+        <Snackbar
+            anchorOrigin={{
+            vertical: 'bottom',
+            horizontal: 'left',
+            }}
+            open={open}
+            onClose={onClose}
+            autoHideDuration={6000}
+            message={message}
+            action={
+                <React.Fragment>
+                  <IconButton size="small" aria-label="close" color="inherit" onClick={onClose}>
+                    <CloseIcon fontSize="small" />
+                  </IconButton>
+                </React.Fragment>
+              }>
+            <Alert onClose={onClose} severity="error">
+                {message}
+            </Alert>
+        </Snackbar>
     );
 }
 
