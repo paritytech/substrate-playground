@@ -17,8 +17,8 @@ import Tabs from '@material-ui/core/Tabs';
 import Tooltip from '@material-ui/core/Tooltip';
 import Toolbar from '@material-ui/core/Toolbar';
 import Typography from '@material-ui/core/Typography';
-import { Client, Configuration, Session, Template, User } from '@substrate/playground-client';
-import { CenteredContainer } from '../components';
+import { Client, Configuration, PlaygroundUser, Session, Template, User } from '@substrate/playground-client';
+import { CenteredContainer, ErrorSnackbar } from '../components';
 import { useInterval } from '../hooks';
 import { Container } from '@material-ui/core';
 
@@ -151,7 +151,7 @@ const useToolbarStyles = makeStyles((theme: Theme) =>
   }),
 );
 
-function EnhancedTableToolbar({ label, selected = null, onDelete }: { label: string, selected?: string | null, onDelete: () => void}): JSX.Element {
+function EnhancedTableToolbar({ label, selected = null, onDelete }: { label: string, selected?: string | null, onDelete?: () => void}): JSX.Element {
     const classes = useToolbarStyles();
     return (
         <Toolbar
@@ -179,10 +179,11 @@ function EnhancedTableToolbar({ label, selected = null, onDelete }: { label: str
     );
 }
 
-function Users({ client }: { client: Client }): JSX.Element {
+function Users({ client, user }: { client: Client, user: PlaygroundUser }): JSX.Element {
     const classes = useStyles();
     const [selected, setSelected] = useState<string | null>(null);
     const [users, setUsers] = useState<Record<string, User>>({});
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const isSelected = (name: string) => selected == name;
     const handleClick = (_event: React.MouseEvent<unknown>, name: string) => {
         if (selected == name) {
@@ -192,19 +193,22 @@ function Users({ client }: { client: Client }): JSX.Element {
         }
    };
 
-   console.log("users", users)
-
     useInterval(async () => {
         setUsers(await client.listUsers());
     }, 5000);
 
     async function onDelete(): Promise<void> {
-        // TODO disallow deleting current user
-        if (selected) {
+        if (selected && selected != user.id) {
             delete users[selected];
             setUsers({...users});
             setSelected(null);
-            await deleteUser(client, selected);
+            try {
+                await deleteUser(client, selected);
+            } catch {
+                setErrorMessage("Failed to delete user");
+            }
+        } else {
+            setErrorMessage("Can't delete currently logged user");
         }
     }
 
@@ -248,6 +252,8 @@ function Users({ client }: { client: Client }): JSX.Element {
                         </TableBody>
                     </Table>
                 </TableContainer>
+                {errorMessage &&
+                <ErrorSnackbar open={true} message={errorMessage} onClose={() => setErrorMessage(null)} />}
             </Container>
         );
     } else {
@@ -270,7 +276,7 @@ function DetailsPanel({ client }: { client: Client }): JSX.Element {
     );
 }
 
-export function AdminPanel({ client }: { client: Client }): JSX.Element {
+export function AdminPanel({ client, user }: { client: Client, user: PlaygroundUser }): JSX.Element {
     const [value, setValue] = React.useState(0);
 
     const handleChange = (_: React.ChangeEvent<{}>, newValue: number) => {
@@ -292,7 +298,7 @@ export function AdminPanel({ client }: { client: Client }): JSX.Element {
                 : value == 1
                 ? <Templates client={client} />
                 : value == 2
-                ? <Users client={client} />
+                ? <Users client={client} user={user} />
                 : <Sessions client={client} />}
             </Paper>
         </CenteredContainer>

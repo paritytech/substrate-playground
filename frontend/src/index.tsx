@@ -1,6 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom";
-import { Client, Template } from '@substrate/playground-client';
+import { Client, PlaygroundUser, Template } from '@substrate/playground-client';
 import { createMuiTheme, ThemeProvider } from '@material-ui/core/styles';
 import { AdminPanel } from './panels/admin';
 import { LoginPanel } from './panels/login';
@@ -12,7 +12,7 @@ import { LoadingPanel, Wrapper } from './components';
 import { useLifecycle, Events, PanelId, Params, States } from './lifecycle';
 import { terms } from "./terms";
 
-function MainPanel({ client, params, id, templates, onConnect, onDeployed, restartAction }: { client: Client, params: Params, id: PanelId, templates: Record<string, Template>, restartAction: () => void, onConnect: () => void, onDeployed: () => void}): JSX.Element {
+function MainPanel({ client, user, params, id, templates, onConnect, onDeployed, restartAction }: { client: Client, user: PlaygroundUser, params: Params, id: PanelId, templates: Record<string, Template>, restartAction: () => void, onConnect: () => void, onDeployed: () => void}): JSX.Element {
     switch(id) {
         case PanelId.Session:
           return <SessionPanel client={client} templates={templates} onRetry={restartAction}
@@ -27,7 +27,7 @@ function MainPanel({ client, params, id, templates, onConnect, onDeployed, resta
         case PanelId.Stats:
           return <StatsPanel />;
         case PanelId.Admin:
-          return <AdminPanel client={client} />;
+          return <AdminPanel client={client} user={user} />;
         case PanelId.Theia:
           return <TheiaPanel client={client} autoDeploy={params.deploy} templates={templates} onMissingSession={restartAction} onSessionFailing={restartAction} onSessionTimeout={restartAction} />;
       }
@@ -52,7 +52,7 @@ function App({ base, params }: { base: string, params: Params }): JSX.Element {
             <div style={{ display: "flex", width: "100vw", height: "100vh", alignItems: "center", justifyContent: "center" }}>
                 <Wrapper thin={state.matches(States.LOGGED) && panel == PanelId.Theia} onPlayground={() => selectPanel(PanelId.Session)} onAdminClick={() => selectPanel(PanelId.Admin)} onStatsClick={() => selectPanel(PanelId.Stats)} onLogout={() => send(Events.LOGOUT)} user={user}>
                     {state.matches(States.LOGGED)
-                    ? <MainPanel client={client} params={params} id={panel} templates={templates} onConnect={() => selectPanel(PanelId.Theia)} onDeployed={() => selectPanel(PanelId.Theia)} restartAction={restartAction} />
+                    ? <MainPanel client={client} user={user} params={params} id={panel} templates={templates} onConnect={() => selectPanel(PanelId.Theia)} onDeployed={() => selectPanel(PanelId.Theia)} restartAction={restartAction} />
                     : state.matches(States.TERMS_UNAPPROVED)
                         ? <TermsPanel terms={terms} onTermsApproved={() => send(Events.TERMS_APPROVAL)} />
                         : state.matches(States.UNLOGGED)
