@@ -79,11 +79,11 @@ export function ErrorSnackbar({ message, open, onClose }: { message: string, ope
             autoHideDuration={6000}
             message={message}
             action={
-                <React.Fragment>
+                <>
                   <IconButton size="small" aria-label="close" color="inherit" onClick={onClose}>
                     <CloseIcon fontSize="small" />
                   </IconButton>
-                </React.Fragment>
+                </>
               }>
             <Alert onClose={onClose} severity="error">
                 {message}
@@ -265,7 +265,7 @@ export function Wrapper({ thin = false, onPlayground, onStatsClick, onAdminClick
 export function LoadingPanel() {
     return (
         <CenteredContainer>
-            <Typography variant="h6">
+            <Typography style={{margin: 20}} variant="h6">
                 Loading
             </Typography>
             <CircularProgress />

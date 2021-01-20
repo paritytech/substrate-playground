@@ -172,10 +172,10 @@ function Media() {
       />
       <Skeleton animation="wave" variant="rect" height={80} />
       <CardContent>
-        <React.Fragment>
+        <>
           <Skeleton animation="wave" height={10} style={{ marginBottom: 6 }} />
           <Skeleton animation="wave" height={10} width="80%" />
-        </React.Fragment>
+        </>
       </CardContent>
     </Card>
   );
