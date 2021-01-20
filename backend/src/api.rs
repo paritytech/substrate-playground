@@ -236,11 +236,7 @@ fn query_segment(origin: &Origin) -> String {
 }
 
 fn protocol(env: &Environment) -> String {
-    if env.secured {
-        "https"
-    } else {
-        "http"
-    }.to_string()
+    if env.secured { "https" } else { "http" }.to_string()
 }
 
 // Gets called from UI. Then redirects to the GitHub `auth_uri` which itself redirects to `/auth/github`

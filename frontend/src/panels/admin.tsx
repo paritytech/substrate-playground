@@ -1,7 +1,14 @@
 import clsx from 'clsx';
 import React, { Dispatch, SetStateAction, useState } from "react";
 import { createStyles, lighten, makeStyles, Theme } from '@material-ui/core/styles';
+import Button from '@material-ui/core/Button';
+import ButtonGroup from '@material-ui/core/ButtonGroup';
 import Checkbox from '@material-ui/core/Checkbox';
+import Container from '@material-ui/core/Container';
+import Dialog from '@material-ui/core/Dialog';
+import DialogContent from '@material-ui/core/DialogContent';
+import DialogTitle from '@material-ui/core/DialogTitle';
+import FormControlLabel from '@material-ui/core/FormControlLabel';
 import IconButton from '@material-ui/core/IconButton';
 import CreateIcon from '@material-ui/icons/Create';
 import DeleteIcon from '@material-ui/icons/Delete';
@@ -14,13 +21,13 @@ import TableContainer from '@material-ui/core/TableContainer';
 import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
 import Tabs from '@material-ui/core/Tabs';
+import TextField from '@material-ui/core/TextField';
 import Tooltip from '@material-ui/core/Tooltip';
 import Toolbar from '@material-ui/core/Toolbar';
 import Typography from '@material-ui/core/Typography';
-import { Client, Configuration, PlaygroundUser, Session, Template, User } from '@substrate/playground-client';
+import { Client, Configuration, PlaygroundUser, Session, Template, User, UserConfiguration } from '@substrate/playground-client';
 import { CenteredContainer, ErrorSnackbar, LoadingPanel } from '../components';
 import { useInterval } from '../hooks';
-import { Button, ButtonGroup, Container, Dialog, DialogContent, DialogContentText, DialogTitle, TextField } from '@material-ui/core';
 
 const useStyles = makeStyles({
     table: {
@@ -184,30 +191,43 @@ function EnhancedTableToolbar({ label, selected = null, onCreate, onDelete }: { 
     );
 }
 
-function UserCreationDialog({ users, show, onCreate, onHide }: { users: Record<string, User>, show: boolean, onCreate: (id: string) => void, onHide: () => void }): JSX.Element {
-    const [value, setValue] = React.useState('');
+function UserCreationDialog({ users, show, onCreate, onHide }: { users: Record<string, User>, show: boolean, onCreate: (id: string, conf: UserConfiguration) => void, onHide: () => void }): JSX.Element {
+    const [id, setID] = React.useState('');
+    const [durationChecked, setDurationChecked] = React.useState(false);
 
-    const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-      setValue(event.target.value);
-    };
+    function reset(): void {
+        setID('');
+        setDurationChecked(false);
+    }
+    const handleIDChange = (event: React.ChangeEvent<HTMLInputElement>) => setID(event.target.value);
+    const handleDurationChange = (event: React.ChangeEvent<HTMLInputElement>) => setDurationChecked(event.target.checked);
     return (
         <Dialog open={show} maxWidth="md">
             <DialogTitle>User details</DialogTitle>
             <DialogContent>
-                <div style={{display: "flex", flexDirection: "column"}}>
+                <Container style={{display: "flex", flexDirection: "column"}}>
                     <TextField
                         style={{marginBottom: 20}}
-                        value={value}
-                        onChange={handleChange}
+                        value={id}
+                        onChange={handleIDChange}
                         required
                         label="GitHub ID"
                         autoFocus
                         />
-                    <ButtonGroup style={{alignSelf: "flex-end"}} size="small">
-                        <Button disabled={!value || users[value] != null} onClick={() => {setValue(''); onCreate(value.toLowerCase()); onHide();}}>CREATE</Button>
+                    <FormControlLabel
+                        control={
+                            <Checkbox
+                                checked={durationChecked}
+                                onChange={handleDurationChange}
+                                />
+                        }
+                        label="Can Customize duration"
+                    />
+                    <ButtonGroup style={{alignSelf: "flex-end", marginTop: 20}} size="small">
+                        <Button disabled={!id || users[id] != null} onClick={() => {reset(); onCreate(id.toLowerCase(), {admin: false, canCustomizeDuration: durationChecked}); onHide();}}>CREATE</Button>
                         <Button onClick={onHide}>CLOSE</Button>
                     </ButtonGroup>
-                </div>
+                </Container>
             </DialogContent>
         </Dialog>
     );
@@ -227,13 +247,12 @@ function Users({ client, user }: { client: Client, user: PlaygroundUser }): JSX.
         }
    };
 
-    async function onCreate(id: string, setUsers: Dispatch<SetStateAction<Record<string, User> | null>>): Promise<void> {
+    async function onCreate(id: string, conf: UserConfiguration, setUsers: Dispatch<SetStateAction<Record<string, User> | null>>): Promise<void> {
         try {
-            const details = {admin: false};
-            await client.createOrUpdateUser(id, details);
+            await client.createOrUpdateUser(id, conf);
             setUsers((users: Record<string, User> | null) => {
                 if (users) {
-                    users[id] = details;
+                    users[id] = conf;
                 }
                 return {...users};
             });
@@ -276,6 +295,7 @@ function Users({ client, user }: { client: Client, user: PlaygroundUser }): JSX.
                                 <TableCell></TableCell>
                                 <TableCell>ID</TableCell>
                                 <TableCell align="right">Admin</TableCell>
+                                <TableCell align="right">Can Customize Duration</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
@@ -301,6 +321,7 @@ function Users({ client, user }: { client: Client, user: PlaygroundUser }): JSX.
                                         {id}
                                     </TableCell>
                                     <TableCell align="right">{user.admin.toString()}</TableCell>
+                                    <TableCell align="right">{user.canCustomizeDuration.toString()}</TableCell>
                                 </TableRow>
                                 )})}
                         </TableBody>
@@ -308,7 +329,7 @@ function Users({ client, user }: { client: Client, user: PlaygroundUser }): JSX.
                 </TableContainer>
                 {errorMessage &&
                 <ErrorSnackbar open={true} message={errorMessage} onClose={() => setErrorMessage(null)} />}
-                <UserCreationDialog users={resources} show={showCreationDialog} onCreate={(id) => onCreate(id, setUsers)} onHide={() => setShowCreationDialog(false)} />
+                <UserCreationDialog users={resources} show={showCreationDialog} onCreate={(id, conf) => onCreate(id, conf, setUsers)} onHide={() => setShowCreationDialog(false)} />
             </>
         )}
         </Resources>

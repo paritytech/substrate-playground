@@ -2,9 +2,16 @@ use serde::{Deserialize, Serialize};
 use serde_yaml::from_str;
 use std::fmt::{self, Display, Formatter};
 
+fn default_as_false() -> bool {
+    false
+}
+
 #[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct User {
     pub admin: bool,
+    #[serde(default = "default_as_false")]
+    pub can_customize_duration: bool,
 }
 
 impl Display for User {
@@ -18,8 +25,11 @@ impl Display for User {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct UserConfiguration {
     pub admin: bool,
+    #[serde(default = "default_as_false")]
+    pub can_customize_duration: bool,
 }
 
 impl UserConfiguration {

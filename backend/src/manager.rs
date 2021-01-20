@@ -214,8 +214,8 @@ impl Manager {
         new_runtime()?.block_on(self.clone().engine.list_sessions())
     }
 
-    fn can_update_duration(&self, user: User) -> bool {
-        user.admin
+    fn can_customize_duration(&self, user: User) -> bool {
+        user.admin || user.can_customize_duration
     }
 
     pub fn create_or_update_session(
@@ -231,7 +231,7 @@ impl Manager {
                     username
                 )
             })?;
-            if !self.can_update_duration(user) {
+            if !self.can_customize_duration(user) {
                 return Err("Only admin can customize a session duration".to_string());
             }
         }

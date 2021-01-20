@@ -493,9 +493,7 @@ impl Engine {
             )?,
             reason: status.clone().reason.unwrap_or_else(|| "".to_string()),
             message: status.clone().message.unwrap_or_else(|| "".to_string()),
-            start_time: status
-                .clone()
-                .start_time.and_then(|dt| Some(dt.0.into())),
+            start_time: status.clone().start_time.map(|dt| dt.0.into()),
         })
     }
 
@@ -503,6 +501,7 @@ impl Engine {
         let user_configuration = UserConfiguration::parse(s)?;
         Ok(User {
             admin: user_configuration.admin,
+            can_customize_duration: user_configuration.can_customize_duration,
         })
     }
 
@@ -554,11 +553,16 @@ impl Engine {
             &self.env.namespace,
             USERS_CONFIG_MAP,
             id.as_str(),
-            format!("admin: {}", user.admin).as_str(),
+            serde_yaml::to_string(&user)
+                .map_err(error_to_string)?
+                .as_str(),
         )
         .await?;
 
-        Ok(User { admin: user.admin })
+        Ok(User {
+            admin: user.admin,
+            can_customize_duration: user.can_customize_duration,
+        })
     }
 
     pub async fn delete_user(self, id: String) -> Result<(), String> {
@@ -574,7 +578,7 @@ impl Engine {
         let pod = pod_api.get(&pod_name(username)).await.ok();
 
         match pod.map(|pod| self.clone().pod_to_session(&self.env, &pod)) {
-            Some(session) => session.map(|session| Some(session)),
+            Some(session) => session.map(Some),
             None => Ok(None),
         }
     }

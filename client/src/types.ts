@@ -29,10 +29,12 @@ export interface PlaygroundUser {
 
 export interface User {
     admin: boolean,
+    canCustomizeDuration: boolean,
 }
 
 export interface UserConfiguration {
     admin: boolean,
+    canCustomizeDuration: boolean,
 }
 
 export interface Session {
