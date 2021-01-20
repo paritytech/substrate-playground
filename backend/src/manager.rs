@@ -225,11 +225,13 @@ impl Manager {
     ) -> Result<Session, String> {
         if conf.duration.is_some() {
             // Duration can only customized by users with proper rights
-            let user = self
-                .clone()
-                .get_user(username)?
-                .ok_or_else(|| format!("Duration customization requires user but can't find {}", username))?;
-            if ! self.can_update_duration(user) {
+            let user = self.clone().get_user(username)?.ok_or_else(|| {
+                format!(
+                    "Duration customization requires user but can't find {}",
+                    username
+                )
+            })?;
+            if !self.can_update_duration(user) {
                 return Err("Only admin can customize a session duration".to_string());
             }
         }
