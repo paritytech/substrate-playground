@@ -204,7 +204,7 @@ function UserCreationDialog({ users, show, onCreate, onHide }: { users: Record<s
                         autoFocus
                         />
                     <ButtonGroup style={{alignSelf: "flex-end"}} size="small">
-                        <Button disabled={!value || users[value] == null} onClick={() => {onCreate(value.toLowerCase()); onHide();}}>CREATE</Button>
+                        <Button disabled={!value || users[value] != null} onClick={() => {onCreate(value.toLowerCase()); onHide();}}>CREATE</Button>
                         <Button onClick={onHide}>CLOSE</Button>
                     </ButtonGroup>
                 </div>
