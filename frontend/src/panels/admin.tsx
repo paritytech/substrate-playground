@@ -235,7 +235,7 @@ function Users({ client, user }: { client: Client, user: PlaygroundUser }): JSX.
                 if (users) {
                     users[id] = details;
                 }
-                return users;
+                return {...users};
             });
         } catch (e) {
             console.error(e);
