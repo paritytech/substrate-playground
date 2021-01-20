@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import React, { useState } from "react";
+import React, { Dispatch, SetStateAction, useState } from "react";
 import { createStyles, lighten, makeStyles, Theme } from '@material-ui/core/styles';
 import Checkbox from '@material-ui/core/Checkbox';
 import IconButton from '@material-ui/core/IconButton';
@@ -18,7 +18,7 @@ import Tooltip from '@material-ui/core/Tooltip';
 import Toolbar from '@material-ui/core/Toolbar';
 import Typography from '@material-ui/core/Typography';
 import { Client, Configuration, PlaygroundUser, Session, Template, User } from '@substrate/playground-client';
-import { CenteredContainer, ErrorSnackbar } from '../components';
+import { CenteredContainer, ErrorSnackbar, LoadingPanel } from '../components';
 import { useInterval } from '../hooks';
 import { Button, ButtonGroup, Container, Dialog, DialogContent, DialogContentText, DialogTitle, TextField } from '@material-ui/core';
 
@@ -38,17 +38,33 @@ function EmptyPanel({ label }: { label: string}): JSX.Element {
     );
 }
 
-function Sessions({ client }: { client: Client }): JSX.Element {
-    const classes = useStyles();
-    const [sessions, setSessions] = useState<Record<string, Session>>({});
+function Resources<T>( { children, label, callback }: { children: (resources: Record<string, T>, setter: Dispatch<SetStateAction<Record<string, T> | null>>) => NonNullable<React.ReactNode>, label: string, callback: () => Promise<Record<string, T>> }): JSX.Element {
+    const [resources, setResources] = useState<Record<string, T> | null>(null);
 
     useInterval(async () => {
-        setSessions(await client.listSessions());
+        setResources(await callback());
     }, 5000);
 
-    if (Object.keys(sessions).length > 0) {
+    if (!resources) {
+        return <LoadingPanel />;
+    } else if (Object.keys(resources).length > 0) {
         return (
             <Container>
+                {children(resources, setResources)}
+            </Container>
+        );
+    } else {
+        return <EmptyPanel label={`No ${label.toLowerCase()}`} />;
+    }
+}
+
+function Sessions({ client }: { client: Client }): JSX.Element {
+    const classes = useStyles();
+
+    return (
+        <Resources<Session> label="Sessions" callback={async () => await client.listSessions()}>
+            {(resources: Record<string, Session>) => (
+            <>
                 <EnhancedTableToolbar label="Sessions" />
                 <TableContainer component={Paper}>
                     <Table className={classes.table} aria-label="simple table">
@@ -60,7 +76,7 @@ function Sessions({ client }: { client: Client }): JSX.Element {
                             </TableRow>
                         </TableHead>
                         <TableBody>
-                        {Object.entries(sessions).map(([id, session]) => (
+                        {Object.entries(resources).map(([id, session]) => (
                         <TableRow key={id}>
                             <TableCell component="th" scope="row">
                                 {id}
@@ -72,25 +88,19 @@ function Sessions({ client }: { client: Client }): JSX.Element {
                         </TableBody>
                     </Table>
                 </TableContainer>
-            </Container>
-        );
-    } else {
-        return <EmptyPanel label="No sessions" />;
-    }
+            </>
+            )}
+        </Resources>
+    );
 }
 
 function Templates({ client }: { client: Client }): JSX.Element {
     const classes = useStyles();
-    const [templates, setTemplates] = useState<Record<string, Template>>({});
 
-    useInterval(async () => {
-        const { templates } = await client.get();
-        setTemplates(templates);
-    }, 5000);
-
-    if (Object.keys(templates).length > 0) {
-        return (
-            <Container>
+    return (
+        <Resources<Template> label="Templates" callback={async () => (await client.get()).templates}>
+        {(resources: Record<string, Template>) => (
+            <>
                 <EnhancedTableToolbar label="Templates" />
                 <TableContainer component={Paper}>
                     <Table className={classes.table} aria-label="simple table">
@@ -102,7 +112,7 @@ function Templates({ client }: { client: Client }): JSX.Element {
                             </TableRow>
                         </TableHead>
                         <TableBody>
-                        {Object.entries(templates).map(([id, template]) => (
+                        {Object.entries(resources).map(([id, template]) => (
                         <TableRow key={id}>
                             <TableCell component="th" scope="row">
                                 {template.name}
@@ -114,11 +124,10 @@ function Templates({ client }: { client: Client }): JSX.Element {
                         </TableBody>
                     </Table>
                 </TableContainer>
-            </Container>
-        );
-    } else {
-        return <EmptyPanel label="No templates" />;
-    }
+            </>
+            )}
+        </Resources>
+    );
 }
 
 async function deleteUser(client: Client, id: string): Promise<void> {
@@ -164,13 +173,13 @@ function EnhancedTableToolbar({ label, selected = null, onCreate, onDelete }: { 
                 <DeleteIcon />
             </IconButton>
             </Tooltip>
-        ) : (
+        ) : onCreate ? (
             <Tooltip title="Create">
             <IconButton aria-label="create" onClick={onCreate}>
                 <CreateIcon />
             </IconButton>
             </Tooltip>
-        )}
+        ) : <></>}
         </Toolbar>
     );
 }
@@ -207,7 +216,6 @@ function UserCreationDialog({ show, onCreate, onHide }: { show: boolean, onCreat
 function Users({ client, user }: { client: Client, user: PlaygroundUser }): JSX.Element {
     const classes = useStyles();
     const [selected, setSelected] = useState<string | null>(null);
-    const [users, setUsers] = useState<Record<string, User>>({});
     const [showCreationDialog, setShowCreationDialog] = useState(false);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const isSelected = (name: string) => selected == name;
@@ -219,29 +227,36 @@ function Users({ client, user }: { client: Client, user: PlaygroundUser }): JSX.
         }
    };
 
-    useInterval(async () => {
-        setUsers(await client.listUsers());
-    }, 5000);
-
-    async function onCreate(id: string): Promise<void> {
+    async function onCreate(id: string, setUsers: Dispatch<SetStateAction<Record<string, User> | null>>): Promise<void> {
         try {
             const details = {admin: false};
             await client.createOrUpdateUser(id, details);
-            users[id] = details;
-            setUsers({...users});
-        } catch {
+            setUsers((users: Record<string, User> | null) => {
+                if (users) {
+                    users[id] = details;
+                }
+                return users;
+            });
+        } catch (e) {
+            console.error(e);
             setErrorMessage("Failed to create user");
         }
     }
 
-    async function onDelete(): Promise<void> {
+    async function onDelete(setUsers: Dispatch<SetStateAction<Record<string, User> | null>>): Promise<void> {
         if (selected && selected != user.id) {
             try {
                 await deleteUser(client, selected);
-                delete users[selected];
-                setUsers({...users});
+
+                setUsers((users: Record<string, User> | null) => {
+                    if (users) {
+                        delete users[selected];
+                    }
+                    return users;
+                });
                 setSelected(null);
-            } catch {
+            } catch (e) {
+                console.error(e);
                 setErrorMessage("Failed to delete user");
             }
         } else {
@@ -249,20 +264,22 @@ function Users({ client, user }: { client: Client, user: PlaygroundUser }): JSX.
         }
     }
 
-    if (Object.keys(users).length > 0) {
-        return (
-            <Container>
-                <EnhancedTableToolbar label="Users" selected={selected} onCreate={() => setShowCreationDialog(true)} onDelete={onDelete} />
+    return (
+        <Resources<User> label="Users" callback={async () => await client.listUsers()}>
+        {(resources: Record<string, User>, setUsers: Dispatch<SetStateAction<Record<string, User> | null>>) => (
+            <>
+                <EnhancedTableToolbar label="Users" selected={selected} onCreate={() => setShowCreationDialog(true)} onDelete={() => onDelete(setUsers)} />
                 <TableContainer component={Paper}>
                     <Table className={classes.table} aria-label="simple table">
                         <TableHead>
                             <TableRow>
+                                <TableCell></TableCell>
                                 <TableCell>ID</TableCell>
                                 <TableCell align="right">Admin</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
-                            {Object.entries(users).map(([id, user], index) => {
+                            {Object.entries(resources).map(([id, user], index) => {
                                     const isItemSelected = isSelected(id);
                                     const labelId = `enhanced-table-checkbox-${index}`;
                                     return (
@@ -291,12 +308,11 @@ function Users({ client, user }: { client: Client, user: PlaygroundUser }): JSX.
                 </TableContainer>
                 {errorMessage &&
                 <ErrorSnackbar open={true} message={errorMessage} onClose={() => setErrorMessage(null)} />}
-                <UserCreationDialog show={showCreationDialog} onCreate={onCreate} onHide={() => setShowCreationDialog(false)} />
-            </Container>
-        );
-    } else {
-        return <EmptyPanel label="No users" />;
-    }
+                <UserCreationDialog show={showCreationDialog} onCreate={(id) => onCreate(id, setUsers)} onHide={() => setShowCreationDialog(false)} />
+            </>
+        )}
+        </Resources>
+    );
 }
 
 function DetailsPanel({ client }: { client: Client }): JSX.Element {
@@ -305,7 +321,7 @@ function DetailsPanel({ client }: { client: Client }): JSX.Element {
     useInterval(async () => {
         const { configuration } = await client.get();
         setConfiguration(configuration);
-    }, 10000);
+    }, 5000);
 
     return (
         <Container>
