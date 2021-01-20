@@ -87,7 +87,7 @@ impl Manager {
             let sessions_thread = self.clone().sessions.clone();
             if let Ok(mut sessions2) = sessions_thread.lock() {
                 let sessions3 = &mut sessions2.clone();
-                for (id, _) in sessions3 {
+                for id in sessions3.keys() {
                     match self.clone().get_session(&id) {
                         Ok(Some(session)) => {
                             // Deployed sessions are removed from the set
@@ -185,7 +185,7 @@ impl Manager {
     // Users
 
     pub fn get_user(self, id: &str) -> Result<Option<User>, String> {
-        new_runtime()?.block_on(self.clone().engine.get_user(&id))
+        new_runtime()?.block_on(self.engine.get_user(&id))
     }
 
     pub fn list_users(self) -> Result<BTreeMap<String, User>, String> {

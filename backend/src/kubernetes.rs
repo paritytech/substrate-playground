@@ -495,8 +495,7 @@ impl Engine {
             message: status.clone().message.unwrap_or_else(|| "".to_string()),
             start_time: status
                 .clone()
-                .start_time
-                .map_or(None, |dt| Some(dt.0.into())),
+                .start_time.and_then(|dt| Some(dt.0.into())),
         })
     }
 
@@ -526,7 +525,7 @@ impl Engine {
         let user = users.get(id);
 
         match user.map(|user| self.clone().yaml_to_user(&user)) {
-            Some(user) => user.map(|user| Some(user)),
+            Some(user) => user.map(Some),
             None => Ok(None),
         }
     }
