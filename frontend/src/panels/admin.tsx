@@ -184,7 +184,7 @@ function EnhancedTableToolbar({ label, selected = null, onCreate, onDelete }: { 
     );
 }
 
-function UserCreationDialog({ show, onCreate, onHide }: { show: boolean, onCreate: (id: string) => void, onHide: () => void }): JSX.Element {
+function UserCreationDialog({ users, show, onCreate, onHide }: { users: Record<string, User>, show: boolean, onCreate: (id: string) => void, onHide: () => void }): JSX.Element {
     const [value, setValue] = React.useState('');
 
     const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -204,7 +204,7 @@ function UserCreationDialog({ show, onCreate, onHide }: { show: boolean, onCreat
                         autoFocus
                         />
                     <ButtonGroup style={{alignSelf: "flex-end"}} size="small">
-                        <Button disabled={!value} onClick={() => {onCreate(value.toLowerCase()); onHide();}}>CREATE</Button>
+                        <Button disabled={!value || users[value]} onClick={() => {onCreate(value.toLowerCase()); onHide();}}>CREATE</Button>
                         <Button onClick={onHide}>CLOSE</Button>
                     </ButtonGroup>
                 </div>
@@ -308,7 +308,7 @@ function Users({ client, user }: { client: Client, user: PlaygroundUser }): JSX.
                 </TableContainer>
                 {errorMessage &&
                 <ErrorSnackbar open={true} message={errorMessage} onClose={() => setErrorMessage(null)} />}
-                <UserCreationDialog show={showCreationDialog} onCreate={(id) => onCreate(id, setUsers)} onHide={() => setShowCreationDialog(false)} />
+                <UserCreationDialog users={resources} show={showCreationDialog} onCreate={(id) => onCreate(id, setUsers)} onHide={() => setShowCreationDialog(false)} />
             </>
         )}
         </Resources>
