@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import marked from 'marked';
 import Button from '@material-ui/core/Button';
+import ButtonGroup from "@material-ui/core/ButtonGroup";
 import Card from '@material-ui/core/Card';
 import CardContent from '@material-ui/core/CardContent';
 import Container from "@material-ui/core/Container";
@@ -234,17 +235,17 @@ function ExistingSession({session, onStop, onConnect}: {session: Session, onStop
             </Container>
             <Divider orientation="horizontal" />
             <Container style={{display: "flex", flexDirection: "column", alignItems: "flex-end", paddingTop: 10, paddingBottom: 10}}>
-                <div>
-                <Button style={{marginRight: 10}} onClick={onStopClick} disabled={stopping} color="secondary" variant="outlined" disableElevation>
-                    Stop
-                </Button>
-                <Button onClick={() => onConnectClick(session)} disabled={stopping || session.pod.phase !== 'Running'} color="primary" variant="contained" disableElevation>
-                    Connect
-                </Button>
-                </div>
-                {errorMessage &&
-                <ErrorSnackbar open={true} message={errorMessage} onClose={() => setErrorMessage(null)} />}
+                <ButtonGroup style={{alignSelf: "flex-end"}} size="small">
+                    <Button onClick={onStopClick} disabled={stopping} color="secondary" disableElevation>
+                        Stop
+                    </Button>
+                    <Button onClick={() => onConnectClick(session)} disabled={stopping || session.pod.phase !== 'Running'} disableElevation>
+                        Connect
+                    </Button>
+                </ButtonGroup>
             </Container>
+            {errorMessage &&
+            <ErrorSnackbar open={true} message={errorMessage} onClose={() => setErrorMessage(null)} />}
         </>
     );
 }
