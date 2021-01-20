@@ -18,7 +18,7 @@ import TableRow from '@material-ui/core/TableRow';
 import Typography from '@material-ui/core/Typography';
 import { makeStyles, createStyles, Theme } from '@material-ui/core/styles';
 import { Client, NameValuePair, Port, Session, Template } from '@substrate/playground-client';
-import { ErrorMessage } from "../components";
+import { ErrorMessage, ErrorSnackbar } from "../components";
 import { useInterval } from "../hooks";
 
 const useStyles = makeStyles((theme: Theme) =>
@@ -31,14 +31,24 @@ const useStyles = makeStyles((theme: Theme) =>
     }),
 );
 
-function TemplateSelector({templates, onDeployed, onRetry}: {templates: Record<string, Template>, onDeployed: (name: string) => void, onRetry: () => void}): JSX.Element {
+function TemplateSelector({templates, onDeployed, onRetry}: {templates: Record<string, Template>, onDeployed: (template: string) => void, onRetry: () => void}): JSX.Element {
     const publicTemplates = Object.entries(templates).filter(([k, v]) => v.tags?.public == "true");
     const templatesAvailable = publicTemplates.length > 0;
     const [selection, select] = useState(templatesAvailable ? publicTemplates[0] : null);
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const classes = useStyles();
+
+    function onCreateClick(template: string): void {
+        try {
+            onDeployed(template);
+        } catch {
+            setErrorMessage("Failed to create a new session");
+        }
+    }
+
     if (selection) {
         return (
-            <React.Fragment>
+            <>
                 <Typography variant="h5" style={{padding: 20}}>Select a template</Typography>
                 <Divider orientation="horizontal" />
                 <Container style={{display: "flex", flex: 1, padding: 0, alignItems: "center", overflowY: "auto"}}>
@@ -64,11 +74,13 @@ function TemplateSelector({templates, onDeployed, onRetry}: {templates: Record<s
                 </Container>
                 <Divider orientation="horizontal" />
                 <Container style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", paddingTop: 10, paddingBottom: 10 }}>
-                    <Button onClick={() => onDeployed(selection[0])} color="primary" variant="contained" disableElevation disabled={!templatesAvailable}>
+                    <Button onClick={() => onCreateClick(selection[0])} color="primary" variant="contained" disableElevation disabled={!templatesAvailable}>
                         Create
                     </Button>
                 </Container>
-            </React.Fragment>
+                {errorMessage &&
+                <ErrorSnackbar open={true} message={errorMessage} onClose={() => setErrorMessage(null)} />}
+            </>
         );
     } else {
         return (
@@ -193,8 +205,28 @@ export function SessionDetails({ session }: {session: Session}): JSX.Element {
 
 function ExistingSession({session, onStop, onConnect}: {session: Session, onStop: () => void, onConnect: (session: Session) => void}): JSX.Element {
     const [stopping, setStopping] = useState(false);
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+    function onConnectClick(session: Session): void {
+        try {
+            onConnect(session);
+        } catch {
+            setErrorMessage("Failed to connect to the session");
+        }
+    }
+
+    function onStopClick(): void {
+        try {
+            setStopping(true);
+            onStop();
+        } catch {
+            setStopping(false);
+            setErrorMessage("Failed to stop the session");
+        }
+    }
+
     return (
-        <React.Fragment>
+        <>
             <Typography variant="h5" style={{padding: 20}}>Existing session</Typography>
             <Divider orientation="horizontal" />
             <Container style={{display: "flex", flex: 1, padding: 0, justifyContent: "center", alignItems: "center", overflowY: "auto"}}>
@@ -203,15 +235,17 @@ function ExistingSession({session, onStop, onConnect}: {session: Session, onStop
             <Divider orientation="horizontal" />
             <Container style={{display: "flex", flexDirection: "column", alignItems: "flex-end", paddingTop: 10, paddingBottom: 10}}>
                 <div>
-                <Button style={{marginRight: 10}} onClick={() => { setStopping(true); onStop();}} disabled={stopping} color="secondary" variant="outlined" disableElevation>
+                <Button style={{marginRight: 10}} onClick={onStopClick} disabled={stopping} color="secondary" variant="outlined" disableElevation>
                     Stop
                 </Button>
-                <Button onClick={() => onConnect(session)} disabled={session.pod.phase !== 'Running'} color="primary" variant="contained" disableElevation>
+                <Button onClick={() => onConnectClick(session)} disabled={stopping || session.pod.phase !== 'Running'} color="primary" variant="contained" disableElevation>
                     Connect
                 </Button>
                 </div>
+                {errorMessage &&
+                <ErrorSnackbar open={true} message={errorMessage} onClose={() => setErrorMessage(null)} />}
             </Container>
-        </React.Fragment>
+        </>
     );
 }
 
