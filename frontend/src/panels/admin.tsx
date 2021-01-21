@@ -249,7 +249,7 @@ function Users({ client, user }: { client: Client, user: PlaygroundUser }): JSX.
 
     async function onCreate(id: string, conf: UserConfiguration, setUsers: Dispatch<SetStateAction<Record<string, User> | null>>): Promise<void> {
         try {
-            await client.createOrUpdateUser(id, conf);
+            await client.createUser(id, conf);
             setUsers((users: Record<string, User> | null) => {
                 if (users) {
                     users[id] = conf;

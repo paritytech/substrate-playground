@@ -20,7 +20,7 @@ function MainPanel({ client, user, params, id, templates, onConnect, onDeployed,
                         await client.deleteCurrentSession();
                     }}
                     onDeployed={async template => {
-                        await client.createOrUpdateCurrentSession({template: template});
+                        await client.createCurrentSession({template: template});
                         onDeployed();
                     }}
                     onConnect={onConnect} />;

@@ -2,10 +2,10 @@
 # yarn lockfile v1
 
 
-"@substrate/playground-client@1.2.0":
-  version "1.2.0"
-  resolved "https://registry.yarnpkg.com/@substrate/playground-client/-/playground-client-1.2.0.tgz#bb5967141613e085eee53a6bfbba01219b20d070"
-  integrity sha512-f8B2NOvmJP1P1RfYKH7y6tePmGnnsjjjkkdEvgRUShWRkG/vL6VXkPhzZ1KfgE9LPp96brCPqpenoX6YwKfU/w==
+"@substrate/playground-client@1.3.0":
+  version "1.3.0"
+  resolved "https://registry.yarnpkg.com/@substrate/playground-client/-/playground-client-1.3.0.tgz#a8fff299124a11c936874f5328ce8f3cc325e95f"
+  integrity sha512-1VQ0GAvOCyJaUHzBK+q9cib4tqO+yiDXEG0UzCdmqRPXcGSz7zRcXtnAbHVmqp7IHIqYK+n6oKFUU0cujYhjQA==
 
 "@types/node@14.14.22":
   version "14.14.22"

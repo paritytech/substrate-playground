@@ -53,7 +53,7 @@ export function TheiaPanel({ client, autoDeploy, templates, onMissingSession, on
                         if (session) {
                             setData({ type: "ERROR", value: "A session is still active", action: onMissingSession});
                         } else {
-                            client.createOrUpdateCurrentSession({template: autoDeploy}).then(fetchData);
+                            client.createCurrentSession({template: autoDeploy}).then(fetchData);
                         }
                     })
                 } catch {
