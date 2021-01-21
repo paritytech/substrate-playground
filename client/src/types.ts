@@ -37,6 +37,10 @@ export interface UserConfiguration {
     canCustomizeDuration: boolean,
 }
 
+export interface UserUpdateConfiguration {
+    admin: boolean,
+    canCustomizeDuration: boolean,
+}
 export interface Session {
     user: String,
     url: string,
@@ -48,6 +52,11 @@ export interface Session {
 
 export interface SessionConfiguration {
     template: string,
+    /* The number of minutes this session will be able to last */
+    duration?: number,
+}
+
+export interface SessionUpdateConfiguration {
     /* The number of minutes this session will be able to last */
     duration?: number,
 }

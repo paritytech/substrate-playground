@@ -32,6 +32,14 @@ pub struct UserConfiguration {
     pub can_customize_duration: bool,
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct UserUpdateConfiguration {
+    pub admin: bool,
+    #[serde(default = "default_as_false")]
+    pub can_customize_duration: bool,
+}
+
 impl UserConfiguration {
     pub fn parse(s: &str) -> Result<Self, String> {
         from_str(s).map_err(|err| format!("{}", err))

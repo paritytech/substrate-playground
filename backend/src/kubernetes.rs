@@ -1,7 +1,10 @@
 //! Find more details here:
 //! * https://docs.rs/k8s-openapi/0.5.1/k8s_openapi/api/core/v1/struct.ServiceStatus.html
 //! * https://docs.rs/k8s-openapi/0.5.1/k8s_openapi/api/core/v1/struct.ServiceSpec.html
-use crate::user::{User, UserConfiguration};
+use crate::{
+    session::SessionUpdateConfiguration,
+    user::{User, UserConfiguration, UserUpdateConfiguration},
+};
 use crate::{
     session::{Session, SessionConfiguration, SessionDefaults},
     template::Template,
@@ -383,12 +386,6 @@ mod system_time {
     }
 }
 
-fn get_session_duration(conf: Configuration, session_conf: SessionConfiguration) -> Duration {
-    session_conf
-        .duration
-        .unwrap_or(conf.session_defaults.duration)
-}
-
 fn patch_to_vec(op: &str, path: &str, value: Option<&str>) -> Result<Vec<u8>, String> {
     let json = match value {
         Some(value) => serde_json::json!([{
@@ -402,6 +399,11 @@ fn patch_to_vec(op: &str, path: &str, value: Option<&str>) -> Result<Vec<u8>, St
         }]),
     };
     serde_json::to_vec(&json).map_err(error_to_string)
+}
+
+fn session_id(id: &str) -> String {
+    // Create a unique ID for this session. Use lowercase to make sure the result can be used as part of a DNS
+    id.to_string().to_lowercase()
 }
 
 impl Engine {
@@ -540,11 +542,7 @@ impl Engine {
             .collect::<Result<BTreeMap<String, User>, String>>()?)
     }
 
-    pub async fn create_or_update_user(
-        self,
-        id: String,
-        user: UserConfiguration,
-    ) -> Result<User, String> {
+    pub async fn create_user(self, id: String, user: UserConfiguration) -> Result<(), String> {
         let config = config().await?;
         let client = Client::new(config);
 
@@ -559,10 +557,29 @@ impl Engine {
         )
         .await?;
 
-        Ok(User {
-            admin: user.admin,
-            can_customize_duration: user.can_customize_duration,
-        })
+        Ok(())
+    }
+
+    pub async fn update_user(
+        self,
+        id: String,
+        user: UserUpdateConfiguration,
+    ) -> Result<(), String> {
+        let config = config().await?;
+        let client = Client::new(config);
+
+        add_config_map_value(
+            client,
+            &self.env.namespace,
+            USERS_CONFIG_MAP,
+            id.as_str(),
+            serde_yaml::to_string(&user)
+                .map_err(error_to_string)?
+                .as_str(),
+        )
+        .await?;
+
+        Ok(())
     }
 
     pub async fn delete_user(self, id: String) -> Result<(), String> {
@@ -571,11 +588,11 @@ impl Engine {
         delete_config_map_value(client, &self.env.namespace, USERS_CONFIG_MAP, id.as_str()).await
     }
 
-    pub async fn get_session(self, username: &str) -> Result<Option<Session>, String> {
+    pub async fn get_session(self, id: &str) -> Result<Option<Session>, String> {
         let config = config().await?;
         let client = Client::new(config);
         let pod_api: Api<Pod> = Api::namespaced(client, &self.env.namespace);
-        let pod = pod_api.get(&pod_name(username)).await.ok();
+        let pod = pod_api.get(&pod_name(id)).await.ok();
 
         match pod.map(|pod| self.clone().pod_to_session(&self.env, &pod)) {
             Some(session) => session.map(Some),
@@ -634,11 +651,7 @@ impl Engine {
         Ok(())
     }
 
-    pub async fn create_session(
-        self,
-        session_uuid: String,
-        conf: SessionConfiguration,
-    ) -> Result<Session, String> {
+    pub async fn create_session(self, id: &str, conf: SessionConfiguration) -> Result<(), String> {
         let config = config().await?;
         let client = Client::new(config);
         // Access the right image id
@@ -656,41 +669,49 @@ impl Engine {
         // With the proper mapping
         // Define the correct route
         // Also deploy proper tcp mapping configmap https://kubernetes.github.io/ingress-nginx/user-guide/exposing-tcp-udp-services/
+        let session_id = session_id(id);
+
         let mut sessions = BTreeMap::new();
-        sessions.insert(session_uuid.clone(), template);
+        sessions.insert(session_id.clone(), template);
         self.patch_ingress(sessions).await?;
 
+        let duration = conf
+            .duration
+            .unwrap_or(self.configuration.session_defaults.duration);
         // Deploy a new pod for this image
-        let pod = pod_api
+        pod_api
             .create(
                 &PostParams::default(),
-                &create_pod(
-                    &self.env,
-                    &session_uuid.clone(),
-                    template,
-                    &get_session_duration(self.clone().configuration, conf),
-                ),
+                &create_pod(&self.env, &session_id.clone(), template, &duration),
             )
             .await
             .map_err(error_to_string)?;
 
         // Deploy the associated service
         let service_api: Api<Service> = Api::namespaced(client.clone(), namespace);
-        let service = create_service(&session_uuid.clone(), template);
+        let service = create_service(&session_id.clone(), template);
         service_api
             .create(&PostParams::default(), &service)
             .await
             .map_err(error_to_string)?;
 
-        Ok(self.clone().pod_to_session(&self.env, &pod)?)
+        Ok(())
     }
 
     pub async fn update_session(
         self,
-        session: Session,
-        conf: SessionConfiguration,
-    ) -> Result<Session, String> {
-        let duration = get_session_duration(self.configuration, conf);
+        id: &str,
+        conf: SessionUpdateConfiguration,
+    ) -> Result<(), String> {
+        let session = self
+            .clone()
+            .get_session(&session_id(id))
+            .await?
+            .ok_or("No existing session".to_string())?;
+
+        let duration = conf
+            .duration
+            .unwrap_or(self.configuration.session_defaults.duration);
         if duration != session.duration {
             let config = config().await?;
             let client = Client::new(config);
@@ -713,43 +734,26 @@ impl Engine {
                 .map_err(error_to_string)?;
         }
 
-        Ok(Session {
-            duration,
-            ..session
-        })
+        Ok(())
     }
 
-    pub async fn create_or_update_session(
-        self,
-        username: &str,
-        conf: SessionConfiguration,
-    ) -> Result<Session, String> {
-        // Create a unique ID for this session. Use lowercase to make sure the result can be used as part of a DNS
-        let session_uuid = username.to_string().to_lowercase();
-        if let Ok(Some(session)) = self.clone().get_session(&session_uuid.clone()).await {
-            self.update_session(session, conf).await
-        } else {
-            self.create_session(session_uuid, conf).await
-        }
-    }
-
-    pub async fn delete_session(self, username: &str) -> Result<(), String> {
+    pub async fn delete_session(self, id: &str) -> Result<(), String> {
         // Undeploy the service by its id
         let config = config().await?;
         let client = Client::new(config);
         let service_api: Api<Service> = Api::namespaced(client.clone(), &self.env.namespace);
         service_api
-            .delete(&service_name(username), &DeleteParams::default())
+            .delete(&service_name(id), &DeleteParams::default())
             .await
             .map_err(|s| format!("Error {}", s))?;
 
         let pod_api: Api<Pod> = Api::namespaced(client.clone(), &self.env.namespace);
         pod_api
-            .delete(&pod_name(username), &DeleteParams::default())
+            .delete(&pod_name(id), &DeleteParams::default())
             .await
             .map_err(|s| format!("Error {}", s))?;
 
-        let subdomain = subdomain(&self.env.host, username);
+        let subdomain = subdomain(&self.env.host, id);
         let ingress_api: Api<Ingress> = Api::namespaced(client, &self.env.namespace);
         let mut ingress: Ingress = ingress_api
             .get(INGRESS_NAME)

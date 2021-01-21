@@ -20,6 +20,13 @@ pub struct SessionConfiguration {
     pub duration: Option<Duration>,
 }
 
+#[derive(Deserialize, Clone, Debug)]
+pub struct SessionUpdateConfiguration {
+    #[serde(default)]
+    #[serde(with = "option_duration")]
+    pub duration: Option<Duration>,
+}
+
 #[derive(Serialize, Debug, Clone)]
 pub struct SessionDefaults {
     #[serde(with = "duration")]

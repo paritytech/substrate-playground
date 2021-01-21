@@ -1,4 +1,8 @@
-use crate::{kubernetes::Engine, session::SessionConfiguration};
+use crate::{
+    kubernetes::Engine,
+    session::{SessionConfiguration, SessionUpdateConfiguration},
+    user::UserUpdateConfiguration,
+};
 use crate::{
     kubernetes::Phase,
     user::{User, UserConfiguration},
@@ -30,7 +34,7 @@ fn running_sessions(sessions: Vec<Session>) -> Vec<Session> {
 pub struct Manager {
     pub engine: Engine,
     pub metrics: Metrics,
-    sessions: Arc<Mutex<BTreeMap<String, Session>>>,
+    sessions: Arc<Mutex<BTreeMap<String, ()>>>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -192,12 +196,12 @@ impl Manager {
         new_runtime()?.block_on(self.engine.list_users())
     }
 
-    pub fn create_or_update_user(
-        self,
-        id: String,
-        user: UserConfiguration,
-    ) -> Result<User, String> {
-        new_runtime()?.block_on(self.engine.create_or_update_user(id, user))
+    pub fn create_user(self, id: String, user: UserConfiguration) -> Result<(), String> {
+        new_runtime()?.block_on(self.engine.create_user(id, user))
+    }
+
+    pub fn update_user(self, id: String, user: UserUpdateConfiguration) -> Result<(), String> {
+        new_runtime()?.block_on(self.engine.update_user(id, user))
     }
 
     pub fn delete_user(self, id: String) -> Result<(), String> {
@@ -206,8 +210,8 @@ impl Manager {
 
     // Sessions
 
-    pub fn get_session(self, username: &str) -> Result<Option<Session>, String> {
-        new_runtime()?.block_on(self.engine.get_session(&username))
+    pub fn get_session(self, id: &str) -> Result<Option<Session>, String> {
+        new_runtime()?.block_on(self.engine.get_session(&id))
     }
 
     pub fn list_sessions(&self) -> Result<Vec<Session>, String> {
@@ -218,18 +222,11 @@ impl Manager {
         user.admin || user.can_customize_duration
     }
 
-    pub fn create_or_update_session(
-        self,
-        username: &str,
-        conf: SessionConfiguration,
-    ) -> Result<Session, String> {
+    pub fn create_session(self, id: &str, conf: SessionConfiguration) -> Result<(), String> {
         if conf.duration.is_some() {
             // Duration can only customized by users with proper rights
-            let user = self.clone().get_user(username)?.ok_or_else(|| {
-                format!(
-                    "Duration customization requires user but can't find {}",
-                    username
-                )
+            let user = self.clone().get_user(id)?.ok_or_else(|| {
+                format!("Duration customization requires user but can't find {}", id)
             })?;
             if !self.can_customize_duration(user) {
                 return Err("Only admin can customize a session duration".to_string());
@@ -237,28 +234,40 @@ impl Manager {
         }
 
         let template = conf.clone().template;
-        let result = new_runtime()?.block_on(self.engine.create_or_update_session(&username, conf));
+        let result = new_runtime()?.block_on(self.engine.create_session(id, conf));
         match result.clone() {
             Ok(session) => {
                 if let Ok(mut sessions) = self.sessions.lock() {
-                    sessions.insert(username.into(), session);
+                    sessions.insert(id.into(), session);
                 } else {
                     error!("Failed to acquire sessions lock");
                 }
-                self.metrics.inc_deploy_counter(&username, &template);
+                self.metrics.inc_deploy_counter(&id, &template);
             }
-            Err(_) => self
-                .metrics
-                .inc_deploy_failures_counter(&username, &template),
+            Err(_) => self.metrics.inc_deploy_failures_counter(&id, &template),
         }
         result
     }
 
-    pub fn delete_session(self, username: &str) -> Result<(), String> {
-        let result = new_runtime()?.block_on(self.engine.delete_session(&username));
+    pub fn update_session(self, id: &str, conf: SessionUpdateConfiguration) -> Result<(), String> {
+        if conf.duration.is_some() {
+            // Duration can only customized by users with proper rights
+            let user = self.clone().get_user(id)?.ok_or_else(|| {
+                format!("Duration customization requires user but can't find {}", id)
+            })?;
+            if !self.can_customize_duration(user) {
+                return Err("Only admin can customize a session duration".to_string());
+            }
+        }
+
+        new_runtime()?.block_on(self.engine.update_session(id, conf))
+    }
+
+    pub fn delete_session(self, id: &str) -> Result<(), String> {
+        let result = new_runtime()?.block_on(self.engine.delete_session(&id));
         match result {
-            Ok(_) => self.metrics.inc_undeploy_counter(&username),
-            Err(_) => self.metrics.inc_undeploy_failures_counter(&username),
+            Ok(_) => self.metrics.inc_undeploy_counter(&id),
+            Err(_) => self.metrics.inc_undeploy_failures_counter(&id),
         }
         result
     }

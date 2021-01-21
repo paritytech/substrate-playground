@@ -1,17 +1,20 @@
 //! HTTP endpoints exposed in /api context
-use crate::session::SessionConfiguration;
 use crate::user::{LoggedAdmin, LoggedUser, UserConfiguration};
 use crate::Context;
 use crate::{
     github::{token_validity, GitHubUser},
     kubernetes::Environment,
 };
+use crate::{
+    session::{SessionConfiguration, SessionUpdateConfiguration},
+    user::UserUpdateConfiguration,
+};
 use request::FormItems;
 use rocket::response::{content, status, Redirect};
 use rocket::{
     catch, delete, get,
     http::{Cookie, Cookies, SameSite, Status},
-    put, Outcome, State,
+    patch, put, Outcome, State,
 };
 use rocket::{
     http::uri::Origin,
@@ -125,27 +128,69 @@ pub fn get_user(state: State<'_, Context>, _admin: LoggedAdmin, id: String) -> J
     result_to_jsonrpc(manager.get_user(&id))
 }
 
+#[get("/users/<_id>", rank = 2)]
+pub fn get_user_unlogged(_id: String) -> status::Unauthorized<()> {
+    status::Unauthorized::<()>(None)
+}
+
 #[get("/users")]
 pub fn list_users(state: State<'_, Context>, _admin: LoggedAdmin) -> JsonValue {
     let manager = state.manager.clone();
     result_to_jsonrpc(manager.list_users())
 }
 
+#[get("/users", rank = 2)]
+pub fn list_users_unlogged() -> status::Unauthorized<()> {
+    status::Unauthorized::<()>(None)
+}
+
 #[put("/users/<id>", data = "<conf>")]
-pub fn create_or_update_user(
+pub fn create_user(
     state: State<'_, Context>,
     _admin: LoggedAdmin,
     id: String,
     conf: Json<UserConfiguration>,
 ) -> JsonValue {
     let manager = state.manager.clone();
-    result_to_jsonrpc(manager.create_or_update_user(id, conf.0))
+    result_to_jsonrpc(manager.create_user(id, conf.0))
+}
+
+#[put("/users/<_id>", data = "<_conf>", rank = 2)]
+pub fn create_user_unlogged(
+    _id: String,
+    _conf: Json<UserConfiguration>,
+) -> status::Unauthorized<()> {
+    status::Unauthorized::<()>(None)
+}
+
+#[patch("/users/<id>", data = "<conf>")]
+pub fn update_user(
+    state: State<'_, Context>,
+    _admin: LoggedAdmin,
+    id: String,
+    conf: Json<UserUpdateConfiguration>,
+) -> JsonValue {
+    let manager = state.manager.clone();
+    result_to_jsonrpc(manager.update_user(id, conf.0))
+}
+
+#[patch("/users/<_id>", data = "<_conf>", rank = 2)]
+pub fn update_user_unlogged(
+    _id: String,
+    _conf: Json<UserUpdateConfiguration>,
+) -> status::Unauthorized<()> {
+    status::Unauthorized::<()>(None)
 }
 
 #[delete("/users/<id>")]
 pub fn delete_user(state: State<'_, Context>, _admin: LoggedAdmin, id: String) -> JsonValue {
     let manager = state.manager.clone();
     result_to_jsonrpc(manager.delete_user(id))
+}
+
+#[delete("/users/<_id>", rank = 2)]
+pub fn delete_user_unlogged(_id: String) -> status::Unauthorized<()> {
+    status::Unauthorized::<()>(None)
 }
 
 // Current Session
@@ -156,14 +201,43 @@ pub fn get_current_session(state: State<'_, Context>, user: LoggedUser) -> JsonV
     result_to_jsonrpc(manager.get_session(&user.id))
 }
 
+#[get("/session", rank = 2)]
+pub fn get_current_session_unlogged() -> status::Unauthorized<()> {
+    status::Unauthorized::<()>(None)
+}
+
 #[put("/session", data = "<conf>")]
-pub fn create_or_update_current_session(
+pub fn create_current_session(
     state: State<'_, Context>,
     user: LoggedUser,
     conf: Json<SessionConfiguration>,
 ) -> JsonValue {
     let manager = state.manager.clone();
-    result_to_jsonrpc(manager.create_or_update_session(&user.id, conf.0))
+    result_to_jsonrpc(manager.create_session(&user.id, conf.0))
+}
+
+#[put("/session", data = "<_conf>", rank = 2)]
+pub fn create_current_session_unlogged(
+    _conf: Json<SessionConfiguration>,
+) -> status::Unauthorized<()> {
+    status::Unauthorized::<()>(None)
+}
+
+#[patch("/session", data = "<conf>")]
+pub fn update_current_session(
+    state: State<'_, Context>,
+    user: LoggedUser,
+    conf: Json<SessionUpdateConfiguration>,
+) -> JsonValue {
+    let manager = state.manager.clone();
+    result_to_jsonrpc(manager.update_session(&user.id, conf.0))
+}
+
+#[patch("/session", data = "<_conf>", rank = 2)]
+pub fn update_current_session_unlogged(
+    _conf: Json<SessionUpdateConfiguration>,
+) -> status::Unauthorized<()> {
+    status::Unauthorized::<()>(None)
 }
 
 #[delete("/session")]
@@ -185,33 +259,58 @@ pub fn list_sessions(state: State<'_, Context>, _admin: LoggedAdmin) -> JsonValu
     result_to_jsonrpc(manager.list_sessions())
 }
 
-#[put("/sessions/<username>", data = "<conf>")]
-pub fn create_or_update_session(
+#[get("/sessions", rank = 2)]
+pub fn list_sessions_unlogged() -> status::Unauthorized<()> {
+    status::Unauthorized::<()>(None)
+}
+
+#[put("/sessions/<id>", data = "<conf>")]
+pub fn create_session(
     state: State<'_, Context>,
     _admin: LoggedAdmin,
-    username: String,
+    id: String,
     conf: Json<SessionConfiguration>,
 ) -> JsonValue {
     let manager = state.manager.clone();
-    result_to_jsonrpc(manager.create_or_update_session(&username, conf.0))
+    result_to_jsonrpc(manager.create_session(&id, conf.0))
 }
 
-#[put("/sessions/<_username>", data = "<_conf>", rank = 2)]
-pub fn create_or_update_session_unlogged(
-    _username: String,
+#[put("/sessions/<_id>", data = "<_conf>", rank = 2)]
+pub fn create_session_unlogged(
+    _id: String,
     _conf: Json<SessionConfiguration>,
 ) -> status::Unauthorized<()> {
     status::Unauthorized::<()>(None)
 }
 
-#[delete("/sessions/<username>")]
-pub fn delete_session(
+#[patch("/sessions/<id>", data = "<conf>")]
+pub fn update_session(
     state: State<'_, Context>,
     _admin: LoggedAdmin,
-    username: String,
+    id: String,
+    conf: Json<SessionUpdateConfiguration>,
 ) -> JsonValue {
     let manager = state.manager.clone();
-    result_to_jsonrpc(manager.delete_session(&username))
+    result_to_jsonrpc(manager.update_session(&id, conf.0))
+}
+
+#[patch("/sessions/<_id>", data = "<_conf>", rank = 2)]
+pub fn update_session_unlogged(
+    _id: String,
+    _conf: Json<SessionConfiguration>,
+) -> status::Unauthorized<()> {
+    status::Unauthorized::<()>(None)
+}
+
+#[delete("/sessions/<id>")]
+pub fn delete_session(state: State<'_, Context>, _admin: LoggedAdmin, id: String) -> JsonValue {
+    let manager = state.manager.clone();
+    result_to_jsonrpc(manager.delete_session(&id))
+}
+
+#[delete("/sessions/<_id>", rank = 2)]
+pub fn delete_session_unlogged(_id: String) -> status::Unauthorized<()> {
+    status::Unauthorized::<()>(None)
 }
 
 // TODO Nodes / Pods
