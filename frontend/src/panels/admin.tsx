@@ -10,8 +10,9 @@ import DialogContent from '@material-ui/core/DialogContent';
 import DialogTitle from '@material-ui/core/DialogTitle';
 import FormControlLabel from '@material-ui/core/FormControlLabel';
 import IconButton from '@material-ui/core/IconButton';
-import CreateIcon from '@material-ui/icons/Create';
+import AddIcon from '@material-ui/icons/Add';
 import DeleteIcon from '@material-ui/icons/Delete';
+import EditIcon from '@material-ui/icons/Edit';
 import Paper from '@material-ui/core/Paper';
 import Tab from '@material-ui/core/Tab';
 import Table from '@material-ui/core/Table';
@@ -25,7 +26,7 @@ import TextField from '@material-ui/core/TextField';
 import Tooltip from '@material-ui/core/Tooltip';
 import Toolbar from '@material-ui/core/Toolbar';
 import Typography from '@material-ui/core/Typography';
-import { Client, Configuration, PlaygroundUser, Session, Template, User, UserConfiguration } from '@substrate/playground-client';
+import { Client, Configuration, PlaygroundUser, Session, Template, User, UserConfiguration, UserUpdateConfiguration } from '@substrate/playground-client';
 import { CenteredContainer, ErrorSnackbar, LoadingPanel } from '../components';
 import { useInterval } from '../hooks';
 
@@ -163,7 +164,7 @@ const useToolbarStyles = makeStyles((theme: Theme) =>
   }),
 );
 
-function EnhancedTableToolbar({ label, selected = null, onCreate, onDelete }: { label: string, selected?: string | null, onCreate?: () => void, onDelete?: () => void}): JSX.Element {
+function EnhancedTableToolbar({ label, selected = null, onCreate, onUpdate, onDelete }: { label: string, selected?: string | null, onCreate?: () => void, onUpdate?: () => void, onDelete?: () => void}): JSX.Element {
     const classes = useToolbarStyles();
     return (
         <Toolbar
@@ -174,19 +175,30 @@ function EnhancedTableToolbar({ label, selected = null, onCreate, onDelete }: { 
         <Typography className={classes.title} variant="h6" id="tableTitle" component="div">
             {label}
         </Typography>
-        {selected ? (
+        {selected ?
+        <>
+            {onUpdate &&
+            <Tooltip title="Update">
+                <IconButton aria-label="update" onClick={onUpdate}>
+                    <EditIcon />
+                </IconButton>
+            </Tooltip>}
+            {onDelete &&
             <Tooltip title="Delete">
-            <IconButton aria-label="delete" onClick={onDelete}>
-                <DeleteIcon />
-            </IconButton>
-            </Tooltip>
-        ) : onCreate ? (
-            <Tooltip title="Create">
-            <IconButton aria-label="create" onClick={onCreate}>
-                <CreateIcon />
-            </IconButton>
-            </Tooltip>
-        ) : <></>}
+                <IconButton aria-label="delete" onClick={onDelete}>
+                    <DeleteIcon />
+                </IconButton>
+            </Tooltip>}
+        </>
+        : <>
+          {onCreate &&
+           <Tooltip title="Create">
+           <IconButton aria-label="create" onClick={onCreate}>
+               <AddIcon />
+           </IconButton>
+           </Tooltip>}
+          </>
+        }
         </Toolbar>
     );
 }
@@ -233,10 +245,59 @@ function UserCreationDialog({ users, show, onCreate, onHide }: { users: Record<s
     );
 }
 
+function UserUpdateDialog({ id, admin, canCustomizeDuration, show, onUpdate, onHide }: { id: string, admin: boolean, canCustomizeDuration: boolean, show: boolean, onUpdate: (id: string, conf: UserUpdateConfiguration) => void, onHide: () => void }): JSX.Element {
+    const [adminChecked, setAdminChecked] = React.useState(false);
+    const [durationChecked, setDurationChecked] = React.useState(false);
+
+    React.useEffect(() => {
+        setAdminChecked(admin);
+        setDurationChecked(canCustomizeDuration);
+    }, [admin, canCustomizeDuration]);
+
+    function reset(): void {
+        setAdminChecked(false);
+        setDurationChecked(false);
+    }
+    const handleAdminChange = (event: React.ChangeEvent<HTMLInputElement>) => setAdminChecked(event.target.checked);
+    const handleDurationChange = (event: React.ChangeEvent<HTMLInputElement>) => setDurationChecked(event.target.checked);
+    return (
+        <Dialog open={show} maxWidth="md">
+            <DialogTitle>User details</DialogTitle>
+            <DialogContent>
+                <Container style={{display: "flex", flexDirection: "column"}}>
+                    <FormControlLabel
+                        control={
+                            <Checkbox
+                                checked={adminChecked}
+                                onChange={handleAdminChange}
+                                />
+                        }
+                        label="Is admin"
+                    />
+                    <FormControlLabel
+                        control={
+                            <Checkbox
+                                checked={durationChecked}
+                                onChange={handleDurationChange}
+                                />
+                        }
+                        label="Can Customize duration"
+                    />
+                    <ButtonGroup style={{alignSelf: "flex-end", marginTop: 20}} size="small">
+                        <Button disabled={ adminChecked == admin && durationChecked == canCustomizeDuration} onClick={() => {reset(); onUpdate(id.toLowerCase(), {admin: adminChecked, canCustomizeDuration: durationChecked}); onHide();}}>UPDATE</Button>
+                        <Button onClick={onHide}>CLOSE</Button>
+                    </ButtonGroup>
+                </Container>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
 function Users({ client, user }: { client: Client, user: PlaygroundUser }): JSX.Element {
     const classes = useStyles();
     const [selected, setSelected] = useState<string | null>(null);
     const [showCreationDialog, setShowCreationDialog] = useState(false);
+    const [showUpdateDialog, setShowUpdateDialog] = useState(false);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const isSelected = (name: string) => selected == name;
     const handleClick = (_event: React.MouseEvent<unknown>, name: string) => {
@@ -259,6 +320,21 @@ function Users({ client, user }: { client: Client, user: PlaygroundUser }): JSX.
         } catch (e) {
             console.error(e);
             setErrorMessage("Failed to create user");
+        }
+    }
+
+    async function onUpdate(id: string, conf: UserUpdateConfiguration, setUsers: Dispatch<SetStateAction<Record<string, User> | null>>): Promise<void> {
+        try {
+            await client.updateUser(id, conf);
+            setUsers((users: Record<string, User> | null) => {
+                if (users) {
+                    users[id] = conf;
+                }
+                return {...users};
+            });
+        } catch (e) {
+            console.error(e);
+            setErrorMessage("Failed to update user");
         }
     }
 
@@ -287,7 +363,7 @@ function Users({ client, user }: { client: Client, user: PlaygroundUser }): JSX.
         <Resources<User> label="Users" callback={async () => await client.listUsers()}>
         {(resources: Record<string, User>, setUsers: Dispatch<SetStateAction<Record<string, User> | null>>) => (
             <>
-                <EnhancedTableToolbar label="Users" selected={selected} onCreate={() => setShowCreationDialog(true)} onDelete={() => onDelete(setUsers)} />
+                <EnhancedTableToolbar label="Users" selected={selected} onCreate={() => setShowCreationDialog(true)} onUpdate={() => setShowUpdateDialog(true)} onDelete={() => onDelete(setUsers)} />
                 <TableContainer component={Paper}>
                     <Table className={classes.table} aria-label="simple table">
                         <TableHead>
@@ -330,6 +406,8 @@ function Users({ client, user }: { client: Client, user: PlaygroundUser }): JSX.
                 {errorMessage &&
                 <ErrorSnackbar open={true} message={errorMessage} onClose={() => setErrorMessage(null)} />}
                 <UserCreationDialog users={resources} show={showCreationDialog} onCreate={(id, conf) => onCreate(id, conf, setUsers)} onHide={() => setShowCreationDialog(false)} />
+                {selected &&
+                <UserUpdateDialog id={selected} admin={resources[selected].admin} canCustomizeDuration={resources[selected].canCustomizeDuration} show={showUpdateDialog} onUpdate={(id, conf) => onUpdate(id, conf, setUsers)} onHide={() => setShowUpdateDialog(false)} />}
             </>
         )}
         </Resources>
