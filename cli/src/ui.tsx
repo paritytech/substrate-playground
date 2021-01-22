@@ -8,6 +8,7 @@ import Gradient from 'ink-gradient';
 import BigText from 'ink-big-text';
 import Link from 'ink-link';
 import Spinner from 'ink-spinner';
+import { Item } from 'ink-select-input/build/SelectInput';
 
 function dockerRun(image: string, web: boolean, port: number): ChildProcessWithoutNullStreams {
 	if (web) {
@@ -17,10 +18,10 @@ function dockerRun(image: string, web: boolean, port: number): ChildProcessWitho
 	}
 }
 
-function TemplateSelector({ templates, onSelect }: {templates: Template[], onSelect: (item) => void}): JSX.Element {
-	const items = templates.filter(t => t.tags?.public).map(t => {return {label: t.name, value: t.name, template: t}});
+function TemplateSelector({ templates, onSelect }: {templates: Record<string, Template>, onSelect: (item: Item<Template>) => void}): JSX.Element {
+	const items = Object.entries(templates).filter(([_, t]) => t.tags?.public).map(([id, t]) => {return {key: id, label: t.name, value: t}});
 	const [description, setDescription] = useState(templates[0].description);
-	const handleHighlight = item => setDescription(item.template.description);
+	const handleHighlight = (item: Item<Template>) => setDescription(item.value.description);
 	return (
 		<Box flexDirection="column" margin={2}>
 			<Text>Select a template:</Text>
@@ -105,8 +106,8 @@ enum State {
     ERROR_PORT_ALREADY_USED
 }
 
-function App({web, port, env, template, templates, debug}: {web: boolean, port: number, env: EnvironmentType, template: string, templates: Template[], debug: boolean}): JSX.Element {
-	const defaultemplate = templates.find(t => t.name == template);
+function App({web, port, env, template, templates, debug}: {web: boolean, port: number, env: EnvironmentType, template: string, templates: Record<string, Template>, debug: boolean}): JSX.Element {
+	const defaultemplate = templates[template];
 	const [state, setState] = useState(() => {
         if (template && !defaultemplate) {
             return State.ERROR_UNKNOWN_TEMPLATE;
@@ -119,11 +120,12 @@ function App({web, port, env, template, templates, debug}: {web: boolean, port: 
 	useEffect(() => {
 		function deploy(template: Template) {
 			setState(State.INIT);
-            const tag = template.image.split(":").slice(-1)[0];
-			const image = `paritytech/substrate-playground-template-${template.name}${web?"-theia":""}:${tag}`;
-			if(debug) {
+
+			const image = web ? template.image.replace(":", "-theia:") : template.image;
+			if (debug) {
 				console.log(`Using image ${image}`);
 			}
+
 			const p = dockerRun(image, web, port);
 			if (p.stderr) {
 				p.stderr.on('data', data => {
@@ -157,19 +159,20 @@ function App({web, port, env, template, templates, debug}: {web: boolean, port: 
 	}, [selectedTemplate]);
 
 	return (
-	<Box flexDirection="column">
-
 		<Box flexDirection="column">
-			<Gradient name="rainbow">
-				<BigText text="Playground"/>
-			</Gradient>
-			<Text>Locally deploy a playground <Text bold>template</Text> from CLI (<Text bold color="green">{env}</Text>)</Text>
-		</Box>
 
-		{state
-		? <Status state={state} web={web} templateId={template || (selectedTemplate && selectedTemplate.name)} port={port} />
-		: <TemplateSelector templates={templates} onSelect={item => setTemplate(item.template)} />}
-	</Box>);
+			<Box flexDirection="column">
+				<Gradient name="rainbow">
+					<BigText text="Playground"/>
+				</Gradient>
+				<Text>Locally deploy a playground <Text bold>template</Text> from CLI (<Text bold color="green">{env}</Text>)</Text>
+			</Box>
+
+			{state
+			? <Status state={state} web={web} templateId={template || (selectedTemplate && selectedTemplate.name)} port={port} />
+			: <TemplateSelector templates={templates} onSelect={item => setTemplate(item.value)} />}
+		</Box>
+	);
 };
 
 export function ui(object): React.ReactNode {
