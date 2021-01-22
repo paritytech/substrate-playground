@@ -33,8 +33,10 @@ substrate-playground --web --template=node-template
 # Publish
 
 ```shell
-npm add-user
-npm publish --access public
+git pull --rebase
+yarn clean && yarn && yarn build
+yarn login
+yarn publish
 ```
 
 # Development

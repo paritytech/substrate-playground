@@ -21,7 +21,10 @@
   "scripts": {
     "build": "tsc --jsx react",
     "start": "node dist/index.js",
-    "clean": "rm -rf dist/ node_modules/ yarn.lock"
+    "clean": "rm -rf dist/ node_modules/ yarn.lock",
+    "preversion": "test -z \"$(git diff-index --name-only HEAD --)\"",
+    "postversion": "git push --tags && git push && echo \"Successfully released version $npm_package_version!\"",
+    "release": "yarn version"
   },
   "dependencies": {
     "@substrate/playground-client": "1.3.2",
