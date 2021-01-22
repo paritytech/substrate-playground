@@ -9,7 +9,7 @@ import { StatsPanel } from './panels/stats';
 import { TermsPanel } from './panels/terms';
 import { TheiaPanel } from './panels/theia';
 import { LoadingPanel, Wrapper } from './components';
-import { useLifecycle, Events, PanelId, Params, States } from './lifecycle';
+import { useLifecycle, Events, PanelId, States } from './lifecycle';
 import { terms } from "./terms";
 
 function MainPanel({ client, user, params, id, templates, onConnect, onDeployed, restartAction }: { client: Client, user: PlaygroundUser, params: Params, id: PanelId, templates: Record<string, Template>, restartAction: () => void, onConnect: () => void, onDeployed: () => void}): JSX.Element {
@@ -33,8 +33,8 @@ function MainPanel({ client, user, params, id, templates, onConnect, onDeployed,
       }
 }
 
-function App({ base, params }: { base: string, params: Params }): JSX.Element {
-    const client = new Client(base, {credentials: "include"});
+function App({ params }: { params: Params }): JSX.Element {
+    const client = new Client(params.base, {credentials: "include"});
     const { deploy } = params;
     const [state, send] = useLifecycle(client, deploy? PanelId.Theia: PanelId.Session);
     const { panel, templates, user } = state.context;
@@ -64,16 +64,20 @@ function App({ base, params }: { base: string, params: Params }): JSX.Element {
     );
 }
 
+export interface Params {
+    version?: string,
+    deploy: string | null,
+    base: string,
+}
+
 function extractParams(): Params {
     const params = new URLSearchParams(window.location.search);
-    return {deploy: params.get('deploy')};
+    return {deploy: params.get('deploy'),
+            version: process.env.GITHUB_SHA,
+            base: process.env.BASE || "/api"};
 }
 
 function main(): void {
-    const base = process.env.BASE || "/api";
-    console.log(`Connected to: ${base}`);
-    console.log(`Version ${process.env.GITHUB_SHA}`);
-
     // Set domain to root DNS so that they share the same origin and communicate
     const members = document.domain.split(".");
     if (members.length > 1) {
@@ -81,7 +85,7 @@ function main(): void {
     }
 
     ReactDOM.render(
-        <App base={base} params={extractParams()} />,
+        <App params={extractParams()} />,
         document.querySelector("main")
     );
 }

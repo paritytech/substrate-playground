@@ -4,9 +4,6 @@ import { Client, PlaygroundUser, Template } from '@substrate/playground-client';
 import { approve, approved } from './terms';
 
 export enum PanelId {Session, Admin, Stats, Theia}
-export interface Params {
-    deploy?: string,
-}
 
 export interface Context {
   panel: PanelId,
