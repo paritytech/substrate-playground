@@ -4,7 +4,7 @@ import { Client, Template } from '@substrate/playground-client';
 import { CenteredContainer, ErrorMessage, Loading } from '../components';
 import { fetchWithTimeout } from '../utils';
 
-export function TheiaPanel({ client, autoDeploy, templates, onMissingSession, onSessionFailing, onSessionTimeout }: { client: Client, autoDeploy?: string, templates: Record<string, Template>, onMissingSession: () => void, onSessionFailing: () => void, onSessionTimeout: () => void }): JSX.Element {
+export function TheiaPanel({ client, autoDeploy, templates, onMissingSession, onSessionFailing, onSessionTimeout }: { client: Client, autoDeploy: string | null, templates: Record<string, Template>, onMissingSession: () => void, onSessionFailing: () => void, onSessionTimeout: () => void }): JSX.Element {
     const maxRetries = 5*60;
     const ref = useRef(null);
     const [data, setData] = useState({ type: "LOADING", phase: "Preparing", retry: 0, value: "", url: "" });

@@ -20,6 +20,7 @@ import Toolbar from '@material-ui/core/Toolbar';
 import Typography from '@material-ui/core/Typography';
 import { PlaygroundUser } from "@substrate/playground-client";
 import { useInterval } from './hooks';
+import { Params } from "./index";
 
 function wrapAction(action: (() => void) | Promise<void>, call: (flag: boolean) => void):(() => void) | Promise<void> {
     if (action instanceof Promise) {
@@ -237,7 +238,7 @@ function Nav({ onPlayground, onStatsClick, onAdminClick, onLogout, user }: { onP
     );
 }
 
-export function Wrapper({ thin = false, onPlayground, onStatsClick, onAdminClick, onLogout, user, children}: { thin?: boolean, onPlayground: () => void, onStatsClick: () => void, onAdminClick: () => void, onLogout: () => void, user?: PlaygroundUser, children: NonNullable<React.ReactNode>}): JSX.Element {
+export function Wrapper({ params, thin = false, onPlayground, onStatsClick, onAdminClick, onLogout, user, children}: { params: Params, thin?: boolean, onPlayground: () => void, onStatsClick: () => void, onAdminClick: () => void, onLogout: () => void, user?: PlaygroundUser, children: React.ReactElement}): JSX.Element {
     return (
         <div style={{display: "flex", flexDirection: "column", width: "inherit", height: "inherit"}}>
 
@@ -248,7 +249,11 @@ export function Wrapper({ thin = false, onPlayground, onStatsClick, onAdminClick
             </Fade>
 
             {!thin &&
-            <Container style={{display: "flex", justifyContent: "center"}} component="footer" maxWidth={false}>
+            <Container style={{display: "flex", justifyContent: "space-between", alignItems: "center"}} component="footer" maxWidth={false}>
+                <Typography color="textSecondary">
+                    {params.base != "/api" &&
+                    <>Connected to {params.base}</>}
+                </Typography>
                 <Link
                     href="https://www.parity.io/privacy/"
                     rel="noreferrer"
@@ -256,6 +261,9 @@ export function Wrapper({ thin = false, onPlayground, onStatsClick, onAdminClick
                     style={{ margin: 15 }}>
                     Privacy Policy
                 </Link>
+                <Typography color="textSecondary">
+                    #{params.version || 'UNKNOWN'}
+                </Typography>
             </Container>}
 
         </div>
