@@ -53,6 +53,8 @@ function StatusContent({state, web, templateId, port}: {state: State, web: boole
 			return <Text>No templates</Text>;
 		case State.ERROR_UNKNOWN_TEMPLATE:
 			return <Text>Unknown template <Text bold color="green">{templateId}</Text></Text>;
+        case State.ERROR_UNKNOWN_IMAGE:
+            return <Text>Unknown image</Text>;
 		case State.ERROR_PORT_ALREADY_USED:
 			return <Text>Port {port} already used!</Text>;
 		case State.INIT:
@@ -78,7 +80,8 @@ function StatusContent({state, web, templateId, port}: {state: State, web: boole
 
 function statusBorderColor(state: State): string {
 	switch (state) {
-		case State.ERROR_UNKNOWN_TEMPLATE:
+		case State.ERROR_UNKNOWN_IMAGE:
+        case State.ERROR_UNKNOWN_TEMPLATE:
 		case State.ERROR_NO_TEMPLATE:
 		case State.ERROR_PORT_ALREADY_USED:
 			return "red";
@@ -103,6 +106,7 @@ enum State {
     STARTED,
     ERROR_NO_TEMPLATE,
     ERROR_UNKNOWN_TEMPLATE,
+    ERROR_UNKNOWN_IMAGE,
     ERROR_PORT_ALREADY_USED
 }
 
@@ -121,7 +125,7 @@ function App({web, port, env, template, templates, debug}: {web: boolean, port: 
 		function deploy(template: Template) {
 			setState(State.INIT);
 
-			const image = web ? template.image.replace(":", "-theia:") : template.image;
+			const image = web ? template.image : template.image.replace("-theia", "");
 			if (debug) {
 				console.log(`Using image ${image}`);
 			}
@@ -130,7 +134,10 @@ function App({web, port, env, template, templates, debug}: {web: boolean, port: 
 			if (p.stderr) {
 				p.stderr.on('data', data => {
 					const s = data.toString();
-					if (s.match(/.*Ports are not available.*/)) {
+					if (s.match(/.*manifest unknown: manifest unknown.*/)) {
+						setState(State.ERROR_UNKNOWN_IMAGE);
+					}
+                    if (s.match(/.*Ports are not available.*/)) {
 						setState(State.ERROR_PORT_ALREADY_USED);
 					}
 				});
