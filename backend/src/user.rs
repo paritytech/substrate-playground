@@ -61,6 +61,7 @@ pub struct LoggedUser {
     pub id: String,
     pub avatar: String,
     pub admin: bool,
+    pub can_customize_duration: bool,
 }
 
 impl Display for LoggedUser {

@@ -42,6 +42,7 @@ pub struct PlaygroundUser {
     pub id: String,
     pub avatar: String,
     pub admin: bool,
+    pub can_customize_duration: bool,
 }
 
 #[derive(Serialize, Clone, Debug)]
@@ -170,6 +171,7 @@ impl Manager {
                 id: user.id,
                 avatar: user.avatar,
                 admin: user.admin,
+                can_customize_duration: user.can_customize_duration,
             }),
             env: self.engine.env,
             configuration: self.engine.configuration,

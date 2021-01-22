@@ -57,6 +57,7 @@ fn request_to_user<'a, 'r>(request: &'a Request<'r>) -> request::Outcome<LoggedU
                     id: id.clone(),
                     avatar: gh_user.avatar_url,
                     admin: user.map_or(false, |user| user.admin),
+                    can_customize_duration: user.map_or(false, |user| user.can_customize_duration),
                 })
             } else {
                 Outcome::Failure((Status::Forbidden, "User is not whitelisted"))

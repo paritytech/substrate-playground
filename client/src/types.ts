@@ -25,6 +25,7 @@ export interface PlaygroundUser {
     id: string,
     avatar: string,
     admin: boolean,
+    canCustomizeDuration: boolean,
 }
 
 export interface User {
