@@ -21,7 +21,8 @@ const argv: Arguments = yargs(process.argv.slice(2))
 		'web': {
 			alias: 'w',
 			describe: 'enable web IDE',
-			type: 'boolean'
+			type: 'boolean',
+            default: true
 		},
 		'env': {
 			alias: 'e',
