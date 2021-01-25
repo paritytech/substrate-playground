@@ -17,7 +17,7 @@ use k8s_openapi::api::extensions::v1beta1::{
 };
 use k8s_openapi::apimachinery::pkg::{apis::meta::v1::ObjectMeta, util::intstr::IntOrString};
 use kube::{
-    api::{Api, DeleteParams, ListParams, Meta, PatchParams, PatchStrategy, PostParams},
+    api::{Api, DeleteParams, ListParams, Meta, Patch, PatchParams, PostParams},
     config::KubeConfigOptions,
     Client, Config,
 };
@@ -260,14 +260,17 @@ async fn add_config_map_value(
 ) -> Result<(), String> {
     let config_map_api: Api<ConfigMap> = Api::namespaced(client, namespace);
     let params = PatchParams {
-        patch_strategy: PatchStrategy::JSON,
         ..PatchParams::default()
     };
     config_map_api
         .patch(
             name,
             &params,
-            patch_to_vec("add", format!("/data/{}", key).as_str(), Some(value))?,
+            &Patch::Merge(patch_to_vec(
+                "add",
+                format!("/data/{}", key).as_str(),
+                Some(value),
+            )),
         )
         .await
         .map_err(error_to_string)?;
@@ -287,14 +290,17 @@ async fn delete_config_map_value(
 ) -> Result<(), String> {
     let config_map_api: Api<ConfigMap> = Api::namespaced(client, namespace);
     let params = PatchParams {
-        patch_strategy: PatchStrategy::JSON,
         ..PatchParams::default()
     };
     config_map_api
         .patch(
             name,
             &params,
-            patch_to_vec("remove", format!("/data/{}", key).as_str(), None)?,
+            &Patch::Merge(patch_to_vec(
+                "remove",
+                format!("/data/{}", key).as_str(),
+                None,
+            )),
         )
         .await
         .map_err(error_to_string)?;
@@ -386,8 +392,8 @@ mod system_time {
     }
 }
 
-fn patch_to_vec(op: &str, path: &str, value: Option<&str>) -> Result<Vec<u8>, String> {
-    let json = match value {
+fn patch_to_vec(op: &str, path: &str, value: Option<&str>) -> serde_json::Value {
+    match value {
         Some(value) => serde_json::json!([{
             "op": op,
             "path": path,
@@ -397,8 +403,7 @@ fn patch_to_vec(op: &str, path: &str, value: Option<&str>) -> Result<Vec<u8>, St
             "op": op,
             "path": path,
         }]),
-    };
-    serde_json::to_vec(&json).map_err(error_to_string)
+    }
 }
 
 fn session_id(id: &str) -> String {
@@ -707,7 +712,7 @@ impl Engine {
             .clone()
             .get_session(&session_id(id))
             .await?
-            .ok_or("No existing session".to_string())?;
+            .ok_or_else(|| "No existing session".to_string())?;
 
         let duration = conf
             .duration
@@ -717,18 +722,17 @@ impl Engine {
             let client = Client::new(config);
             let pod_api: Api<Pod> = Api::namespaced(client, &self.env.namespace);
             let params = PatchParams {
-                patch_strategy: PatchStrategy::JSON,
                 ..PatchParams::default()
             };
             pod_api
                 .patch(
                     &pod_name(&session.username),
                     &params,
-                    patch_to_vec(
+                    &Patch::Merge(patch_to_vec(
                         "add",
                         format!("/metadata/annotations/{}", SESSION_DURATION_ANNOTATION).as_str(),
                         Some(session_duration_annotation(duration).as_str()),
-                    )?,
+                    )),
                 )
                 .await
                 .map_err(error_to_string)?;
