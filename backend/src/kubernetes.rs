@@ -9,6 +9,7 @@ use crate::{
     session::{Session, SessionConfiguration, SessionDefaults},
     template::Template,
 };
+use json_patch::{AddOperation, PatchOperation, RemoveOperation};
 use k8s_openapi::api::core::v1::{
     ConfigMap, Container, EnvVar, Pod, PodSpec, Service, ServicePort, ServiceSpec,
 };
@@ -22,6 +23,7 @@ use kube::{
     Client, Config,
 };
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use serde_json::json;
 use std::{collections::BTreeMap, error::Error, time::Duration};
 use std::{env, str::FromStr, time::SystemTime};
 
@@ -262,16 +264,13 @@ async fn add_config_map_value(
     let params = PatchParams {
         ..PatchParams::default()
     };
+    let patch: Patch<json_patch::Patch> =
+        Patch::Json(json_patch::Patch(vec![PatchOperation::Add(AddOperation {
+            path: format!("/data/{}", key),
+            value: json!(value),
+        })]));
     config_map_api
-        .patch(
-            name,
-            &params,
-            &Patch::Merge(patch_to_vec(
-                "add",
-                format!("/data/{}", key).as_str(),
-                Some(value),
-            )),
-        )
+        .patch(name, &params, &patch)
         .await
         .map_err(error_to_string)?;
     Ok(())
@@ -292,16 +291,14 @@ async fn delete_config_map_value(
     let params = PatchParams {
         ..PatchParams::default()
     };
+    let patch: Patch<json_patch::Patch> =
+        Patch::Json(json_patch::Patch(vec![PatchOperation::Remove(
+            RemoveOperation {
+                path: format!("/data/{}", key),
+            },
+        )]));
     config_map_api
-        .patch(
-            name,
-            &params,
-            &Patch::Merge(patch_to_vec(
-                "remove",
-                format!("/data/{}", key).as_str(),
-                None,
-            )),
-        )
+        .patch(name, &params, &patch)
         .await
         .map_err(error_to_string)?;
     Ok(())
@@ -389,20 +386,6 @@ mod system_time {
             Some(value) => serializer.serialize_some(&value.as_secs()),
             None => serializer.serialize_none(),
         }
-    }
-}
-
-fn patch_to_vec(op: &str, path: &str, value: Option<&str>) -> serde_json::Value {
-    match value {
-        Some(value) => serde_json::json!([{
-            "op": op,
-            "path": path,
-            "value": value,
-        }]),
-        None => serde_json::json!([{
-            "op": op,
-            "path": path,
-        }]),
     }
 }
 
@@ -724,16 +707,13 @@ impl Engine {
             let params = PatchParams {
                 ..PatchParams::default()
             };
+            let patch: Patch<json_patch::Patch> =
+                Patch::Json(json_patch::Patch(vec![PatchOperation::Add(AddOperation {
+                    path: format!("/metadata/annotations/{}", SESSION_DURATION_ANNOTATION),
+                    value: json!(session_duration_annotation(duration)),
+                })]));
             pod_api
-                .patch(
-                    &pod_name(&session.username),
-                    &params,
-                    &Patch::Merge(patch_to_vec(
-                        "add",
-                        format!("/metadata/annotations/{}", SESSION_DURATION_ANNOTATION).as_str(),
-                        Some(session_duration_annotation(duration).as_str()),
-                    )),
-                )
+                .patch(&pod_name(&session.username), &params, &patch)
                 .await
                 .map_err(error_to_string)?;
         }
