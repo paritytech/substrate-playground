@@ -23,7 +23,7 @@ use std::{
 };
 use tokio::runtime::Runtime;
 
-fn running_sessions(sessions: Vec<Session>) -> Vec<Session> {
+fn running_sessions(sessions: Vec<&Session>) -> Vec<&Session> {
     sessions
         .into_iter()
         .filter(|session| session.pod.phase == Phase::Running)
@@ -65,7 +65,7 @@ impl Manager {
                 engine
                     .clone()
                     .patch_ingress(
-                        running_sessions(sessions)
+                        running_sessions(sessions.values().collect())
                             .iter()
                             .map(|i| (i.username.clone(), &i.template))
                             .collect(),
@@ -127,7 +127,7 @@ impl Manager {
             // Go through all Running pods and figure out if they have to be undeployed
             match self.clone().list_sessions() {
                 Ok(sessions) => {
-                    for session in running_sessions(sessions) {
+                    for session in running_sessions(sessions.values().collect()) {
                         if let Some(duration) =
                             &session.pod.start_time.and_then(|p| p.elapsed().ok())
                         {
@@ -216,7 +216,7 @@ impl Manager {
         new_runtime()?.block_on(self.engine.get_session(&id))
     }
 
-    pub fn list_sessions(&self) -> Result<Vec<Session>, String> {
+    pub fn list_sessions(&self) -> Result<BTreeMap<String, Session>, String> {
         new_runtime()?.block_on(self.clone().engine.list_sessions())
     }
 

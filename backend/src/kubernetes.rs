@@ -589,7 +589,7 @@ impl Engine {
     }
 
     /// Lists all currently running sessions
-    pub async fn list_sessions(&self) -> Result<Vec<Session>, String> {
+    pub async fn list_sessions(&self) -> Result<BTreeMap<String, Session>, String> {
         let config = config().await?;
         let client = Client::new(config);
         let pod_api: Api<Pod> = Api::namespaced(client, &self.env.namespace);
@@ -602,7 +602,8 @@ impl Engine {
         Ok(pods
             .iter()
             .flat_map(|pod| self.clone().pod_to_session(&self.env, pod).ok())
-            .collect())
+            .map(|session| (session.clone().username, session))
+            .collect::<BTreeMap<String, Session>>())
     }
 
     pub async fn patch_ingress(
