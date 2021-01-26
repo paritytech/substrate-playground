@@ -34,21 +34,14 @@ pub struct SessionDefaults {
 }
 
 mod option_duration {
-    use serde::{self, de::Error, Deserialize, Deserializer};
+    use serde::{self, Deserialize, Deserializer};
     use std::time::Duration;
 
     pub fn deserialize<'de, D>(deserializer: D) -> Result<Option<Duration>, D::Error>
     where
         D: Deserializer<'de>,
     {
-        let s = String::deserialize(deserializer)?;
-        match s.parse() {
-            Ok(res) => Ok(Some(Duration::from_secs(res) / 60)),
-            Err(e) => Err(Error::custom(format!(
-                "Failed to deserialize duration: {}",
-                e
-            ))),
-        }
+        Ok(Some(Duration::from_secs(u64::deserialize(deserializer)? * 60)))
     }
 }
 
