@@ -3,7 +3,7 @@ import { Client, EnvironmentType, playgroundBaseURL } from '@substrate/playgroun
 import 'cross-fetch/polyfill';
 import 'abort-controller/polyfill';
 
-const env: EnvironmentType = EnvironmentType[process.env.ENV] || EnvironmentType.dev;
+const env: EnvironmentType = process.env.ENV as EnvironmentType || EnvironmentType.dev;
 const client = new Client(playgroundBaseURL(env), {credentials: "include"});
 
 test('unauthenticated - should not be able to create a new session', async (t) => {
