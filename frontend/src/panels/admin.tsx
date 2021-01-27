@@ -84,7 +84,10 @@ function SessionCreationDialog({ conf, sessions, users, templates, show, onCreat
 
     const handleUserChange = (event: React.ChangeEvent<HTMLInputElement>) => setUser(event.target.value);
     const handleTemplateChange = (event: React.ChangeEvent<HTMLInputElement>) => setTemplate(event.target.value);
-    const handleDurationChange = (event: React.ChangeEvent<HTMLInputElement>) => setDuration(Number.parseInt(event.target.value));
+    const handleDurationChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const duration = Number.parseInt(event.target.value);
+        setDuration(Number.isNaN(duration)? 0 : duration);
+    };
     return (
         <Dialog open={show} onClose={onHide} maxWidth="md">
             <DialogTitle>Session details</DialogTitle>
@@ -144,9 +147,12 @@ function SessionUpdateDialog({ id, duration, show, onUpdate, onHide }: { id: str
 
     React.useEffect(() => {
         setDuration(duration);
-    }, [duration]);
+    }, []);
 
-    const handleDurationChange = (event: React.ChangeEvent<HTMLInputElement>) => setDuration(Number.parseInt(event.target.value));
+    const handleDurationChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const duration = Number.parseInt(event.target.value);
+        setDuration(Number.isNaN(duration)? 0 : duration);
+    };
     return (
         <Dialog open={show} onClose={onHide} maxWidth="md">
             <DialogTitle>Session details</DialogTitle>
@@ -154,15 +160,16 @@ function SessionUpdateDialog({ id, duration, show, onUpdate, onHide }: { id: str
                 <Container style={{display: "flex", flexDirection: "column"}}>
                     <TextField
                         style={{marginBottom: 20}}
-                        value={duration}
+                        value={newDuration}
                         onChange={handleDurationChange}
+                        onError={() => console.log("oups")}
                         required
                         type="number"
                         label="Duration"
                         autoFocus
                         />
                     <ButtonGroup style={{alignSelf: "flex-end", marginTop: 20}} size="small">
-                        <Button disabled={ duration == newDuration} onClick={() => {onUpdate(id.toLowerCase(), {duration: newDuration}); onHide();}}>UPDATE</Button>
+                        <Button disabled={ newDuration <= 0 || duration == newDuration} onClick={() => {onUpdate(id.toLowerCase(), {duration: newDuration}); onHide();}}>UPDATE</Button>
                         <Button onClick={onHide}>CLOSE</Button>
                     </ButtonGroup>
                 </Container>
@@ -267,6 +274,8 @@ function Sessions({ client }: { client: Client }): JSX.Element {
                                     <TableCell>ID</TableCell>
                                     <TableCell align="right">Template</TableCell>
                                     <TableCell align="right">URL</TableCell>
+                                    <TableCell align="right">Duration</TableCell>
+                                    <TableCell align="right">Phase</TableCell>
                                 </TableRow>
                             </TableHead>
                             <TableBody>
@@ -293,6 +302,8 @@ function Sessions({ client }: { client: Client }): JSX.Element {
                                         </TableCell>
                                         <TableCell align="right">{session.template.name}</TableCell>
                                         <TableCell align="right"><a href={`//${session.url}`}>{session.url}</a></TableCell>
+                                        <TableCell align="right">{session.duration}</TableCell>
+                                        <TableCell align="right">{session.pod.phase}</TableCell>
                                     </TableRow>
                                 )})}
                             </TableBody>
