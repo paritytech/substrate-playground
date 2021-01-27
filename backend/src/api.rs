@@ -214,7 +214,7 @@ pub fn create_current_session(
     conf: Json<SessionConfiguration>,
 ) -> JsonValue {
     let manager = state.manager.clone();
-    result_to_jsonrpc(manager.create_session(&user.id, conf.0))
+    result_to_jsonrpc(manager.create_session(&user.id, &user.id, conf.0))
 }
 
 #[put("/session", data = "<_conf>", rank = 2)]
@@ -231,7 +231,7 @@ pub fn update_current_session(
     conf: Json<SessionUpdateConfiguration>,
 ) -> JsonValue {
     let manager = state.manager.clone();
-    result_to_jsonrpc(manager.update_session(&user.id, conf.0))
+    result_to_jsonrpc(manager.update_session(&user.id, &user.id, conf.0))
 }
 
 #[patch("/session", data = "<_conf>", rank = 2)]
@@ -268,12 +268,12 @@ pub fn list_sessions_unlogged() -> status::Unauthorized<()> {
 #[put("/sessions/<id>", data = "<conf>")]
 pub fn create_session(
     state: State<'_, Context>,
-    _admin: LoggedAdmin,
+    admin: LoggedAdmin,
     id: String,
     conf: Json<SessionConfiguration>,
 ) -> JsonValue {
     let manager = state.manager.clone();
-    result_to_jsonrpc(manager.create_session(&id, conf.0))
+    result_to_jsonrpc(manager.create_session(&id, &admin.id, conf.0))
 }
 
 #[put("/sessions/<_id>", data = "<_conf>", rank = 2)]
@@ -287,12 +287,12 @@ pub fn create_session_unlogged(
 #[patch("/sessions/<id>", data = "<conf>")]
 pub fn update_session(
     state: State<'_, Context>,
-    _admin: LoggedAdmin,
+    admin: LoggedAdmin,
     id: String,
     conf: Json<SessionUpdateConfiguration>,
 ) -> JsonValue {
     let manager = state.manager.clone();
-    result_to_jsonrpc(manager.update_session(&id, conf.0))
+    result_to_jsonrpc(manager.update_session(&id, &admin.id, conf.0))
 }
 
 #[patch("/sessions/<_id>", data = "<_conf>", rank = 2)]
