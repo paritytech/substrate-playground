@@ -710,7 +710,7 @@ impl Engine {
             };
             let patch: Patch<json_patch::Patch> =
                 Patch::Json(json_patch::Patch(vec![PatchOperation::Add(AddOperation {
-                    path: format!("/metadata/annotations/{}", SESSION_DURATION_ANNOTATION),
+                    path: format!("/metadata/annotations/{}", SESSION_DURATION_ANNOTATION.replace("/", "~1")),
                     value: json!(session_duration_annotation(duration)),
                 })]));
             pod_api
