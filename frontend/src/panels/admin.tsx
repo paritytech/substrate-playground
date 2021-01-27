@@ -26,9 +26,10 @@ import TextField from '@material-ui/core/TextField';
 import Tooltip from '@material-ui/core/Tooltip';
 import Toolbar from '@material-ui/core/Toolbar';
 import Typography from '@material-ui/core/Typography';
-import { Client, Configuration, PlaygroundUser, Session, Template, User, UserConfiguration, UserUpdateConfiguration } from '@substrate/playground-client';
+import { Client, Configuration, PlaygroundUser, Session, SessionConfiguration, SessionUpdateConfiguration, Template, User, UserConfiguration, UserUpdateConfiguration } from '@substrate/playground-client';
 import { CenteredContainer, ErrorSnackbar, LoadingPanel } from '../components';
 import { useInterval } from '../hooks';
+import { MenuItem } from '@material-ui/core';
 
 const useStyles = makeStyles({
     table: {
@@ -36,11 +37,17 @@ const useStyles = makeStyles({
     },
 });
 
-function EmptyPanel({ label }: { label: string}): JSX.Element {
+function NoResourcesContainer({ label, action }: { label: string, action?: () => void}): JSX.Element {
     return (
         <Container>
             <Typography variant="h6">
                 {label}
+                {action &&
+                 <Tooltip title="Create">
+                    <IconButton aria-label="create" onClick={action}>
+                        <AddIcon />
+                    </IconButton>
+                </Tooltip>}
             </Typography>
         </Container>
     );
@@ -55,47 +62,249 @@ function Resources<T>( { children, label, callback }: { children: (resources: Re
 
     if (!resources) {
         return <LoadingPanel />;
-    } else if (Object.keys(resources).length > 0) {
+    } else {
         return (
             <Container>
                 {children(resources, setResources)}
             </Container>
         );
-    } else {
-        return <EmptyPanel label={`No ${label.toLowerCase()}`} />;
     }
+}
+
+function SessionCreationDialog({ conf, sessions, users, templates, show, onCreate, onHide }: { conf: Configuration | null, sessions: Record<string, Session>, users: Record<string, User> | null, templates: Record<string, Template> | null, show: boolean, onCreate: (id: string, conf: SessionConfiguration) => void, onHide: () => void }): JSX.Element {
+    const [user, setUser] = React.useState<string | null>(null);
+    const [template, setTemplate] = React.useState<string | null>(null);
+    const [duration, setDuration] = React.useState(0);
+
+    React.useEffect(() => {
+        if (conf) {
+            setDuration(conf?.sessionDefaults.duration);
+        }
+    }, []);
+
+    const handleUserChange = (event: React.ChangeEvent<HTMLInputElement>) => setUser(event.target.value);
+    const handleTemplateChange = (event: React.ChangeEvent<HTMLInputElement>) => setTemplate(event.target.value);
+    const handleDurationChange = (event: React.ChangeEvent<HTMLInputElement>) => setDuration(Number.parseInt(event.target.value));
+    return (
+        <Dialog open={show} maxWidth="md">
+            <DialogTitle>Session details</DialogTitle>
+            <DialogContent>
+                <Container style={{display: "flex", flexDirection: "column"}}>
+                    <TextField
+                        style={{marginBottom: 20}}
+                        select
+                        value={user}
+                        onChange={handleUserChange}
+                        required
+                        label="User"
+                        autoFocus
+                        >
+                    {users &&
+                    Object.keys(users).map(id => (
+                        <MenuItem key={id} value={id}>
+                        {id}
+                        </MenuItem>))
+                    }
+                    </TextField>
+                    <TextField
+                        style={{marginBottom: 20}}
+                        select
+                        value={template}
+                        onChange={handleTemplateChange}
+                        required
+                        label="Template"
+                        >
+                    {templates &&
+                    Object.keys(templates).map(id => (
+                        <MenuItem key={id} value={id}>
+                        {id}
+                        </MenuItem>))
+                    }
+                    </TextField>
+                    <TextField
+                        style={{marginBottom: 20}}
+                        value={duration}
+                        onChange={handleDurationChange}
+                        required
+                        type="number"
+                        label="Duration"
+                        />
+                    <ButtonGroup style={{alignSelf: "flex-end", marginTop: 20}} size="small">
+                        <Button disabled={user == null || template == null || sessions[user] != null || duration <= 0} onClick={() => {onCreate(user.toLowerCase(), {template: template, duration: duration}); onHide();}}>CREATE</Button>
+                        <Button onClick={onHide}>CLOSE</Button>
+                    </ButtonGroup>
+                </Container>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+function SessionUpdateDialog({ id, duration, show, onUpdate, onHide }: { id: string, duration: number, show: boolean, onUpdate: (id: string, conf: SessionUpdateConfiguration) => void, onHide: () => void }): JSX.Element {
+    const [newDuration, setDuration] = React.useState(0);
+
+    React.useEffect(() => {
+        setDuration(duration);
+    }, [duration]);
+
+    const handleDurationChange = (event: React.ChangeEvent<HTMLInputElement>) => setDuration(Number.parseInt(event.target.value));
+    return (
+        <Dialog open={show} maxWidth="md">
+            <DialogTitle>Session details</DialogTitle>
+            <DialogContent>
+                <Container style={{display: "flex", flexDirection: "column"}}>
+                    <TextField
+                        style={{marginBottom: 20}}
+                        value={duration}
+                        onChange={handleDurationChange}
+                        required
+                        type="number"
+                        label="Duration"
+                        autoFocus
+                        />
+                    <ButtonGroup style={{alignSelf: "flex-end", marginTop: 20}} size="small">
+                        <Button disabled={ duration == newDuration} onClick={() => {onUpdate(id.toLowerCase(), {duration: newDuration}); onHide();}}>UPDATE</Button>
+                        <Button onClick={onHide}>CLOSE</Button>
+                    </ButtonGroup>
+                </Container>
+            </DialogContent>
+        </Dialog>
+    );
 }
 
 function Sessions({ client }: { client: Client }): JSX.Element {
     const classes = useStyles();
+    const [selected, setSelected] = useState<string | null>(null);
+    const [showCreationDialog, setShowCreationDialog] = useState(false);
+    const [showUpdateDialog, setShowUpdateDialog] = useState(false);
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
+    const isSelected = (name: string) => selected == name;
+    const handleClick = (_event: React.MouseEvent<unknown>, name: string) => {
+        if (selected == name) {
+            setSelected(null);
+        } else {
+            setSelected(name);
+        }
+    };
+    const [configuration, setConfiguration] = useState<Configuration | null>(null);
+    const [users, setUsers] = useState<Record<string, User> | null>(null);
+    const [templates, setTemplates] = useState<Record<string, Template> | null>(null);
+
+    useInterval(async () => {
+        const { configuration, templates } = await client.get();
+        setConfiguration(configuration);
+        setTemplates(templates);
+        setUsers(await client.listUsers());
+    }, 5000);
+
+    function sessionMock(conf: SessionConfiguration): Session {
+        return {duration: conf.duration || 0, template: {name: "", image: "", description: ""}, user: "", url: "", pod: {phase: 'Pending', reason: "", message: ""}};
+    }
+
+    async function onCreate(id: string, conf: SessionConfiguration, setSessions: Dispatch<SetStateAction<Record<string, Session> | null>>): Promise<void> {
+        try {
+            await client.createSession(id, conf);
+            setSessions((sessions: Record<string, Session> | null) => {
+                if (sessions) {
+                    sessions[id] = sessionMock(conf);
+                }
+                return {...sessions};
+            });
+        } catch (e) {
+            console.error(e);
+            setErrorMessage("Failed to create session");
+        }
+    }
+
+    async function onUpdate(id: string, conf: SessionUpdateConfiguration, setSessions: Dispatch<SetStateAction<Record<string, Session> | null>>): Promise<void> {
+        try {
+            await client.updateSession(id, conf);
+            setSessions((sessions: Record<string, Session> | null) => {
+                if (sessions && conf.duration) {
+                    sessions[id].duration = conf.duration;
+                }
+                return {...sessions};
+            });
+        } catch (e) {
+            console.error(e);
+            setErrorMessage("Failed to update session");
+        }
+    }
+
+    async function onDelete(setSessions: Dispatch<SetStateAction<Record<string, Session> | null>>): Promise<void> {
+        if (selected) {
+            try {
+                await client.deleteSession(selected);
+
+                setSessions((sessions: Record<string, Session> | null) => {
+                    if (sessions) {
+                        delete sessions[selected];
+                    }
+                    return sessions;
+                });
+                setSelected(null);
+            } catch (e) {
+                console.error(e);
+                setErrorMessage("Failed to delete session");
+            }
+        } else {
+            setErrorMessage("Can't delete currently logged session");
+        }
+    }
 
     return (
         <Resources<Session> label="Sessions" callback={async () => await client.listSessions()}>
-            {(resources: Record<string, Session>) => (
+            {(resources: Record<string, Session>, setSessions: Dispatch<SetStateAction<Record<string, Session> | null>>) => (
             <>
-                <EnhancedTableToolbar label="Sessions" />
-                <TableContainer component={Paper}>
-                    <Table className={classes.table} aria-label="simple table">
-                        <TableHead>
-                            <TableRow>
-                                <TableCell>ID</TableCell>
-                                <TableCell align="right">Template</TableCell>
-                                <TableCell align="right">URL</TableCell>
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
-                        {Object.entries(resources).map(([id, session]) => (
-                        <TableRow key={id}>
-                            <TableCell component="th" scope="row">
-                                {id}
-                            </TableCell>
-                            <TableCell align="right">{session.template.name}</TableCell>
-                            <TableCell align="right"><a href={session.url}>{session.url}</a></TableCell>
-                        </TableRow>
-                        ))}
-                        </TableBody>
-                    </Table>
-                </TableContainer>
+                {Object.keys(resources).length > 0
+                ?
+                <>
+                    <EnhancedTableToolbar label="Sessions" selected={selected} onCreate={() => setShowCreationDialog(true)} onUpdate={() => setShowUpdateDialog(true)} onDelete={() => onDelete(setSessions)} />
+                    <TableContainer component={Paper}>
+                        <Table className={classes.table} aria-label="simple table">
+                            <TableHead>
+                                <TableRow>
+                                    <TableCell></TableCell>
+                                    <TableCell>ID</TableCell>
+                                    <TableCell align="right">Template</TableCell>
+                                    <TableCell align="right">URL</TableCell>
+                                </TableRow>
+                            </TableHead>
+                            <TableBody>
+                            {Object.entries(resources).map(([id, session], index) => {
+                                const isItemSelected = isSelected(id);
+                                const labelId = `enhanced-table-checkbox-${index}`;
+                                return (
+                                    <TableRow
+                                        key={id}
+                                        hover
+                                        onClick={(event) => handleClick(event, id)}
+                                        role="checkbox"
+                                        aria-checked={isItemSelected}
+                                        tabIndex={-1}
+                                        selected={isItemSelected}>
+                                        <TableCell padding="checkbox">
+                                            <Checkbox
+                                                checked={isItemSelected}
+                                                inputProps={{ 'aria-labelledby': labelId }}
+                                            />
+                                        </TableCell>
+                                        <TableCell component="th" scope="row">
+                                            {id}
+                                        </TableCell>
+                                        <TableCell align="right">{session.template.name}</TableCell>
+                                        <TableCell align="right"><a href={`//${session.url}`}>{session.url}</a></TableCell>
+                                    </TableRow>
+                                )})}
+                            </TableBody>
+                        </Table>
+                    </TableContainer>
+                </>
+                : <NoResourcesContainer label={`No sessions`} action={() => setShowCreationDialog(true)} />}
+                {errorMessage &&
+                <ErrorSnackbar open={true} message={errorMessage} onClose={() => setErrorMessage(null)} />}
+                <SessionCreationDialog conf={configuration} sessions={resources} users={users} templates={templates} show={showCreationDialog} onCreate={(id, conf) => onCreate(id, conf, setSessions)} onHide={() => setShowCreationDialog(false)} />
+                {selected &&
+                <SessionUpdateDialog id={selected} duration={resources[selected].duration} show={showUpdateDialog} onUpdate={(id, conf) => onUpdate(id, conf, setSessions)} onHide={() => setShowUpdateDialog(false)} />}
             </>
             )}
         </Resources>
@@ -167,39 +376,41 @@ const useToolbarStyles = makeStyles((theme: Theme) =>
 function EnhancedTableToolbar({ label, selected = null, onCreate, onUpdate, onDelete }: { label: string, selected?: string | null, onCreate?: () => void, onUpdate?: () => void, onDelete?: () => void}): JSX.Element {
     const classes = useToolbarStyles();
     return (
-        <Toolbar
-        className={clsx(classes.root, {
-            [classes.highlight]: selected != null,
-        })}
-        >
-        <Typography className={classes.title} variant="h6" id="tableTitle" component="div">
-            {label}
-        </Typography>
-        {selected ?
         <>
-            {onUpdate &&
-            <Tooltip title="Update">
-                <IconButton aria-label="update" onClick={onUpdate}>
-                    <EditIcon />
-                </IconButton>
+            <Toolbar
+            className={clsx(classes.root, {
+                [classes.highlight]: selected != null,
+            })}
+            >
+            <Typography className={classes.title} variant="h6" id="tableTitle" component="div">
+                {label}
+            </Typography>
+            {selected ?
+            <>
+                {onUpdate &&
+                <Tooltip title="Update">
+                    <IconButton aria-label="update" onClick={onUpdate}>
+                        <EditIcon />
+                    </IconButton>
+                </Tooltip>}
+                {onDelete &&
+                <Tooltip title="Delete">
+                    <IconButton aria-label="delete" onClick={onDelete}>
+                        <DeleteIcon />
+                    </IconButton>
+                </Tooltip>}
+            </>
+            : <>
+            {onCreate &&
+            <Tooltip title="Create">
+                    <IconButton aria-label="create" onClick={onCreate}>
+                        <AddIcon />
+                    </IconButton>
             </Tooltip>}
-            {onDelete &&
-            <Tooltip title="Delete">
-                <IconButton aria-label="delete" onClick={onDelete}>
-                    <DeleteIcon />
-                </IconButton>
-            </Tooltip>}
+            </>
+            }
+            </Toolbar>
         </>
-        : <>
-          {onCreate &&
-           <Tooltip title="Create">
-           <IconButton aria-label="create" onClick={onCreate}>
-               <AddIcon />
-           </IconButton>
-           </Tooltip>}
-          </>
-        }
-        </Toolbar>
     );
 }
 

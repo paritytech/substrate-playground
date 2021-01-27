@@ -15,12 +15,12 @@ import { terms } from "./terms";
 function MainPanel({ client, user, params, id, templates, onConnect, onDeployed, restartAction }: { client: Client, user: PlaygroundUser, params: Params, id: PanelId, templates: Record<string, Template>, restartAction: () => void, onConnect: () => void, onDeployed: () => void}): JSX.Element {
     switch(id) {
         case PanelId.Session:
-          return <SessionPanel client={client} templates={templates} onRetry={restartAction}
+          return <SessionPanel client={client} user={user} templates={templates} onRetry={restartAction}
                     onStop={async () => {
                         await client.deleteCurrentSession();
                     }}
-                    onDeployed={async template => {
-                        await client.createCurrentSession({template: template});
+                    onDeployed={async conf => {
+                        await client.createCurrentSession(conf);
                         onDeployed();
                     }}
                     onConnect={onConnect} />;
