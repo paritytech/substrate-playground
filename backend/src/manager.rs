@@ -54,7 +54,7 @@ pub struct PlaygroundDetails {
 }
 
 impl Manager {
-    const FIVE_SECONDS: Duration = Duration::from_secs(5);
+    const SLEEP_TIME: Duration = Duration::from_secs(60);
 
     pub async fn new() -> Result<Self, Box<dyn Error>> {
         let metrics = Metrics::new()?;
@@ -86,7 +86,7 @@ impl Manager {
 
     pub fn spawn_background_thread(self) -> JoinHandle<()> {
         thread::spawn(move || loop {
-            thread::sleep(Manager::FIVE_SECONDS);
+            thread::sleep(Manager::SLEEP_TIME);
 
             // Track some deployments metrics
             let sessions_thread = self.clone().sessions.clone();
@@ -133,8 +133,8 @@ impl Manager {
                         {
                             if duration > &session.duration {
                                 info!(
-                                    "Undeploying {} {:?} {:?}",
-                                    session.username, duration, session.duration
+                                    "Undeploying {} {:?}",
+                                    session.username, session.pod.phase
                                 );
 
                                 match self.clone().delete_session(&session.username) {
@@ -224,10 +224,10 @@ impl Manager {
         user.admin || user.can_customize_duration
     }
 
-    pub fn create_session(self, id: &str, conf: SessionConfiguration) -> Result<(), String> {
+    pub fn create_session(self, id: &str, user_id: &str, conf: SessionConfiguration) -> Result<(), String> {
         if conf.duration.is_some() {
             // Duration can only customized by users with proper rights
-            let user = self.clone().get_user(id)?.ok_or_else(|| {
+            let user = self.clone().get_user(user_id)?.ok_or_else(|| {
                 format!("Duration customization requires user but can't find {}", id)
             })?;
             if !self.can_customize_duration(user) {
@@ -251,17 +251,16 @@ impl Manager {
         result
     }
 
-    pub fn update_session(self, id: &str, conf: SessionUpdateConfiguration) -> Result<(), String> {
+    pub fn update_session(self, id: &str, user_id: &str, conf: SessionUpdateConfiguration) -> Result<(), String> {
         if conf.duration.is_some() {
             // Duration can only customized by users with proper rights
-            let user = self.clone().get_user(id)?.ok_or_else(|| {
+            let user = self.clone().get_user(user_id)?.ok_or_else(|| {
                 format!("Duration customization requires user but can't find {}", id)
             })?;
             if !self.can_customize_duration(user) {
                 return Err("Only admin can customize a session duration".to_string());
             }
         }
-
         new_runtime()?.block_on(self.engine.update_session(id, conf))
     }
 
