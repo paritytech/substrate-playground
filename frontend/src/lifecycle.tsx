@@ -1,14 +1,15 @@
 import { assign, Machine } from 'xstate';
 import { useMachine } from '@xstate/react';
-import { Client, PlaygroundUser, Template } from '@substrate/playground-client';
+import { Client, Configuration, PlaygroundUser, Template } from '@substrate/playground-client';
 import { approve, approved } from './terms';
 
 export enum PanelId {Session, Admin, Stats, Theia}
 
 export interface Context {
   panel: PanelId,
+  conf: Configuration,
   user?: PlaygroundUser,
-  templates?: Record<string, Template>,
+  templates: Record<string, Template>,
 }
 
 export enum States {
@@ -50,11 +51,11 @@ function lifecycle(client: Client, id: PanelId) {
             invoke: {
                 src: () => async (callback) => {
                     try {
-                        const { templates, user } = (await client.get());
+                        const { configuration, templates, user } = (await client.get());
                         if (user) {
-                            callback({type: Events.LOGIN, templates: templates, user: user});
+                            callback({type: Events.LOGIN, user: user, templates: templates, conf: configuration});
                         } else {
-                            callback({type: Events.UNLOGIN, templates: templates});
+                            callback({type: Events.UNLOGIN, templates: templates, conf: configuration});
                         }
                     } catch {
                         callback({type: Events.UNLOGIN});
@@ -64,15 +65,17 @@ function lifecycle(client: Client, id: PanelId) {
             on: {[Events.LOGIN]: {target: States.LOGGED,
                                   actions: assign((_, event) => {
                                     return {
-                                      templates: event.templates,
                                       user: event.user,
+                                      templates: event.templates,
+                                      conf: event.conf,
                                     }
                                   })},
                  [Events.UNLOGIN]: {target: States.UNLOGGED,
                                     actions: assign((_, event) => {
                                       return {
-                                        templates: event.templates,
                                         user: null,
+                                        templates: event.templates,
+                                        conf: event.conf,
                                       }
                                     })}}
         },

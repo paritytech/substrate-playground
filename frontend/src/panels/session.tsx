@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import marked from 'marked';
+import ArrowDropDownIcon from '@material-ui/icons/ArrowDropDown';
 import Button from '@material-ui/core/Button';
 import ButtonGroup from "@material-ui/core/ButtonGroup";
 import Card from '@material-ui/core/Card';
@@ -18,9 +19,11 @@ import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
 import Typography from '@material-ui/core/Typography';
 import { makeStyles, createStyles, Theme } from '@material-ui/core/styles';
-import { Client, NameValuePair, Port, Session, Template } from '@substrate/playground-client';
+import { Client, Configuration, NameValuePair, PlaygroundUser, Port, Session, SessionConfiguration, Template, UserConfiguration } from '@substrate/playground-client';
+import { SessionCreationDialog } from "./admin";
 import { ErrorMessage, ErrorSnackbar } from "../components";
 import { useInterval } from "../hooks";
+import { ClickAwayListener, Grow, MenuItem, MenuList, Popper } from "@material-ui/core";
 
 const useStyles = makeStyles((theme: Theme) =>
     createStyles({
@@ -32,16 +35,107 @@ const useStyles = makeStyles((theme: Theme) =>
     }),
 );
 
-function TemplateSelector({templates, onDeployed, onRetry}: {templates: Record<string, Template>, onDeployed: (template: string) => void, onRetry: () => void}): JSX.Element {
+function canCustomizeDuration(user: PlaygroundUser): boolean {
+    return user.admin || user.canCustomizeDuration;
+}
+
+function canCustomize(user: PlaygroundUser): boolean {
+    return canCustomizeDuration(user);
+}
+
+const options = [{id: 'create', label: 'Create'}, {id: 'custom', label: 'Customize and Create'}];
+
+export default function SplitButton({ template, onCreate, onCreateCustom }: { template: string, onCreate: (conf: SessionConfiguration) => void, onCreateCustom: () => void}) {
+  const [open, setOpen] = React.useState(false);
+  const anchorRef = React.useRef<HTMLDivElement>(null);
+  const [selectedIndex, setSelectedIndex] = React.useState(0);
+
+  const handleClick = () => {
+      const selection = options[selectedIndex];
+      if (selection.id == 'create') {
+        onCreate({template: template});
+      } else {
+        onCreateCustom();
+      }
+  };
+
+  const handleMenuItemClick = (
+    event: React.MouseEvent<HTMLLIElement, MouseEvent>,
+    index: number,
+  ) => {
+    setSelectedIndex(index);
+    setOpen(false);
+  };
+
+  const handleToggle = () => {
+    setOpen((prevOpen) => !prevOpen);
+  };
+
+  const handleClose = (event: React.MouseEvent<Document, MouseEvent>) => {
+    if (anchorRef.current && anchorRef.current.contains(event.target as HTMLElement)) {
+      return;
+    }
+
+    setOpen(false);
+  };
+
+  return (
+      <>
+        <ButtonGroup variant="contained" color="primary" ref={anchorRef} aria-label="split button">
+          <Button onClick={handleClick}>{options[selectedIndex].label}</Button>
+          <Button
+            color="primary"
+            size="small"
+            aria-controls={open ? 'split-button-menu' : undefined}
+            aria-expanded={open ? 'true' : undefined}
+            aria-label="select merge strategy"
+            aria-haspopup="menu"
+            onClick={handleToggle}
+          >
+            <ArrowDropDownIcon />
+          </Button>
+        </ButtonGroup>
+        <Popper open={open} anchorEl={anchorRef.current} role={undefined} transition disablePortal>
+          {({ TransitionProps, placement }) => (
+            <Grow
+              {...TransitionProps}
+              style={{
+                transformOrigin: placement === 'bottom' ? 'center top' : 'center bottom',
+              }}
+            >
+              <Paper>
+                <ClickAwayListener onClickAway={handleClose}>
+                  <MenuList id="split-button-menu">
+                    {options.map((option, index) => (
+                      <MenuItem
+                        key={option.id}
+                        selected={index === selectedIndex}
+                        onClick={(event) => handleMenuItemClick(event, index)}
+                      >
+                        {option.label}
+                      </MenuItem>
+                    ))}
+                  </MenuList>
+                </ClickAwayListener>
+              </Paper>
+            </Grow>
+          )}
+        </Popper>
+      </>
+  );
+}
+
+function TemplateSelector({client, conf, user, templates, onDeployed, onRetry}: {client: Client, conf: Configuration, user: PlaygroundUser, templates: Record<string, Template>, onDeployed: (conf: SessionConfiguration) => void, onRetry: () => void}): JSX.Element {
     const publicTemplates = Object.entries(templates).filter(([k, v]) => v.tags?.public == "true");
     const templatesAvailable = publicTemplates.length > 0;
     const [selection, select] = useState(templatesAvailable ? publicTemplates[0] : null);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
+    const [openCustom, setOpenCustom] = React.useState(false);
     const classes = useStyles();
 
-    function onCreateClick(template: string): void {
+    function onCreateClick(conf: SessionConfiguration): void {
         try {
-            onDeployed(template);
+            onDeployed(conf);
         } catch {
             setErrorMessage("Failed to create a new session");
         }
@@ -75,12 +169,15 @@ function TemplateSelector({templates, onDeployed, onRetry}: {templates: Record<s
                 </Container>
                 <Divider orientation="horizontal" />
                 <Container style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", paddingTop: 10, paddingBottom: 10 }}>
-                    <Button onClick={() => onCreateClick(selection[0])} color="primary" variant="contained" disableElevation disabled={!templatesAvailable}>
-                        Create
-                    </Button>
+                    {canCustomize(user)
+                    ? <SplitButton template={selection[0]} onCreate={() => onCreateClick({template: selection[0]})} onCreateCustom={() => setOpenCustom(true)} />
+                    : <Button onClick={() => onCreateClick({template: selection[0]})} color="primary" variant="contained" disableElevation disabled={!templatesAvailable}>
+                          Create
+                      </Button>}
                 </Container>
                 {errorMessage &&
                 <ErrorSnackbar open={true} message={errorMessage} onClose={() => setErrorMessage(null)} />}
+                <SessionCreationDialog user={user.id} template={selection[0]} conf={conf} templates={templates} show={openCustom} onCreate={onCreateClick} onHide={() => setOpenCustom(false)} />
             </>
         );
     } else {
@@ -250,7 +347,7 @@ function ExistingSession({session, onStop, onConnect}: {session: Session, onStop
     );
 }
 
-export function SessionPanel({ client, templates, onDeployed, onConnect, onRetry, onStop }: {client: Client, templates: Record<string, Template>, onStop: () => void, onConnect: (session: Session) => void, onDeployed: (name: string) => void, onRetry: () => void}): JSX.Element {
+export function SessionPanel({ client, conf, user, templates, onDeployed, onConnect, onRetry, onStop }: {client: Client, conf: Configuration, user: PlaygroundUser, templates: Record<string, Template>, onStop: () => void, onConnect: (session: Session) => void, onDeployed: (conf: SessionConfiguration) => void, onRetry: () => void}): JSX.Element {
     const [session, setSession] = useState<Session | null>(null);
 
     useInterval(async () => setSession(await client.getCurrentSession()), 1000);
@@ -260,7 +357,7 @@ export function SessionPanel({ client, templates, onDeployed, onConnect, onRetry
             <Paper style={{ display: "flex", flexDirection: "column", height: "60vh", width: "60vw", justifyContent: "center"}} elevation={3}>
                 {session
                  ? <ExistingSession session={session} onConnect={onConnect} onStop={onStop} />
-                 : <TemplateSelector templates={templates} onRetry={onRetry} onDeployed={onDeployed} />}
+                 : <TemplateSelector client={client} conf={conf} user={user} templates={templates} onRetry={onRetry} onDeployed={onDeployed} />}
             </Paper>
         </Container>
     );

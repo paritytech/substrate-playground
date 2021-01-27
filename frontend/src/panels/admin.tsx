@@ -71,16 +71,10 @@ function Resources<T>( { children, label, callback }: { children: (resources: Re
     }
 }
 
-function SessionCreationDialog({ conf, sessions, users, templates, show, onCreate, onHide }: { conf: Configuration | null, sessions: Record<string, Session>, users: Record<string, User> | null, templates: Record<string, Template> | null, show: boolean, onCreate: (id: string, conf: SessionConfiguration) => void, onHide: () => void }): JSX.Element {
-    const [user, setUser] = React.useState<string | null>(null);
-    const [template, setTemplate] = React.useState<string | null>(null);
-    const [duration, setDuration] = React.useState(0);
-
-    React.useEffect(() => {
-        if (conf) {
-            setDuration(conf?.sessionDefaults.duration);
-        }
-    }, []);
+export function SessionCreationDialog({ conf, sessions, user, users, template, templates, show, onCreate, onHide }: { conf: Configuration, sessions?: Record<string, Session>, user?: string, users?: Record<string, User> | null, template?: string, templates: Record<string, Template> | null, show: boolean, onCreate: (conf: SessionConfiguration, id?: string, ) => void, onHide: () => void }): JSX.Element {
+    const [selectedUser, setUser] = React.useState<string | null>(null);
+    const [selectedTemplate, setTemplate] = React.useState<string | null>(null);
+    const [duration, setDuration] = React.useState(conf.sessionDefaults.duration);
 
     const handleUserChange = (event: React.ChangeEvent<HTMLInputElement>) => setUser(event.target.value);
     const handleTemplateChange = (event: React.ChangeEvent<HTMLInputElement>) => setTemplate(event.target.value);
@@ -88,15 +82,36 @@ function SessionCreationDialog({ conf, sessions, users, templates, show, onCreat
         const duration = Number.parseInt(event.target.value);
         setDuration(Number.isNaN(duration)? 0 : duration);
     };
+
+    const currentUser = user || selectedUser;
+    const currentTemplate = template || selectedTemplate;
+
+    function valid(): boolean {
+        if (duration <= 0) {
+            return false;
+        }
+        if (!currentUser) {
+            return false;
+        }
+        if (!currentTemplate) {
+            return false;
+        }
+        if (sessions && sessions[currentUser] != null) {
+            return false;
+        }
+        return true;
+    }
+
     return (
         <Dialog open={show} onClose={onHide} maxWidth="md">
             <DialogTitle>Session details</DialogTitle>
             <DialogContent>
                 <Container style={{display: "flex", flexDirection: "column"}}>
+                    {!user &&
                     <TextField
                         style={{marginBottom: 20}}
                         select
-                        value={user}
+                        value={selectedUser}
                         onChange={handleUserChange}
                         required
                         label="User"
@@ -109,6 +124,8 @@ function SessionCreationDialog({ conf, sessions, users, templates, show, onCreat
                         </MenuItem>))
                     }
                     </TextField>
+                    }
+                    {!template &&
                     <TextField
                         style={{marginBottom: 20}}
                         select
@@ -124,6 +141,7 @@ function SessionCreationDialog({ conf, sessions, users, templates, show, onCreat
                         </MenuItem>))
                     }
                     </TextField>
+                    }
                     <TextField
                         style={{marginBottom: 20}}
                         value={duration}
@@ -133,7 +151,7 @@ function SessionCreationDialog({ conf, sessions, users, templates, show, onCreat
                         label="Duration"
                         />
                     <ButtonGroup style={{alignSelf: "flex-end", marginTop: 20}} size="small">
-                        <Button disabled={user == null || template == null || sessions[user] != null || duration <= 0} onClick={() => {onCreate(user.toLowerCase(), {template: template, duration: duration}); onHide();}}>CREATE</Button>
+                        <Button disabled={!valid()} onClick={() => {onCreate({template: currentTemplate, duration: duration}, currentUser); onHide();}}>CREATE</Button>
                         <Button onClick={onHide}>CLOSE</Button>
                     </ButtonGroup>
                 </Container>
@@ -178,7 +196,7 @@ function SessionUpdateDialog({ id, duration, show, onUpdate, onHide }: { id: str
     );
 }
 
-function Sessions({ client }: { client: Client }): JSX.Element {
+function Sessions({ client, conf }: { client: Client, conf: Configuration }): JSX.Element {
     const classes = useStyles();
     const [selected, setSelected] = useState<string | null>(null);
     const [showCreationDialog, setShowCreationDialog] = useState(false);
@@ -192,13 +210,11 @@ function Sessions({ client }: { client: Client }): JSX.Element {
             setSelected(name);
         }
     };
-    const [configuration, setConfiguration] = useState<Configuration | null>(null);
     const [users, setUsers] = useState<Record<string, User> | null>(null);
     const [templates, setTemplates] = useState<Record<string, Template> | null>(null);
 
     useInterval(async () => {
-        const { configuration, templates } = await client.get();
-        setConfiguration(configuration);
+        const { templates } = await client.get();
         setTemplates(templates);
         setUsers(await client.listUsers());
     }, 5000);
@@ -207,15 +223,19 @@ function Sessions({ client }: { client: Client }): JSX.Element {
         return {duration: conf.duration || 0, template: {name: "", image: "", description: ""}, user: "", url: "", pod: {phase: 'Pending', reason: "", message: ""}};
     }
 
-    async function onCreate(id: string, conf: SessionConfiguration, setSessions: Dispatch<SetStateAction<Record<string, Session> | null>>): Promise<void> {
+    async function onCreate(conf: SessionConfiguration, id: string | null, setSessions: Dispatch<SetStateAction<Record<string, Session> | null>>): Promise<void> {
         try {
-            await client.createSession(id, conf);
-            setSessions((sessions: Record<string, Session> | null) => {
-                if (sessions) {
-                    sessions[id] = sessionMock(conf);
-                }
-                return {...sessions};
-            });
+            if (id) {
+                await client.createSession(id, conf);
+                setSessions((sessions: Record<string, Session> | null) => {
+                    if (sessions) {
+                        sessions[id] = sessionMock(conf);
+                    }
+                    return {...sessions};
+                });
+            } else {
+                await client.createCurrentSession(conf);
+            }
         } catch (e) {
             console.error(e);
             setErrorMessage("Failed to create session");
@@ -313,7 +333,7 @@ function Sessions({ client }: { client: Client }): JSX.Element {
                 : <NoResourcesContainer label={`No sessions`} action={() => setShowCreationDialog(true)} />}
                 {errorMessage &&
                 <ErrorSnackbar open={true} message={errorMessage} onClose={() => setErrorMessage(null)} />}
-                <SessionCreationDialog conf={configuration} sessions={resources} users={users} templates={templates} show={showCreationDialog} onCreate={(id, conf) => onCreate(id, conf, setSessions)} onHide={() => setShowCreationDialog(false)} />
+                <SessionCreationDialog conf={conf} sessions={resources} users={users} templates={templates} show={showCreationDialog} onCreate={(conf, id) => onCreate(conf, id, setSessions)} onHide={() => setShowCreationDialog(false)} />
                 {selected &&
                 <SessionUpdateDialog id={selected} duration={resources[selected].duration} show={showUpdateDialog} onUpdate={(id, conf) => onUpdate(id, conf, setSessions)} onHide={() => setShowUpdateDialog(false)} />}
             </>
@@ -664,22 +684,15 @@ function Users({ client, user }: { client: Client, user: PlaygroundUser }): JSX.
     );
 }
 
-function DetailsPanel({ client }: { client: Client }): JSX.Element {
-    const [configuration, setConfiguration] = useState<Configuration | null>(null);
-
-    useInterval(async () => {
-        const { configuration } = await client.get();
-        setConfiguration(configuration);
-    }, 5000);
-
+function DetailsPanel({ client, conf }: { client: Client, conf: Configuration }): JSX.Element {
     return (
         <Container>
-            Default duration: {configuration?.sessionDefaults.duration} minutes
+            Default duration: {conf.sessionDefaults.duration} minutes
         </Container>
     );
 }
 
-export function AdminPanel({ client, user }: { client: Client, user: PlaygroundUser }): JSX.Element {
+export function AdminPanel({ client, user, conf }: { client: Client, user: PlaygroundUser, conf: Configuration }): JSX.Element {
     const [value, setValue] = React.useState(0);
 
     const handleChange = (_: React.ChangeEvent<{}>, newValue: number) => {
@@ -697,12 +710,12 @@ export function AdminPanel({ client, user }: { client: Client, user: PlaygroundU
 
             <Paper style={{ display: "flex", overflowY: "auto", flexDirection: "column", alignItems: 'center', justifyContent: 'center', textAlign: 'center', marginTop: 20, width: "80vw", height: "80vh"}} elevation={3}>
                 {value == 0
-                ? <DetailsPanel client={client} />
+                ? <DetailsPanel client={client} conf={conf} />
                 : value == 1
                 ? <Templates client={client} />
                 : value == 2
                 ? <Users client={client} user={user} />
-                : <Sessions client={client} />}
+                : <Sessions client={client} conf={conf} />}
             </Paper>
         </CenteredContainer>
     );
