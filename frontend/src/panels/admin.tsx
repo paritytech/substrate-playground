@@ -29,7 +29,7 @@ import Typography from '@material-ui/core/Typography';
 import { Client, Configuration, PlaygroundUser, Session, SessionConfiguration, SessionUpdateConfiguration, Template, User, UserConfiguration, UserUpdateConfiguration } from '@substrate/playground-client';
 import { CenteredContainer, ErrorSnackbar, LoadingPanel } from '../components';
 import { useInterval } from '../hooks';
-import { MenuItem } from '@material-ui/core';
+import { DialogActions, DialogContentText, MenuItem } from '@material-ui/core';
 
 const useStyles = makeStyles({
     table: {
@@ -86,7 +86,7 @@ function SessionCreationDialog({ conf, sessions, users, templates, show, onCreat
     const handleTemplateChange = (event: React.ChangeEvent<HTMLInputElement>) => setTemplate(event.target.value);
     const handleDurationChange = (event: React.ChangeEvent<HTMLInputElement>) => setDuration(Number.parseInt(event.target.value));
     return (
-        <Dialog open={show} maxWidth="md">
+        <Dialog open={show} onClose={onHide} maxWidth="md">
             <DialogTitle>Session details</DialogTitle>
             <DialogContent>
                 <Container style={{display: "flex", flexDirection: "column"}}>
@@ -148,7 +148,7 @@ function SessionUpdateDialog({ id, duration, show, onUpdate, onHide }: { id: str
 
     const handleDurationChange = (event: React.ChangeEvent<HTMLInputElement>) => setDuration(Number.parseInt(event.target.value));
     return (
-        <Dialog open={show} maxWidth="md">
+        <Dialog open={show} onClose={onHide} maxWidth="md">
             <DialogTitle>Session details</DialogTitle>
             <DialogContent>
                 <Container style={{display: "flex", flexDirection: "column"}}>
@@ -373,7 +373,34 @@ const useToolbarStyles = makeStyles((theme: Theme) =>
   }),
 );
 
+function DeleteConfirmationDialog({open, onClose, onConfirmation}: {open: boolean, onClose: () => void, onConfirmation?: () => void}): JSX.Element {
+    return (
+        <Dialog
+        open={open}
+        onClose={onClose}
+        aria-labelledby="alert-dialog-title"
+        aria-describedby="alert-dialog-description"
+      >
+        <DialogTitle id="alert-dialog-title">Are you sure?</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            This resource will be deleted
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={onClose} autoFocus>
+            Disagree
+          </Button>
+          <Button onClick={() => {onClose(); if (onConfirmation) onConfirmation();}}>
+            Agree
+          </Button>
+        </DialogActions>
+      </Dialog>
+    );
+}
+
 function EnhancedTableToolbar({ label, selected = null, onCreate, onUpdate, onDelete }: { label: string, selected?: string | null, onCreate?: () => void, onUpdate?: () => void, onDelete?: () => void}): JSX.Element {
+    const [open, setOpen] = React.useState(false);
     const classes = useToolbarStyles();
     return (
         <>
@@ -395,18 +422,19 @@ function EnhancedTableToolbar({ label, selected = null, onCreate, onUpdate, onDe
                 </Tooltip>}
                 {onDelete &&
                 <Tooltip title="Delete">
-                    <IconButton aria-label="delete" onClick={onDelete}>
+                    <IconButton aria-label="delete" onClick={() => setOpen(true)}>
                         <DeleteIcon />
                     </IconButton>
                 </Tooltip>}
+                <DeleteConfirmationDialog open={open} onClose={() => setOpen(false)} onConfirmation={onDelete} />
             </>
             : <>
-            {onCreate &&
-            <Tooltip title="Create">
-                    <IconButton aria-label="create" onClick={onCreate}>
-                        <AddIcon />
-                    </IconButton>
-            </Tooltip>}
+                {onCreate &&
+                <Tooltip title="Create">
+                        <IconButton aria-label="create" onClick={onCreate}>
+                            <AddIcon />
+                        </IconButton>
+                </Tooltip>}
             </>
             }
             </Toolbar>
@@ -425,7 +453,7 @@ function UserCreationDialog({ users, show, onCreate, onHide }: { users: Record<s
     const handleIDChange = (event: React.ChangeEvent<HTMLInputElement>) => setID(event.target.value);
     const handleDurationChange = (event: React.ChangeEvent<HTMLInputElement>) => setDurationChecked(event.target.checked);
     return (
-        <Dialog open={show} maxWidth="md">
+        <Dialog open={show} onClose={onHide} maxWidth="md">
             <DialogTitle>User details</DialogTitle>
             <DialogContent>
                 <Container style={{display: "flex", flexDirection: "column"}}>
@@ -472,7 +500,7 @@ function UserUpdateDialog({ id, admin, canCustomizeDuration, show, onUpdate, onH
     const handleAdminChange = (event: React.ChangeEvent<HTMLInputElement>) => setAdminChecked(event.target.checked);
     const handleDurationChange = (event: React.ChangeEvent<HTMLInputElement>) => setDurationChecked(event.target.checked);
     return (
-        <Dialog open={show} maxWidth="md">
+        <Dialog open={show} onClose={onHide} maxWidth="md">
             <DialogTitle>User details</DialogTitle>
             <DialogContent>
                 <Container style={{display: "flex", flexDirection: "column"}}>
