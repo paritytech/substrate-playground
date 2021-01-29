@@ -23,7 +23,7 @@
         "@theia/metrics": "1.9.0",
         "@theia/mini-browser": "1.9.0",
         "@theia/monaco": "1.9.0",
-        "@theia/navigator": "1.9.0",
+        "@theia/navigator": "1.10.0",
         "@theia/outline-view": "1.9.0",
         "@theia/output": "1.9.0",
         "@theia/plugin": "1.9.0",
