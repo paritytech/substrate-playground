@@ -1,5 +1,5 @@
 import { rpc } from './rpc';
-import { Playground, Session, SessionConfiguration, SessionUpdateConfiguration, User, UserConfiguration, UserUpdateConfiguration, } from './types';
+import { Playground, Pool, Session, SessionConfiguration, SessionUpdateConfiguration, User, UserConfiguration, UserUpdateConfiguration, } from './types';
 
 export class Client {
 
@@ -7,6 +7,7 @@ export class Client {
     static usersResource = 'users';
     static sessionResource = 'session';
     static sessionsResource = 'sessions';
+    static poolsResource = 'pools';
 
     private readonly base: string;
     private readonly defaultInit: RequestInit;
@@ -121,6 +122,16 @@ export class Client {
             method: 'DELETE',
             ...init
         });
+    }
+
+    // Pools
+
+    async getPool(id: string, init: RequestInit = this.defaultInit): Promise<Pool | null> {
+        return rpc(this.path(Client.poolsResource, id), init);
+    }
+
+    async listPools(init: RequestInit = this.defaultInit): Promise<Record<string, Pool>> {
+        return rpc(this.path(Client.poolsResource), init);
     }
 
     // Login

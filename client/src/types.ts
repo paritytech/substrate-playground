@@ -19,6 +19,7 @@ export interface Configuration {
 export interface SessionDefaults {
     /* The default number of minutes sessions can last */
     duration: number,
+    poolAffinity: string,
 }
 
 export interface PlaygroundUser {
@@ -31,19 +32,22 @@ export interface PlaygroundUser {
 export interface User {
     admin: boolean,
     canCustomizeDuration: boolean,
+    poolAffinity: string,
 }
 
 export interface UserConfiguration {
     admin: boolean,
     canCustomizeDuration: boolean,
+    poolAffinity: string,
 }
 
 export interface UserUpdateConfiguration {
     admin: boolean,
     canCustomizeDuration: boolean,
 }
+
 export interface Session {
-    user: String,
+    userId: string,
     url: string,
     template: Template,
     pod: PodDetails,
@@ -51,10 +55,17 @@ export interface Session {
     duration: number,
 }
 
+export interface Pool {
+    name: string,
+    instanceType?: string,
+    sessionIds: string[],
+}
+
 export interface SessionConfiguration {
     template: string,
     /* The number of minutes this session will be able to last */
     duration?: number,
+    poolAffinity?: string,
 }
 
 export interface SessionUpdateConfiguration {
@@ -91,8 +102,8 @@ export interface Template {
 export type Phase = 'Pending' | 'Running' | 'Succeeded' | 'Failed' | 'Unknown';
 export interface PodDetails {
     phase: Phase,
-    reason: String,
-    message: String,
+    reason: string,
+    message: string,
     /* The number of seconds since this session started */
     startTime?: number,
 }
