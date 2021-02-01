@@ -628,7 +628,7 @@ function UserUpdateDialog({ client, id, user, show, onUpdate, onHide }: { client
                     />
                   <TextField
                         style={{marginBottom: 20}}
-                        value={id}
+                        value={poolAffinity}
                         onChange={handlePoolAffinityChange}
                         required
                         label="Pool Affinity"
