@@ -64,7 +64,11 @@ export interface Session {
 export interface Pool {
     name: string,
     instanceType?: string,
-    sessionIds: string[],
+    nodes: Node[],
+}
+
+export interface Node {
+    hostname: string,
 }
 
 export interface SessionConfiguration {

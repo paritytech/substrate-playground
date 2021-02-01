@@ -140,6 +140,7 @@ fn create_pod(
             ..Default::default()
         },
         spec: Some(PodSpec {
+            // TODO affinity
             affinity: Some(Affinity {
                 node_affinity: None,
                 pod_anti_affinity: Some(PodAntiAffinity {
@@ -509,16 +510,27 @@ impl Engine {
         let node = nodes.first().ok_or("empty vec of nodes".to_string())?;
         let labels = node.metadata.labels.clone().ok_or("no labels")?;
         let local = "local".to_string();
+        let unknown = "unknown".to_string();
         let instance_type = labels
             .get("node.kubernetes.io/instance-type")
             .unwrap_or_else(|| &local);
 
-        // TODO For each node, list pods and extract session_ids
-
         Ok(Pool {
             name: id,
             instance_type: Some(instance_type.clone()),
-            session_ids: vec![],
+            nodes: nodes
+                .iter()
+                .map(|node| crate::session::Node {
+                    hostname: node
+                        .metadata
+                        .labels
+                        .clone()
+                        .unwrap_or_default()
+                        .get("kubernetes.io/hostname")
+                        .unwrap_or_else(|| &unknown)
+                        .clone(),
+                })
+                .collect(),
         })
     }
 
@@ -694,10 +706,16 @@ impl Engine {
 
     pub async fn create_session(self, id: &str, conf: SessionConfiguration) -> Result<(), String> {
         // Make sure some node on the right pools still have rooms
-        // Find pool affinity, lookup corresponding pool and capacity based on type, figure out if there is room left
+        // Find pool affinity, lookup corresponding pool and capacity based on nodes, figure out if there is room left
         // TODO: replace with custom scheduler
         // * https://kubernetes.io/docs/tasks/extend-kubernetes/configure-multiple-schedulers/
         // * https://kubernetes.io/blog/2017/03/advanced-scheduling-in-kubernetes/
+        let pools = self.list_pools().await?;
+        let max_sessions_allowed = pools.values().map(|pool| pool.nodes.len()).sum();
+        let sessions = self.list_sessions().await?;
+        if sessions.len() >= max_sessions_allowed {
+            return Err(format!("Reached maximum of sessions allowed: {}", max_sessions_allowed));
+        }
         let config = config().await?;
         let client = Client::new(config);
         // Access the right image id

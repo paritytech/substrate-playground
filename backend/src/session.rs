@@ -17,7 +17,13 @@ pub struct Session {
 pub struct Pool {
     pub name: String,
     pub instance_type: Option<String>,
-    pub session_ids: Vec<String>,
+    pub nodes: Vec<Node>,
+}
+
+#[derive(Serialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct Node {
+    pub hostname: String,
 }
 
 #[derive(Deserialize, Clone, Debug)]
