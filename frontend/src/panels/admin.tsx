@@ -280,7 +280,7 @@ function Sessions({ client, conf, user }: { client: Client, conf: Configuration,
             }
         } catch (e) {
             console.error(e);
-            setErrorMessage("Failed to create session");
+            setErrorMessage("Failed to create session: ", e);
         }
     }
 
