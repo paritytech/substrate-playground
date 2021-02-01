@@ -88,7 +88,7 @@ export function canCustomize(user: PlaygroundUser): boolean {
     return canCustomizeDuration(user) || canCustomizePoolAffinity(user);
 }
 
-export function SessionCreationDialog({ client, conf, sessions, user, users, template, templates, show, onCreate, onHide }: { client: Client, conf: Configuration, sessions?: Record<string, Session>, user: PlaygroundUser, users?: Record<string, User> | null, template?: string, templates: Record<string, Template> | null, show: boolean, onCreate: (conf: SessionConfiguration, id?: string, ) => void, onHide: () => void }): JSX.Element {
+export function SessionCreationDialog({ client, conf, sessions, user, users, template, templates, show, onCreate, onHide, allowUserSelection = false }: { client: Client, conf: Configuration, sessions?: Record<string, Session>, user: PlaygroundUser, users?: Record<string, User> | null, template?: string, templates: Record<string, Template> | null, show: boolean, onCreate: (conf: SessionConfiguration, id?: string, ) => void, onHide: () => void , allowUserSelection?: boolean}): JSX.Element {
     const [selectedUser, setUser] = React.useState<string | null>(null);
     const [selectedTemplate, setTemplate] = React.useState<string | null>(null);
     const [duration, setDuration] = React.useState(conf.sessionDefaults.duration);
@@ -131,7 +131,7 @@ export function SessionCreationDialog({ client, conf, sessions, user, users, tem
             <DialogTitle>Session details</DialogTitle>
             <DialogContent>
                 <Container style={{display: "flex", flexDirection: "column"}}>
-                    {!user &&
+                    {allowUserSelection &&
                     <TextField
                         style={{marginBottom: 20}}
                         select
@@ -375,7 +375,7 @@ function Sessions({ client, conf, user }: { client: Client, conf: Configuration,
                 : <NoResourcesContainer label={`No sessions`} action={() => setShowCreationDialog(true)} />}
                 {errorMessage &&
                 <ErrorSnackbar open={true} message={errorMessage} onClose={() => setErrorMessage(null)} />}
-                <SessionCreationDialog client={client} conf={conf} sessions={resources} user={user} users={users} templates={templates} show={showCreationDialog} onCreate={(conf, id) => onCreate(conf, id, setSessions)} onHide={() => setShowCreationDialog(false)} />
+                <SessionCreationDialog allowUserSelection={true} client={client} conf={conf} sessions={resources} user={user} users={users} templates={templates} show={showCreationDialog} onCreate={(conf, id) => onCreate(conf, id, setSessions)} onHide={() => setShowCreationDialog(false)} />
                 {selected &&
                 <SessionUpdateDialog id={selected} duration={resources[selected].duration} show={showUpdateDialog} onUpdate={(id, conf) => onUpdate(id, conf, setSessions)} onHide={() => setShowUpdateDialog(false)} />}
             </>
