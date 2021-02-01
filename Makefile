@@ -180,6 +180,7 @@ k8s-gke-static-ip: requires-k8s
 	gcloud compute addresses describe ${NAMESPACE} --region=${GKE_REGION} --format="value(address)"
 
 k8s-dev: requires-k8s
+	@kubectl label nodes docker-desktop cloud.google.com/gke-nodepool=default --overwrite
 	@cd conf/k8s; skaffold dev
 
 k8s-deploy-playground: requires-k8s ## Deploy playground on kubernetes
