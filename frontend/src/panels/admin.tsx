@@ -752,8 +752,10 @@ function Users({ client, user, conf }: { client: Client, user: PlaygroundUser, c
                             <TableRow>
                                 <TableCell></TableCell>
                                 <TableCell>ID</TableCell>
+                                <TableCell>Pool Affinity</TableCell>
                                 <TableCell align="right">Admin</TableCell>
                                 <TableCell align="right">Can Customize Duration</TableCell>
+                                <TableCell align="right">Can Customize Pool Affinity</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
@@ -778,8 +780,10 @@ function Users({ client, user, conf }: { client: Client, user: PlaygroundUser, c
                                     <TableCell component="th" scope="row">
                                         {id}
                                     </TableCell>
+                                    <TableCell align="right">{user.poolAffinity}</TableCell>
                                     <TableCell align="right">{user.admin.toString()}</TableCell>
                                     <TableCell align="right">{user.canCustomizeDuration.toString()}</TableCell>
+                                    <TableCell align="right">{user.canCustomizePoolAffinity.toString()}</TableCell>
                                 </TableRow>
                                 )})}
                         </TableBody>
