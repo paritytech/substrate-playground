@@ -107,7 +107,7 @@ export function SessionCreationDialog({ client, conf, sessions, user, users, tem
     };
     const handlePoolAffinityChange = (event: React.ChangeEvent<HTMLInputElement>) => setPoolAffinity(event.target.value);
 
-    const currentUser = user.id || selectedUser;
+    const currentUser = selectedUser || user.id;
     const currentTemplate = template || selectedTemplate;
 
     function valid(): boolean {
