@@ -221,6 +221,11 @@ impl Manager {
         user.admin || user.can_customize_duration
     }
 
+    fn session_id(&self, id: &str) -> String {
+        // Create a unique ID for this session. Use lowercase to make sure the result can be used as part of a DNS
+        id.to_string().to_lowercase()
+    }
+
     pub fn create_session(
         self,
         id: &str,
@@ -238,7 +243,7 @@ impl Manager {
         }
 
         let template = conf.clone().template;
-        let result = new_runtime()?.block_on(self.engine.create_session(id, conf));
+        let result = new_runtime()?.block_on(self.engine.create_session(self.session_id(id), conf));
         match result {
             Ok(session) => {
                 if let Ok(mut sessions) = self.sessions.lock() {
@@ -268,7 +273,7 @@ impl Manager {
                 return Err("Only admin can customize a session duration".to_string());
             }
         }
-        new_runtime()?.block_on(self.engine.update_session(id, conf))
+        new_runtime()?.block_on(self.engine.update_session(&self.session_id(id), conf))
     }
 
     pub fn delete_session(self, id: &str) -> Result<(), String> {

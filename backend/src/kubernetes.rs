@@ -68,8 +68,8 @@ pub fn pod_name(user: &str) -> String {
     format!("{}-{}", COMPONENT_VALUE, user)
 }
 
-pub fn service_name(user: &str) -> String {
-    format!("{}-service-{}", COMPONENT_VALUE, user)
+pub fn service_name(session_id: &str) -> String {
+    format!("{}-service-{}", COMPONENT_VALUE, session_id)
 }
 
 fn create_env_var(name: &str, value: &str) -> EnvVar {
@@ -80,10 +80,10 @@ fn create_env_var(name: &str, value: &str) -> EnvVar {
     }
 }
 
-fn pod_env_variables(template: &Template, host: &str, session_uuid: &str) -> Vec<EnvVar> {
+fn pod_env_variables(template: &Template, host: &str, session_id: &str) -> Vec<EnvVar> {
     let mut envs = vec![
         create_env_var("SUBSTRATE_PLAYGROUND", ""),
-        create_env_var("SUBSTRATE_PLAYGROUND_SESSION", session_uuid),
+        create_env_var("SUBSTRATE_PLAYGROUND_SESSION", session_id),
         create_env_var("SUBSTRATE_PLAYGROUND_HOSTNAME", host),
     ];
     if let Some(mut template_envs) = template.runtime.as_ref().and_then(|r| {
@@ -123,27 +123,26 @@ fn create_pod_annotations(template: &Template, duration: &Duration) -> BTreeMap<
 
 fn create_pod(
     env: &Environment,
-    session_uuid: &str,
+    session_id: &str,
     template: &Template,
     duration: &Duration,
-    pool_affinity: &str,
+    pool_id: &str,
 ) -> Pod {
     let mut labels = BTreeMap::new();
     // TODO fetch docker image labels and add them to the pod.
     // Can be done by querying dockerhub (https://docs.docker.com/registry/spec/api/)
     labels.insert(APP_LABEL.to_string(), APP_VALUE.to_string());
     labels.insert(COMPONENT_LABEL.to_string(), COMPONENT_VALUE.to_string());
-    labels.insert(OWNER_LABEL.to_string(), session_uuid.to_string());
-    // TODO affinity
+    labels.insert(OWNER_LABEL.to_string(), session_id.to_string());
+
     Pod {
         metadata: ObjectMeta {
-            name: Some(pod_name(session_uuid)),
+            name: Some(pod_name(session_id)),
             labels: Some(labels),
             annotations: Some(create_pod_annotations(template, duration)),
             ..Default::default()
         },
         spec: Some(PodSpec {
-            // TODO affinity
             affinity: Some(Affinity {
                 node_affinity: Some(NodeAffinity {
                     preferred_during_scheduling_ignored_during_execution: Some(vec![
@@ -153,7 +152,7 @@ fn create_pod(
                                 match_expressions: Some(vec![NodeSelectorRequirement {
                                     key: NODE_POOL_LABEL.to_string(),
                                     operator: "In".to_string(),
-                                    values: Some(vec![pool_affinity.to_string()]),
+                                    values: Some(vec![pool_id.to_string()]),
                                 }]),
                                 ..Default::default()
                             },
@@ -166,7 +165,7 @@ fn create_pod(
             containers: vec![Container {
                 name: format!("{}-container", COMPONENT_VALUE),
                 image: Some(template.image.to_string()),
-                env: Some(pod_env_variables(template, &env.host, session_uuid)),
+                env: Some(pod_env_variables(template, &env.host, session_id)),
                 ..Default::default()
             }],
             termination_grace_period_seconds: Some(1),
@@ -176,13 +175,13 @@ fn create_pod(
     }
 }
 
-fn create_service(session_uuid: &str, template: &Template) -> Service {
+fn create_service(session_id: &str, template: &Template) -> Service {
     let mut labels = BTreeMap::new();
     labels.insert(APP_LABEL.to_string(), APP_VALUE.to_string());
     labels.insert(COMPONENT_LABEL.to_string(), COMPONENT_VALUE.to_string());
-    labels.insert(OWNER_LABEL.to_string(), session_uuid.to_string());
+    labels.insert(OWNER_LABEL.to_string(), session_id.to_string());
     let mut selectors = BTreeMap::new();
-    selectors.insert(OWNER_LABEL.to_string(), session_uuid.to_string());
+    selectors.insert(OWNER_LABEL.to_string(), session_id.to_string());
 
     // The theia port itself is mandatory
     let mut ports = vec![ServicePort {
@@ -210,7 +209,7 @@ fn create_service(session_uuid: &str, template: &Template) -> Service {
 
     Service {
         metadata: ObjectMeta {
-            name: Some(service_name(session_uuid)),
+            name: Some(service_name(session_id)),
             labels: Some(labels),
             ..Default::default()
         },
@@ -251,8 +250,8 @@ fn create_ingress_paths(service_name: String, template: &Template) -> Vec<HTTPIn
     paths
 }
 
-fn subdomain(host: &str, session_uuid: &str) -> String {
-    format!("{}.{}", session_uuid, host)
+fn subdomain(host: &str, session_id: &str) -> String {
+    format!("{}.{}", session_id, host)
 }
 
 async fn config() -> Result<Config, String> {
@@ -416,11 +415,6 @@ mod system_time {
             None => serializer.serialize_none(),
         }
     }
-}
-
-fn session_id(id: &str) -> String {
-    // Create a unique ID for this session. Use lowercase to make sure the result can be used as part of a DNS
-    id.to_string().to_lowercase()
 }
 
 impl Engine {
@@ -684,12 +678,12 @@ impl Engine {
             .clone();
         let mut spec = ingress.clone().spec.ok_or("No spec")?.clone();
         let mut rules: Vec<IngressRule> = spec.clone().rules.ok_or("No rules")?;
-        for (uuid, template) in templates {
-            let subdomain = subdomain(&self.env.host, &uuid);
+        for (session_id, template) in templates {
+            let subdomain = subdomain(&self.env.host, &session_id);
             rules.push(IngressRule {
                 host: Some(subdomain.clone()),
                 http: Some(HTTPIngressRuleValue {
-                    paths: create_ingress_paths(service_name(&uuid), template),
+                    paths: create_ingress_paths(service_name(&session_id), template),
                 }),
             });
         }
@@ -704,16 +698,21 @@ impl Engine {
         Ok(())
     }
 
-    pub async fn create_session(self, id: &str, conf: SessionConfiguration) -> Result<(), String> {
+    pub async fn create_session(self, session_id: String, conf: SessionConfiguration) -> Result<(), String> {
         // Make sure some node on the right pools still have rooms
         // Find pool affinity, lookup corresponding pool and capacity based on nodes, figure out if there is room left
         // TODO: replace with custom scheduler
         // * https://kubernetes.io/docs/tasks/extend-kubernetes/configure-multiple-schedulers/
         // * https://kubernetes.io/blog/2017/03/advanced-scheduling-in-kubernetes/
-        let pools = self.list_pools().await?;
-        let max_sessions_allowed = pools.values().map(|pool| pool.nodes.len()).sum();
+        let pool_id = conf.clone()
+            .pool_affinity
+            .unwrap_or(self.clone().configuration.session_defaults.pool_affinity);
+        let pool = self.get_pool(&pool_id).await?.ok_or("".to_string())?;
+        // TODO only check correct pool_affinity
+        let max_sessions_allowed = pool.nodes.len();
         let sessions = self.list_sessions().await?;
         if sessions.len() >= max_sessions_allowed {
+            // TODO metrics
             return Err(format!(
                 "Reached maximum of sessions allowed: {}",
                 max_sessions_allowed
@@ -736,7 +735,6 @@ impl Engine {
         // With the proper mapping
         // Define the correct route
         // Also deploy proper tcp mapping configmap https://kubernetes.github.io/ingress-nginx/user-guide/exposing-tcp-udp-services/
-        let session_id = session_id(id);
 
         let mut sessions = BTreeMap::new();
         sessions.insert(session_id.clone(), template);
@@ -745,9 +743,7 @@ impl Engine {
         let duration = conf
             .duration
             .unwrap_or(self.configuration.session_defaults.duration);
-        let pool_affinity = conf
-            .pool_affinity
-            .unwrap_or(self.configuration.session_defaults.pool_affinity);
+
         // Deploy a new pod for this image
         pod_api
             .create(
@@ -757,7 +753,7 @@ impl Engine {
                     &session_id.clone(),
                     template,
                     &duration,
-                    &pool_affinity,
+                    &pool_id,
                 ),
             )
             .await
@@ -776,12 +772,12 @@ impl Engine {
 
     pub async fn update_session(
         self,
-        id: &str,
+        session_id: &str,
         conf: SessionUpdateConfiguration,
     ) -> Result<(), String> {
         let session = self
             .clone()
-            .get_session(&session_id(id))
+            .get_session(&session_id)
             .await?
             .ok_or_else(|| "No existing session".to_string())?;
 
@@ -854,7 +850,7 @@ impl Engine {
         Ok(())
     }
 
-    pub async fn get_pool(self, id: &str) -> Result<Option<Pool>, String> {
+    pub async fn get_pool(&self, id: &str) -> Result<Option<Pool>, String> {
         let config = config().await?;
         let client = Client::new(config);
         let node_api: Api<Node> = Api::all(client);
