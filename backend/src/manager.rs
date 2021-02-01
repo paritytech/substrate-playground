@@ -62,15 +62,17 @@ impl Manager {
         // Go through all existing sessions and update the ingress
         match engine.clone().list_sessions().await {
             Ok(sessions) => {
-                engine
-                    .clone()
-                    .patch_ingress(
-                        running_sessions(sessions.values().collect())
-                            .iter()
-                            .map(|i| (i.user_id.clone(), &i.template))
-                            .collect(),
-                    )
-                    .await?;
+                let running = running_sessions(sessions.values().collect())
+                    .iter()
+                    .map(|i| (i.user_id.clone(), &i.template))
+                    .collect();
+                engine.clone().patch_ingress(&running).await?;
+
+                if running.is_empty() {
+                    info!("No sesssions restored");
+                } else {
+                    info!("Restored sesssions for {:?}", running.keys());
+                }
             }
             Err(err) => error!(
                 "Failed to call list_all: {}. Existing sessions won't be accessible",
@@ -159,6 +161,11 @@ fn new_runtime() -> Result<Runtime, String> {
     Runtime::new().map_err(|err| format!("{}", err))
 }
 
+fn session_id(id: &str) -> String {
+    // Create a unique ID for this session. Use lowercase to make sure the result can be used as part of a DNS
+    id.to_string().to_lowercase()
+}
+
 impl Manager {
     pub fn get(self, user: LoggedUser) -> Result<PlaygroundDetails, String> {
         let templates = new_runtime()?.block_on(self.clone().engine.list_templates())?;
@@ -221,11 +228,6 @@ impl Manager {
         user.admin || user.can_customize_duration
     }
 
-    fn session_id(&self, id: &str) -> String {
-        // Create a unique ID for this session. Use lowercase to make sure the result can be used as part of a DNS
-        id.to_string().to_lowercase()
-    }
-
     pub fn create_session(
         self,
         id: &str,
@@ -243,7 +245,7 @@ impl Manager {
         }
 
         let template = conf.clone().template;
-        let result = new_runtime()?.block_on(self.engine.create_session(self.session_id(id), conf));
+        let result = new_runtime()?.block_on(self.engine.create_session(session_id(id), conf));
         match result {
             Ok(session) => {
                 if let Ok(mut sessions) = self.sessions.lock() {
@@ -273,7 +275,7 @@ impl Manager {
                 return Err("Only admin can customize a session duration".to_string());
             }
         }
-        new_runtime()?.block_on(self.engine.update_session(&self.session_id(id), conf))
+        new_runtime()?.block_on(self.engine.update_session(&session_id(id), conf))
     }
 
     pub fn delete_session(self, id: &str) -> Result<(), String> {

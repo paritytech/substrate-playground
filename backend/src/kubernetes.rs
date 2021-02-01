@@ -505,9 +505,7 @@ impl Engine {
         let labels = node.metadata.labels.clone().ok_or("no labels")?;
         let local = "local".to_string();
         let unknown = "unknown".to_string();
-        let instance_type = labels
-            .get(INSTANCE_TYPE_LABEL)
-            .unwrap_or(&local);
+        let instance_type = labels.get(INSTANCE_TYPE_LABEL).unwrap_or(&local);
 
         Ok(Pool {
             name: id,
@@ -666,7 +664,7 @@ impl Engine {
 
     pub async fn patch_ingress(
         &self,
-        templates: BTreeMap<String, &Template>,
+        templates: &BTreeMap<String, &Template>,
     ) -> Result<(), String> {
         let config = config().await?;
         let client = Client::new(config);
@@ -698,16 +696,24 @@ impl Engine {
         Ok(())
     }
 
-    pub async fn create_session(self, session_id: String, conf: SessionConfiguration) -> Result<(), String> {
+    pub async fn create_session(
+        self,
+        session_id: String,
+        conf: SessionConfiguration,
+    ) -> Result<(), String> {
         // Make sure some node on the right pools still have rooms
         // Find pool affinity, lookup corresponding pool and capacity based on nodes, figure out if there is room left
         // TODO: replace with custom scheduler
         // * https://kubernetes.io/docs/tasks/extend-kubernetes/configure-multiple-schedulers/
         // * https://kubernetes.io/blog/2017/03/advanced-scheduling-in-kubernetes/
-        let pool_id = conf.clone()
+        let pool_id = conf
+            .clone()
             .pool_affinity
             .unwrap_or(self.clone().configuration.session_defaults.pool_affinity);
-        let pool = self.get_pool(&pool_id).await?.ok_or("".to_string())?;
+        let pool = self
+            .get_pool(&pool_id)
+            .await?
+            .ok_or_else(|| "No existing pool".to_string())?;
         // TODO only check correct pool_affinity
         let max_sessions_allowed = pool.nodes.len();
         let sessions = self.list_sessions().await?;
@@ -738,7 +744,7 @@ impl Engine {
 
         let mut sessions = BTreeMap::new();
         sessions.insert(session_id.clone(), template);
-        self.patch_ingress(sessions).await?;
+        self.patch_ingress(&sessions).await?;
 
         let duration = conf
             .duration
@@ -879,7 +885,7 @@ impl Engine {
             nodes.iter().fold(BTreeMap::new(), |mut acc, node| {
                 if let Some(labels) = node.metadata.labels.clone() {
                     let key = labels.get(NODE_POOL_LABEL).unwrap_or(&default);
-                    let nodes = acc.entry(key.clone()).or_insert(Vec::new());
+                    let nodes = acc.entry(key.clone()).or_insert_with(Vec::new);
                     nodes.push(node.clone());
                 } else {
                     log::error!("No labels");
