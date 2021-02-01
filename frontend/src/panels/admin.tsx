@@ -556,7 +556,8 @@ function UserCreationDialog({ client, conf, users, show, onCreate, onHide }: { c
                     />
                    <TextField
                         style={{marginBottom: 20}}
-                        value={id}
+                        select
+                        value={poolAffinity}
                         onChange={handlePoolAffinityChange}
                         required
                         label="Pool Affinity"
@@ -628,6 +629,7 @@ function UserUpdateDialog({ client, id, user, show, onUpdate, onHide }: { client
                     />
                   <TextField
                         style={{marginBottom: 20}}
+                        select
                         value={poolAffinity}
                         onChange={handlePoolAffinityChange}
                         required
