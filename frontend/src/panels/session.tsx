@@ -19,8 +19,8 @@ import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
 import Typography from '@material-ui/core/Typography';
 import { makeStyles, createStyles, Theme } from '@material-ui/core/styles';
-import { Client, Configuration, NameValuePair, PlaygroundUser, Port, Session, SessionConfiguration, Template, UserConfiguration } from '@substrate/playground-client';
-import { SessionCreationDialog } from "./admin";
+import { Client, Configuration, NameValuePair, PlaygroundUser, Port, Session, SessionConfiguration, Template } from '@substrate/playground-client';
+import { SessionCreationDialog, canCustomize } from "./admin";
 import { ErrorMessage, ErrorSnackbar } from "../components";
 import { useInterval } from "../hooks";
 import { ClickAwayListener, Grow, MenuItem, MenuList, Popper } from "@material-ui/core";
@@ -34,14 +34,6 @@ const useStyles = makeStyles((theme: Theme) =>
         },
     }),
 );
-
-function canCustomizeDuration(user: PlaygroundUser): boolean {
-    return user.admin || user.canCustomizeDuration;
-}
-
-function canCustomize(user: PlaygroundUser): boolean {
-    return canCustomizeDuration(user);
-}
 
 const options = [{id: 'create', label: 'Create'}, {id: 'custom', label: 'Customize and Create'}];
 
@@ -177,7 +169,7 @@ function TemplateSelector({client, conf, user, templates, onDeployed, onRetry}: 
                 </Container>
                 {errorMessage &&
                 <ErrorSnackbar open={true} message={errorMessage} onClose={() => setErrorMessage(null)} />}
-                <SessionCreationDialog user={user.id} template={selection[0]} conf={conf} templates={templates} show={openCustom} onCreate={onCreateClick} onHide={() => setOpenCustom(false)} />
+                <SessionCreationDialog client={client} user={user} template={selection[0]} conf={conf} templates={templates} show={openCustom} onCreate={onCreateClick} onHide={() => setOpenCustom(false)} />
             </>
         );
     } else {

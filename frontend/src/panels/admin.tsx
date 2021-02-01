@@ -26,7 +26,7 @@ import TextField from '@material-ui/core/TextField';
 import Tooltip from '@material-ui/core/Tooltip';
 import Toolbar from '@material-ui/core/Toolbar';
 import Typography from '@material-ui/core/Typography';
-import { Client, Configuration, PlaygroundUser, Session, SessionConfiguration, SessionUpdateConfiguration, Template, User, UserConfiguration, UserUpdateConfiguration } from '@substrate/playground-client';
+import { Client, Configuration, PlaygroundUser, Pool, Session, SessionConfiguration, SessionUpdateConfiguration, Template, User, UserConfiguration, UserUpdateConfiguration } from '@substrate/playground-client';
 import { CenteredContainer, ErrorSnackbar, LoadingPanel } from '../components';
 import { useInterval } from '../hooks';
 import { DialogActions, DialogContentText, MenuItem } from '@material-ui/core';
@@ -57,7 +57,12 @@ function Resources<T>( { children, label, callback }: { children: (resources: Re
     const [resources, setResources] = useState<Record<string, T> | null>(null);
 
     useInterval(async () => {
-        setResources(await callback());
+        try {
+            setResources(await callback());
+        } catch (e) {
+            setResources({});
+            console.error(e);
+        }
     }, 5000);
 
     if (!resources) {
@@ -71,10 +76,28 @@ function Resources<T>( { children, label, callback }: { children: (resources: Re
     }
 }
 
-export function SessionCreationDialog({ conf, sessions, user, users, template, templates, show, onCreate, onHide }: { conf: Configuration, sessions?: Record<string, Session>, user?: string, users?: Record<string, User> | null, template?: string, templates: Record<string, Template> | null, show: boolean, onCreate: (conf: SessionConfiguration, id?: string, ) => void, onHide: () => void }): JSX.Element {
+function canCustomizeDuration(user: PlaygroundUser): boolean {
+    return user.admin || user.canCustomizeDuration;
+}
+
+function canCustomizePoolAffinity(user: PlaygroundUser): boolean {
+    return user.admin || user.canCustomizePoolAffinity;
+}
+
+export function canCustomize(user: PlaygroundUser): boolean {
+    return canCustomizeDuration(user) || canCustomizePoolAffinity(user);
+}
+
+export function SessionCreationDialog({ client, conf, sessions, user, users, template, templates, show, onCreate, onHide }: { client: Client, conf: Configuration, sessions?: Record<string, Session>, user: PlaygroundUser, users?: Record<string, User> | null, template?: string, templates: Record<string, Template> | null, show: boolean, onCreate: (conf: SessionConfiguration, id?: string, ) => void, onHide: () => void }): JSX.Element {
     const [selectedUser, setUser] = React.useState<string | null>(null);
     const [selectedTemplate, setTemplate] = React.useState<string | null>(null);
     const [duration, setDuration] = React.useState(conf.sessionDefaults.duration);
+    const [poolAffinity, setPoolAffinity] = React.useState(conf.sessionDefaults.poolAffinity);
+    const [pools, setPools] = useState<Record<string, Pool> | null>(null);
+
+    useInterval(async () => {
+        setPools(await client.listPools());
+    }, 5000);
 
     const handleUserChange = (event: React.ChangeEvent<HTMLInputElement>) => setUser(event.target.value);
     const handleTemplateChange = (event: React.ChangeEvent<HTMLInputElement>) => setTemplate(event.target.value);
@@ -82,8 +105,9 @@ export function SessionCreationDialog({ conf, sessions, user, users, template, t
         const duration = Number.parseInt(event.target.value);
         setDuration(Number.isNaN(duration)? 0 : duration);
     };
+    const handlePoolAffinityChange = (event: React.ChangeEvent<HTMLInputElement>) => setPoolAffinity(event.target.value);
 
-    const currentUser = user || selectedUser;
+    const currentUser = user.id || selectedUser;
     const currentTemplate = template || selectedTemplate;
 
     function valid(): boolean {
@@ -142,6 +166,24 @@ export function SessionCreationDialog({ conf, sessions, user, users, template, t
                     }
                     </TextField>
                     }
+                    {canCustomizePoolAffinity(user) &&
+                    <TextField
+                        style={{marginBottom: 20}}
+                        select
+                        value={template}
+                        onChange={handlePoolAffinityChange}
+                        required
+                        label="Pool affinity"
+                        >
+                    {pools &&
+                    Object.keys(pools).map(id => (
+                        <MenuItem key={id} value={id}>
+                        {id}
+                        </MenuItem>))
+                    }
+                    </TextField>
+                    }
+                    {canCustomizeDuration(user) &&
                     <TextField
                         style={{marginBottom: 20}}
                         value={duration}
@@ -149,9 +191,9 @@ export function SessionCreationDialog({ conf, sessions, user, users, template, t
                         required
                         type="number"
                         label="Duration"
-                        />
+                        />}
                     <ButtonGroup style={{alignSelf: "flex-end", marginTop: 20}} size="small">
-                        <Button disabled={!valid()} onClick={() => {onCreate({template: currentTemplate, duration: duration}, currentUser); onHide();}}>CREATE</Button>
+                        <Button disabled={!valid()} onClick={() => {onCreate({template: currentTemplate, duration: duration, poolAffinity: poolAffinity}, currentUser); onHide();}}>CREATE</Button>
                         <Button onClick={onHide}>CLOSE</Button>
                     </ButtonGroup>
                 </Container>
@@ -196,7 +238,7 @@ function SessionUpdateDialog({ id, duration, show, onUpdate, onHide }: { id: str
     );
 }
 
-function Sessions({ client, conf }: { client: Client, conf: Configuration }): JSX.Element {
+function Sessions({ client, conf, user }: { client: Client, conf: Configuration, user: PlaygroundUser }): JSX.Element {
     const classes = useStyles();
     const [selected, setSelected] = useState<string | null>(null);
     const [showCreationDialog, setShowCreationDialog] = useState(false);
@@ -220,7 +262,7 @@ function Sessions({ client, conf }: { client: Client, conf: Configuration }): JS
     }, 5000);
 
     function sessionMock(conf: SessionConfiguration): Session {
-        return {duration: conf.duration || 0, template: {name: "", image: "", description: ""}, user: "", url: "", pod: {phase: 'Pending', reason: "", message: ""}};
+        return {duration: conf.duration || 0, template: {name: "", image: "", description: ""}, userId: "", url: "", pod: {phase: 'Pending', reason: "", message: ""}};
     }
 
     async function onCreate(conf: SessionConfiguration, id: string | null, setSessions: Dispatch<SetStateAction<Record<string, Session> | null>>): Promise<void> {
@@ -333,7 +375,7 @@ function Sessions({ client, conf }: { client: Client, conf: Configuration }): JS
                 : <NoResourcesContainer label={`No sessions`} action={() => setShowCreationDialog(true)} />}
                 {errorMessage &&
                 <ErrorSnackbar open={true} message={errorMessage} onClose={() => setErrorMessage(null)} />}
-                <SessionCreationDialog conf={conf} sessions={resources} users={users} templates={templates} show={showCreationDialog} onCreate={(conf, id) => onCreate(conf, id, setSessions)} onHide={() => setShowCreationDialog(false)} />
+                <SessionCreationDialog client={client} conf={conf} sessions={resources} user={user} users={users} templates={templates} show={showCreationDialog} onCreate={(conf, id) => onCreate(conf, id, setSessions)} onHide={() => setShowCreationDialog(false)} />
                 {selected &&
                 <SessionUpdateDialog id={selected} duration={resources[selected].duration} show={showUpdateDialog} onUpdate={(id, conf) => onUpdate(id, conf, setSessions)} onHide={() => setShowUpdateDialog(false)} />}
             </>
@@ -473,16 +515,23 @@ function EnhancedTableToolbar({ label, selected = null, onCreate, onUpdate, onDe
     );
 }
 
-function UserCreationDialog({ users, show, onCreate, onHide }: { users: Record<string, User>, show: boolean, onCreate: (id: string, conf: UserConfiguration) => void, onHide: () => void }): JSX.Element {
+function UserCreationDialog({ client, conf, users, show, onCreate, onHide }: { client: Client, conf: Configuration, users: Record<string, User>, show: boolean, onCreate: (id: string, conf: UserConfiguration) => void, onHide: () => void }): JSX.Element {
     const [id, setID] = React.useState('');
-    const [durationChecked, setDurationChecked] = React.useState(false);
+    const [adminChecked, setAdminChecked] = React.useState(false);
+    const [poolAffinity, setPoolAffinity] = React.useState<string>(conf.sessionDefaults.poolAffinity);
+    const [customizeDurationChecked, setCustomizeDurationChecked] = React.useState(false);
+    const [customizePoolAffinityChecked, setCustomizePoolAffinityChecked] = React.useState(false);
+    const [pools, setPools] = useState<Record<string, Pool> | null>(null);
 
-    function reset(): void {
-        setID('');
-        setDurationChecked(false);
-    }
+    useInterval(async () => {
+        setPools(await client.listPools());
+    }, 5000);
+
     const handleIDChange = (event: React.ChangeEvent<HTMLInputElement>) => setID(event.target.value);
-    const handleDurationChange = (event: React.ChangeEvent<HTMLInputElement>) => setDurationChecked(event.target.checked);
+    const handleAdminChange = (event: React.ChangeEvent<HTMLInputElement>) => setAdminChecked(event.target.checked);
+    const handlePoolAffinityChange = (event: React.ChangeEvent<HTMLInputElement>) => setPoolAffinity(event.target.value);
+    const handleCustomizeDurationChange = (event: React.ChangeEvent<HTMLInputElement>) => setCustomizeDurationChecked(event.target.checked);
+    const handleCustomizePoolAffinityChange = (event: React.ChangeEvent<HTMLInputElement>) => setCustomizePoolAffinityChecked(event.target.checked);
     return (
         <Dialog open={show} onClose={onHide} maxWidth="md">
             <DialogTitle>User details</DialogTitle>
@@ -499,14 +548,47 @@ function UserCreationDialog({ users, show, onCreate, onHide }: { users: Record<s
                     <FormControlLabel
                         control={
                             <Checkbox
-                                checked={durationChecked}
-                                onChange={handleDurationChange}
+                                checked={adminChecked}
+                                onChange={handleAdminChange}
+                                />
+                        }
+                        label="Is admin"
+                    />
+                   <TextField
+                        style={{marginBottom: 20}}
+                        value={id}
+                        onChange={handlePoolAffinityChange}
+                        required
+                        label="Pool Affinity"
+                        autoFocus
+                        >
+                    {pools &&
+                    Object.keys(pools).map(id => (
+                        <MenuItem key={id} value={id}>
+                        {id}
+                        </MenuItem>))
+                    }
+                    </TextField>
+                    <FormControlLabel
+                        control={
+                            <Checkbox
+                                checked={customizeDurationChecked}
+                                onChange={handleCustomizeDurationChange}
                                 />
                         }
                         label="Can Customize duration"
                     />
+                    <FormControlLabel
+                        control={
+                            <Checkbox
+                                checked={customizePoolAffinityChecked}
+                                onChange={handleCustomizePoolAffinityChange}
+                                />
+                        }
+                        label="Can Customize pool affinity"
+                    />
                     <ButtonGroup style={{alignSelf: "flex-end", marginTop: 20}} size="small">
-                        <Button disabled={!id || users[id] != null} onClick={() => {reset(); onCreate(id.toLowerCase(), {admin: false, canCustomizeDuration: durationChecked}); onHide();}}>CREATE</Button>
+                        <Button disabled={!id || users[id] != null} onClick={() => {onCreate(id.toLowerCase(), {admin: adminChecked, poolAffinity: poolAffinity, canCustomizeDuration: customizeDurationChecked, canCustomizePoolAffinity: customizePoolAffinityChecked}); onHide();}}>CREATE</Button>
                         <Button onClick={onHide}>CLOSE</Button>
                     </ButtonGroup>
                 </Container>
@@ -515,21 +597,21 @@ function UserCreationDialog({ users, show, onCreate, onHide }: { users: Record<s
     );
 }
 
-function UserUpdateDialog({ id, admin, canCustomizeDuration, show, onUpdate, onHide }: { id: string, admin: boolean, canCustomizeDuration: boolean, show: boolean, onUpdate: (id: string, conf: UserUpdateConfiguration) => void, onHide: () => void }): JSX.Element {
-    const [adminChecked, setAdminChecked] = React.useState(false);
-    const [durationChecked, setDurationChecked] = React.useState(false);
+function UserUpdateDialog({ client, id, user, show, onUpdate, onHide }: { client: Client, id: string, user: User, show: boolean, onUpdate: (id: string, conf: UserUpdateConfiguration) => void, onHide: () => void }): JSX.Element {
+    const [adminChecked, setAdminChecked] = React.useState(user.admin);
+    const [poolAffinity, setPoolAffinity] = React.useState(user.poolAffinity);
+    const [customizeDurationChecked, setCustomizeDurationChecked] = React.useState(user.canCustomizeDuration);
+    const [customizePoolAffinityChecked, setCustomizePoolAffinityChecked] = React.useState(user.canCustomizePoolAffinity);
+    const [pools, setPools] = useState<Record<string, Pool> | null>(null);
 
-    React.useEffect(() => {
-        setAdminChecked(admin);
-        setDurationChecked(canCustomizeDuration);
-    }, [admin, canCustomizeDuration]);
+    useInterval(async () => {
+        setPools(await client.listPools());
+    }, 5000);
 
-    function reset(): void {
-        setAdminChecked(false);
-        setDurationChecked(false);
-    }
     const handleAdminChange = (event: React.ChangeEvent<HTMLInputElement>) => setAdminChecked(event.target.checked);
-    const handleDurationChange = (event: React.ChangeEvent<HTMLInputElement>) => setDurationChecked(event.target.checked);
+    const handlePoolAffinityChange = (event: React.ChangeEvent<HTMLInputElement>) => setPoolAffinity(event.target.value);
+    const handleCustomizeDurationChange = (event: React.ChangeEvent<HTMLInputElement>) => setCustomizeDurationChecked(event.target.checked);
+    const handleCustomizePoolAffinityChange = (event: React.ChangeEvent<HTMLInputElement>) => setCustomizePoolAffinityChecked(event.target.checked);
     return (
         <Dialog open={show} onClose={onHide} maxWidth="md">
             <DialogTitle>User details</DialogTitle>
@@ -544,17 +626,41 @@ function UserUpdateDialog({ id, admin, canCustomizeDuration, show, onUpdate, onH
                         }
                         label="Is admin"
                     />
+                  <TextField
+                        style={{marginBottom: 20}}
+                        value={id}
+                        onChange={handlePoolAffinityChange}
+                        required
+                        label="Pool Affinity"
+                        autoFocus
+                        >
+                    {pools &&
+                    Object.keys(pools).map(id => (
+                        <MenuItem key={id} value={id}>
+                        {id}
+                        </MenuItem>))
+                    }
+                    </TextField>
                     <FormControlLabel
                         control={
                             <Checkbox
-                                checked={durationChecked}
-                                onChange={handleDurationChange}
+                                checked={customizeDurationChecked}
+                                onChange={handleCustomizeDurationChange}
                                 />
                         }
                         label="Can Customize duration"
                     />
+                    <FormControlLabel
+                        control={
+                            <Checkbox
+                                checked={customizePoolAffinityChecked}
+                                onChange={handleCustomizePoolAffinityChange}
+                                />
+                        }
+                        label="Can Customize pool affinity"
+                    />
                     <ButtonGroup style={{alignSelf: "flex-end", marginTop: 20}} size="small">
-                        <Button disabled={ adminChecked == admin && durationChecked == canCustomizeDuration} onClick={() => {reset(); onUpdate(id.toLowerCase(), {admin: adminChecked, canCustomizeDuration: durationChecked}); onHide();}}>UPDATE</Button>
+                        <Button disabled={ adminChecked == user.admin && customizeDurationChecked == user.canCustomizeDuration } onClick={() => {onUpdate(id.toLowerCase(), {admin: adminChecked, poolAffinity: poolAffinity, canCustomizeDuration: customizeDurationChecked, canCustomizePoolAffinity: customizePoolAffinity}); onHide();}}>UPDATE</Button>
                         <Button onClick={onHide}>CLOSE</Button>
                     </ButtonGroup>
                 </Container>
@@ -563,7 +669,7 @@ function UserUpdateDialog({ id, admin, canCustomizeDuration, show, onUpdate, onH
     );
 }
 
-function Users({ client, user }: { client: Client, user: PlaygroundUser }): JSX.Element {
+function Users({ client, user, conf }: { client: Client, user: PlaygroundUser, conf: Configuration }): JSX.Element {
     const classes = useStyles();
     const [selected, setSelected] = useState<string | null>(null);
     const [showCreationDialog, setShowCreationDialog] = useState(false);
@@ -593,12 +699,16 @@ function Users({ client, user }: { client: Client, user: PlaygroundUser }): JSX.
         }
     }
 
+    function updatedUserMock(user: User, conf: UserUpdateConfiguration): User {
+        return {admin: conf.admin, poolAffinity: user.poolAffinity, canCustomizeDuration: conf.canCustomizeDuration, canCustomizePoolAffinity: user.canCustomizePoolAffinity};
+    }
+
     async function onUpdate(id: string, conf: UserUpdateConfiguration, setUsers: Dispatch<SetStateAction<Record<string, User> | null>>): Promise<void> {
         try {
             await client.updateUser(id, conf);
             setUsers((users: Record<string, User> | null) => {
                 if (users) {
-                    users[id] = conf;
+                    users[id] = updatedUserMock(users[id], conf);
                 }
                 return {...users};
             });
@@ -675,20 +785,52 @@ function Users({ client, user }: { client: Client, user: PlaygroundUser }): JSX.
                 </TableContainer>
                 {errorMessage &&
                 <ErrorSnackbar open={true} message={errorMessage} onClose={() => setErrorMessage(null)} />}
-                <UserCreationDialog users={resources} show={showCreationDialog} onCreate={(id, conf) => onCreate(id, conf, setUsers)} onHide={() => setShowCreationDialog(false)} />
+                <UserCreationDialog client={client} conf={conf} users={resources} show={showCreationDialog} onCreate={(id, conf) => onCreate(id, conf, setUsers)} onHide={() => setShowCreationDialog(false)} />
                 {selected &&
-                <UserUpdateDialog id={selected} admin={resources[selected].admin} canCustomizeDuration={resources[selected].canCustomizeDuration} show={showUpdateDialog} onUpdate={(id, conf) => onUpdate(id, conf, setUsers)} onHide={() => setShowUpdateDialog(false)} />}
+                <UserUpdateDialog client={client} id={selected} user={resources[selected]} show={showUpdateDialog} onUpdate={(id, conf) => onUpdate(id, conf, setUsers)} onHide={() => setShowUpdateDialog(false)} />}
             </>
         )}
         </Resources>
     );
 }
 
-function DetailsPanel({ client, conf }: { client: Client, conf: Configuration }): JSX.Element {
+function DetailsPanel({ conf }: { conf: Configuration }): JSX.Element {
     return (
         <Container>
             Default duration: {conf.sessionDefaults.duration} minutes
         </Container>
+    );
+}
+
+function Pools({ client }: { client: Client }): JSX.Element {
+    const classes = useStyles();
+
+    return (
+        <Resources<Pool> label="Pools" callback={async () => await client.listPools()}>
+        {(resources: Record<string, Pool>) => (
+            <>
+                <EnhancedTableToolbar label="Pools" />
+                <TableContainer component={Paper}>
+                    <Table className={classes.table} aria-label="simple table">
+                        <TableHead>
+                            <TableRow>
+                                <TableCell align="right">Name</TableCell>
+                                <TableCell align="right">Instance type</TableCell>
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
+                        {Object.entries(resources).map(([id, pool]) => (
+                        <TableRow key={id}>
+                            <TableCell align="right">{pool.name}</TableCell>
+                            <TableCell align="right">{pool.instanceType}</TableCell>
+                        </TableRow>
+                        ))}
+                        </TableBody>
+                    </Table>
+                </TableContainer>
+            </>
+            )}
+        </Resources>
     );
 }
 
@@ -706,16 +848,19 @@ export function AdminPanel({ client, user, conf }: { client: Client, user: Playg
                 <Tab label="Templates" />
                 <Tab label="Users" />
                 <Tab label="Sessions" />
+                <Tab label="Pools" />
             </Tabs>
 
             <Paper style={{ display: "flex", overflowY: "auto", flexDirection: "column", alignItems: 'center', justifyContent: 'center', textAlign: 'center', marginTop: 20, width: "80vw", height: "80vh"}} elevation={3}>
                 {value == 0
-                ? <DetailsPanel client={client} conf={conf} />
+                ? <DetailsPanel conf={conf} />
                 : value == 1
                 ? <Templates client={client} />
                 : value == 2
-                ? <Users client={client} user={user} />
-                : <Sessions client={client} conf={conf} />}
+                ? <Users client={client} user={user} conf={conf} />
+                : value == 3
+                ? <Sessions client={client} conf={conf} user={user} />
+                : <Pools client={client} />}
             </Paper>
         </CenteredContainer>
     );

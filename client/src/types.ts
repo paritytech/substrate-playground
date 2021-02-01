@@ -26,24 +26,30 @@ export interface PlaygroundUser {
     id: string,
     avatar: string,
     admin: boolean,
+    poolAffinity: string,
     canCustomizeDuration: boolean,
+    canCustomizePoolAffinity: boolean,
 }
 
 export interface User {
     admin: boolean,
-    canCustomizeDuration: boolean,
     poolAffinity: string,
+    canCustomizeDuration: boolean,
+    canCustomizePoolAffinity: boolean,
 }
 
 export interface UserConfiguration {
     admin: boolean,
+    poolAffinity?: string,
     canCustomizeDuration: boolean,
-    poolAffinity: string,
+    canCustomizePoolAffinity: boolean,
 }
 
 export interface UserUpdateConfiguration {
     admin: boolean,
+    poolAffinity?: string,
     canCustomizeDuration: boolean,
+    canCustomizePoolAffinity: boolean,
 }
 
 export interface Session {
