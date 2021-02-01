@@ -12,6 +12,9 @@ pub struct User {
     pub admin: bool,
     #[serde(default = "default_as_false")]
     pub can_customize_duration: bool,
+    #[serde(default = "default_as_false")]
+    pub can_customize_pool_affinity: bool,
+    pub pool_affinity: Option<String>,
 }
 
 impl Display for User {
@@ -30,6 +33,9 @@ pub struct UserConfiguration {
     pub admin: bool,
     #[serde(default = "default_as_false")]
     pub can_customize_duration: bool,
+    #[serde(default = "default_as_false")]
+    pub can_customize_pool_affinity: bool,
+    pub pool_affinity: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -38,6 +44,9 @@ pub struct UserUpdateConfiguration {
     pub admin: bool,
     #[serde(default = "default_as_false")]
     pub can_customize_duration: bool,
+    #[serde(default = "default_as_false")]
+    pub can_customize_pool_affinity: bool,
+    pub pool_affinity: Option<String>,
 }
 
 impl UserConfiguration {
@@ -61,7 +70,9 @@ pub struct LoggedUser {
     pub id: String,
     pub avatar: String,
     pub admin: bool,
+    pub pool_affinity: Option<String>,
     pub can_customize_duration: bool,
+    pub can_customize_pool_affinity: bool,
 }
 
 impl Display for LoggedUser {

@@ -57,7 +57,10 @@ fn request_to_user<'a, 'r>(request: &'a Request<'r>) -> request::Outcome<LoggedU
                     id: id.clone(),
                     avatar: gh_user.avatar_url,
                     admin: user.map_or(false, |user| user.admin),
+                    pool_affinity: user.and_then(|user| user.pool_affinity.clone()),
                     can_customize_duration: user.map_or(false, |user| user.can_customize_duration),
+                    can_customize_pool_affinity: user
+                        .map_or(false, |user| user.can_customize_pool_affinity),
                 })
             } else {
                 Outcome::Failure((Status::Forbidden, "User is not whitelisted"))
@@ -254,6 +257,17 @@ pub fn delete_current_session_unlogged() -> status::Unauthorized<()> {
 
 // Sessions
 
+#[get("/sessions/<id>")]
+pub fn get_session(state: State<'_, Context>, _admin: LoggedAdmin, id: String) -> JsonValue {
+    let manager = state.manager.clone();
+    result_to_jsonrpc(manager.get_session(&id))
+}
+
+#[get("/sessions/<_id>", rank = 2)]
+pub fn get_session_unlogged(_id: String) -> status::Unauthorized<()> {
+    status::Unauthorized::<()>(None)
+}
+
 #[get("/sessions")]
 pub fn list_sessions(state: State<'_, Context>, _admin: LoggedAdmin) -> JsonValue {
     let manager = state.manager.clone();
@@ -314,7 +328,29 @@ pub fn delete_session_unlogged(_id: String) -> status::Unauthorized<()> {
     status::Unauthorized::<()>(None)
 }
 
-// TODO Nodes / Pods
+// Pools
+
+#[get("/pools/<id>")]
+pub fn get_pool(state: State<'_, Context>, _admin: LoggedAdmin, id: String) -> JsonValue {
+    let manager = state.manager.clone();
+    result_to_jsonrpc(manager.get_pool(&id))
+}
+
+#[get("/pools/<_id>", rank = 2)]
+pub fn get_pool_unlogged(_id: String) -> status::Unauthorized<()> {
+    status::Unauthorized::<()>(None)
+}
+
+#[get("/pools")]
+pub fn list_pools(state: State<'_, Context>, _admin: LoggedAdmin) -> JsonValue {
+    let manager = state.manager.clone();
+    result_to_jsonrpc(manager.list_pools())
+}
+
+#[get("/pools", rank = 2)]
+pub fn list_pools_unlogged() -> status::Unauthorized<()> {
+    status::Unauthorized::<()>(None)
+}
 
 // kubectl get pod -o=custom-columns=NAME:.metadata.name,STATUS:.status.phase,NODE:.spec.nodeName --namespace playground
 

@@ -1,6 +1,6 @@
 use crate::{
     kubernetes::Engine,
-    session::{SessionConfiguration, SessionUpdateConfiguration},
+    session::{Pool, SessionConfiguration, SessionUpdateConfiguration},
     user::UserUpdateConfiguration,
 };
 use crate::{
@@ -67,7 +67,7 @@ impl Manager {
                     .patch_ingress(
                         running_sessions(sessions.values().collect())
                             .iter()
-                            .map(|i| (i.username.clone(), &i.template))
+                            .map(|i| (i.user_id.clone(), &i.template))
                             .collect(),
                     )
                     .await?;
@@ -99,7 +99,7 @@ impl Manager {
                             // Additionally the deployment time is tracked
                             match session.pod.phase {
                                 Phase::Running | Phase::Failed => {
-                                    sessions2.remove(&session.username);
+                                    sessions2.remove(&session.user_id);
                                     // TODO track success / failure
                                     if let Some(duration) =
                                         &session.pod.start_time.and_then(|p| p.elapsed().ok())
@@ -132,17 +132,14 @@ impl Manager {
                             &session.pod.start_time.and_then(|p| p.elapsed().ok())
                         {
                             if duration > &session.duration {
-                                info!(
-                                    "Undeploying {} {:?}",
-                                    session.username, session.pod.phase
-                                );
+                                info!("Undeploying {} {:?}", session.user_id, session.pod.phase);
 
-                                match self.clone().delete_session(&session.username) {
+                                match self.clone().delete_session(&session.user_id) {
                                     Ok(()) => (),
                                     Err(err) => {
                                         warn!(
                                             "Error while undeploying {}: {}",
-                                            session.username, err
+                                            session.user_id, err
                                         )
                                     }
                                 }
@@ -224,7 +221,12 @@ impl Manager {
         user.admin || user.can_customize_duration
     }
 
-    pub fn create_session(self, id: &str, user_id: &str, conf: SessionConfiguration) -> Result<(), String> {
+    pub fn create_session(
+        self,
+        id: &str,
+        user_id: &str,
+        conf: SessionConfiguration,
+    ) -> Result<(), String> {
         if conf.duration.is_some() {
             // Duration can only customized by users with proper rights
             let user = self.clone().get_user(user_id)?.ok_or_else(|| {
@@ -251,7 +253,12 @@ impl Manager {
         result
     }
 
-    pub fn update_session(self, id: &str, user_id: &str, conf: SessionUpdateConfiguration) -> Result<(), String> {
+    pub fn update_session(
+        self,
+        id: &str,
+        user_id: &str,
+        conf: SessionUpdateConfiguration,
+    ) -> Result<(), String> {
         if conf.duration.is_some() {
             // Duration can only customized by users with proper rights
             let user = self.clone().get_user(user_id)?.ok_or_else(|| {
@@ -271,5 +278,15 @@ impl Manager {
             Err(_) => self.metrics.inc_undeploy_failures_counter(&id),
         }
         result
+    }
+
+    // Pools
+
+    pub fn get_pool(self, id: &str) -> Result<Option<Pool>, String> {
+        new_runtime()?.block_on(self.engine.get_pool(&id))
+    }
+
+    pub fn list_pools(&self) -> Result<BTreeMap<String, Pool>, String> {
+        new_runtime()?.block_on(self.clone().engine.list_pools())
     }
 }

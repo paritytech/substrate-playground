@@ -4,7 +4,7 @@ use std::time::Duration;
 
 #[derive(Serialize, Clone, Debug)]
 pub struct Session {
-    pub username: String,
+    pub user_id: String,
     pub template: Template,
     pub url: String,
     pub pod: PodDetails,
@@ -12,12 +12,22 @@ pub struct Session {
     pub duration: Duration,
 }
 
+#[derive(Serialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct Pool {
+    pub name: String,
+    pub instance_type: Option<String>,
+    pub session_ids: Vec<String>,
+}
+
 #[derive(Deserialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct SessionConfiguration {
     pub template: String,
     #[serde(default)]
     #[serde(with = "option_duration")]
     pub duration: Option<Duration>,
+    pub pool_affinity: Option<String>,
 }
 
 #[derive(Deserialize, Clone, Debug)]
@@ -28,9 +38,11 @@ pub struct SessionUpdateConfiguration {
 }
 
 #[derive(Serialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct SessionDefaults {
     #[serde(with = "duration")]
     pub duration: Duration,
+    pub pool_affinity: String,
 }
 
 mod option_duration {
@@ -41,7 +53,9 @@ mod option_duration {
     where
         D: Deserializer<'de>,
     {
-        Ok(Some(Duration::from_secs(u64::deserialize(deserializer)? * 60)))
+        Ok(Some(Duration::from_secs(
+            u64::deserialize(deserializer)? * 60,
+        )))
     }
 }
 

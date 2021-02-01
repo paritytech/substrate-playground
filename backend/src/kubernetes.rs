@@ -2,7 +2,7 @@
 //! * https://docs.rs/k8s-openapi/0.5.1/k8s_openapi/api/core/v1/struct.ServiceStatus.html
 //! * https://docs.rs/k8s-openapi/0.5.1/k8s_openapi/api/core/v1/struct.ServiceSpec.html
 use crate::{
-    session::SessionUpdateConfiguration,
+    session::{Pool, SessionUpdateConfiguration},
     user::{User, UserConfiguration, UserUpdateConfiguration},
 };
 use crate::{
@@ -10,13 +10,17 @@ use crate::{
     template::Template,
 };
 use json_patch::{AddOperation, PatchOperation, RemoveOperation};
-use k8s_openapi::api::core::v1::{
-    ConfigMap, Container, EnvVar, Pod, PodSpec, Service, ServicePort, ServiceSpec,
-};
 use k8s_openapi::api::extensions::v1beta1::{
     HTTPIngressPath, HTTPIngressRuleValue, Ingress, IngressBackend, IngressRule,
 };
 use k8s_openapi::apimachinery::pkg::{apis::meta::v1::ObjectMeta, util::intstr::IntOrString};
+use k8s_openapi::{
+    api::core::v1::{
+        Affinity, ConfigMap, Container, EnvVar, Node, Pod, PodAffinityTerm, PodAntiAffinity,
+        PodSpec, Service, ServicePort, ServiceSpec,
+    },
+    apimachinery::pkg::apis::meta::v1::LabelSelector,
+};
 use kube::{
     api::{Api, DeleteParams, ListParams, Meta, Patch, PatchParams, PostParams},
     config::KubeConfigOptions,
@@ -119,6 +123,7 @@ fn create_pod(
     session_uuid: &str,
     template: &Template,
     duration: &Duration,
+    pool_affinity: &str,
 ) -> Pod {
     let mut labels = BTreeMap::new();
     // TODO fetch docker image labels and add them to the pod.
@@ -126,7 +131,7 @@ fn create_pod(
     labels.insert(APP_LABEL.to_string(), APP_VALUE.to_string());
     labels.insert(COMPONENT_LABEL.to_string(), COMPONENT_VALUE.to_string());
     labels.insert(OWNER_LABEL.to_string(), session_uuid.to_string());
-
+    // TODO affinity
     Pod {
         metadata: ObjectMeta {
             name: Some(pod_name(session_uuid)),
@@ -135,12 +140,37 @@ fn create_pod(
             ..Default::default()
         },
         spec: Some(PodSpec {
+            affinity: Some(Affinity {
+                node_affinity: None,
+                pod_anti_affinity: Some(PodAntiAffinity {
+                    required_during_scheduling_ignored_during_execution: Some(vec![
+                        PodAffinityTerm {
+                            label_selector: Some(LabelSelector {
+                                match_labels: Some(
+                                    vec![(
+                                        COMPONENT_LABEL.to_string(),
+                                        COMPONENT_VALUE.to_string(),
+                                    )]
+                                    .into_iter()
+                                    .collect(),
+                                ),
+                                ..Default::default()
+                            }),
+                            topology_key: "kubernetes.io/hostname".to_string(),
+                            ..Default::default()
+                        },
+                    ]),
+                    ..Default::default()
+                }),
+                ..Default::default()
+            }),
             containers: vec![Container {
                 name: format!("{}-container", COMPONENT_VALUE),
                 image: Some(template.image.to_string()),
                 env: Some(pod_env_variables(template, &env.host, session_uuid)),
                 ..Default::default()
             }],
+            termination_grace_period_seconds: Some(1),
             ..Default::default()
         }),
         ..Default::default()
@@ -440,6 +470,7 @@ impl Engine {
                 github_client_id,
                 session_defaults: SessionDefaults {
                     duration: str_to_session_duration_minutes(&session_default_duration)?,
+                    pool_affinity: "default-session".to_string(),
                 },
             },
             secrets: Secrets {
@@ -451,7 +482,8 @@ impl Engine {
     // Creates a Session from a Pod annotations
     fn pod_to_session(self, env: &Environment, pod: &Pod) -> Result<Session, String> {
         let labels = pod.metadata.labels.clone().ok_or("no labels")?;
-        let username = labels.get(OWNER_LABEL).ok_or("no owner label")?.to_string();
+        let unknown = "UNKNOWN OWNER".to_string();
+        let username = labels.get(OWNER_LABEL).unwrap_or_else(|| &unknown);
         let annotations = &pod.metadata.annotations.clone().ok_or("no annotations")?;
         let template = Template::parse(
             &annotations
@@ -463,12 +495,30 @@ impl Engine {
                 .get(SESSION_DURATION_ANNOTATION)
                 .ok_or("no session_duration annotation")?,
         )?;
+
         Ok(Session {
-            username: username.clone(),
+            user_id: username.clone(),
             template,
             url: subdomain(&env.host, &username),
             pod: Self::pod_to_details(self, pod)?,
             duration,
+        })
+    }
+
+    fn nodes_to_pool(self, id: String, nodes: Vec<Node>) -> Result<Pool, String> {
+        let node = nodes.first().ok_or("empty vec of nodes".to_string())?;
+        let labels = node.metadata.labels.clone().ok_or("no labels")?;
+        let local = "local".to_string();
+        let instance_type = labels
+            .get("node.kubernetes.io/instance-type")
+            .unwrap_or_else(|| &local);
+
+        // TODO For each node, list pods and extract session_ids
+
+        Ok(Pool {
+            name: id,
+            instance_type: Some(instance_type.clone()),
+            session_ids: vec![],
         })
     }
 
@@ -491,7 +541,9 @@ impl Engine {
         let user_configuration = UserConfiguration::parse(s)?;
         Ok(User {
             admin: user_configuration.admin,
+            pool_affinity: user_configuration.pool_affinity,
             can_customize_duration: user_configuration.can_customize_duration,
+            can_customize_pool_affinity: user_configuration.can_customize_pool_affinity,
         })
     }
 
@@ -602,7 +654,7 @@ impl Engine {
         Ok(pods
             .iter()
             .flat_map(|pod| self.clone().pod_to_session(&self.env, pod).ok())
-            .map(|session| (session.clone().username, session))
+            .map(|session| (session.clone().user_id, session))
             .collect::<BTreeMap<String, Session>>())
     }
 
@@ -641,6 +693,11 @@ impl Engine {
     }
 
     pub async fn create_session(self, id: &str, conf: SessionConfiguration) -> Result<(), String> {
+        // Make sure some node on the right pools still have rooms
+        // Find pool affinity, lookup corresponding pool and capacity based on type, figure out if there is room left
+        // TODO: replace with custom scheduler
+        // * https://kubernetes.io/docs/tasks/extend-kubernetes/configure-multiple-schedulers/
+        // * https://kubernetes.io/blog/2017/03/advanced-scheduling-in-kubernetes/
         let config = config().await?;
         let client = Client::new(config);
         // Access the right image id
@@ -667,11 +724,20 @@ impl Engine {
         let duration = conf
             .duration
             .unwrap_or(self.configuration.session_defaults.duration);
+        let pool_affinity = conf
+            .pool_affinity
+            .unwrap_or(self.configuration.session_defaults.pool_affinity);
         // Deploy a new pod for this image
         pod_api
             .create(
                 &PostParams::default(),
-                &create_pod(&self.env, &session_id.clone(), template, &duration),
+                &create_pod(
+                    &self.env,
+                    &session_id.clone(),
+                    template,
+                    &duration,
+                    &pool_affinity,
+                ),
             )
             .await
             .map_err(error_to_string)?;
@@ -710,11 +776,14 @@ impl Engine {
             };
             let patch: Patch<json_patch::Patch> =
                 Patch::Json(json_patch::Patch(vec![PatchOperation::Add(AddOperation {
-                    path: format!("/metadata/annotations/{}", SESSION_DURATION_ANNOTATION.replace("/", "~1")),
+                    path: format!(
+                        "/metadata/annotations/{}",
+                        SESSION_DURATION_ANNOTATION.replace("/", "~1")
+                    ),
                     value: json!(session_duration_annotation(duration)),
                 })]));
             pod_api
-                .patch(&pod_name(&session.username), &params, &patch)
+                .patch(&pod_name(&session.user_id), &params, &patch)
                 .await
                 .map_err(error_to_string)?;
         }
@@ -762,5 +831,56 @@ impl Engine {
             .map_err(error_to_string)?;
 
         Ok(())
+    }
+
+    pub async fn get_pool(self, id: &str) -> Result<Option<Pool>, String> {
+        let config = config().await?;
+        let client = Client::new(config);
+        let node_api: Api<Node> = Api::all(client);
+        let nodes = list_by_selector(
+            &node_api,
+            format!("{}={}", "cloud.google.com/gke-nodepool", id).to_string(),
+        )
+        .await?;
+
+        match self.clone().nodes_to_pool(id.to_string(), nodes) {
+            Ok(pool) => Ok(Some(pool)),
+            Err(_) => Ok(None),
+        }
+    }
+
+    pub async fn list_pools(&self) -> Result<BTreeMap<String, Pool>, String> {
+        let config = config().await?;
+        let client = Client::new(config);
+        let node_api: Api<Node> = Api::all(client);
+
+        let nodes = node_api
+            .list(&ListParams::default())
+            .await
+            .map(|l| l.items)
+            .map_err(|s| format!("Error {}", s))?;
+
+        let default = "default".to_string();
+        let nodes_by_pool: BTreeMap<String, Vec<Node>> =
+            nodes.iter().fold(BTreeMap::new(), |mut acc, node| {
+                if let Some(labels) = node.metadata.labels.clone() {
+                    let key = labels
+                        .get("cloud.google.com/gke-nodepool")
+                        .unwrap_or(&default);
+                    let nodes = acc.entry(key.clone()).or_insert(vec![]);
+                    nodes.push(node.clone());
+                } else {
+                    log::error!("No labels");
+                }
+                acc
+            });
+
+        Ok(nodes_by_pool
+            .into_iter()
+            .flat_map(|(s, v)| match self.clone().nodes_to_pool(s.clone(), v) {
+                Ok(pool) => Some((s, pool)),
+                Err(_) => None,
+            })
+            .collect())
     }
 }

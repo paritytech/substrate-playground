@@ -104,6 +104,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 api::delete_current_session,
                 api::delete_current_session_unlogged,
                 // Sessions
+                api::get_session,
+                api::get_session_unlogged,
                 api::list_sessions,
                 api::list_sessions_unlogged,
                 api::create_session,
@@ -112,6 +114,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 api::update_session_unlogged,
                 api::delete_session,
                 api::delete_session_unlogged,
+                // Pools
+                api::get_pool,
+                api::get_pool_unlogged,
+                api::list_pools,
+                api::list_pools_unlogged,
                 // Login
                 api::github_login,
                 api::post_install_callback,
