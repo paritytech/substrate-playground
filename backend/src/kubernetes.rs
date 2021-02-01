@@ -10,17 +10,16 @@ use crate::{
     template::Template,
 };
 use json_patch::{AddOperation, PatchOperation, RemoveOperation};
-use k8s_openapi::api::extensions::v1beta1::{
-    HTTPIngressPath, HTTPIngressRuleValue, Ingress, IngressBackend, IngressRule,
+use k8s_openapi::api::core::v1::{
+    Affinity, ConfigMap, Container, EnvVar, Node, Pod, PodSpec, Service, ServicePort, ServiceSpec,
+};
+use k8s_openapi::api::{
+    core::v1::{NodeAffinity, NodeSelectorRequirement, NodeSelectorTerm, PreferredSchedulingTerm},
+    extensions::v1beta1::{
+        HTTPIngressPath, HTTPIngressRuleValue, Ingress, IngressBackend, IngressRule,
+    },
 };
 use k8s_openapi::apimachinery::pkg::{apis::meta::v1::ObjectMeta, util::intstr::IntOrString};
-use k8s_openapi::{
-    api::core::v1::{
-        Affinity, ConfigMap, Container, EnvVar, Node, Pod, PodAffinityTerm, PodAntiAffinity,
-        PodSpec, Service, ServicePort, ServiceSpec,
-    },
-    apimachinery::pkg::apis::meta::v1::LabelSelector,
-};
 use kube::{
     api::{Api, DeleteParams, ListParams, Meta, Patch, PatchParams, PostParams},
     config::KubeConfigOptions,
@@ -31,6 +30,9 @@ use serde_json::json;
 use std::{collections::BTreeMap, error::Error, time::Duration};
 use std::{env, str::FromStr, time::SystemTime};
 
+const NODE_POOL_LABEL: &str = "cloud.google.com/gke-nodepool";
+const INSTANCE_TYPE_LABEL: &str = "node.kubernetes.io/instance-type";
+const HOSTNAME_LABEL: &str = "kubernetes.io/hostname";
 const APP_LABEL: &str = "app.kubernetes.io/part-of";
 const APP_VALUE: &str = "playground";
 const COMPONENT_LABEL: &str = "app.kubernetes.io/component";
@@ -42,6 +44,7 @@ const SESSION_DURATION_ANNOTATION: &str = "playground.substrate.io/session_durat
 const USERS_CONFIG_MAP: &str = "playground-users";
 const TEMPLATES_CONFIG_MAP: &str = "playground-templates";
 const THEIA_WEB_PORT: i32 = 3000;
+const DEFAULT_SESSION_POOL: &str = "session";
 
 fn error_to_string<T: std::fmt::Display>(err: T) -> String {
     format!("{}", err)
@@ -142,23 +145,18 @@ fn create_pod(
         spec: Some(PodSpec {
             // TODO affinity
             affinity: Some(Affinity {
-                node_affinity: None,
-                pod_anti_affinity: Some(PodAntiAffinity {
-                    required_during_scheduling_ignored_during_execution: Some(vec![
-                        PodAffinityTerm {
-                            label_selector: Some(LabelSelector {
-                                match_labels: Some(
-                                    vec![(
-                                        COMPONENT_LABEL.to_string(),
-                                        COMPONENT_VALUE.to_string(),
-                                    )]
-                                    .into_iter()
-                                    .collect(),
-                                ),
+                node_affinity: Some(NodeAffinity {
+                    preferred_during_scheduling_ignored_during_execution: Some(vec![
+                        PreferredSchedulingTerm {
+                            weight: 100,
+                            preference: NodeSelectorTerm {
+                                match_expressions: Some(vec![NodeSelectorRequirement {
+                                    key: NODE_POOL_LABEL.to_string(),
+                                    operator: "In".to_string(),
+                                    values: Some(vec![pool_affinity.to_string()]),
+                                }]),
                                 ..Default::default()
-                            }),
-                            topology_key: "kubernetes.io/hostname".to_string(),
-                            ..Default::default()
+                            },
                         },
                     ]),
                     ..Default::default()
@@ -471,7 +469,7 @@ impl Engine {
                 github_client_id,
                 session_defaults: SessionDefaults {
                     duration: str_to_session_duration_minutes(&session_default_duration)?,
-                    pool_affinity: "default-session".to_string(),
+                    pool_affinity: DEFAULT_SESSION_POOL.to_string(),
                 },
             },
             secrets: Secrets {
@@ -484,7 +482,7 @@ impl Engine {
     fn pod_to_session(self, env: &Environment, pod: &Pod) -> Result<Session, String> {
         let labels = pod.metadata.labels.clone().ok_or("no labels")?;
         let unknown = "UNKNOWN OWNER".to_string();
-        let username = labels.get(OWNER_LABEL).unwrap_or_else(|| &unknown);
+        let username = labels.get(OWNER_LABEL).unwrap_or(&unknown);
         let annotations = &pod.metadata.annotations.clone().ok_or("no annotations")?;
         let template = Template::parse(
             &annotations
@@ -507,13 +505,15 @@ impl Engine {
     }
 
     fn nodes_to_pool(self, id: String, nodes: Vec<Node>) -> Result<Pool, String> {
-        let node = nodes.first().ok_or("empty vec of nodes".to_string())?;
+        let node = nodes
+            .first()
+            .ok_or_else(|| "empty vec of nodes".to_string())?;
         let labels = node.metadata.labels.clone().ok_or("no labels")?;
         let local = "local".to_string();
         let unknown = "unknown".to_string();
         let instance_type = labels
-            .get("node.kubernetes.io/instance-type")
-            .unwrap_or_else(|| &local);
+            .get(INSTANCE_TYPE_LABEL)
+            .unwrap_or(&local);
 
         Ok(Pool {
             name: id,
@@ -526,8 +526,8 @@ impl Engine {
                         .labels
                         .clone()
                         .unwrap_or_default()
-                        .get("kubernetes.io/hostname")
-                        .unwrap_or_else(|| &unknown)
+                        .get(HOSTNAME_LABEL)
+                        .unwrap_or(&unknown)
                         .clone(),
                 })
                 .collect(),
@@ -714,7 +714,10 @@ impl Engine {
         let max_sessions_allowed = pools.values().map(|pool| pool.nodes.len()).sum();
         let sessions = self.list_sessions().await?;
         if sessions.len() >= max_sessions_allowed {
-            return Err(format!("Reached maximum of sessions allowed: {}", max_sessions_allowed));
+            return Err(format!(
+                "Reached maximum of sessions allowed: {}",
+                max_sessions_allowed
+            ));
         }
         let config = config().await?;
         let client = Client::new(config);
@@ -855,11 +858,8 @@ impl Engine {
         let config = config().await?;
         let client = Client::new(config);
         let node_api: Api<Node> = Api::all(client);
-        let nodes = list_by_selector(
-            &node_api,
-            format!("{}={}", "cloud.google.com/gke-nodepool", id).to_string(),
-        )
-        .await?;
+        let nodes =
+            list_by_selector(&node_api, format!("{}={}", NODE_POOL_LABEL, id).to_string()).await?;
 
         match self.clone().nodes_to_pool(id.to_string(), nodes) {
             Ok(pool) => Ok(Some(pool)),
@@ -882,10 +882,8 @@ impl Engine {
         let nodes_by_pool: BTreeMap<String, Vec<Node>> =
             nodes.iter().fold(BTreeMap::new(), |mut acc, node| {
                 if let Some(labels) = node.metadata.labels.clone() {
-                    let key = labels
-                        .get("cloud.google.com/gke-nodepool")
-                        .unwrap_or(&default);
-                    let nodes = acc.entry(key.clone()).or_insert(vec![]);
+                    let key = labels.get(NODE_POOL_LABEL).unwrap_or(&default);
+                    let nodes = acc.entry(key.clone()).or_insert(Vec::new());
                     nodes.push(node.clone());
                 } else {
                     log::error!("No labels");
