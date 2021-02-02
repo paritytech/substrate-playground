@@ -280,7 +280,7 @@ function Sessions({ client, conf, user }: { client: Client, conf: Configuration,
             }
         } catch (e) {
             console.error(e);
-            setErrorMessage("Failed to create session: ", e);
+            setErrorMessage(`Failed to create session: ${e}`);
         }
     }
 
@@ -822,6 +822,7 @@ function Pools({ client }: { client: Client }): JSX.Element {
                             <TableRow>
                                 <TableCell align="right">Name</TableCell>
                                 <TableCell align="right">Instance type</TableCell>
+                                <TableCell align="right"># of nodes</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
@@ -829,6 +830,7 @@ function Pools({ client }: { client: Client }): JSX.Element {
                         <TableRow key={id}>
                             <TableCell align="right">{pool.name}</TableCell>
                             <TableCell align="right">{pool.instanceType}</TableCell>
+                            <TableCell align="right">{pool.nodes.length}</TableCell>
                         </TableRow>
                         ))}
                         </TableBody>
