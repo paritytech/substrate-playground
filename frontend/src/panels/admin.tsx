@@ -664,7 +664,7 @@ function UserUpdateDialog({ client, id, user, show, onUpdate, onHide }: { client
                         label="Can Customize pool affinity"
                     />
                     <ButtonGroup style={{alignSelf: "flex-end", marginTop: 20}} size="small">
-                        <Button disabled={ adminChecked == user.admin && customizeDurationChecked == user.canCustomizeDuration } onClick={() => {onUpdate(id.toLowerCase(), {admin: adminChecked, poolAffinity: poolAffinity, canCustomizeDuration: customizeDurationChecked, canCustomizePoolAffinity: customizePoolAffinity}); onHide();}}>UPDATE</Button>
+                        <Button disabled={ adminChecked == user.admin && customizeDurationChecked == user.canCustomizeDuration } onClick={() => {onUpdate(id.toLowerCase(), {admin: adminChecked, poolAffinity: poolAffinity, canCustomizeDuration: customizeDurationChecked, canCustomizePoolAffinity: customizePoolAffinityChecked}); onHide();}}>UPDATE</Button>
                         <Button onClick={onHide}>CLOSE</Button>
                     </ButtonGroup>
                 </Container>
