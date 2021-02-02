@@ -44,7 +44,7 @@ const SESSION_DURATION_ANNOTATION: &str = "playground.substrate.io/session_durat
 const USERS_CONFIG_MAP: &str = "playground-users";
 const TEMPLATES_CONFIG_MAP: &str = "playground-templates";
 const THEIA_WEB_PORT: i32 = 3000;
-const DEFAULT_SESSION_POOL: &str = "session";
+const DEFAULT_SESSION_POOL: &str = "default";
 
 fn error_to_string<T: std::fmt::Display>(err: T) -> String {
     format!("{}", err)
@@ -707,6 +707,7 @@ impl Engine {
         // * https://kubernetes.io/docs/tasks/extend-kubernetes/configure-multiple-schedulers/
         // * https://kubernetes.io/blog/2017/03/advanced-scheduling-in-kubernetes/
         let pool_id = conf
+        // TODO user conf
             .clone()
             .pool_affinity
             .unwrap_or(self.clone().configuration.session_defaults.pool_affinity);
@@ -714,13 +715,13 @@ impl Engine {
             .get_pool(&pool_id)
             .await?
             .ok_or_else(|| "No existing pool".to_string())?;
-        // TODO only check correct pool_affinity
         let max_sessions_allowed = pool.nodes.len();
         let sessions = self.list_sessions().await?;
         if sessions.len() >= max_sessions_allowed {
             // TODO metrics
+            // TODO configurable # of concurrent session per node
             return Err(format!(
-                "Reached maximum of sessions allowed: {}",
+                "Reached maximum number of concurrent sessions allowed: {}",
                 max_sessions_allowed
             ));
         }
