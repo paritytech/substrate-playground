@@ -89,7 +89,7 @@ export function canCustomize(user: PlaygroundUser): boolean {
 }
 
 export function SessionCreationDialog({ client, conf, sessions, user, users, template, templates, show, onCreate, onHide, allowUserSelection = false }: { client: Client, conf: Configuration, sessions?: Record<string, Session>, user: PlaygroundUser, users?: Record<string, User> | null, template?: string, templates: Record<string, Template> | null, show: boolean, onCreate: (conf: SessionConfiguration, id?: string, ) => void, onHide: () => void , allowUserSelection?: boolean}): JSX.Element {
-    const [selectedUser, setUser] = React.useState<string | null>(null);
+    const [selectedUser, setUser] = React.useState<string | null>(user.id);
     const [selectedTemplate, setTemplate] = React.useState<string | null>(null);
     const [duration, setDuration] = React.useState(conf.sessionDefaults.duration);
     const [poolAffinity, setPoolAffinity] = React.useState(conf.sessionDefaults.poolAffinity);
@@ -173,7 +173,7 @@ export function SessionCreationDialog({ client, conf, sessions, user, users, tem
                     <TextField
                         style={{marginBottom: 20}}
                         select
-                        value={template}
+                        value={poolAffinity}
                         onChange={handlePoolAffinityChange}
                         required
                         label="Pool affinity"
@@ -225,7 +225,6 @@ function SessionUpdateDialog({ id, duration, show, onUpdate, onHide }: { id: str
                         style={{marginBottom: 20}}
                         value={newDuration}
                         onChange={handleDurationChange}
-                        onError={() => console.log("oups")}
                         required
                         type="number"
                         label="Duration"
@@ -592,7 +591,7 @@ function UserCreationDialog({ client, conf, users, show, onCreate, onHide }: { c
                         label="Can Customize pool affinity"
                     />
                     <ButtonGroup style={{alignSelf: "flex-end", marginTop: 20}} size="small">
-                        <Button disabled={!id || users[id] != null || !poolAffinity} onClick={() => {onCreate(id.toLowerCase(), {admin: adminChecked, poolAffinity: poolAffinity, canCustomizeDuration: customizeDurationChecked, canCustomizePoolAffinity: customizePoolAffinityChecked}); onHide();}}>CREATE</Button>
+                        <Button disabled={!id || users[id] != null} onClick={() => {onCreate(id.toLowerCase(), {admin: adminChecked, poolAffinity: poolAffinity, canCustomizeDuration: customizeDurationChecked, canCustomizePoolAffinity: customizePoolAffinityChecked}); onHide();}}>CREATE</Button>
                         <Button onClick={onHide}>CLOSE</Button>
                     </ButtonGroup>
                 </Container>
