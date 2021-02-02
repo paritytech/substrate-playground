@@ -44,7 +44,6 @@ const SESSION_DURATION_ANNOTATION: &str = "playground.substrate.io/session_durat
 const USERS_CONFIG_MAP: &str = "playground-users";
 const TEMPLATES_CONFIG_MAP: &str = "playground-templates";
 const THEIA_WEB_PORT: i32 = 3000;
-const DEFAULT_SESSION_POOL: &str = "default";
 
 fn error_to_string<T: std::fmt::Display>(err: T) -> String {
     format!("{}", err)
@@ -452,6 +451,8 @@ impl Engine {
             env::var("GITHUB_CLIENT_SECRET").map_err(|_| "GITHUB_CLIENT_SECRET must be set")?;
         let session_default_duration = env::var("SESSION_DEFAULT_DURATION")
             .map_err(|_| "SESSION_DEFAULT_DURATION must be set")?;
+        let session_default_pool_affinity = env::var("SESSION_DEFAULT_POOL_AFFINITY")
+            .map_err(|_| "SESSION_DEFAULT_POOL_AFFINITY must be set")?;
 
         Ok(Engine {
             env: Environment {
@@ -463,7 +464,7 @@ impl Engine {
                 github_client_id,
                 session_defaults: SessionDefaults {
                     duration: str_to_session_duration_minutes(&session_default_duration)?,
-                    pool_affinity: DEFAULT_SESSION_POOL.to_string(),
+                    pool_affinity: session_default_pool_affinity.to_string(),
                 },
             },
             secrets: Secrets {

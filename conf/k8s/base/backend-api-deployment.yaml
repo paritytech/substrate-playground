@@ -38,6 +38,11 @@ spec:
               configMapKeyRef:
                 name: playground-config
                 key: session.defaultDuration
+          - name: SESSION_DEFAULT_POOL_AFFINITY
+            valueFrom:
+              configMapKeyRef:
+                name: playground-config
+                key: session.defaultPoolAffinity
           - name: GITHUB_CLIENT_ID
             valueFrom:
               configMapKeyRef:
