@@ -704,6 +704,7 @@ impl Engine {
 
     pub async fn create_session(
         self,
+        user: Option<User>,
         session_id: String,
         conf: SessionConfiguration,
     ) -> Result<(), String> {
@@ -713,10 +714,11 @@ impl Engine {
         // * https://kubernetes.io/docs/tasks/extend-kubernetes/configure-multiple-schedulers/
         // * https://kubernetes.io/blog/2017/03/advanced-scheduling-in-kubernetes/
         let pool_id = conf
-            // TODO user conf
             .clone()
             .pool_affinity
-            .unwrap_or(self.clone().configuration.session_defaults.pool_affinity);
+            .unwrap_or_else(|| {
+                user.and_then(|user| user.pool_affinity).unwrap_or(self.clone().configuration.session_defaults.pool_affinity)
+            });
         let pool = self
             .get_pool(&pool_id)
             .await?

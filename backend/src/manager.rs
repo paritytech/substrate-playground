@@ -234,9 +234,10 @@ impl Manager {
         user_id: &str,
         conf: SessionConfiguration,
     ) -> Result<(), String> {
+        let user = self.clone().get_user(user_id)?;
         if conf.duration.is_some() {
             // Duration can only customized by users with proper rights
-            let user = self.clone().get_user(user_id)?.ok_or_else(|| {
+            let user = user.clone().ok_or_else(|| {
                 format!("Duration customization requires user but can't find {}", id)
             })?;
             if !self.can_customize_duration(user) {
@@ -245,7 +246,7 @@ impl Manager {
         }
 
         let template = conf.clone().template;
-        let result = new_runtime()?.block_on(self.engine.create_session(session_id(id), conf));
+        let result = new_runtime()?.block_on(self.engine.create_session(user, session_id(id), conf));
         match result {
             Ok(session) => {
                 if let Ok(mut sessions) = self.sessions.lock() {
