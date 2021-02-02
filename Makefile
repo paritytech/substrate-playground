@@ -158,7 +158,7 @@ k8s-create-cluster: requires-k8s
         --min-nodes 2 \
         --max-nodes 10 \
 	kubectl create ns ${NAMESPACE} \
-	kubectl create configmap playground-config --namespace=playground --from-literal=github.clientId="$${CLIENT_ID}" --from-literal=session.defaultDuration="180" --from-literal=session.defaultPoolAffinity="default" \
+	kubectl create configmap playground-config --namespace=playground --from-literal=github.clientId="$${CLIENT_ID}" --from-literal=session.defaultDuration="180" --from-literal=session.defaultMaxPerNode="2" --from-literal=session.defaultPoolAffinity="default" \
 	kubectl create secret generic playground-secrets --namespace=playground --from-literal=github.clientSecret="$${CLIENT_SECRET}" --from-literal=rocket.secretKey=`openssl rand -base64 32` \
 	kubectl create configmap playground-templates --namespace=${NAMESPACE} --from-file=conf/k8s/overlays/${ENV}/templates/ --dry-run=client -o yaml | kubectl apply -f - \
 	kubectl create configmap playground-users --namespace=${NAMESPACE} --from-file=conf/k8s/overlays/${ENV}/users/ --dry-run=client -o yaml | kubectl apply -f -

@@ -20,6 +20,7 @@ export interface SessionDefaults {
     /* The default number of minutes sessions can last */
     duration: number,
     poolAffinity: string,
+    maxSessionsPerPod: string,
 }
 
 export interface PlaygroundUser {

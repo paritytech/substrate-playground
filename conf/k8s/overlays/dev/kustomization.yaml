@@ -21,6 +21,7 @@ configMapGenerator:
     - github.clientId=dd81163290c118582a1a
     - session.defaultDuration=180
     - session.defaultPoolAffinity=default
+    - session.defaultMaxPerNode=2
 # TODO make immutable
 # Requires k8s 1.19
 # See https://github.com/kubernetes-sigs/kustomize/issues/2895

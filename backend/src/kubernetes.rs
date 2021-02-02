@@ -453,6 +453,8 @@ impl Engine {
             .map_err(|_| "SESSION_DEFAULT_DURATION must be set")?;
         let session_default_pool_affinity = env::var("SESSION_DEFAULT_POOL_AFFINITY")
             .map_err(|_| "SESSION_DEFAULT_POOL_AFFINITY must be set")?;
+        let session_default_max_per_node = env::var("SESSION_DEFAULT_MAX_PER_NODE")
+            .map_err(|_| "SESSION_DEFAULT_MAX_PER_NODE must be set")?;
 
         Ok(Engine {
             env: Environment {
@@ -464,7 +466,10 @@ impl Engine {
                 github_client_id,
                 session_defaults: SessionDefaults {
                     duration: str_to_session_duration_minutes(&session_default_duration)?,
-                    pool_affinity: session_default_pool_affinity.to_string(),
+                    pool_affinity: session_default_pool_affinity,
+                    max_sessions_per_pod: session_default_max_per_node
+                        .parse()
+                        .map_err(error_to_string)?,
                 },
             },
             secrets: Secrets {
@@ -708,7 +713,7 @@ impl Engine {
         // * https://kubernetes.io/docs/tasks/extend-kubernetes/configure-multiple-schedulers/
         // * https://kubernetes.io/blog/2017/03/advanced-scheduling-in-kubernetes/
         let pool_id = conf
-        // TODO user conf
+            // TODO user conf
             .clone()
             .pool_affinity
             .unwrap_or(self.clone().configuration.session_defaults.pool_affinity);
@@ -716,11 +721,11 @@ impl Engine {
             .get_pool(&pool_id)
             .await?
             .ok_or_else(|| "No existing pool".to_string())?;
-        let max_sessions_allowed = pool.nodes.len();
+        let max_sessions_allowed =
+            pool.nodes.len() * self.configuration.session_defaults.max_sessions_per_pod;
         let sessions = self.list_sessions().await?;
         if sessions.len() >= max_sessions_allowed {
             // TODO metrics
-            // TODO configurable # of concurrent session per node
             return Err(format!(
                 "Reached maximum number of concurrent sessions allowed: {}",
                 max_sessions_allowed

@@ -49,6 +49,7 @@ pub struct SessionDefaults {
     #[serde(with = "duration")]
     pub duration: Duration,
     pub pool_affinity: String,
+    pub max_sessions_per_pod: usize,
 }
 
 mod option_duration {
