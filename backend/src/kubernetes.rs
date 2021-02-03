@@ -721,7 +721,7 @@ impl Engine {
         let pool = self
             .get_pool(&pool_id)
             .await?
-            .ok_or_else(|| "No existing pool".to_string())?;
+            .ok_or_else(|| format!("Unknown pool: {}", pool_id))?;
         let max_sessions_allowed =
             pool.nodes.len() * self.configuration.session_defaults.max_sessions_per_pod;
         let sessions = self.list_sessions().await?;
