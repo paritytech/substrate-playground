@@ -1,5 +1,4 @@
 import { injectable, inject } from "inversify";
-import { Client } from "@substrate/playground-client";
 import { MAIN_MENU_BAR, CommandContribution, CommandRegistry, MenuContribution, MenuModelRegistry } from "@theia/core/lib/common";
 import { ConnectionStatusService, ConnectionStatus } from '@theia/core/lib/browser/connection-status-service';
 import { MessageService } from '@theia/core/lib/common/message-service';
@@ -13,16 +12,6 @@ import { FileDownloadService } from '@theia/filesystem/lib/browser/download/file
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import URI from '@theia/core/lib/common/uri';
 import { URI as VSCodeURI } from 'vscode-uri';
-
-export const SendFeedbackCommand = {
-    id: 'TheiaSubstrateExtension.send-feedback-command',
-    label: "Send feedback"
-};
-
-export const StopInstanceCommand = {
-    id: 'TheiaSubstrateExtension.stop-instance-command',
-    label: "Stop this instance"
-};
 
 async function openTerminal(terminalService: TerminalService, options: TerminalWidgetOptions = {}): Promise<TerminalWidget> {
    const terminalWidget = await terminalService.newTerminal(options);
@@ -100,13 +89,6 @@ function registerBridge(registry, connectionStatusService, messageService) {
     answer("extension-advertise", "", {online: online});
 }
 
-function sessionDetails() {
-    const [id] = window.location.host.split(".");
-    return {
-        session: id,
-    };
-}
-
 async function locateDevcontainer(workspaceService: WorkspaceService, fileService: FileService): Promise<URI | undefined> {
     const location: FileStat | undefined = (await workspaceService.roots)[0];
     if (!location || !location?.children) {
@@ -181,17 +163,6 @@ export class TheiaSubstrateExtensionCommandContribution implements CommandContri
     protected readonly fileService: FileService;
 
     registerCommands(registry: CommandRegistry): void {
-        const {session} = sessionDetails();
-        registry.registerCommand(SendFeedbackCommand, {
-            execute: () => window.open('https://docs.google.com/forms/d/e/1FAIpQLSdXpq_fHqS_ow4nC7EpGmrC_XGX_JCIRzAqB1vaBtoZrDW-ZQ/viewform?edit_requested=true')
-        });
-        registry.registerCommand(StopInstanceCommand, {
-            execute: async () => {
-                const client = new Client('/api', {credentials: "include"});
-                client.deleteSession(session);
-            }
-        });
-
         if (window !== window.parent) {
             // Running in a iframe
             registerBridge(registry, this.connectionStatusService, this.messageService);
@@ -239,16 +210,6 @@ export class TheiaSubstrateExtensionMenuContribution implements MenuContribution
     async registerMenus(menus: MenuModelRegistry): Promise<void> {
         const PLAYGROUND = [...MAIN_MENU_BAR, '8_playground'];
         menus.registerSubmenu(PLAYGROUND, 'Playground');
-        const PLAYGROUND_STOP_INSTANCE = [...PLAYGROUND, '1_links'];
-        menus.registerMenuAction(PLAYGROUND_STOP_INSTANCE, {
-            commandId: StopInstanceCommand.id,
-            order: "1"
-        });
-        const feedbackIndex = 2;
-        const PLAYGROUND_SEND_FEEDBACK = [...PLAYGROUND, '${feedbackIndex}_feedback'];
-        menus.registerMenuAction(PLAYGROUND_SEND_FEEDBACK, {
-            commandId: SendFeedbackCommand.id
-        });
         const uri = await locateDevcontainer(this.workspaceService, this.fileService);
         if (uri) {
             const file = await this.fileService.readFile(uri);
@@ -262,7 +223,7 @@ export class TheiaSubstrateExtensionMenuContribution implements MenuContribution
                         }
                     });
 
-                    const index = `${feedbackIndex+1+i}_${id}`;
+                    const index = `${i}_${id}`;
                     const MENU_ITEM = [...PLAYGROUND, index];
                     menus.registerMenuAction(MENU_ITEM, {
                         commandId: command.id
