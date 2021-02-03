@@ -89,7 +89,7 @@ build-template-theia-base:
 push-template-theia-base: build-template-theia-base ## Push a newly built theia image on docker.io
 	docker push ${TEMPLATE_THEIA_BASE}:sha-${THEIA_DOCKER_IMAGE_VERSION}
 
-build-test-templates: build-template-base build-template-theia-base
+build-test-templates: push-template-base push-template-theia-base
 	$(eval THEIA_DOCKER_IMAGE_VERSION=$(shell git rev-parse --short HEAD))
 	$(eval TAG=paritytech/substrate-playground-template-test:latest)
 	$(eval TAG_THEIA=paritytech/substrate-playground-template-test-theia:latest)
