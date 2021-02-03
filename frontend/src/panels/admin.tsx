@@ -100,7 +100,7 @@ export function SessionCreationDialog({ client, conf, sessions, user, users, tem
         setPools(await client.listPools());
     }, 5000);
 
-    const handleUserChange = (event: any, newValue: string | null) => setUser(newValue);
+    const handleUserChange = (_event: any, newValue: string | null) => setUser(newValue);
     const handleTemplateChange = (event: React.ChangeEvent<HTMLInputElement>) => setTemplate(event.target.value);
     const handleDurationChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const duration = Number.parseInt(event.target.value);
@@ -587,7 +587,7 @@ function UserCreationDialog({ client, conf, users, show, onCreate, onHide }: { c
                         label="Can Customize pool affinity"
                     />
                     <ButtonGroup style={{alignSelf: "flex-end", marginTop: 20}} size="small">
-                        <Button disabled={!id || users[id] != null} onClick={() => {onCreate(id.toLowerCase(), {admin: adminChecked, poolAffinity: poolAffinity, canCustomizeDuration: customizeDurationChecked, canCustomizePoolAffinity: customizePoolAffinityChecked}); onHide();}}>CREATE</Button>
+                        <Button disabled={!id || users[id] != null || !poolAffinity} onClick={() => {onCreate(id.toLowerCase(), {admin: adminChecked, poolAffinity: poolAffinity, canCustomizeDuration: customizeDurationChecked, canCustomizePoolAffinity: customizePoolAffinityChecked}); onHide();}}>CREATE</Button>
                         <Button onClick={onHide}>CLOSE</Button>
                     </ButtonGroup>
                 </Container>
@@ -660,7 +660,7 @@ function UserUpdateDialog({ client, id, user, show, onUpdate, onHide }: { client
                         label="Can Customize pool affinity"
                     />
                     <ButtonGroup style={{alignSelf: "flex-end", marginTop: 20}} size="small">
-                        <Button disabled={ adminChecked == user.admin && customizeDurationChecked == user.canCustomizeDuration } onClick={() => {onUpdate(id.toLowerCase(), {admin: adminChecked, poolAffinity: poolAffinity, canCustomizeDuration: customizeDurationChecked, canCustomizePoolAffinity: customizePoolAffinityChecked}); onHide();}}>UPDATE</Button>
+                        <Button disabled={ adminChecked == user.admin && poolAffinity == user.poolAffinity && customizeDurationChecked == user.canCustomizeDuration && customizePoolAffinityChecked == user.canCustomizePoolAffinity } onClick={() => {onUpdate(id.toLowerCase(), {admin: adminChecked, poolAffinity: poolAffinity, canCustomizeDuration: customizeDurationChecked, canCustomizePoolAffinity: customizePoolAffinityChecked}); onHide();}}>UPDATE</Button>
                         <Button onClick={onHide}>CLOSE</Button>
                     </ButtonGroup>
                 </Container>
