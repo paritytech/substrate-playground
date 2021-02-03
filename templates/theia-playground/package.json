@@ -64,7 +64,7 @@
         "vscode-builtin-log": "https://open-vsx.org/api/vscode/log/1.47.3/file/vscode.log-1.47.3.vsix",
         "vscode-builtin-make": "https://open-vsx.org/api/vscode/make/1.47.3/file/vscode.make-1.47.3.vsix",
         "vscode-builtin-markdown": "https://open-vsx.org/api/vscode/markdown/1.47.3/file/vscode.markdown-1.47.3.vsix",
-        "vscode-builtin-markdown-language-features": "https://open-vsx.org/api/vscode/markdown-language-features/1.39.1/file/vscode.markdown-language-features-1.39.1.vsix",
+        "vscode-builtin-markdown-language-features": "https://open-vsx.org/api/vscode/markdown-language-features/1.47.3/file/vscode.markdown-language-features-1.47.3.vsix",
         "vscode-builtin-merge-conflicts": "https://open-vsx.org/api/vscode/merge-conflict/1.47.3/file/vscode.merge-conflict-1.47.3.vsix",
         "vscode-builtin-npm": "https://open-vsx.org/api/vscode/npm/1.47.3/file/vscode.npm-1.47.3.vsix",
         "vscode-builtin-node-debug2": "https://github.com/theia-ide/vscode-node-debug2/releases/download/v1.33.0/node-debug2-1.33.0.vsix",
