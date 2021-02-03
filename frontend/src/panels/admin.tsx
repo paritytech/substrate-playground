@@ -340,6 +340,7 @@ function Sessions({ client, conf, user }: { client: Client, conf: Configuration,
                                     <TableCell align="right">URL</TableCell>
                                     <TableCell align="right">Duration</TableCell>
                                     <TableCell align="right">Phase</TableCell>
+                                    <TableCell align="right">Node</TableCell>
                                 </TableRow>
                             </TableHead>
                             <TableBody>
@@ -368,6 +369,7 @@ function Sessions({ client, conf, user }: { client: Client, conf: Configuration,
                                         <TableCell align="right"><a href={`//${session.url}`}>{session.url}</a></TableCell>
                                         <TableCell align="right">{session.duration}</TableCell>
                                         <TableCell align="right">{session.pod.phase}</TableCell>
+                                        <TableCell align="right">{session.node}</TableCell>
                                     </TableRow>
                                 )})}
                             </TableBody>

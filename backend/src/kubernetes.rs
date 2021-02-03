@@ -128,8 +128,6 @@ fn create_pod(
     pool_id: &str,
 ) -> Pod {
     let mut labels = BTreeMap::new();
-    // TODO fetch docker image labels and add them to the pod.
-    // Can be done by querying dockerhub (https://docs.docker.com/registry/spec/api/)
     labels.insert(APP_LABEL.to_string(), APP_VALUE.to_string());
     labels.insert(COMPONENT_LABEL.to_string(), COMPONENT_VALUE.to_string());
     labels.insert(OWNER_LABEL.to_string(), session_id.to_string());
@@ -499,8 +497,9 @@ impl Engine {
             user_id: username.clone(),
             template,
             url: subdomain(&env.host, &username),
-            pod: Self::pod_to_details(self, pod)?,
+            pod: Self::pod_to_details(self, &pod.clone())?,
             duration,
+            node: pod.clone().spec.ok_or("err".to_string())?.node_name.ok_or("err".to_string())?,
         })
     }
 
@@ -727,7 +726,6 @@ impl Engine {
             pool.nodes.len() * self.configuration.session_defaults.max_sessions_per_pod;
         let sessions = self.list_sessions().await?;
         if sessions.len() >= max_sessions_allowed {
-            // TODO metrics
             return Err(format!(
                 "Reached maximum number of concurrent sessions allowed: {}",
                 max_sessions_allowed

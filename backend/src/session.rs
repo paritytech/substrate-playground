@@ -10,6 +10,7 @@ pub struct Session {
     pub pod: PodDetails,
     #[serde(with = "duration")]
     pub duration: Duration,
+    pub node: String,
 }
 
 #[derive(Serialize, Clone, Debug)]
