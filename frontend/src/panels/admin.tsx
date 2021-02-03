@@ -30,6 +30,7 @@ import { Client, Configuration, PlaygroundUser, Pool, Session, SessionConfigurat
 import { CenteredContainer, ErrorSnackbar, LoadingPanel } from '../components';
 import { useInterval } from '../hooks';
 import { DialogActions, DialogContentText, MenuItem } from '@material-ui/core';
+import { Autocomplete } from '@material-ui/lab';
 
 const useStyles = makeStyles({
     table: {
@@ -99,7 +100,7 @@ export function SessionCreationDialog({ client, conf, sessions, user, users, tem
         setPools(await client.listPools());
     }, 5000);
 
-    const handleUserChange = (event: React.ChangeEvent<HTMLInputElement>) => setUser(event.target.value);
+    const handleUserChange = (event: any, newValue: string | null) => setUser(newValue);
     const handleTemplateChange = (event: React.ChangeEvent<HTMLInputElement>) => setTemplate(event.target.value);
     const handleDurationChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const duration = Number.parseInt(event.target.value);
@@ -135,22 +136,15 @@ export function SessionCreationDialog({ client, conf, sessions, user, users, tem
             <DialogContent>
                 <Container style={{display: "flex", flexDirection: "column"}}>
                     {allowUserSelection &&
-                    <TextField
-                        style={{marginBottom: 20}}
-                        select
-                        value={selectedUser}
-                        onChange={handleUserChange}
-                        required
-                        label="User"
-                        autoFocus
-                        >
-                    {users &&
-                    Object.keys(users).map(id => (
-                        <MenuItem key={id} value={id}>
-                        {id}
-                        </MenuItem>))
-                    }
-                    </TextField>
+                    <Autocomplete
+                        size="small"
+                        freeSolo
+                        onInputChange={handleUserChange}
+                        options={users ? Object.keys(users) : []}
+                        defaultValue={user.id}
+                        getOptionLabel={(user) => user}
+                        renderInput={(params) => <TextField {...params} label="User" />}
+                      />
                     }
                     {!template &&
                     <TextField
