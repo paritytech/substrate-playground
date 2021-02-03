@@ -117,7 +117,7 @@ export default function SplitButton({ template, onCreate, onCreateCustom }: { te
   );
 }
 
-function TemplateSelector({client, conf, user, templates, onDeployed, onRetry}: {client: Client, conf: Configuration, user: PlaygroundUser, templates: Record<string, Template>, onDeployed: (conf: SessionConfiguration) => void, onRetry: () => void}): JSX.Element {
+function TemplateSelector({client, conf, user, templates, onDeployed, onRetry}: {client: Client, conf: Configuration, user: PlaygroundUser, templates: Record<string, Template>, onDeployed: (conf: SessionConfiguration) => Promise<void>, onRetry: () => void}): JSX.Element {
     const publicTemplates = Object.entries(templates).filter(([k, v]) => v.tags?.public == "true");
     const templatesAvailable = publicTemplates.length > 0;
     const [selection, select] = useState(templatesAvailable ? publicTemplates[0] : null);
@@ -125,11 +125,11 @@ function TemplateSelector({client, conf, user, templates, onDeployed, onRetry}: 
     const [openCustom, setOpenCustom] = React.useState(false);
     const classes = useStyles();
 
-    function onCreateClick(conf: SessionConfiguration): void {
+    async function onCreateClick(conf: SessionConfiguration): Promise<void> {
         try {
-            onDeployed(conf);
-        } catch {
-            setErrorMessage("Failed to create a new session");
+            await onDeployed(conf);
+        } catch (e) {
+            setErrorMessage(`Failed to create a new session: ${e}`);
         }
     }
 
@@ -339,7 +339,7 @@ function ExistingSession({session, onStop, onConnect}: {session: Session, onStop
     );
 }
 
-export function SessionPanel({ client, conf, user, templates, onDeployed, onConnect, onRetry, onStop }: {client: Client, conf: Configuration, user: PlaygroundUser, templates: Record<string, Template>, onStop: () => void, onConnect: (session: Session) => void, onDeployed: (conf: SessionConfiguration) => void, onRetry: () => void}): JSX.Element {
+export function SessionPanel({ client, conf, user, templates, onDeployed, onConnect, onRetry, onStop }: {client: Client, conf: Configuration, user: PlaygroundUser, templates: Record<string, Template>, onStop: () => void, onConnect: (session: Session) => void, onDeployed: (conf: SessionConfiguration) => Promise<void>, onRetry: () => void}): JSX.Element {
     const [session, setSession] = useState<Session | null>(null);
 
     useInterval(async () => setSession(await client.getCurrentSession()), 1000);
