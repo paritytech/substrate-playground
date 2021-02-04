@@ -164,7 +164,7 @@ jobs:
         working-directory: conf/k8s/overlays/${{ steps.env.outputs.environment }}
 
       - name: Audit URLs using Lighthouse
-        uses: treosh/lighthouse-ci-action@v3
+        uses: treosh/lighthouse-ci-action@7.0.0
         with:
           urls: https://${{ steps.env.outputs.domain }}.substrate.dev/
           uploadArtifacts: true
