@@ -499,7 +499,12 @@ impl Engine {
             url: subdomain(&env.host, &username),
             pod: Self::pod_to_details(self, &pod.clone())?,
             duration,
-            node: pod.clone().spec.ok_or("err".to_string())?.node_name.ok_or("err".to_string())?,
+            node: pod
+                .clone()
+                .spec
+                .ok_or_else(|| "err".to_string())?
+                .node_name
+                .ok_or_else(|| "err".to_string())?,
         })
     }
 
@@ -712,12 +717,10 @@ impl Engine {
         // TODO: replace with custom scheduler
         // * https://kubernetes.io/docs/tasks/extend-kubernetes/configure-multiple-schedulers/
         // * https://kubernetes.io/blog/2017/03/advanced-scheduling-in-kubernetes/
-        let pool_id = conf
-            .clone()
-            .pool_affinity
-            .unwrap_or_else(|| {
-                user.and_then(|user| user.pool_affinity).unwrap_or(self.clone().configuration.session_defaults.pool_affinity)
-            });
+        let pool_id = conf.clone().pool_affinity.unwrap_or_else(|| {
+            user.and_then(|user| user.pool_affinity)
+                .unwrap_or(self.clone().configuration.session_defaults.pool_affinity)
+        });
         let pool = self
             .get_pool(&pool_id)
             .await?

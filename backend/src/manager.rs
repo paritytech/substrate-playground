@@ -246,7 +246,8 @@ impl Manager {
         }
 
         let template = conf.clone().template;
-        let result = new_runtime()?.block_on(self.engine.create_session(user, session_id(id), conf));
+        let result =
+            new_runtime()?.block_on(self.engine.create_session(user, session_id(id), conf));
         match result {
             Ok(session) => {
                 if let Ok(mut sessions) = self.sessions.lock() {
