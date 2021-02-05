@@ -25,6 +25,7 @@ use kube::{
     config::KubeConfigOptions,
     Client, Config,
 };
+use log::error;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::json;
 use std::{collections::BTreeMap, error::Error, time::Duration};
@@ -568,8 +569,15 @@ impl Engine {
         Ok(get_templates(client, &self.env.namespace)
             .await?
             .into_iter()
-            .map(|(k, v)| Template::parse(&v).map(|v2| (k, v2)))
-            .collect::<Result<BTreeMap<String, Template>, String>>()?)
+            .filter_map(|(k, v)| {
+                if let Ok(template) = Template::parse(&v) {
+                    Some((k, template))
+                } else {
+                    error!("Error while parsing template {}", k);
+                    None
+                }
+            })
+            .collect::<BTreeMap<String, Template>>())
     }
 
     pub async fn get_user(self, id: &str) -> Result<Option<User>, String> {
