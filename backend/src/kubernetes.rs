@@ -28,7 +28,7 @@ use kube::{
 use log::error;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::json;
-use std::{collections::BTreeMap, error::Error, time::Duration};
+use std::{collections::BTreeMap, convert::TryFrom, error::Error, time::Duration};
 use std::{env, str::FromStr, time::SystemTime};
 
 const NODE_POOL_LABEL: &str = "cloud.google.com/gke-nodepool";
@@ -419,7 +419,7 @@ impl Engine {
     pub async fn new() -> Result<Self, Box<dyn Error>> {
         let config = config().await?;
         let namespace = config.clone().default_ns.to_string();
-        let client = Client::new(config);
+        let client = Client::try_from(config)?;
         let ingress_api: Api<Ingress> = Api::namespaced(client.clone(), &namespace);
         let secured = if let Ok(ingress) = ingress_api.get(INGRESS_NAME).await {
             ingress.spec.ok_or("No spec")?.tls.is_some()
@@ -564,7 +564,7 @@ impl Engine {
 
     pub async fn list_templates(self) -> Result<BTreeMap<String, Template>, String> {
         let config = config().await?;
-        let client = Client::new(config);
+        let client = Client::try_from(config).map_err(error_to_string)?;
 
         Ok(get_templates(client, &self.env.namespace)
             .await?
@@ -582,7 +582,7 @@ impl Engine {
 
     pub async fn get_user(self, id: &str) -> Result<Option<User>, String> {
         let config = config().await?;
-        let client = Client::new(config);
+        let client = Client::try_from(config).map_err(error_to_string)?;
 
         let users = list_users(client, &self.env.namespace).await?;
         let user = users.get(id);
@@ -595,7 +595,7 @@ impl Engine {
 
     pub async fn list_users(self) -> Result<BTreeMap<String, User>, String> {
         let config = config().await?;
-        let client = Client::new(config);
+        let client = Client::try_from(config).map_err(error_to_string)?;
 
         Ok(list_users(client, &self.env.namespace)
             .await?
@@ -606,7 +606,7 @@ impl Engine {
 
     pub async fn create_user(self, id: String, user: UserConfiguration) -> Result<(), String> {
         let config = config().await?;
-        let client = Client::new(config);
+        let client = Client::try_from(config).map_err(error_to_string)?;
 
         add_config_map_value(
             client,
@@ -628,7 +628,7 @@ impl Engine {
         user: UserUpdateConfiguration,
     ) -> Result<(), String> {
         let config = config().await?;
-        let client = Client::new(config);
+        let client = Client::try_from(config).map_err(error_to_string)?;
 
         add_config_map_value(
             client,
@@ -646,13 +646,13 @@ impl Engine {
 
     pub async fn delete_user(self, id: String) -> Result<(), String> {
         let config = config().await?;
-        let client = Client::new(config);
+        let client = Client::try_from(config).map_err(error_to_string)?;
         delete_config_map_value(client, &self.env.namespace, USERS_CONFIG_MAP, id.as_str()).await
     }
 
     pub async fn get_session(self, id: &str) -> Result<Option<Session>, String> {
         let config = config().await?;
-        let client = Client::new(config);
+        let client = Client::try_from(config).map_err(error_to_string)?;
         let pod_api: Api<Pod> = Api::namespaced(client, &self.env.namespace);
         let pod = pod_api.get(&pod_name(id)).await.ok();
 
@@ -665,7 +665,7 @@ impl Engine {
     /// Lists all currently running sessions
     pub async fn list_sessions(&self) -> Result<BTreeMap<String, Session>, String> {
         let config = config().await?;
-        let client = Client::new(config);
+        let client = Client::try_from(config).map_err(error_to_string)?;
         let pod_api: Api<Pod> = Api::namespaced(client, &self.env.namespace);
         let pods = list_by_selector(
             &pod_api,
@@ -685,7 +685,7 @@ impl Engine {
         templates: &BTreeMap<String, &Template>,
     ) -> Result<(), String> {
         let config = config().await?;
-        let client = Client::new(config);
+        let client = Client::try_from(config).map_err(error_to_string)?;
         let ingress_api: Api<Ingress> = Api::namespaced(client, &self.env.namespace);
         let mut ingress: Ingress = ingress_api
             .get(INGRESS_NAME)
@@ -743,7 +743,7 @@ impl Engine {
             ));
         }
         let config = config().await?;
-        let client = Client::new(config);
+        let client = Client::try_from(config).map_err(error_to_string)?;
         // Access the right image id
         let templates = get_templates(client.clone(), &self.env.namespace).await?;
         let template_str = templates
@@ -810,7 +810,7 @@ impl Engine {
             .unwrap_or(self.configuration.session_defaults.duration);
         if duration != session.duration {
             let config = config().await?;
-            let client = Client::new(config);
+            let client = Client::try_from(config).map_err(error_to_string)?;
             let pod_api: Api<Pod> = Api::namespaced(client, &self.env.namespace);
             let params = PatchParams {
                 ..PatchParams::default()
@@ -835,7 +835,7 @@ impl Engine {
     pub async fn delete_session(self, id: &str) -> Result<(), String> {
         // Undeploy the service by its id
         let config = config().await?;
-        let client = Client::new(config);
+        let client = Client::try_from(config).map_err(error_to_string)?;
         let service_api: Api<Service> = Api::namespaced(client.clone(), &self.env.namespace);
         service_api
             .delete(&service_name(id), &DeleteParams::default())
@@ -876,7 +876,7 @@ impl Engine {
 
     pub async fn get_pool(&self, id: &str) -> Result<Option<Pool>, String> {
         let config = config().await?;
-        let client = Client::new(config);
+        let client = Client::try_from(config).map_err(error_to_string)?;
         let node_api: Api<Node> = Api::all(client);
         let nodes =
             list_by_selector(&node_api, format!("{}={}", NODE_POOL_LABEL, id).to_string()).await?;
@@ -889,7 +889,7 @@ impl Engine {
 
     pub async fn list_pools(&self) -> Result<BTreeMap<String, Pool>, String> {
         let config = config().await?;
-        let client = Client::new(config);
+        let client = Client::try_from(config).map_err(error_to_string)?;
         let node_api: Api<Node> = Api::all(client);
 
         let nodes = node_api
