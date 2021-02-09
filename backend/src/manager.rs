@@ -14,7 +14,13 @@ use crate::{
 use crate::{metrics::Metrics, session::Session, user::LoggedUser};
 use log::{error, info, warn};
 use serde::{Deserialize, Serialize};
-use std::{collections::{BTreeMap, HashSet}, error::Error, sync::{Arc, Mutex}, thread::{self, JoinHandle}, time::Duration};
+use std::{
+    collections::{BTreeMap, HashSet},
+    error::Error,
+    sync::{Arc, Mutex},
+    thread::{self, JoinHandle},
+    time::Duration,
+};
 use tokio::runtime::Runtime;
 
 fn running_sessions(sessions: Vec<&Session>) -> Vec<&Session> {
@@ -284,7 +290,7 @@ impl Manager {
                 } else {
                     error!("Failed to acquire sessions lock");
                 }
-            },
+            }
             Err(_) => self.metrics.inc_undeploy_failures_counter(&id),
         }
         result
