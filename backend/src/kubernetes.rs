@@ -25,6 +25,7 @@ use kube::{
     config::KubeConfigOptions,
     Client, Config,
 };
+use kube_runtime::{watcher};
 use log::error;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::json;
@@ -37,7 +38,7 @@ const HOSTNAME_LABEL: &str = "kubernetes.io/hostname";
 const APP_LABEL: &str = "app.kubernetes.io/part-of";
 const APP_VALUE: &str = "playground";
 const COMPONENT_LABEL: &str = "app.kubernetes.io/component";
-const COMPONENT_VALUE: &str = "theia";
+const COMPONENT_VALUE: &str = "session";
 const OWNER_LABEL: &str = "app.kubernetes.io/owner";
 const INGRESS_NAME: &str = "ingress";
 const TEMPLATE_ANNOTATION: &str = "playground.substrate.io/template";
@@ -454,6 +455,9 @@ impl Engine {
             .map_err(|_| "SESSION_DEFAULT_POOL_AFFINITY must be set")?;
         let session_default_max_per_node = env::var("SESSION_DEFAULT_MAX_PER_NODE")
             .map_err(|_| "SESSION_DEFAULT_MAX_PER_NODE must be set")?;
+
+        let api = Api::<Pod>::namespaced(client, &namespace);
+        let watcher = watcher(api, ListParams::default());
 
         Ok(Engine {
             env: Environment {
