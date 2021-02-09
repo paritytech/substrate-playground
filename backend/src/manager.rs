@@ -14,13 +14,7 @@ use crate::{
 use crate::{metrics::Metrics, session::Session, user::LoggedUser};
 use log::{error, info, warn};
 use serde::{Deserialize, Serialize};
-use std::{
-    collections::BTreeMap,
-    error::Error,
-    sync::{Arc, Mutex},
-    thread::{self, JoinHandle},
-    time::Duration,
-};
+use std::{collections::{BTreeMap, HashSet}, error::Error, sync::{Arc, Mutex}, thread::{self, JoinHandle}, time::Duration};
 use tokio::runtime::Runtime;
 
 fn running_sessions(sessions: Vec<&Session>) -> Vec<&Session> {
@@ -34,7 +28,7 @@ fn running_sessions(sessions: Vec<&Session>) -> Vec<&Session> {
 pub struct Manager {
     pub engine: Engine,
     pub metrics: Metrics,
-    sessions: Arc<Mutex<BTreeMap<String, ()>>>,
+    sessions: Arc<Mutex<HashSet<String>>>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -82,7 +76,7 @@ impl Manager {
         Ok(Manager {
             engine,
             metrics,
-            sessions: Arc::new(Mutex::new(BTreeMap::new())), // Temp map used to track session deployment time
+            sessions: Arc::new(Mutex::new(HashSet::new())), // Temp map used to track session deployment time
         })
     }
 
@@ -94,7 +88,7 @@ impl Manager {
             let sessions_thread = self.clone().sessions.clone();
             if let Ok(mut sessions2) = sessions_thread.lock() {
                 let sessions3 = &mut sessions2.clone();
-                for id in sessions3.keys() {
+                for id in sessions3.iter() {
                     match self.clone().get_session(&id) {
                         Ok(Some(session)) => {
                             // Deployed sessions are removed from the set
@@ -249,9 +243,9 @@ impl Manager {
         let result =
             new_runtime()?.block_on(self.engine.create_session(user, session_id(id), conf));
         match result {
-            Ok(session) => {
+            Ok(_session) => {
                 if let Ok(mut sessions) = self.sessions.lock() {
-                    sessions.insert(id.into(), session);
+                    sessions.insert(id.into());
                 } else {
                     error!("Failed to acquire sessions lock");
                 }
@@ -283,7 +277,14 @@ impl Manager {
     pub fn delete_session(self, id: &str) -> Result<(), String> {
         let result = new_runtime()?.block_on(self.engine.delete_session(&id));
         match result {
-            Ok(_) => self.metrics.inc_undeploy_counter(&id),
+            Ok(_) => {
+                self.metrics.inc_undeploy_counter(&id);
+                if let Ok(mut sessions) = self.sessions.lock() {
+                    sessions.remove(id);
+                } else {
+                    error!("Failed to acquire sessions lock");
+                }
+            },
             Err(_) => self.metrics.inc_undeploy_failures_counter(&id),
         }
         result
