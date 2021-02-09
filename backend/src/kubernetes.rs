@@ -25,7 +25,6 @@ use kube::{
     config::KubeConfigOptions,
     Client, Config,
 };
-use kube_runtime::{watcher};
 use log::error;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::json;
@@ -455,9 +454,6 @@ impl Engine {
             .map_err(|_| "SESSION_DEFAULT_POOL_AFFINITY must be set")?;
         let session_default_max_per_node = env::var("SESSION_DEFAULT_MAX_PER_NODE")
             .map_err(|_| "SESSION_DEFAULT_MAX_PER_NODE must be set")?;
-
-        let api = Api::<Pod>::namespaced(client, &namespace);
-        let watcher = watcher(api, ListParams::default());
 
         Ok(Engine {
             env: Environment {
