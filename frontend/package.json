@@ -40,7 +40,7 @@
     "eslint": "6.8.0",
     "eslint-plugin-react": "7.22.0",
     "parcel": "nightly",
-    "typescript": "4.1.3"
+    "typescript": "4.1.4"
   },
   "browserslist": [
     "last 5 and_chr versions",
