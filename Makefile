@@ -181,6 +181,7 @@ k8s-gke-static-ip: requires-k8s
 
 k8s-dev: requires-k8s
 	@kubectl label nodes docker-desktop cloud.google.com/gke-nodepool=default --overwrite
+	@kubectl create ns ${NAMESPACE} --dry-run=client -o yaml | kubectl apply -f -
 	@cd conf/k8s; skaffold dev
 
 k8s-deploy-playground: requires-k8s ## Deploy playground on kubernetes
