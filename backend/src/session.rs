@@ -1,16 +1,67 @@
-use crate::{kubernetes::PodDetails, template::Template};
+use crate::template::Template;
 use serde::{Deserialize, Serialize};
-use std::time::Duration;
+use std::{
+    str::FromStr,
+    time::{Duration, SystemTime},
+};
 
 #[derive(Serialize, Clone, Debug)]
 pub struct Session {
     pub user_id: String,
     pub template: Template,
     pub url: String,
-    pub pod: PodDetails,
+    pub pod: Pod,
     #[serde(with = "duration")]
     pub duration: Duration,
     pub node: String,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+pub enum Phase {
+    Pending,
+    Running,
+    Succeeded,
+    Failed,
+    Unknown,
+}
+
+impl FromStr for Phase {
+    type Err = String;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "Pending" => Ok(Phase::Pending),
+            "Running" => Ok(Phase::Running),
+            "Succeeded" => Ok(Phase::Succeeded),
+            "Failed" => Ok(Phase::Failed),
+            "Unknown" => Ok(Phase::Unknown),
+            _ => Err(format!("'{}' is not a valid value for Phase", s)),
+        }
+    }
+}
+
+#[derive(Serialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct Pod {
+    pub phase: Phase,
+    pub reason: String,
+    pub message: String,
+    #[serde(with = "system_time")]
+    pub start_time: Option<SystemTime>,
+}
+
+mod system_time {
+    use serde::{self, Serializer};
+    use std::time::SystemTime;
+
+    pub fn serialize<S>(date: &Option<SystemTime>, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match date.and_then(|v| v.elapsed().ok()) {
+            Some(value) => serializer.serialize_some(&value.as_secs()),
+            None => serializer.serialize_none(),
+        }
+    }
 }
 
 #[derive(Serialize, Clone, Debug)]

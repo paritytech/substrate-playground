@@ -2,7 +2,7 @@
 //! * https://docs.rs/k8s-openapi/0.5.1/k8s_openapi/api/core/v1/struct.ServiceStatus.html
 //! * https://docs.rs/k8s-openapi/0.5.1/k8s_openapi/api/core/v1/struct.ServiceSpec.html
 use crate::{
-    session::{Pool, SessionUpdateConfiguration},
+    session::{self, Pool, SessionUpdateConfiguration},
     user::{User, UserConfiguration, UserUpdateConfiguration},
 };
 use crate::{
@@ -28,8 +28,9 @@ use kube::{
 use log::error;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::json;
+use session::Phase;
 use std::{collections::BTreeMap, convert::TryFrom, error::Error, time::Duration};
-use std::{env, str::FromStr, time::SystemTime};
+use std::{env, str::FromStr};
 
 const NODE_POOL_LABEL: &str = "cloud.google.com/gke-nodepool";
 const INSTANCE_TYPE_LABEL: &str = "node.kubernetes.io/instance-type";
@@ -367,54 +368,6 @@ pub struct Engine {
     pub secrets: Secrets,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
-pub enum Phase {
-    Pending,
-    Running,
-    Succeeded,
-    Failed,
-    Unknown,
-}
-
-impl FromStr for Phase {
-    type Err = String;
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            "Pending" => Ok(Phase::Pending),
-            "Running" => Ok(Phase::Running),
-            "Succeeded" => Ok(Phase::Succeeded),
-            "Failed" => Ok(Phase::Failed),
-            "Unknown" => Ok(Phase::Unknown),
-            _ => Err(format!("'{}' is not a valid value for Phase", s)),
-        }
-    }
-}
-
-#[derive(Serialize, Clone, Debug)]
-#[serde(rename_all = "camelCase")]
-pub struct PodDetails {
-    pub phase: Phase,
-    pub reason: String,
-    pub message: String,
-    #[serde(with = "system_time")]
-    pub start_time: Option<SystemTime>,
-}
-
-mod system_time {
-    use serde::{self, Serializer};
-    use std::time::SystemTime;
-
-    pub fn serialize<S>(date: &Option<SystemTime>, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        match date.and_then(|v| v.elapsed().ok()) {
-            Some(value) => serializer.serialize_some(&value.as_secs()),
-            None => serializer.serialize_none(),
-        }
-    }
-}
-
 impl Engine {
     pub async fn new() -> Result<Self, Box<dyn Error>> {
         let config = config().await?;
@@ -537,9 +490,9 @@ impl Engine {
         })
     }
 
-    fn pod_to_details(self, pod: &Pod) -> Result<PodDetails, String> {
+    fn pod_to_details(self, pod: &Pod) -> Result<session::Pod, String> {
         let status = pod.status.as_ref().ok_or("No status")?;
-        Ok(PodDetails {
+        Ok(session::Pod {
             phase: Phase::from_str(
                 &status
                     .clone()

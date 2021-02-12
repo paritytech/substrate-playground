@@ -2,6 +2,7 @@
 
 use hyper::{
     header::{qitem, Accept, Authorization, Basic, UserAgent},
+    mime::Mime,
     net::HttpsConnector,
     status::StatusCode,
     Client,
@@ -21,8 +22,16 @@ pub struct GitHubUser {
     pub login: String,
     #[serde(default)]
     pub avatar_url: String,
+    pub organizations_url: String,
 }
 
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+pub struct GitHubOrg {
+    #[serde(default)]
+    pub login: String,
+}
+
+///
 /// Returns a GitHubUser representing provided token.
 ///
 /// # Arguments
@@ -31,6 +40,7 @@ pub struct GitHubUser {
 /// * `client_id` - a github OAuth client ID
 /// * `client_secret` - a github OAuth client secret (matching client ID)
 ///
+#[allow(dead_code)]
 pub fn token_validity(
     token: &str,
     client_id: &str,
@@ -72,15 +82,14 @@ pub fn token_validity(
     }
 }
 
+///
 /// Returns current GitHubUser represented by a `token`.
 ///
 /// # Arguments
 ///
 /// * `token` - a github token
 ///
-pub fn current_user(
-    token: &str,
-) -> Result<GitHubUser, String> {
+pub fn current_user(token: &str) -> Result<GitHubUser, String> {
     let https = HttpsConnector::new(hyper_sync_rustls::TlsClient::new());
     let client = Client::with_connector(https);
 
@@ -108,6 +117,45 @@ pub fn current_user(
             })?;
 
         Ok(user)
+    } else {
+        Err("Invalid token".to_string())
+    }
+}
+
+///
+/// Returns a Vec<GitHubOrg> associated to a GitHubUser.
+///
+/// # Arguments
+///
+/// * `token` - a github token
+/// * `user` - a GitHubUser
+///
+pub fn orgs(token: &str, user: &GitHubUser) -> Result<Vec<GitHubOrg>, String> {
+    let https = HttpsConnector::new(hyper_sync_rustls::TlsClient::new());
+    let client = Client::with_connector(https);
+
+    let mime: Mime = "application/vnd.github.v3+json"
+        .parse()
+        .expect("parse GitHub MIME type");
+
+    let response: hyper::client::response::Response = client
+        .get(user.organizations_url.as_str())
+        .header(Authorization(format!("token {}", token)))
+        .header(Accept(vec![qitem(mime)]))
+        .header(UserAgent("Substrate Playground".into()))
+        .send()
+        .map_err(|a| a.to_string())?;
+
+    let status = response.status;
+    if !status.is_success() {
+        return Err(format!("got non-success status {}", status));
+    }
+
+    if status == StatusCode::Ok {
+        let orgs: Vec<GitHubOrg> = serde_json::from_reader(response.take(2 * 1024 * 1024))
+            .map_err(|error| format!("Failed to read Vec<GitHubOrg>: {}", error.to_string()))?;
+
+        Ok(orgs)
     } else {
         Err("Invalid token".to_string())
     }

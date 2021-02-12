@@ -2,7 +2,7 @@
 use crate::user::{LoggedAdmin, LoggedUser, UserConfiguration};
 use crate::Context;
 use crate::{
-    github::{current_user, GitHubUser},
+    github::{current_user, orgs, GitHubUser},
     kubernetes::Environment,
 };
 use crate::{
@@ -39,14 +39,17 @@ fn request_to_user<'a, 'r>(request: &'a Request<'r>) -> request::Outcome<LoggedU
     let mut cookies = request.cookies();
     if let Some(token) = cookies.get_private(COOKIE_TOKEN) {
         let token_value = token.value();
-        if let Ok(gh_user) = current_user(
-            token_value
-        ) {
-            let id = gh_user.login;
+        if let Ok(gh_user) = current_user(token_value) {
+            let id = gh_user.clone().login;
             let users = Runtime::new()
                 .map_err(|_| Err((Status::ExpectationFailed, "Failed to execute async fn")))?
                 .block_on(engine.clone().list_users())
                 .map_err(|_| Err((Status::FailedDependency, "Missing users ConfiMap")))?;
+            let organizations = orgs(token_value, &gh_user)
+                .unwrap_or(vec![])
+                .iter()
+                .map(|org| org.clone().login)
+                .collect();
             let user = users.get(&id);
             // If at least one non-admin user is defined, then users are only allowed if whitelisted
             let filtered = users.values().any(|user| !user.admin);
@@ -59,6 +62,7 @@ fn request_to_user<'a, 'r>(request: &'a Request<'r>) -> request::Outcome<LoggedU
                     can_customize_duration: user.map_or(false, |user| user.can_customize_duration),
                     can_customize_pool_affinity: user
                         .map_or(false, |user| user.can_customize_pool_affinity),
+                    organizations,
                 })
             } else {
                 Outcome::Failure((Status::Forbidden, "User is not whitelisted"))
@@ -419,11 +423,7 @@ pub fn post_install_callback(
 }
 
 #[get("/login?<bearer>")]
-pub fn login(
-    mut cookies: Cookies<'_>,
-    bearer: String,
-) -> Result<(), String> {
-
+pub fn login(mut cookies: Cookies<'_>, bearer: String) -> Result<(), String> {
     cookies.add_private(
         Cookie::build(COOKIE_TOKEN, bearer)
             .same_site(SameSite::Lax)

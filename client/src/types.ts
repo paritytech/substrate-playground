@@ -2,7 +2,7 @@ export interface Playground {
     env: Environment,
     configuration: Configuration,
     templates: Record<string, Template>,
-    user?: PlaygroundUser,
+    user?: LoggedUser,
 }
 
 export interface Environment {
@@ -23,10 +23,11 @@ export interface SessionDefaults {
     maxSessionsPerPod: string,
 }
 
-export interface PlaygroundUser {
+export interface LoggedUser {
     id: string,
     avatar: string,
     admin: boolean,
+    organizations: string[],
     poolAffinity: string,
     canCustomizeDuration: boolean,
     canCustomizePoolAffinity: boolean,
@@ -57,7 +58,7 @@ export interface Session {
     userId: string,
     url: string,
     template: Template,
-    pod: PodDetails,
+    pod: Pod,
     /* The number of minutes this session can last */
     duration: number,
 }
@@ -111,7 +112,7 @@ export interface Template {
 }
 
 export type Phase = 'Pending' | 'Running' | 'Succeeded' | 'Failed' | 'Unknown';
-export interface PodDetails {
+export interface Pod {
     phase: Phase,
     reason: string,
     message: string,

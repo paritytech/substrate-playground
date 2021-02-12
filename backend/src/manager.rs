@@ -4,16 +4,16 @@ use crate::{
     user::UserUpdateConfiguration,
 };
 use crate::{
-    kubernetes::Phase,
-    user::{User, UserConfiguration},
-};
-use crate::{
     kubernetes::{Configuration, Environment},
     template::Template,
 };
 use crate::{metrics::Metrics, session::Session, user::LoggedUser};
+use crate::{
+    session::Phase,
+    user::{User, UserConfiguration},
+};
 use log::{error, info, warn};
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use std::{
     collections::{BTreeMap, HashSet},
     error::Error,
@@ -37,20 +37,12 @@ pub struct Manager {
     sessions: Arc<Mutex<HashSet<String>>>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct PlaygroundUser {
-    pub id: String,
-    pub avatar: String,
-    pub admin: bool,
-    pub can_customize_duration: bool,
-}
-
 #[derive(Serialize, Clone, Debug)]
-pub struct PlaygroundDetails {
+pub struct Playground {
     pub env: Environment,
     pub configuration: Configuration,
     pub templates: BTreeMap<String, Template>,
-    pub user: Option<PlaygroundUser>,
+    pub user: Option<LoggedUser>,
 }
 
 impl Manager {
@@ -167,24 +159,19 @@ fn session_id(id: &str) -> String {
 }
 
 impl Manager {
-    pub fn get(self, user: LoggedUser) -> Result<PlaygroundDetails, String> {
+    pub fn get(self, user: LoggedUser) -> Result<Playground, String> {
         let templates = new_runtime()?.block_on(self.clone().engine.list_templates())?;
-        Ok(PlaygroundDetails {
+        Ok(Playground {
             templates,
-            user: Some(PlaygroundUser {
-                id: user.id,
-                avatar: user.avatar,
-                admin: user.admin,
-                can_customize_duration: user.can_customize_duration,
-            }),
+            user: Some(user),
             env: self.engine.env,
             configuration: self.engine.configuration,
         })
     }
 
-    pub fn get_unlogged(self) -> Result<PlaygroundDetails, String> {
+    pub fn get_unlogged(self) -> Result<Playground, String> {
         let templates = new_runtime()?.block_on(self.clone().engine.list_templates())?;
-        Ok(PlaygroundDetails {
+        Ok(Playground {
             templates,
             user: None,
             env: self.engine.env,

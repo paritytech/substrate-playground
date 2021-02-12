@@ -70,6 +70,7 @@ pub struct LoggedUser {
     pub id: String,
     pub avatar: String,
     pub admin: bool,
+    pub organizations: Vec<String>,
     pub pool_affinity: Option<String>,
     pub can_customize_duration: bool,
     pub can_customize_pool_affinity: bool,
