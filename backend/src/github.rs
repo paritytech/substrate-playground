@@ -71,3 +71,44 @@ pub fn token_validity(
         Err("Invalid token".to_string())
     }
 }
+
+/// Returns current GitHubUser represented by a `token`.
+///
+/// # Arguments
+///
+/// * `token` - a github token
+///
+pub fn current_user(
+    token: &str,
+) -> Result<GitHubUser, String> {
+    let https = HttpsConnector::new(hyper_sync_rustls::TlsClient::new());
+    let client = Client::with_connector(https);
+
+    let mime: Mime = "application/vnd.github.v3+json"
+        .parse()
+        .expect("parse GitHub MIME type");
+
+    let response: hyper::client::response::Response = client
+        .get("https://api.github.com/user")
+        .header(Authorization(format!("token {}", token)))
+        .header(Accept(vec![qitem(mime)]))
+        .header(UserAgent("Substrate Playground".into()))
+        .send()
+        .map_err(|a| a.to_string())?;
+
+    let status = response.status;
+    if !status.is_success() {
+        return Err(format!("got non-success status {}", status));
+    }
+
+    if status == StatusCode::Ok {
+        let user: GitHubUser =
+            serde_json::from_reader(response.take(2 * 1024 * 1024)).map_err(|error| {
+                format!("Failed to read GitHubTokenValidity: {}", error.to_string())
+            })?;
+
+        Ok(user)
+    } else {
+        Err("Invalid token".to_string())
+    }
+}

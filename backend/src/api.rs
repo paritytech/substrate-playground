@@ -2,7 +2,7 @@
 use crate::user::{LoggedAdmin, LoggedUser, UserConfiguration};
 use crate::Context;
 use crate::{
-    github::{token_validity, GitHubUser},
+    github::{current_user, GitHubUser},
     kubernetes::Environment,
 };
 use crate::{
@@ -38,12 +38,9 @@ fn request_to_user<'a, 'r>(request: &'a Request<'r>) -> request::Outcome<LoggedU
         .engine;
     let mut cookies = request.cookies();
     if let Some(token) = cookies.get_private(COOKIE_TOKEN) {
-        log::info!("token: {}", token);
         let token_value = token.value();
-        if let Ok(gh_user) = token_validity(
-            token_value,
-            engine.configuration.github_client_id.as_str(),
-            engine.secrets.github_client_secret.as_str(),
+        if let Ok(gh_user) = current_user(
+            token_value
         ) {
             let id = gh_user.login;
             let users = Runtime::new()
