@@ -215,6 +215,10 @@ impl Manager {
         user.admin || user.can_customize_duration
     }
 
+    fn can_customize_pool_affinity(&self, user: User) -> bool {
+        user.admin || user.can_customize_pool_affinity
+    }
+
     pub fn create_session(
         self,
         id: &str,
@@ -229,6 +233,15 @@ impl Manager {
             })?;
             if !self.can_customize_duration(user) {
                 return Err("Only admin can customize a session duration".to_string());
+            }
+        }
+        if conf.pool_affinity.is_some() {
+            // Duration can only customized by users with proper rights
+            let user = user.clone().ok_or_else(|| {
+                format!("Pool affinity customization requires user but can't find {}", id)
+            })?;
+            if !self.can_customize_pool_affinity(user) {
+                return Err("Only admin can customize a session pool affinity".to_string());
             }
         }
 
