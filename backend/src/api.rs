@@ -38,6 +38,7 @@ fn request_to_user<'a, 'r>(request: &'a Request<'r>) -> request::Outcome<LoggedU
         .engine;
     let mut cookies = request.cookies();
     if let Some(token) = cookies.get_private(COOKIE_TOKEN) {
+        log::info!("token: {}", token);
         let token_value = token.value();
         if let Ok(gh_user) = token_validity(
             token_value,
@@ -66,10 +67,12 @@ fn request_to_user<'a, 'r>(request: &'a Request<'r>) -> request::Outcome<LoggedU
                 Outcome::Failure((Status::Forbidden, "User is not whitelisted"))
             }
         } else {
+            log::info!("invalid token");
             clear(cookies);
             Outcome::Failure((Status::BadRequest, "Token is invalid"))
         }
     } else {
+        log::info!("no token");
         Outcome::Forward(())
     }
 }
@@ -416,6 +419,21 @@ pub fn post_install_callback(
     );
 
     Ok(Redirect::to(format!("/{}", query_segment(origin))))
+}
+
+#[get("/login?<bearer>")]
+pub fn login(
+    mut cookies: Cookies<'_>,
+    bearer: String,
+) -> Result<(), String> {
+
+    cookies.add_private(
+        Cookie::build(COOKIE_TOKEN, bearer)
+            .same_site(SameSite::Lax)
+            .finish(),
+    );
+
+    Ok(())
 }
 
 #[get("/logout")]

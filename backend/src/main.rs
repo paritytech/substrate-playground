@@ -122,6 +122,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 // Login
                 api::github_login,
                 api::post_install_callback,
+                api::login,
                 api::logout,
             ],
         )

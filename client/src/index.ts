@@ -136,9 +136,8 @@ export class Client {
 
     // Login
 
-    async login(token: string, init: RequestInit = this.defaultInit): Promise<void> {
-        return rpc(this.path('login'), {
-            body: token,
+    async login(bearer: string, init: RequestInit = this.defaultInit): Promise<void> {
+        return rpc(`${this.path('login')}?${bearer}`, {
             ...init
         });
     }
