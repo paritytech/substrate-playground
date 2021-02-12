@@ -3,7 +3,7 @@
 //! * https://docs.rs/k8s-openapi/0.5.1/k8s_openapi/api/core/v1/struct.ServiceSpec.html
 use crate::{
     session::{self, Pool, SessionUpdateConfiguration},
-    user::{User, UserConfiguration, UserUpdateConfiguration},
+    user::{LoggedUser, User, UserConfiguration, UserUpdateConfiguration},
 };
 use crate::{
     session::{Session, SessionConfiguration, SessionDefaults},
@@ -669,7 +669,7 @@ impl Engine {
 
     pub async fn create_session(
         self,
-        user: Option<User>,
+        user: &LoggedUser,
         session_id: String,
         conf: SessionConfiguration,
     ) -> Result<(), String> {
@@ -679,7 +679,8 @@ impl Engine {
         // * https://kubernetes.io/docs/tasks/extend-kubernetes/configure-multiple-schedulers/
         // * https://kubernetes.io/blog/2017/03/advanced-scheduling-in-kubernetes/
         let pool_id = conf.clone().pool_affinity.unwrap_or_else(|| {
-            user.and_then(|user| user.pool_affinity)
+            user.clone()
+                .pool_affinity
                 .unwrap_or(self.clone().configuration.session_defaults.pool_affinity)
         });
         let pool = self

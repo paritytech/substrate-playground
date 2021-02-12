@@ -85,9 +85,3 @@ impl Display for LoggedUser {
         )
     }
 }
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct LoggedAdmin {
-    pub id: String,
-    pub avatar: String,
-}

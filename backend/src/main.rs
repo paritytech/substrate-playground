@@ -85,15 +85,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 api::get_unlogged,
                 // Users
                 api::get_user,
-                api::get_user_unlogged,
                 api::list_users,
-                api::list_users_unlogged,
                 api::create_user,
-                api::create_user_unlogged,
                 api::update_user,
-                api::update_user_unlogged,
                 api::delete_user,
-                api::delete_user_unlogged,
                 // Current Session
                 api::get_current_session,
                 api::get_current_session_unlogged,
@@ -105,20 +100,13 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 api::delete_current_session_unlogged,
                 // Sessions
                 api::get_session,
-                api::get_session_unlogged,
                 api::list_sessions,
-                api::list_sessions_unlogged,
                 api::create_session,
-                api::create_session_unlogged,
                 api::update_session,
-                api::update_session_unlogged,
                 api::delete_session,
-                api::delete_session_unlogged,
                 // Pools
                 api::get_pool,
-                api::get_pool_unlogged,
                 api::list_pools,
-                api::list_pools_unlogged,
                 // Login
                 api::github_login,
                 api::post_install_callback,

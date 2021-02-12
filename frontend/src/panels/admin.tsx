@@ -77,12 +77,16 @@ function Resources<T>( { children, label, callback }: { children: (resources: Re
     }
 }
 
+function paritytechMember(user: LoggedUser): boolean {
+    return user.organizations.indexOf('paritytech') != -1;
+}
+
 function canCustomizeDuration(user: LoggedUser): boolean {
-    return user.admin || user.canCustomizeDuration;
+    return user.admin || user.canCustomizeDuration || paritytechMember(user);
 }
 
 function canCustomizePoolAffinity(user: LoggedUser): boolean {
-    return user.admin || user.canCustomizePoolAffinity;
+    return user.admin || user.canCustomizePoolAffinity || paritytechMember(user);
 }
 
 export function canCustomize(user: LoggedUser): boolean {

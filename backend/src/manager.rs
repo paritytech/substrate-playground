@@ -211,35 +211,31 @@ impl Manager {
         new_runtime()?.block_on(self.clone().engine.list_sessions())
     }
 
-    fn can_customize_duration(&self, user: User) -> bool {
-        user.admin || user.can_customize_duration
+    fn paritytech_member(&self, user: &LoggedUser) -> bool {
+        user.organizations.contains(&"paritytech".to_string())
+    }
+    fn can_customize_duration(&self, user: &LoggedUser) -> bool {
+        user.admin || user.can_customize_duration || self.paritytech_member(user)
     }
 
-    fn can_customize_pool_affinity(&self, user: User) -> bool {
-        user.admin || user.can_customize_pool_affinity
+    fn can_customize_pool_affinity(&self, user: &LoggedUser) -> bool {
+        user.admin || user.can_customize_pool_affinity || self.paritytech_member(user)
     }
 
     pub fn create_session(
         self,
         id: &str,
-        user_id: &str,
+        user: &LoggedUser,
         conf: SessionConfiguration,
     ) -> Result<(), String> {
-        let user = self.clone().get_user(user_id)?;
         if conf.duration.is_some() {
             // Duration can only customized by users with proper rights
-            let user = user.clone().ok_or_else(|| {
-                format!("Duration customization requires user but can't find {}", id)
-            })?;
             if !self.can_customize_duration(user) {
                 return Err("Only admin can customize a session duration".to_string());
             }
         }
         if conf.pool_affinity.is_some() {
             // Duration can only customized by users with proper rights
-            let user = user.clone().ok_or_else(|| {
-                format!("Pool affinity customization requires user but can't find {}", id)
-            })?;
             if !self.can_customize_pool_affinity(user) {
                 return Err("Only admin can customize a session pool affinity".to_string());
             }
@@ -265,14 +261,11 @@ impl Manager {
     pub fn update_session(
         self,
         id: &str,
-        user_id: &str,
+        user: &LoggedUser,
         conf: SessionUpdateConfiguration,
     ) -> Result<(), String> {
         if conf.duration.is_some() {
             // Duration can only customized by users with proper rights
-            let user = self.clone().get_user(user_id)?.ok_or_else(|| {
-                format!("Duration customization requires user but can't find {}", id)
-            })?;
             if !self.can_customize_duration(user) {
                 return Err("Only admin can customize a session duration".to_string());
             }
