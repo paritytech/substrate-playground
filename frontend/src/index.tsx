@@ -1,6 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom";
-import { Client, Configuration, PlaygroundUser, Template } from '@substrate/playground-client';
+import { Client, Configuration, LoggedUser, Template } from '@substrate/playground-client';
 import { createMuiTheme, ThemeProvider } from '@material-ui/core/styles';
 import { AdminPanel } from './panels/admin';
 import { LoginPanel } from './panels/login';
@@ -12,7 +12,7 @@ import { LoadingPanel, Wrapper } from './components';
 import { useLifecycle, Events, PanelId, States } from './lifecycle';
 import { terms } from "./terms";
 
-function MainPanel({ client, conf, user, params, id, templates, onConnect, onDeployed, restartAction }: { client: Client, conf: Configuration, user: PlaygroundUser, params: Params, id: PanelId, templates: Record<string, Template>, restartAction: () => void, onConnect: () => void, onDeployed: () => void}): JSX.Element {
+function MainPanel({ client, conf, user, params, id, templates, onConnect, onDeployed, restartAction }: { client: Client, conf: Configuration, user: LoggedUser, params: Params, id: PanelId, templates: Record<string, Template>, restartAction: () => void, onConnect: () => void, onDeployed: () => void}): JSX.Element {
     switch(id) {
         case PanelId.Session:
           return <SessionPanel client={client} conf={conf} user={user} templates={templates} onRetry={restartAction}

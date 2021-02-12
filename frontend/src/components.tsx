@@ -18,7 +18,7 @@ import MoreVertIcon from '@material-ui/icons/MoreVert';
 import Snackbar from "@material-ui/core/Snackbar";
 import Toolbar from '@material-ui/core/Toolbar';
 import Typography from '@material-ui/core/Typography';
-import { PlaygroundUser } from "@substrate/playground-client";
+import { LoggedUser } from "@substrate/playground-client";
 import { useInterval } from './hooks';
 import { Params } from "./index";
 
@@ -140,7 +140,7 @@ export function Loading({ phase, retry = 0 }: { phase?: string, retry?: number }
     );
 }
 
-function Nav({ onPlayground, onStatsClick, onAdminClick, onLogout, user }: { onPlayground: () => void, onStatsClick: () => void, onAdminClick: () => void, onLogout: () => void, user?: PlaygroundUser }): JSX.Element  {
+function Nav({ onPlayground, onStatsClick, onAdminClick, onLogout, user }: { onPlayground: () => void, onStatsClick: () => void, onAdminClick: () => void, onLogout: () => void, user?: LoggedUser }): JSX.Element  {
     const [anchorEl, setAnchorEl] = React.useState(null);
     const open = Boolean(anchorEl);
     const handleMenu = (event) => setAnchorEl(event.currentTarget);
@@ -238,7 +238,7 @@ function Nav({ onPlayground, onStatsClick, onAdminClick, onLogout, user }: { onP
     );
 }
 
-export function Wrapper({ params, thin = false, onPlayground, onStatsClick, onAdminClick, onLogout, user, children}: { params: Params, thin?: boolean, onPlayground: () => void, onStatsClick: () => void, onAdminClick: () => void, onLogout: () => void, user?: PlaygroundUser, children: React.ReactElement}): JSX.Element {
+export function Wrapper({ params, thin = false, onPlayground, onStatsClick, onAdminClick, onLogout, user, children}: { params: Params, thin?: boolean, onPlayground: () => void, onStatsClick: () => void, onAdminClick: () => void, onLogout: () => void, user?: LoggedUser, children: React.ReactElement}): JSX.Element {
     return (
         <div style={{display: "flex", flexDirection: "column", width: "inherit", height: "inherit"}}>
 

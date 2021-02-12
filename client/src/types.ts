@@ -61,6 +61,7 @@ export interface Session {
     pod: Pod,
     /* The number of minutes this session can last */
     duration: number,
+    node: string,
 }
 
 export interface Pool {

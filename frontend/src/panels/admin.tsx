@@ -26,7 +26,7 @@ import TextField from '@material-ui/core/TextField';
 import Tooltip from '@material-ui/core/Tooltip';
 import Toolbar from '@material-ui/core/Toolbar';
 import Typography from '@material-ui/core/Typography';
-import { Client, Configuration, PlaygroundUser, Pool, Session, SessionConfiguration, SessionUpdateConfiguration, Template, User, UserConfiguration, UserUpdateConfiguration } from '@substrate/playground-client';
+import { Client, Configuration, LoggedUser, Pool, Session, SessionConfiguration, SessionUpdateConfiguration, Template, User, UserConfiguration, UserUpdateConfiguration } from '@substrate/playground-client';
 import { CenteredContainer, ErrorSnackbar, LoadingPanel } from '../components';
 import { useInterval } from '../hooks';
 import { DialogActions, DialogContentText, MenuItem } from '@material-ui/core';
@@ -77,19 +77,19 @@ function Resources<T>( { children, label, callback }: { children: (resources: Re
     }
 }
 
-function canCustomizeDuration(user: PlaygroundUser): boolean {
+function canCustomizeDuration(user: LoggedUser): boolean {
     return user.admin || user.canCustomizeDuration;
 }
 
-function canCustomizePoolAffinity(user: PlaygroundUser): boolean {
+function canCustomizePoolAffinity(user: LoggedUser): boolean {
     return user.admin || user.canCustomizePoolAffinity;
 }
 
-export function canCustomize(user: PlaygroundUser): boolean {
+export function canCustomize(user: LoggedUser): boolean {
     return canCustomizeDuration(user) || canCustomizePoolAffinity(user);
 }
 
-export function SessionCreationDialog({ client, conf, sessions, user, users, template, templates, show, onCreate, onHide, allowUserSelection = false }: { client: Client, conf: Configuration, sessions?: Record<string, Session>, user: PlaygroundUser, users?: Record<string, User> | null, template?: string, templates: Record<string, Template> | null, show: boolean, onCreate: (conf: SessionConfiguration, id?: string, ) => void, onHide: () => void , allowUserSelection?: boolean}): JSX.Element {
+export function SessionCreationDialog({ client, conf, sessions, user, users, template, templates, show, onCreate, onHide, allowUserSelection = false }: { client: Client, conf: Configuration, sessions?: Record<string, Session>, user: LoggedUser, users?: Record<string, User> | null, template?: string, templates: Record<string, Template> | null, show: boolean, onCreate: (conf: SessionConfiguration, id?: string, ) => void, onHide: () => void , allowUserSelection?: boolean}): JSX.Element {
     const [selectedUser, setUser] = React.useState<string | null>(user.id);
     const [selectedTemplate, setTemplate] = React.useState<string | null>(null);
     const [duration, setDuration] = React.useState(conf.sessionDefaults.duration);
@@ -234,7 +234,7 @@ function SessionUpdateDialog({ id, duration, show, onUpdate, onHide }: { id: str
     );
 }
 
-function Sessions({ client, conf, user }: { client: Client, conf: Configuration, user: PlaygroundUser }): JSX.Element {
+function Sessions({ client, conf, user }: { client: Client, conf: Configuration, user: LoggedUser }): JSX.Element {
     const classes = useStyles();
     const [selected, setSelected] = useState<string | null>(null);
     const [showCreationDialog, setShowCreationDialog] = useState(false);
@@ -669,7 +669,7 @@ function UserUpdateDialog({ client, id, user, show, onUpdate, onHide }: { client
     );
 }
 
-function Users({ client, user, conf }: { client: Client, user: PlaygroundUser, conf: Configuration }): JSX.Element {
+function Users({ client, user, conf }: { client: Client, user: LoggedUser, conf: Configuration }): JSX.Element {
     const classes = useStyles();
     const [selected, setSelected] = useState<string | null>(null);
     const [showCreationDialog, setShowCreationDialog] = useState(false);
@@ -840,7 +840,7 @@ function Pools({ client }: { client: Client }): JSX.Element {
     );
 }
 
-export function AdminPanel({ client, user, conf }: { client: Client, user: PlaygroundUser, conf: Configuration }): JSX.Element {
+export function AdminPanel({ client, user, conf }: { client: Client, user: LoggedUser, conf: Configuration }): JSX.Element {
     const [value, setValue] = React.useState(0);
 
     const handleChange = (_: React.ChangeEvent<{}>, newValue: number) => {

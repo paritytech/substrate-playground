@@ -1,6 +1,6 @@
 import { assign, Machine } from 'xstate';
 import { useMachine } from '@xstate/react';
-import { Client, Configuration, PlaygroundUser, Template } from '@substrate/playground-client';
+import { Client, Configuration, LoggedUser, Template } from '@substrate/playground-client';
 import { approve, approved } from './terms';
 
 export enum PanelId {Session, Admin, Stats, Theia}
@@ -8,7 +8,7 @@ export enum PanelId {Session, Admin, Stats, Theia}
 export interface Context {
   panel: PanelId,
   conf: Configuration,
-  user?: PlaygroundUser,
+  user?: LoggedUser,
   templates: Record<string, Template>,
 }
 

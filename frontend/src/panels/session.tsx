@@ -19,7 +19,7 @@ import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
 import Typography from '@material-ui/core/Typography';
 import { makeStyles, createStyles, Theme } from '@material-ui/core/styles';
-import { Client, Configuration, NameValuePair, PlaygroundUser, Port, Session, SessionConfiguration, Template } from '@substrate/playground-client';
+import { Client, Configuration, NameValuePair, LoggedUser, Port, Session, SessionConfiguration, Template } from '@substrate/playground-client';
 import { SessionCreationDialog, canCustomize } from "./admin";
 import { ErrorMessage, ErrorSnackbar } from "../components";
 import { useInterval } from "../hooks";
@@ -117,7 +117,7 @@ export default function SplitButton({ template, onCreate, onCreateCustom }: { te
   );
 }
 
-function TemplateSelector({client, conf, user, templates, onDeployed, onRetry}: {client: Client, conf: Configuration, user: PlaygroundUser, templates: Record<string, Template>, onDeployed: (conf: SessionConfiguration) => Promise<void>, onRetry: () => void}): JSX.Element {
+function TemplateSelector({client, conf, user, templates, onDeployed, onRetry}: {client: Client, conf: Configuration, user: LoggedUser, templates: Record<string, Template>, onDeployed: (conf: SessionConfiguration) => Promise<void>, onRetry: () => void}): JSX.Element {
     const publicTemplates = Object.entries(templates).filter(([k, v]) => v.tags?.public == "true");
     const templatesAvailable = publicTemplates.length > 0;
     const [selection, select] = useState(templatesAvailable ? publicTemplates[0] : null);
@@ -339,7 +339,7 @@ function ExistingSession({session, onStop, onConnect}: {session: Session, onStop
     );
 }
 
-export function SessionPanel({ client, conf, user, templates, onDeployed, onConnect, onRetry, onStop }: {client: Client, conf: Configuration, user: PlaygroundUser, templates: Record<string, Template>, onStop: () => void, onConnect: (session: Session) => void, onDeployed: (conf: SessionConfiguration) => Promise<void>, onRetry: () => void}): JSX.Element {
+export function SessionPanel({ client, conf, user, templates, onDeployed, onConnect, onRetry, onStop }: {client: Client, conf: Configuration, user: LoggedUser, templates: Record<string, Template>, onStop: () => void, onConnect: (session: Session) => void, onDeployed: (conf: SessionConfiguration) => Promise<void>, onRetry: () => void}): JSX.Element {
     const [session, setSession] = useState<Session | null>(null);
 
     useInterval(async () => setSession(await client.getCurrentSession()), 1000);
