@@ -22,8 +22,6 @@ pub struct Context {
     manager: Manager,
 }
 
-/// manager -> kubernetes, metrics
-/// manager is injected into api
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     // Initialize log configuration. Reads `RUST_LOG` if any, otherwise fallsback to `default`
@@ -33,7 +31,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
     env_logger::init();
 
     // Prints basic details
-
     log::info!("Running ROCKET in {:?} mode", Environment::active()?);
 
     match env::var("GITHUB_SHA") {
