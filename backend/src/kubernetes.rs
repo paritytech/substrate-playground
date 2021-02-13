@@ -112,14 +112,15 @@ fn str_to_session_duration_minutes(str: &str) -> Result<Duration, String> {
     ))
 }
 
-fn create_pod_annotations(template: &Template, duration: &Duration) -> BTreeMap<String, String> {
+fn create_pod_annotations(template: &Template, duration: &Duration) -> Result<BTreeMap<String, String>, String> {
     let mut annotations = BTreeMap::new();
-    annotations.insert(TEMPLATE_ANNOTATION.to_string(), template.to_string());
+    let s = serde_yaml::to_string(template).map_err( |o| o.to_string())?;
+    annotations.insert(TEMPLATE_ANNOTATION.to_string(), s);
     annotations.insert(
         SESSION_DURATION_ANNOTATION.to_string(),
         session_duration_annotation(*duration),
     );
-    annotations
+    Ok(annotations)
 }
 
 fn create_pod(
@@ -128,17 +129,17 @@ fn create_pod(
     template: &Template,
     duration: &Duration,
     pool_id: &str,
-) -> Pod {
+) -> Result<Pod, String> {
     let mut labels = BTreeMap::new();
     labels.insert(APP_LABEL.to_string(), APP_VALUE.to_string());
     labels.insert(COMPONENT_LABEL.to_string(), COMPONENT_VALUE.to_string());
     labels.insert(OWNER_LABEL.to_string(), session_id.to_string());
 
-    Pod {
+    Ok(Pod {
         metadata: ObjectMeta {
             name: Some(pod_name(session_id)),
             labels: Some(labels),
-            annotations: Some(create_pod_annotations(template, duration)),
+            annotations: Some(create_pod_annotations(template, duration)?),
             ..Default::default()
         },
         spec: Some(PodSpec {
@@ -171,7 +172,7 @@ fn create_pod(
             ..Default::default()
         }),
         ..Default::default()
-    }
+    })
 }
 
 fn create_service(session_id: &str, template: &Template) -> Service {
@@ -436,11 +437,11 @@ impl Engine {
         let unknown = "UNKNOWN OWNER".to_string();
         let username = labels.get(OWNER_LABEL).unwrap_or(&unknown);
         let annotations = &pod.metadata.annotations.clone().ok_or("no annotations")?;
-        let template = Template::parse(
+        let template = serde_yaml::from_str(
             &annotations
                 .get(TEMPLATE_ANNOTATION)
                 .ok_or("no template annotation")?,
-        )?;
+        ).map_err(|err| format!("{}", err))?;
         let duration = str_to_session_duration_minutes(
             annotations
                 .get(SESSION_DURATION_ANNOTATION)
@@ -506,7 +507,7 @@ impl Engine {
     }
 
     fn yaml_to_user(self, s: &str) -> Result<User, String> {
-        let user_configuration = UserConfiguration::parse(s)?;
+        let user_configuration: UserConfiguration = serde_yaml::from_str(s).map_err(|o| o.to_string())?;
         Ok(User {
             admin: user_configuration.admin,
             pool_affinity: user_configuration.pool_affinity,
@@ -523,7 +524,7 @@ impl Engine {
             .await?
             .into_iter()
             .filter_map(|(k, v)| {
-                if let Ok(template) = Template::parse(&v) {
+                if let Ok(template) = serde_yaml::from_str(&v) {
                     Some((k, template))
                 } else {
                     error!("Error while parsing template {}", k);
@@ -699,11 +700,10 @@ impl Engine {
         let config = config().await?;
         let client = Client::try_from(config).map_err(error_to_string)?;
         // Access the right image id
-        let templates = get_templates(client.clone(), &self.env.namespace).await?;
-        let template_str = templates
+        let templates = self.clone().list_templates().await?;
+        let template = templates
             .get(&conf.template.to_string())
             .ok_or_else(|| format!("Unknow image {}", conf.template))?;
-        let template = &Template::parse(&template_str)?;
 
         let namespace = &self.env.namespace;
 
@@ -732,7 +732,7 @@ impl Engine {
                     template,
                     &duration,
                     &pool_id,
-                ),
+                )?,
             )
             .await
             .map_err(error_to_string)?;
