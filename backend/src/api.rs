@@ -1,13 +1,12 @@
 //! HTTP endpoints exposed in /api context
-use crate::user::{LoggedUser, UserConfiguration};
+use crate::types::{
+    LoggedUser, SessionConfiguration, SessionUpdateConfiguration, UserConfiguration,
+    UserUpdateConfiguration,
+};
 use crate::Context;
 use crate::{
     github::{current_user, orgs, GitHubUser},
     kubernetes::Environment,
-};
-use crate::{
-    session::{SessionConfiguration, SessionUpdateConfiguration},
-    user::UserUpdateConfiguration,
 };
 use request::FormItems;
 use rocket::response::{content, status, Redirect};

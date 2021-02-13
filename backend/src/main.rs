@@ -7,9 +7,7 @@ mod kubernetes;
 mod manager;
 mod metrics;
 mod prometheus;
-mod session;
-mod template;
-mod user;
+mod types;
 
 use crate::manager::Manager;
 use crate::prometheus::PrometheusMetrics;

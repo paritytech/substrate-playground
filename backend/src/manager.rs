@@ -1,17 +1,3 @@
-use crate::{
-    kubernetes::Engine,
-    session::{Pool, SessionConfiguration, SessionUpdateConfiguration},
-    user::UserUpdateConfiguration,
-};
-use crate::{
-    kubernetes::{Configuration, Environment},
-    template::Template,
-};
-use crate::{metrics::Metrics, session::Session, user::LoggedUser};
-use crate::{
-    session::Phase,
-    user::{User, UserConfiguration},
-};
 use log::{error, info, warn};
 use serde::Serialize;
 use std::{
@@ -22,6 +8,15 @@ use std::{
     time::Duration,
 };
 use tokio::runtime::Runtime;
+
+use crate::{
+    kubernetes::{Configuration, Engine, Environment},
+    metrics::Metrics,
+    types::{
+        LoggedUser, Phase, Pool, Session, SessionConfiguration, SessionUpdateConfiguration,
+        Template, User, UserConfiguration, UserUpdateConfiguration,
+    },
+};
 
 fn running_sessions(sessions: Vec<&Session>) -> Vec<&Session> {
     sessions

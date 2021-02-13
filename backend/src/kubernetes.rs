@@ -1,13 +1,9 @@
 //! Find more details here:
 //! * https://docs.rs/k8s-openapi/0.5.1/k8s_openapi/api/core/v1/struct.ServiceStatus.html
 //! * https://docs.rs/k8s-openapi/0.5.1/k8s_openapi/api/core/v1/struct.ServiceSpec.html
-use crate::{
-    session::{self, Pool, SessionUpdateConfiguration},
-    user::{LoggedUser, User, UserConfiguration, UserUpdateConfiguration},
-};
-use crate::{
-    session::{Session, SessionConfiguration, SessionDefaults},
-    template::Template,
+use crate::types::{
+    self, LoggedUser, Pool, Session, SessionConfiguration, SessionDefaults,
+    SessionUpdateConfiguration, Template, User, UserConfiguration, UserUpdateConfiguration,
 };
 use json_patch::{AddOperation, PatchOperation, RemoveOperation};
 use k8s_openapi::api::core::v1::{
@@ -28,9 +24,9 @@ use kube::{
 use log::error;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::json;
-use session::Phase;
 use std::{collections::BTreeMap, convert::TryFrom, error::Error, time::Duration};
 use std::{env, str::FromStr};
+use types::Phase;
 
 const NODE_POOL_LABEL: &str = "cloud.google.com/gke-nodepool";
 const INSTANCE_TYPE_LABEL: &str = "node.kubernetes.io/instance-type";
@@ -112,9 +108,12 @@ fn str_to_session_duration_minutes(str: &str) -> Result<Duration, String> {
     ))
 }
 
-fn create_pod_annotations(template: &Template, duration: &Duration) -> Result<BTreeMap<String, String>, String> {
+fn create_pod_annotations(
+    template: &Template,
+    duration: &Duration,
+) -> Result<BTreeMap<String, String>, String> {
     let mut annotations = BTreeMap::new();
-    let s = serde_yaml::to_string(template).map_err( |o| o.to_string())?;
+    let s = serde_yaml::to_string(template).map_err(|o| o.to_string())?;
     annotations.insert(TEMPLATE_ANNOTATION.to_string(), s);
     annotations.insert(
         SESSION_DURATION_ANNOTATION.to_string(),
@@ -441,7 +440,8 @@ impl Engine {
             &annotations
                 .get(TEMPLATE_ANNOTATION)
                 .ok_or("no template annotation")?,
-        ).map_err(|err| format!("{}", err))?;
+        )
+        .map_err(|err| format!("{}", err))?;
         let duration = str_to_session_duration_minutes(
             annotations
                 .get(SESSION_DURATION_ANNOTATION)
@@ -477,7 +477,7 @@ impl Engine {
             instance_type: Some(instance_type.clone()),
             nodes: nodes
                 .iter()
-                .map(|node| crate::session::Node {
+                .map(|node| crate::types::Node {
                     hostname: node
                         .metadata
                         .labels
@@ -491,9 +491,9 @@ impl Engine {
         })
     }
 
-    fn pod_to_details(self, pod: &Pod) -> Result<session::Pod, String> {
+    fn pod_to_details(self, pod: &Pod) -> Result<types::Pod, String> {
         let status = pod.status.as_ref().ok_or("No status")?;
-        Ok(session::Pod {
+        Ok(types::Pod {
             phase: Phase::from_str(
                 &status
                     .clone()
@@ -507,7 +507,8 @@ impl Engine {
     }
 
     fn yaml_to_user(self, s: &str) -> Result<User, String> {
-        let user_configuration: UserConfiguration = serde_yaml::from_str(s).map_err(|o| o.to_string())?;
+        let user_configuration: UserConfiguration =
+            serde_yaml::from_str(s).map_err(|o| o.to_string())?;
         Ok(User {
             admin: user_configuration.admin,
             pool_affinity: user_configuration.pool_affinity,
