@@ -342,7 +342,7 @@ function ExistingSession({session, onStop, onConnect}: {session: Session, onStop
 export function SessionPanel({ client, conf, user, templates, onDeployed, onConnect, onRetry, onStop }: {client: Client, conf: Configuration, user: LoggedUser, templates: Record<string, Template>, onStop: () => void, onConnect: (session: Session) => void, onDeployed: (conf: SessionConfiguration) => Promise<void>, onRetry: () => void}): JSX.Element {
     const [session, setSession] = useState<Session | null>(null);
 
-    useInterval(async () => setSession(await client.getCurrentSession()), 1000);
+    useInterval(async () => setSession(await client.getCurrentSession()), 5000);
 
     return (
         <Container style={{ display: "flex", flex: 1, justifyContent: "center", alignItems: "center" }}>
