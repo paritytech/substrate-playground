@@ -18,6 +18,7 @@ async function fetchWithTimeout<T>(input: RequestInfo, init: RequestInit, timeou
         });
         clearTimeout(id);
         if (response.ok) {
+            // TODO check content-type
             try {
                 const { result, error } = await response.json();
                 if (error) {
@@ -26,12 +27,8 @@ async function fetchWithTimeout<T>(input: RequestInfo, init: RequestInit, timeou
                     return Promise.resolve(result);
                 }
             } catch (e) {
-                try {
-                    const data = await response.text();
-                    return Promise.reject({code: RpcErrorCode.PARSE_ERROR, message: response.statusText, data: data});
-                } catch (e) {
-                    return Promise.reject({code: RpcErrorCode.PARSE_ERROR, message: response.statusText});
-                }
+                // Failed to parse as JSON
+                return Promise.reject({code: RpcErrorCode.PARSE_ERROR, message: response.statusText});
             }
         } else {
             if (response.status == 401) {
