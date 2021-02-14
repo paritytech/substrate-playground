@@ -1,13 +1,10 @@
 //! GitHub utility functions
 
-use hyper::{
-    header::{qitem, Accept, Authorization, Basic, UserAgent},
-    mime::Mime,
-    net::HttpsConnector,
-    status::StatusCode,
-    Client,
-};
-use std::io::Read;
+use core::fmt;
+use hyper::{Client, client::{Body, RequestBuilder}, header::{qitem, Accept, Authorization, Basic, UserAgent}, mime::Mime, net::HttpsConnector, status::StatusCode};
+use serde::de::DeserializeOwned;
+use serde_json::from_reader;
+use std::{error::Error, io::Read};
 
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct GitHubTokenValidity {
@@ -31,8 +28,78 @@ pub struct GitHubOrg {
     pub login: String,
 }
 
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+pub struct GitHubError2 {
+    #[serde(default)]
+    pub message: String,
+    #[serde(default)]
+    pub documentation_url: Option<String>,
+}
+
+/// Create a GitHub specific `Mime` type
+fn mime_type() -> Mime {
+    "application/vnd.github.v3+json"
+        .parse()
+        .expect("parse GitHub MIME type")
+}
+
+/// Create a new `Client`
+fn create_client() -> Client {
+    Client::with_connector(HttpsConnector::new(hyper_sync_rustls::TlsClient::new()))
+}
+
+#[derive(Debug)]
+struct GitHubError {
+    details: String,
+}
+
+impl fmt::Display for GitHubError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.details)
+    }
+}
+
+impl Error for GitHubError {
+    fn description(&self) -> &str {
+        &self.details
+    }
+}
+
+fn tokena(token: &str) -> String {
+    format!("{{\"access_token\":\"{}\"}}", token)
+}
+
+fn send<T>(request_builder: RequestBuilder, token: &str) -> Result<T, Box<dyn Error>>
+where
+    T: DeserializeOwned,
+{
+    let a = tokena(token).clone();
+    let c = a.clone();
+    let b = c.as_bytes().clone();
+    let body = Body::BufBody(b, b.len());
+    let mut response = request_builder
+        .header(Accept(vec![qitem(mime_type())]))
+        .header(UserAgent("Substrate Playground".into()))
+        //.body(format!("{{\"access_token\":\"{}\"}}", token).as_str())
+       // .body(body)
+        .send()?;
+    if response.status == StatusCode::Ok {
+        from_reader(response.take(2 * 1024 * 1024)).map_err(Into::into)
+    } else {
+        let mut s = String::new();
+        if let Ok(_) = response.read_to_string(&mut s) {
+            log::warn!("response {}", s);
+        }
+        Err(GitHubError {
+            details: "".to_string(),
+        }
+        .into())
+    }
+}
+
 ///
 /// Returns a GitHubUser representing provided token.
+/// See https://docs.github.com/en/rest/reference/apps#check-a-token
 ///
 /// # Arguments
 ///
@@ -45,41 +112,15 @@ pub fn token_validity(
     token: &str,
     client_id: &str,
     client_secret: &str,
-) -> Result<GitHubUser, String> {
-    let https = HttpsConnector::new(hyper_sync_rustls::TlsClient::new());
-    let client = Client::with_connector(https);
-
-    let mime = "application/vnd.github.v3+json"
-        .parse()
-        .expect("parse GitHub MIME type");
-
-    // https://docs.github.com/en/rest/reference/apps#check-a-token
-    let response: hyper::client::response::Response = client
+) -> Result<GitHubTokenValidity, Box<dyn Error>> {
+    let client = create_client();
+    let builder = client
         .post(format!("https://api.github.com/applications/{}/token", client_id).as_str())
         .header(Authorization(Basic {
             username: client_id.to_owned(),
             password: Some(client_secret.to_owned()),
-        }))
-        .header(Accept(vec![qitem(mime)]))
-        .header(UserAgent("Substrate Playground".into()))
-        .body(format!("{{\"access_token\":\"{}\"}}", token).as_str())
-        .send()
-        .map_err(|op| {
-            format!(
-                "Failed to access Playground GitHub application: {}",
-                op.to_string()
-            )
-        })?;
-
-    if response.status == StatusCode::Ok {
-        let token_validity: GitHubTokenValidity =
-            serde_json::from_reader(response.take(2 * 1024 * 1024)).map_err(|error| {
-                format!("Failed to read GitHubTokenValidity: {}", error.to_string())
-            })?;
-        Ok(token_validity.user)
-    } else {
-        Err("Invalid token".to_string())
-    }
+        }));
+    send(builder, token)
 }
 
 ///
@@ -89,37 +130,11 @@ pub fn token_validity(
 ///
 /// * `token` - a github token
 ///
-pub fn current_user(token: &str) -> Result<GitHubUser, String> {
-    let https = HttpsConnector::new(hyper_sync_rustls::TlsClient::new());
-    let client = Client::with_connector(https);
-
-    let mime: Mime = "application/vnd.github.v3+json"
-        .parse()
-        .expect("parse GitHub MIME type");
-
-    let response: hyper::client::response::Response = client
-        .get("https://api.github.com/user")
-        .header(Authorization(format!("token {}", token)))
-        .header(Accept(vec![qitem(mime)]))
-        .header(UserAgent("Substrate Playground".into()))
-        .send()
-        .map_err(|a| a.to_string())?;
-
-    let status = response.status;
-    if !status.is_success() {
-        return Err(format!("got non-success status {}", status));
-    }
-
-    if status == StatusCode::Ok {
-        let user: GitHubUser =
-            serde_json::from_reader(response.take(2 * 1024 * 1024)).map_err(|error| {
-                format!("Failed to read GitHubTokenValidity: {}", error.to_string())
-            })?;
-
-        Ok(user)
-    } else {
-        Err("Invalid token".to_string())
-    }
+pub fn current_user(token: &str) -> Result<GitHubUser, Box<dyn Error>> {
+    let client = create_client();
+    let builder = client
+        .get("https://api.github.com/user");
+    send(builder, token)
 }
 
 ///
@@ -130,33 +145,9 @@ pub fn current_user(token: &str) -> Result<GitHubUser, String> {
 /// * `token` - a github token
 /// * `user` - a GitHubUser
 ///
-pub fn orgs(token: &str, user: &GitHubUser) -> Result<Vec<GitHubOrg>, String> {
-    let https = HttpsConnector::new(hyper_sync_rustls::TlsClient::new());
-    let client = Client::with_connector(https);
-
-    let mime: Mime = "application/vnd.github.v3+json"
-        .parse()
-        .expect("parse GitHub MIME type");
-
-    let response: hyper::client::response::Response = client
-        .get(user.organizations_url.as_str())
-        .header(Authorization(format!("token {}", token)))
-        .header(Accept(vec![qitem(mime)]))
-        .header(UserAgent("Substrate Playground".into()))
-        .send()
-        .map_err(|a| a.to_string())?;
-
-    let status = response.status;
-    if !status.is_success() {
-        return Err(format!("got non-success status {}", status));
-    }
-
-    if status == StatusCode::Ok {
-        let orgs: Vec<GitHubOrg> = serde_json::from_reader(response.take(2 * 1024 * 1024))
-            .map_err(|error| format!("Failed to read Vec<GitHubOrg>: {}", error.to_string()))?;
-
-        Ok(orgs)
-    } else {
-        Err("Invalid token".to_string())
-    }
+pub fn orgs(token: &str, user: &GitHubUser) -> Result<Vec<GitHubOrg>, Box<dyn Error>> {
+    let client = create_client();
+    let builder = client
+        .get(user.organizations_url.as_str());
+    send(builder, token)
 }
