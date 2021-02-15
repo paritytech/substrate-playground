@@ -163,12 +163,6 @@ pub struct Port {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct NameUrlPair {
-    pub name: String,
-    pub url: String,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct Command {
     pub name: String,
