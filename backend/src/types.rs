@@ -163,7 +163,7 @@ pub struct Port {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct NameURLPair {
+pub struct NameUrlPair {
     pub name: String,
     pub url: String,
 }
