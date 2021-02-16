@@ -12,7 +12,7 @@ ENV BINARY_NAME=playground
 # Build the project with target x86_64-unknown-linux-musl
 
 # Build dummy main with the project's Cargo lock and toml
-# This is a docker trick in order to avoid downloading and building 
+# This is a docker trick in order to avoid downloading and building
 # dependencies when lock and toml not is modified.
 
 COPY Cargo.* ./
@@ -38,7 +38,11 @@ FROM scratch
 
 ARG GITHUB_SHA
 
-ENV GITHUB_SHA=$GITHUB_SHA\
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+
+ENV SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt\
+    SSL_CERT_DIR=/etc/ssl/certs\
+    GITHUB_SHA=$GITHUB_SHA\
     RUST_BACKTRACE=full\
     RUST_LOG="warn,playground=info"
 
