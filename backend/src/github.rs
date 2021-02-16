@@ -1,126 +1,93 @@
 //! GitHub utility functions
 
+use body::aggregate;
 use core::fmt;
-use hyper::{Client, client::{Body, RequestBuilder}, header::{qitem, Accept, Authorization, Basic, UserAgent}, mime::Mime, net::HttpsConnector, status::StatusCode};
+use hyper::{
+    body::{self, Buf},
+    client::HttpConnector,
+    header::{AUTHORIZATION, CONTENT_TYPE, USER_AGENT},
+    http::request::Builder,
+    Body, Client, Request,
+};
+use hyper_tls::HttpsConnector;
 use serde::de::DeserializeOwned;
 use serde_json::from_reader;
-use std::{error::Error, io::Read};
+use std::error::Error as StdError;
 
-#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
-pub struct GitHubTokenValidity {
-    #[serde(default)]
-    pub user: GitHubUser,
+// Custom Error type
+#[derive(Debug)]
+struct Error {
+    pub cause: GitHubError,
+}
+
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.cause.message)
+    }
+}
+
+impl StdError for Error {
+    fn description(&self) -> &str {
+        &self.cause.message
+    }
 }
 
 /// User information to be retrieved from the GitHub API.
 #[derive(Clone, Default, Debug, serde::Serialize, serde::Deserialize)]
 pub struct GitHubUser {
-    #[serde(default)]
     pub login: String,
-    #[serde(default)]
     pub avatar_url: String,
     pub organizations_url: String,
 }
 
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct GitHubOrg {
-    #[serde(default)]
     pub login: String,
 }
 
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
-pub struct GitHubError2 {
-    #[serde(default)]
+pub struct GitHubError {
     pub message: String,
-    #[serde(default)]
     pub documentation_url: Option<String>,
+    pub errors: Option<Vec<GitHubClientError>>,
 }
 
-/// Create a GitHub specific `Mime` type
-fn mime_type() -> Mime {
-    "application/vnd.github.v3+json"
-        .parse()
-        .expect("parse GitHub MIME type")
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+pub struct GitHubClientError {
+    pub resource: String,
+    pub field: String,
+    pub code: String,
 }
 
 /// Create a new `Client`
-fn create_client() -> Client {
-    Client::with_connector(HttpsConnector::new(hyper_sync_rustls::TlsClient::new()))
+fn create_client() -> Client<HttpsConnector<HttpConnector>> {
+    Client::builder().build(HttpsConnector::new())
 }
 
-#[derive(Debug)]
-struct GitHubError {
-    details: String,
+/// Create a `Request` `Builder` with necessary headers
+fn create_request_builder(token: &str) -> Builder {
+    Request::builder()
+        .header(CONTENT_TYPE, "application/vnd.github.v3+json")
+        .header(USER_AGENT, "Substrate Playground")
+        .header(AUTHORIZATION, format!("token {}", token))
 }
 
-impl fmt::Display for GitHubError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.details)
-    }
-}
-
-impl Error for GitHubError {
-    fn description(&self) -> &str {
-        &self.details
-    }
-}
-
-fn tokena(token: &str) -> String {
-    format!("{{\"access_token\":\"{}\"}}", token)
-}
-
-fn send<T>(request_builder: RequestBuilder, token: &str) -> Result<T, Box<dyn Error>>
+// Send a fresh `Request` created from a `Builder`, sends it and return the object `T` parsed from JSON.
+async fn send<T>(builder: Builder) -> Result<T, Box<dyn StdError>>
 where
     T: DeserializeOwned,
 {
-    let a = tokena(token).clone();
-    let c = a.clone();
-    let b = c.as_bytes().clone();
-    let body = Body::BufBody(b, b.len());
-    let mut response = request_builder
-        .header(Accept(vec![qitem(mime_type())]))
-        .header(UserAgent("Substrate Playground".into()))
-        //.body(format!("{{\"access_token\":\"{}\"}}", token).as_str())
-       // .body(body)
-        .send()?;
-    if response.status == StatusCode::Ok {
-        from_reader(response.take(2 * 1024 * 1024)).map_err(Into::into)
-    } else {
-        let mut s = String::new();
-        if let Ok(_) = response.read_to_string(&mut s) {
-            log::warn!("response {}", s);
-        }
-        Err(GitHubError {
-            details: "".to_string(),
-        }
-        .into())
-    }
-}
-
-///
-/// Returns a GitHubUser representing provided token.
-/// See https://docs.github.com/en/rest/reference/apps#check-a-token
-///
-/// # Arguments
-///
-/// * `token` - a github token
-/// * `client_id` - a github OAuth client ID
-/// * `client_secret` - a github OAuth client secret (matching client ID)
-///
-#[allow(dead_code)]
-pub fn token_validity(
-    token: &str,
-    client_id: &str,
-    client_secret: &str,
-) -> Result<GitHubTokenValidity, Box<dyn Error>> {
     let client = create_client();
-    let builder = client
-        .post(format!("https://api.github.com/applications/{}/token", client_id).as_str())
-        .header(Authorization(Basic {
-            username: client_id.to_owned(),
-            password: Some(client_secret.to_owned()),
-        }));
-    send(builder, token)
+    let req = builder.body(Body::default())?;
+    let res = client.request(req).await?;
+    let status = res.status();
+    let whole_body = aggregate(res).await?;
+    if status.is_success() {
+        from_reader(whole_body.reader()).map_err(Into::into)
+    } else {
+        let cause: GitHubError = from_reader(whole_body.reader())?;
+        Err(Error { cause }.into())
+    }
 }
 
 ///
@@ -130,11 +97,9 @@ pub fn token_validity(
 ///
 /// * `token` - a github token
 ///
-pub fn current_user(token: &str) -> Result<GitHubUser, Box<dyn Error>> {
-    let client = create_client();
-    let builder = client
-        .get("https://api.github.com/user");
-    send(builder, token)
+pub async fn current_user(token: &str) -> Result<GitHubUser, Box<dyn StdError>> {
+    let builder = create_request_builder(token).uri("https://api.github.com/user");
+    send(builder).await
 }
 
 ///
@@ -145,9 +110,7 @@ pub fn current_user(token: &str) -> Result<GitHubUser, Box<dyn Error>> {
 /// * `token` - a github token
 /// * `user` - a GitHubUser
 ///
-pub fn orgs(token: &str, user: &GitHubUser) -> Result<Vec<GitHubOrg>, Box<dyn Error>> {
-    let client = create_client();
-    let builder = client
-        .get(user.organizations_url.as_str());
-    send(builder, token)
+pub async fn orgs(token: &str, user: &GitHubUser) -> Result<Vec<GitHubOrg>, Box<dyn StdError>> {
+    let builder = create_request_builder(token).uri(user.organizations_url.as_str());
+    send(builder).await
 }

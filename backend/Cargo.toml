@@ -11,8 +11,8 @@ edition = "2018"
 log = "0.4.14"
 env_logger = "0.8.3"
 prometheus = "0.11.0"
-hyper = "0.10" #Do not update
-hyper-sync-rustls = "=0.3.0-rc.17"
+hyper = "0.14.2"
+hyper-tls = "0.5.0"
 json-patch = "0.2.6"
 rocket = "0.4.7"
 rocket_contrib = { version = "0.4.7", features = ["json"] }

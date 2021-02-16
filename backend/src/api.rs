@@ -31,51 +31,60 @@ const COOKIE_TOKEN: &str = "token";
 
 // Extract a User from cookies
 impl<'a, 'r> FromRequest<'a, 'r> for LoggedUser {
-    type Error = &'static str;
+    type Error = String;
 
-    fn from_request(request: &'a Request<'r>) -> request::Outcome<LoggedUser, &'static str> {
+    fn from_request(request: &'a Request<'r>) -> request::Outcome<LoggedUser, String> {
         let engine = &request
             .guard::<State<Context>>()
-            .map_failure(|_f| (Status::BadRequest, "Can't access state"))?
+            .map_failure(|_f| (Status::BadRequest, "Can't access state".to_string()))?
             .manager
             .engine;
         let mut cookies = request.cookies();
         if let Some(token) = cookies.get_private(COOKIE_TOKEN) {
             let token_value = token.value();
-            if let Ok(gh_user) = current_user(token_value) {
-                let id = gh_user.clone().login;
-                let users = Runtime::new()
-                    .map_err(|_| Err((Status::ExpectationFailed, "Failed to execute async fn")))?
-                    .block_on(engine.clone().list_users())
-                    .map_err(|_| Err((Status::FailedDependency, "Missing users ConfiMap")))?;
-                let organizations = orgs(token_value, &gh_user)
-                    .unwrap_or_default()
-                    .iter()
-                    .map(|org| org.clone().login)
-                    .collect();
-                let user = users.get(&id);
-                // If at least one non-admin user is defined, then users are only allowed if whitelisted
-                let filtered = users.values().any(|user| !user.admin);
-                if !filtered || user.is_some() {
-                    Outcome::Success(LoggedUser {
-                        id: id.clone(),
-                        avatar: gh_user.avatar_url,
-                        admin: user.map_or(false, |user| user.admin),
-                        pool_affinity: user.and_then(|user| user.pool_affinity.clone()),
-                        can_customize_duration: user
-                            .map_or(false, |user| user.can_customize_duration),
-                        can_customize_pool_affinity: user
-                            .map_or(false, |user| user.can_customize_pool_affinity),
-                        organizations,
-                    })
-                } else {
-                    Outcome::Failure((Status::Forbidden, "User is not whitelisted"))
-                }
-            } else {
+            let runtime = Runtime::new().map_err(|_| {
+                Err((
+                    Status::ExpectationFailed,
+                    "Failed to execute async fn".to_string(),
+                ))
+            })?;
+            let gh_user = runtime.block_on(current_user(token_value)).map_err(|err| {
                 // A token is present, but can't be used to access user details
                 clear(cookies);
-                log::warn!("Can't access user details");
-                Outcome::Failure((Status::BadRequest, "Can't access user details"))
+                Err((
+                    Status::BadRequest,
+                    format!("Can't access user details {}", err),
+                ))
+            })?;
+            let id = gh_user.clone().login;
+            let users = runtime.block_on(engine.clone().list_users()).map_err(|_| {
+                Err((
+                    Status::FailedDependency,
+                    "Missing users ConfiMap".to_string(),
+                ))
+            })?;
+            let organizations = runtime
+                .block_on(orgs(token_value, &gh_user))
+                .unwrap_or_default()
+                .iter()
+                .map(|org| org.clone().login)
+                .collect();
+            let user = users.get(&id);
+            // If at least one non-admin user is defined, then users are only allowed if whitelisted
+            let filtered = users.values().any(|user| !user.admin);
+            if !filtered || user.is_some() {
+                Outcome::Success(LoggedUser {
+                    id: id.clone(),
+                    avatar: gh_user.avatar_url,
+                    admin: user.map_or(false, |user| user.admin),
+                    pool_affinity: user.and_then(|user| user.pool_affinity.clone()),
+                    can_customize_duration: user.map_or(false, |user| user.can_customize_duration),
+                    can_customize_pool_affinity: user
+                        .map_or(false, |user| user.can_customize_pool_affinity),
+                    organizations,
+                })
+            } else {
+                Outcome::Failure((Status::Forbidden, "User is not whitelisted".to_string()))
             }
         } else {
             // No token in cookies, anonymous call
