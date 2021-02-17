@@ -35,21 +35,22 @@ jobs:
       - name: Set environment
         id: env
         run: |
-          echo ::set-output name=sha::sha-${GITHUB_SHA::7}
-          PROJECT=`grep GKE_PROJECT .env | cut -d '=' -f2`
-          ZONE=`grep GKE_ZONE .env | cut -d '=' -f2`
-          echo ::set-output name=project::$( echo ${PROJECT} )
-          echo ::set-output name=zone::$( echo ${ZONE} )
+          GKE_PROJECT=`grep GKE_PROJECT .env | cut -d '=' -f2`
+          GKE_ZONE=`grep GKE_ZONE .env | cut -d '=' -f2`
           if [[ $GITHUB_REF == 'refs/heads/master' ]]; then
               echo ::set-output name=environment::production
               echo ::set-output name=domain::playground
-              CLUSTER=`grep GKE_CLUSTER .env.production | cut -d '=' -f2`
+              ENVIRONMENT='production'
           elif [[ $GITHUB_REF == 'refs/heads/develop' ]]; then
               echo ::set-output name=environment::staging
               echo ::set-output name=domain::playground-staging
-              CLUSTER='substrate-playground-staging'
+              ENVIRONMENT='staging'
           fi
-          echo ::set-output name=cluster::$( echo ${CLUSTER} )
+          GKE_CLUSTER='substrate-playground-'${ENVIRONMENT}
+          echo ::set-output name=sha::sha-${GITHUB_SHA::7}
+          echo ::set-output name=project::$( echo ${GKE_PROJECT} )
+          echo ::set-output name=zone::$( echo ${GKE_ZONE} )
+          echo ::set-output name=cluster::$( echo ${GKE_CLUSTER} )
 
       - uses: google-github-actions/setup-gcloud@master
         with:
@@ -85,7 +86,7 @@ jobs:
               VERSION=pr-${{ github.event.number }}
             fi
             DOCKER_IMAGE=paritytech/substrate-playground-backend-api
-            TAGS="${DOCKER_IMAGE}:latest,${DOCKER_IMAGE}:${VERSION},${DOCKER_IMAGE}:sha-${GITHUB_SHA::7}"
+            TAGS="${DOCKER_IMAGE}:latest,${DOCKER_IMAGE}:${VERSION},${DOCKER_IMAGE}:${{ steps.env.outputs.sha }}"
             echo ::set-output name=tags::${TAGS}
 
       - name: Prepare labels paritytech/substrate-playground-backend-ui
@@ -100,7 +101,7 @@ jobs:
               VERSION=pr-${{ github.event.number }}
             fi
             DOCKER_IMAGE=paritytech/substrate-playground-backend-ui
-            TAGS="${DOCKER_IMAGE}:latest,${DOCKER_IMAGE}:${VERSION},${DOCKER_IMAGE}:sha-${GITHUB_SHA::7}"
+            TAGS="${DOCKER_IMAGE}:latest,${DOCKER_IMAGE}:${VERSION},${DOCKER_IMAGE}:${{ steps.env.outputs.sha }}"
             echo ::set-output name=tags::${TAGS}
 
       - name: Set up Docker Buildx

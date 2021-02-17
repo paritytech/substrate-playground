@@ -53,8 +53,6 @@ COLOR_RESET:= $(shell tput sgr0)
 
 # Include .env for extra customisable ENV variable
 include .env
-# Include an optional .env for per environment ENV variable
--include .env.${ENV}
 
 # TODO check all required env are defined? BASE_TEMPLATE_VERSION, NAMESPACE, GKE_PROJECT, GKE_ZONE, DOCKER_ORG
 

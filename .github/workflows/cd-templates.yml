@@ -1,4 +1,7 @@
+#
 # Deploy templates on playground as soon as changes are commited in conf/../templates/* files
+# Changes on branch 'develop' are deployed on staging, while changes on branch 'master' are deployed on production.
+#
 name: Continuous Deployment templates
 
 on:
@@ -10,7 +13,7 @@ on:
       - 'conf/k8s/overlays/*/templates/*'
 
 jobs:
-  build-and-push-templates:
+  push-templates:
     runs-on: ubuntu-latest
     steps:
 
@@ -20,20 +23,18 @@ jobs:
         id: env
         run: |
           NAMESPACE=`grep NAMESPACE .env | cut -d '=' -f2`
-          PROJECT=`grep GKE_PROJECT .env | cut -d '=' -f2`
-          ZONE=`grep GKE_ZONE .env | cut -d '=' -f2`
-          echo ::set-output name=namespace::$( echo ${NAMESPACE} )
-          echo ::set-output name=project::$( echo ${PROJECT} )
-          echo ::set-output name=zone::$( echo ${ZONE} )
-          CLUSTER=`grep GKE_CLUSTER .env | cut -d '=' -f2`
+          GKE_PROJECT=`grep GKE_PROJECT .env | cut -d '=' -f2`
+          GKE_ZONE=`grep GKE_ZONE .env | cut -d '=' -f2`
           if [[ $GITHUB_REF == 'refs/heads/master' ]]; then
-              echo ::set-output name=environment::production
-              CLUSTER=`grep GKE_CLUSTER .env.production | cut -d '=' -f2`
+              ENVIRONMENT='production'
           elif [[ $GITHUB_REF == 'refs/heads/develop' ]]; then
-              echo ::set-output name=environment::staging
-              CLUSTER='substrate-playground-staging'
+              ENVIRONMENT='staging'
           fi
-          echo ::set-output name=cluster::$( echo ${CLUSTER} )
+          GKE_CLUSTER='substrate-playground-'${ENVIRONMENT}
+          echo ::set-output name=namespace::$( echo ${NAMESPACE} )
+          echo ::set-output name=project::$( echo ${GKE_PROJECT} )
+          echo ::set-output name=zone::$( echo ${GKE_ZONE} )
+          echo ::set-output name=cluster::$( echo ${GKE_CLUSTER} )
 
       - uses: google-github-actions/setup-gcloud@master
         with:
