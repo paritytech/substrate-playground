@@ -95,7 +95,7 @@ impl Manager {
                                     {
                                         self.clone()
                                             .metrics
-                                            .observe_deploy_duration(&id, duration.as_secs_f64());
+                                            .observe_deploy_duration(duration.as_secs_f64());
                                     } else {
                                         error!("Failed to compute this session lifetime");
                                     }
@@ -246,9 +246,9 @@ impl Manager {
                 } else {
                     error!("Failed to acquire sessions lock");
                 }
-                self.metrics.inc_deploy_counter(&id, &template);
+                self.metrics.inc_deploy_counter(&template);
             }
-            Err(_) => self.metrics.inc_deploy_failures_counter(&id, &template),
+            Err(_) => self.metrics.inc_deploy_failures_counter(&template),
         }
         result
     }
@@ -272,14 +272,14 @@ impl Manager {
         let result = new_runtime()?.block_on(self.engine.delete_session(&id));
         match result {
             Ok(_) => {
-                self.metrics.inc_undeploy_counter(&id);
+                self.metrics.inc_undeploy_counter();
                 if let Ok(mut sessions) = self.sessions.lock() {
                     sessions.remove(id);
                 } else {
                     error!("Failed to acquire sessions lock");
                 }
             }
-            Err(_) => self.metrics.inc_undeploy_failures_counter(&id),
+            Err(_) => self.metrics.inc_undeploy_failures_counter(),
         }
         result
     }
