@@ -30,7 +30,7 @@ spec:
           - name: ROCKET_PORT
             value: "80"
           - name: ROCKET_LOG
-            value: "normal"
+            value: "debug"
           - name: ROCKET_ADDRESS
             value: "0.0.0.0"
           - name: SESSION_DEFAULT_DURATION
