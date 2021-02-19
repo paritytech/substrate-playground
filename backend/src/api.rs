@@ -393,10 +393,7 @@ pub fn github_login(
         .get_redirect_extras(
             &mut cookies,
             &["user:read"],
-            &[(
-                "redirect_uri",
-                &redirect_uri,
-            )],
+            &[("redirect_uri", &redirect_uri)],
         )
         .unwrap()
 }
