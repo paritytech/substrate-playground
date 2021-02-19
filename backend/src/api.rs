@@ -388,7 +388,6 @@ pub fn github_login(
         manager.engine.env.host,
         query_segment(origin)
     );
-    log::info!("Redirecting to {}", redirect_uri);
     oauth2
         .get_redirect_extras(
             &mut cookies,
