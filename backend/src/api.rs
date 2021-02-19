@@ -51,6 +51,7 @@ impl<'a, 'r> FromRequest<'a, 'r> for LoggedUser {
             let gh_user = runtime.block_on(current_user(token_value)).map_err(|err| {
                 // A token is present, but can't be used to access user details
                 clear(cookies);
+                log::warn!("Error while accessing user details{}", err);
                 Err((
                     Status::BadRequest,
                     format!("Can't access user details {}", err),
