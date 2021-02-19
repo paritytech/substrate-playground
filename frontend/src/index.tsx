@@ -50,7 +50,7 @@ function App({ params }: { params: Params }): JSX.Element {
     return (
         <ThemeProvider theme={theme}>
             <div style={{ display: "flex", width: "100vw", height: "100vh", alignItems: "center", justifyContent: "center" }}>
-                <Wrapper params={params} thin={state.matches(States.LOGGED) && panel == PanelId.Theia} onPlayground={() => selectPanel(PanelId.Session)} onAdminClick={() => selectPanel(PanelId.Admin)} onStatsClick={() => selectPanel(PanelId.Stats)} onLogout={() => send(Events.LOGOUT)} user={user}>
+                <Wrapper conf={conf} params={params} thin={state.matches(States.LOGGED) && panel == PanelId.Theia} onPlayground={() => selectPanel(PanelId.Session)} onAdminClick={() => selectPanel(PanelId.Admin)} onStatsClick={() => selectPanel(PanelId.Stats)} onLogout={() => send(Events.LOGOUT)} user={user}>
                     {state.matches(States.LOGGED)
                     ? <MainPanel client={client} conf={conf} user={user} params={params} id={panel} templates={templates} onConnect={() => selectPanel(PanelId.Theia)} onDeployed={() => selectPanel(PanelId.Theia)} restartAction={restartAction} />
                     : state.matches(States.TERMS_UNAPPROVED)
