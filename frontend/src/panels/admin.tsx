@@ -378,7 +378,7 @@ function Sessions({ client, conf, user }: { client: Client, conf: Configuration,
                 {errorMessage &&
                 <ErrorSnackbar open={true} message={errorMessage} onClose={() => setErrorMessage(null)} />}
                 <SessionCreationDialog allowUserSelection={true} client={client} conf={conf} sessions={resources} user={user} users={users} templates={templates} show={showCreationDialog} onCreate={(conf, id) => onCreate(conf, id, setSessions)} onHide={() => setShowCreationDialog(false)} />
-                {selected &&
+                {(selected && showUpdateDialog) &&
                 <SessionUpdateDialog id={selected} duration={resources[selected].duration} show={showUpdateDialog} onUpdate={(id, conf) => onUpdate(id, conf, setSessions)} onHide={() => setShowUpdateDialog(false)} />}
             </>
             )}
@@ -793,8 +793,9 @@ function Users({ client, user, conf }: { client: Client, user: LoggedUser, conf:
                 </TableContainer>
                 {errorMessage &&
                 <ErrorSnackbar open={true} message={errorMessage} onClose={() => setErrorMessage(null)} />}
-                <UserCreationDialog client={client} conf={conf} users={resources} show={showCreationDialog} onCreate={(id, conf) => onCreate(id, conf, setUsers)} onHide={() => setShowCreationDialog(false)} />
-                {selected &&
+                {showCreationDialog &&
+                <UserCreationDialog client={client} conf={conf} users={resources} show={showCreationDialog} onCreate={(id, conf) => onCreate(id, conf, setUsers)} onHide={() => setShowCreationDialog(false)} />}
+                {(selected && showUpdateDialog) &&
                 <UserUpdateDialog client={client} id={selected} user={resources[selected]} show={showUpdateDialog} onUpdate={(id, conf) => onUpdate(id, conf, setUsers)} onHide={() => setShowUpdateDialog(false)} />}
             </>
         )}
