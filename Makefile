@@ -141,7 +141,7 @@ ifeq ($(SKIP_ACK), )
 	@read -p $$'Ok to proceed? [yN]' answer; if [ "$${answer}" != "Y" ] ;then exit 1; fi
 endif
 
-k8s-create-cluster: requires-k8s
+k8s-create-cluster: requires-env
 	# See https://cloud.google.com/compute/docs/machine-types
 	@read -p "Client ID?" CLIENT_ID; \
 	read -p "Client secret?" CLIENT_SECRET; \
@@ -154,11 +154,11 @@ k8s-create-cluster: requires-k8s
         --enable-autoscaling \
         --num-nodes 2 \
         --min-nodes 2 \
-        --max-nodes 10 \
-	kubectl create ns ${NAMESPACE} \
-	kubectl create configmap playground-config --namespace=playground --from-literal=github.clientId="$${CLIENT_ID}" --from-literal=session.defaultDuration="180" --from-literal=session.defaultMaxPerNode="2" --from-literal=session.defaultPoolAffinity="default" \
-	kubectl create secret generic playground-secrets --namespace=playground --from-literal=github.clientSecret="$${CLIENT_SECRET}" --from-literal=rocket.secretKey=`openssl rand -base64 32` \
-	kubectl create configmap playground-templates --namespace=${NAMESPACE} --from-file=conf/k8s/overlays/${ENV}/templates/ --dry-run=client -o yaml | kubectl apply -f - \
+        --max-nodes 10 && \
+	kubectl create ns ${NAMESPACE} && \
+	kubectl create configmap playground-config --namespace=playground --from-literal=github.clientId="$${CLIENT_ID}" --from-literal=session.defaultDuration="180" --from-literal=session.defaultMaxPerNode="2" --from-literal=session.defaultPoolAffinity="default" && \
+	kubectl create secret generic playground-secrets --namespace=playground --from-literal=github.clientSecret="$${CLIENT_SECRET}" --from-literal=rocket.secretKey=`openssl rand -base64 32` && \
+	kubectl create configmap playground-templates --namespace=${NAMESPACE} --from-file=conf/k8s/overlays/${ENV}/templates/ --dry-run=client -o yaml | kubectl apply -f - && \
 	kubectl create configmap playground-users --namespace=${NAMESPACE} --from-file=conf/k8s/overlays/${ENV}/users/ --dry-run=client -o yaml | kubectl apply -f -
 
 k8s-cluster-status: requires-k8s
