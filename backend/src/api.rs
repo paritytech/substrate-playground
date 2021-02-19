@@ -382,18 +382,20 @@ pub fn github_login(
     mut cookies: Cookies<'_>,
 ) -> Redirect {
     let manager = state.manager.clone();
+    let redirect_uri = format!(
+        "{}://{}/api/auth/github{}",
+        protocol(&manager.engine.env),
+        manager.engine.env.host,
+        query_segment(origin)
+    );
+    log::info!("Redirecting to {}", redirect_uri);
     oauth2
         .get_redirect_extras(
             &mut cookies,
             &["user:read"],
             &[(
                 "redirect_uri",
-                &format!(
-                    "{}://{}/api/auth/github{}",
-                    protocol(&manager.engine.env),
-                    manager.engine.env.host,
-                    query_segment(origin)
-                ),
+                &redirect_uri,
             )],
         )
         .unwrap()

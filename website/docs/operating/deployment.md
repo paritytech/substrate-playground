@@ -59,7 +59,7 @@ Then update `loadBalancerIP` with the newly created IP in `conf/k8s/overlays/$EN
 ### Cluster creation
 
 ```shell
-make create-cluster
+make k8s-create-cluster
 ```
 
 ### DNS
