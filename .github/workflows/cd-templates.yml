@@ -31,6 +31,7 @@ jobs:
               ENVIRONMENT='staging'
           fi
           GKE_CLUSTER='substrate-playground-'${ENVIRONMENT}
+          echo ::set-output name=environment::$( echo ${ENVIRONMENT} )
           echo ::set-output name=namespace::$( echo ${NAMESPACE} )
           echo ::set-output name=project::$( echo ${GKE_PROJECT} )
           echo ::set-output name=zone::$( echo ${GKE_ZONE} )
