@@ -121,7 +121,7 @@ impl Manager {
                             &session.pod.start_time.and_then(|p| p.elapsed().ok())
                         {
                             if duration > &session.duration {
-                                info!("Undeploying {} {:?}", session.user_id, session.pod.phase);
+                                info!("Undeploying {}", session.user_id);
 
                                 match self.clone().delete_session(&session.user_id) {
                                     Ok(()) => (),
