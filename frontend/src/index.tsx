@@ -2,14 +2,14 @@ import React from "react";
 import ReactDOM from "react-dom";
 import { Client, Configuration, LoggedUser, Template } from '@substrate/playground-client';
 import { createMuiTheme, ThemeProvider } from '@material-ui/core/styles';
+import { CenteredContainer, ErrorMessage, LoadingPanel, Wrapper } from './components';
+import { useLifecycle, Events, PanelId, States } from './lifecycle';
 import { AdminPanel } from './panels/admin';
 import { LoginPanel } from './panels/login';
 import { SessionPanel } from './panels/session';
 import { StatsPanel } from './panels/stats';
 import { TermsPanel } from './panels/terms';
 import { TheiaPanel } from './panels/theia';
-import { LoadingPanel, Wrapper } from './components';
-import { useLifecycle, Events, PanelId, States } from './lifecycle';
 import { terms } from "./terms";
 
 function MainPanel({ client, conf, user, params, id, templates, onConnect, onDeployed, restartAction }: { client: Client, conf: Configuration, user: LoggedUser, params: Params, id: PanelId, templates: Record<string, Template>, restartAction: () => void, onConnect: () => void, onDeployed: () => void}): JSX.Element {
@@ -37,7 +37,7 @@ function App({ params }: { params: Params }): JSX.Element {
     const client = new Client(params.base, {credentials: "include"});
     const { deploy } = params;
     const [state, send] = useLifecycle(client, deploy? PanelId.Theia: PanelId.Session);
-    const { panel, templates, user, conf } = state.context;
+    const { panel, templates, user, conf, error } = state.context;
 
     const restartAction = () => send(Events.RESTART);
     const selectPanel = (id: PanelId) => send(Events.SELECT, {panel: id});
@@ -56,7 +56,11 @@ function App({ params }: { params: Params }): JSX.Element {
                     : state.matches(States.TERMS_UNAPPROVED)
                         ? <TermsPanel terms={terms} onTermsApproved={() => send(Events.TERMS_APPROVAL)} />
                         : state.matches(States.UNLOGGED)
-                        ? <LoginPanel />
+                        ? error
+                        ? <CenteredContainer>
+                            <ErrorMessage reason={error} action={restartAction} />
+                          </CenteredContainer>
+                        : <LoginPanel />
                         : <LoadingPanel />}
                 </Wrapper>
             </div>

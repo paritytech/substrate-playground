@@ -10,6 +10,7 @@ export interface Context {
   conf: Configuration,
   user?: LoggedUser,
   templates: Record<string, Template>,
+  error?: string,
 }
 
 export enum States {
@@ -57,8 +58,8 @@ function lifecycle(client: Client, id: PanelId) {
                         } else {
                             callback({type: Events.UNLOGIN, templates: templates, conf: configuration});
                         }
-                    } catch {
-                        callback({type: Events.UNLOGIN});
+                    } catch (e) {
+                        callback({type: Events.UNLOGIN, error: e.toString()});
                     }
                 },
             },
@@ -76,6 +77,7 @@ function lifecycle(client: Client, id: PanelId) {
                                         user: null,
                                         templates: event.templates,
                                         conf: event.conf,
+                                        error: event.error,
                                       }
                                     })}}
         },
