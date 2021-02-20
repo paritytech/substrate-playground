@@ -61,7 +61,7 @@ impl<'a, 'r> FromRequest<'a, 'r> for LoggedUser {
             let users = runtime.block_on(engine.clone().list_users()).map_err(|_| {
                 Err((
                     Status::FailedDependency,
-                    "Missing users ConfiMap".to_string(),
+                    "Missing users ConfigMap".to_string(),
                 ))
             })?;
             let organizations = runtime
