@@ -89,7 +89,6 @@ impl Manager {
                             match session.pod.phase {
                                 Phase::Running | Phase::Failed => {
                                     sessions2.remove(&session.user_id);
-                                    // TODO track success / failure
                                     if let Some(duration) =
                                         &session.pod.start_time.and_then(|p| p.elapsed().ok())
                                     {
@@ -102,10 +101,11 @@ impl Manager {
                                 }
                                 _ => {}
                             }
-                            // Ignore "Unknown"
-                            // "Succeeded" can't happen
                         }
-                        Err(err) => warn!("Failed to call get: {}", err),
+                        Err(err) => {
+                            warn!("Failed to call get: {}", err);
+                            sessions2.remove(id);
+                        },
                         Ok(None) => warn!("No matching pod: {}", id),
                     }
                 }
