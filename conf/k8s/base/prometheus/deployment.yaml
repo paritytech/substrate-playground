@@ -1,8 +1,9 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: prometheus
 spec:
+  serviceName: "prometheus"
   replicas: 1
   template:
     metadata:
@@ -31,6 +32,12 @@ spec:
         - name: prometheus-config-volume
           configMap:
             name: prometheus-configuration
-        - name: prometheus-storage-volume
-          persistentVolumeClaim:
-            claimName: prometheus-volume-claim
+  volumeClaimTemplates:
+  - metadata:
+      name: prometheus-storage-volume
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: "16Gi"
