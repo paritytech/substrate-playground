@@ -150,5 +150,7 @@ export class Client {
 
 }
 
+export * from "./login";
+export * from "./rpc";
 export * from "./types";
 export * from "./utils";
