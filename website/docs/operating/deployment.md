@@ -62,6 +62,14 @@ Then update `loadBalancerIP` with the newly created IP in `conf/k8s/overlays/$EN
 make k8s-create-cluster
 ```
 
+#### How to choose a machine type
+
+A default machine type is used in the script. It can be changed depending on needs.
+
+* https://cloud.google.com/compute/docs/machine-types
+* https://cloud.google.com/compute/docs/benchmarks-linux
+* https://cloud.google.com/compute/vm-instance-pricing
+
 ### DNS
 
 Create a new [CloudDNS zone](https://console.cloud.google.com/net-services/dns/zones/new/create?authuser=1&project=substrateplayground-252112).
