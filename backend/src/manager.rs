@@ -82,7 +82,7 @@ impl Manager {
             if let Ok(mut sessions2) = sessions_thread.lock() {
                 let sessions3 = &mut sessions2.clone();
                 for id in sessions3.iter() {
-                    match self.clone().get_session(&id) {
+                    match self.clone().get_session(&session_id(id)) {
                         Ok(Some(session)) => {
                             // Deployed sessions are removed from the set
                             // Additionally the deployment time is tracked
