@@ -105,7 +105,7 @@ impl Manager {
                         Err(err) => {
                             warn!("Failed to call get: {}", err);
                             sessions2.remove(id);
-                        },
+                        }
                         Ok(None) => warn!("No matching pod: {}", id),
                     }
                 }

@@ -723,7 +723,11 @@ impl Engine {
             .duration
             .unwrap_or(self.configuration.session_defaults.duration);
 
-        log::info!("Creating session for user {} with template {}", user.id, conf.template);
+        log::info!(
+            "Creating session for user {} with template {}",
+            user.id,
+            conf.template
+        );
 
         // Deploy a new pod for this image
         pod_api
