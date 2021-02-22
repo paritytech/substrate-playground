@@ -133,7 +133,6 @@ pub struct LoggedUser {
 }
 
 impl LoggedUser {
-
     pub fn is_paritytech_member(&self) -> bool {
         self.organizations.contains(&"paritytech".to_string())
     }
@@ -152,7 +151,6 @@ impl LoggedUser {
     pub fn has_admin_edit_rights(&self) -> bool {
         self.admin
     }
-
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
