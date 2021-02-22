@@ -34,7 +34,7 @@ function MainPanel({ client, conf, user, params, id, templates, onConnect, onDep
 }
 
 function App({ params }: { params: Params }): JSX.Element {
-    const client = new Client(params.base, {credentials: "include"});
+    const client = new Client(params.base, 30000, {credentials: "include"});
     const { deploy } = params;
     const [state, send] = useLifecycle(client, deploy? PanelId.Theia: PanelId.Session);
     const { panel, templates, user, conf, error } = state.context;

@@ -4,7 +4,7 @@ import 'cross-fetch/polyfill';
 import 'abort-controller/polyfill';
 
 const env: EnvironmentType = process.env.ENV as EnvironmentType || EnvironmentType.dev;
-const client = new Client(playgroundBaseURL(env), {credentials: "include"});
+const client = new Client(playgroundBaseURL(env), 30000, {credentials: "include"});
 
 test('unauthenticated - should not be able to create a new session', async (t) => {
     try {
