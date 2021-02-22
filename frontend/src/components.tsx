@@ -21,6 +21,7 @@ import Typography from '@material-ui/core/Typography';
 import { Configuration, LoggedUser } from "@substrate/playground-client";
 import { useInterval } from './hooks';
 import { Params } from "./index";
+import { hasAdminReadRights } from './utils';
 
 function wrapAction(action: (() => void) | Promise<void>, call: (flag: boolean) => void):(() => void) | Promise<void> {
     if (action instanceof Promise) {
@@ -156,7 +157,7 @@ function Nav({ conf, onPlayground, onStatsClick, onAdminClick, onLogout, user }:
                     <Button onClick={onPlayground}>Playground</Button>
                 </Typography>
                 <div style={{display: "flex", alignItems: "center"}}>
-                    {user?.admin &&
+                    {(user && hasAdminReadRights(user)) &&
                     <div style={{paddingLeft: 12}}>
                         <IconButton
                             aria-label="account of current user"

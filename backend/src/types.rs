@@ -132,6 +132,29 @@ pub struct LoggedUser {
     pub can_customize_pool_affinity: bool,
 }
 
+impl LoggedUser {
+
+    pub fn is_paritytech_member(&self) -> bool {
+        self.organizations.contains(&"paritytech".to_string())
+    }
+    pub fn can_customize_duration(&self) -> bool {
+        self.admin || self.can_customize_duration || self.is_paritytech_member()
+    }
+
+    pub fn can_customize_pool_affinity(&self) -> bool {
+        self.admin || self.can_customize_pool_affinity || self.is_paritytech_member()
+    }
+
+    pub fn has_admin_read_rights(&self) -> bool {
+        self.admin || self.is_paritytech_member()
+    }
+
+    pub fn has_admin_edit_rights(&self) -> bool {
+        self.admin
+    }
+
+}
+
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Template {
     pub name: String,

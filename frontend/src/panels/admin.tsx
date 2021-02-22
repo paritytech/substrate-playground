@@ -29,6 +29,7 @@ import Typography from '@material-ui/core/Typography';
 import { Client, Configuration, LoggedUser, Pool, Session, SessionConfiguration, SessionUpdateConfiguration, Template, User, UserConfiguration, UserUpdateConfiguration } from '@substrate/playground-client';
 import { CenteredContainer, ErrorSnackbar, LoadingPanel } from '../components';
 import { useInterval } from '../hooks';
+import { canCustomizeDuration, canCustomizePoolAffinity, hasAdminEditRights, hasAdminReadRights } from '../utils';
 import { DialogActions, DialogContentText, MenuItem } from '@material-ui/core';
 import { Autocomplete } from '@material-ui/lab';
 
@@ -38,12 +39,12 @@ const useStyles = makeStyles({
     },
 });
 
-function NoResourcesContainer({ label, action }: { label: string, action?: () => void}): JSX.Element {
+function NoResourcesContainer({ user, label, action }: { user: LoggedUser, label: string, action?: () => void}): JSX.Element {
     return (
         <Container>
             <Typography variant="h6">
                 {label}
-                {action &&
+                {(action && hasAdminEditRights(user)) &&
                  <Tooltip title="Create">
                     <IconButton aria-label="create" onClick={action}>
                         <AddIcon />
@@ -75,18 +76,6 @@ function Resources<T>( { children, label, callback }: { children: (resources: Re
             </Container>
         );
     }
-}
-
-function paritytechMember(user: LoggedUser): boolean {
-    return user.organizations.indexOf('paritytech') != -1;
-}
-
-function canCustomizeDuration(user: LoggedUser): boolean {
-    return user.admin || user.canCustomizeDuration || paritytechMember(user);
-}
-
-function canCustomizePoolAffinity(user: LoggedUser): boolean {
-    return user.admin || user.canCustomizePoolAffinity || paritytechMember(user);
 }
 
 export function canCustomize(user: LoggedUser): boolean {
@@ -327,7 +316,7 @@ function Sessions({ client, conf, user }: { client: Client, conf: Configuration,
                 {Object.keys(resources).length > 0
                 ?
                 <>
-                    <EnhancedTableToolbar label="Sessions" selected={selected} onCreate={() => setShowCreationDialog(true)} onUpdate={() => setShowUpdateDialog(true)} onDelete={() => onDelete(setSessions)} />
+                    <EnhancedTableToolbar user={user} label="Sessions" selected={selected} onCreate={() => setShowCreationDialog(true)} onUpdate={() => setShowUpdateDialog(true)} onDelete={() => onDelete(setSessions)} />
                     <TableContainer component={Paper}>
                         <Table className={classes.table} aria-label="simple table">
                             <TableHead>
@@ -374,7 +363,7 @@ function Sessions({ client, conf, user }: { client: Client, conf: Configuration,
                         </Table>
                     </TableContainer>
                 </>
-                : <NoResourcesContainer label={`No sessions`} action={() => setShowCreationDialog(true)} />}
+                : <NoResourcesContainer user={user} label="No sessions" action={() => setShowCreationDialog(true)} />}
                 {errorMessage &&
                 <ErrorSnackbar open={true} message={errorMessage} onClose={() => setErrorMessage(null)} />}
                 <SessionCreationDialog allowUserSelection={true} client={client} conf={conf} sessions={resources} user={user} users={users} templates={templates} show={showCreationDialog} onCreate={(conf, id) => onCreate(conf, id, setSessions)} onHide={() => setShowCreationDialog(false)} />
@@ -386,14 +375,14 @@ function Sessions({ client, conf, user }: { client: Client, conf: Configuration,
     );
 }
 
-function Templates({ client }: { client: Client }): JSX.Element {
+function Templates({ client, user }: { client: Client, user: LoggedUser }): JSX.Element {
     const classes = useStyles();
 
     return (
         <Resources<Template> label="Templates" callback={async () => (await client.get()).templates}>
         {(resources: Record<string, Template>) => (
             <>
-                <EnhancedTableToolbar label="Templates" />
+                <EnhancedTableToolbar user={user} label="Templates" />
                 <TableContainer component={Paper}>
                     <Table className={classes.table} aria-label="simple table">
                         <TableHead>
@@ -474,20 +463,10 @@ function DeleteConfirmationDialog({open, onClose, onConfirmation}: {open: boolea
     );
 }
 
-function EnhancedTableToolbar({ label, selected = null, onCreate, onUpdate, onDelete }: { label: string, selected?: string | null, onCreate?: () => void, onUpdate?: () => void, onDelete?: () => void}): JSX.Element {
+function EditToolbar({ selected, onCreate, onUpdate, onDelete }: {selected?: string | null, onCreate?: () => void, onUpdate?: () => void, onDelete?: () => void}): JSX.Element {
     const [open, setOpen] = React.useState(false);
-    const classes = useToolbarStyles();
-    return (
-        <>
-            <Toolbar
-            className={clsx(classes.root, {
-                [classes.highlight]: selected != null,
-            })}
-            >
-            <Typography className={classes.title} variant="h6" id="tableTitle" component="div">
-                {label}
-            </Typography>
-            {selected ?
+    if (selected) {
+        return (
             <>
                 {onUpdate &&
                 <Tooltip title="Update">
@@ -503,7 +482,10 @@ function EnhancedTableToolbar({ label, selected = null, onCreate, onUpdate, onDe
                 </Tooltip>}
                 <DeleteConfirmationDialog open={open} onClose={() => setOpen(false)} onConfirmation={onDelete} />
             </>
-            : <>
+        );
+    } else {
+        return (
+            <>
                 {onCreate &&
                 <Tooltip title="Create">
                         <IconButton aria-label="create" onClick={onCreate}>
@@ -511,7 +493,24 @@ function EnhancedTableToolbar({ label, selected = null, onCreate, onUpdate, onDe
                         </IconButton>
                 </Tooltip>}
             </>
-            }
+        );
+    }
+}
+
+function EnhancedTableToolbar({ user, label, selected = null, onCreate, onUpdate, onDelete }: { user: LoggedUser, label: string, selected?: string | null, onCreate?: () => void, onUpdate?: () => void, onDelete?: () => void}): JSX.Element {
+    const classes = useToolbarStyles();
+    return (
+        <>
+            <Toolbar
+            className={clsx(classes.root, {
+                [classes.highlight]: selected != null,
+            })}
+            >
+            <Typography className={classes.title} variant="h6" id="tableTitle" component="div">
+                {label}
+            </Typography>
+            {hasAdminEditRights(user) &&
+            <EditToolbar selected={selected} onCreate={onCreate} onUpdate={onUpdate} onDelete={onDelete} />}
             </Toolbar>
         </>
     );
@@ -747,7 +746,7 @@ function Users({ client, user, conf }: { client: Client, user: LoggedUser, conf:
         <Resources<User> label="Users" callback={async () => await client.listUsers()}>
         {(resources: Record<string, User>, setUsers: Dispatch<SetStateAction<Record<string, User> | null>>) => (
             <>
-                <EnhancedTableToolbar label="Users" selected={selected} onCreate={() => setShowCreationDialog(true)} onUpdate={() => setShowUpdateDialog(true)} onDelete={() => onDelete(setUsers)} />
+                <EnhancedTableToolbar user={user} label="Users" selected={selected} onCreate={() => setShowCreationDialog(true)} onUpdate={() => setShowUpdateDialog(true)} onDelete={() => onDelete(setUsers)} />
                 <TableContainer component={Paper}>
                     <Table className={classes.table} aria-label="simple table">
                         <TableHead>
@@ -839,14 +838,14 @@ function DetailsPanel({ conf }: { conf: Configuration }): JSX.Element {
     );
 }
 
-function Pools({ client }: { client: Client }): JSX.Element {
+function Pools({ client, user }: { client: Client, user: LoggedUser }): JSX.Element {
     const classes = useStyles();
 
     return (
         <Resources<Pool> label="Pools" callback={async () => await client.listPools()}>
         {(resources: Record<string, Pool>) => (
             <>
-                <EnhancedTableToolbar label="Pools" />
+                <EnhancedTableToolbar user={user} label="Pools" />
                 <TableContainer component={Paper}>
                     <Table className={classes.table} aria-label="simple table">
                         <TableHead>
@@ -894,12 +893,12 @@ export function AdminPanel({ client, user, conf }: { client: Client, user: Logge
                 {value == 0
                 ? <DetailsPanel conf={conf} />
                 : value == 1
-                ? <Templates client={client} />
+                ? <Templates client={client} user={user} />
                 : value == 2
                 ? <Users client={client} user={user} conf={conf} />
                 : value == 3
                 ? <Sessions client={client} conf={conf} user={user} />
-                : <Pools client={client} />}
+                : <Pools client={client} user={user} />}
             </Paper>
         </CenteredContainer>
     );

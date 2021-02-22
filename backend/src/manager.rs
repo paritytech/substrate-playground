@@ -206,17 +206,6 @@ impl Manager {
         new_runtime()?.block_on(self.clone().engine.list_sessions())
     }
 
-    fn paritytech_member(&self, user: &LoggedUser) -> bool {
-        user.organizations.contains(&"paritytech".to_string())
-    }
-    fn can_customize_duration(&self, user: &LoggedUser) -> bool {
-        user.admin || user.can_customize_duration || self.paritytech_member(user)
-    }
-
-    fn can_customize_pool_affinity(&self, user: &LoggedUser) -> bool {
-        user.admin || user.can_customize_pool_affinity || self.paritytech_member(user)
-    }
-
     pub fn create_session(
         self,
         id: &str,
@@ -225,13 +214,13 @@ impl Manager {
     ) -> Result<(), String> {
         if conf.duration.is_some() {
             // Duration can only customized by users with proper rights
-            if !self.can_customize_duration(user) {
+            if !user.can_customize_duration() {
                 return Err("Only admin can customize a session duration".to_string());
             }
         }
         if conf.pool_affinity.is_some() {
             // Duration can only customized by users with proper rights
-            if !self.can_customize_pool_affinity(user) {
+            if !user.can_customize_pool_affinity() {
                 return Err("Only admin can customize a session pool affinity".to_string());
             }
         }
@@ -261,7 +250,7 @@ impl Manager {
     ) -> Result<(), String> {
         if conf.duration.is_some() {
             // Duration can only customized by users with proper rights
-            if !self.can_customize_duration(user) {
+            if !user.can_customize_duration() {
                 return Err("Only admin can customize a session duration".to_string());
             }
         }
