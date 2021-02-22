@@ -8,7 +8,18 @@ export enum RpcErrorCode {
     TIMEOUT_ERROR = 1000,
 }
 
-async function fetchWithTimeout<T>(input: RequestInfo, init: RequestInit, timeout: number = 30000): Promise<T> {
+export async function fetchWithTimeout(input: RequestInfo, init: RequestInit, timeout): Promise<Response> {
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), timeout);
+    const response = await fetch(input, {
+      ...init,
+      signal: controller.signal
+    });
+    clearTimeout(id);
+    return response;
+}
+
+async function call<T>(input: RequestInfo, init: RequestInit, timeout: number): Promise<T> {
     try {
         const controller = new AbortController();
         const id = setTimeout(() => controller.abort(), timeout);
@@ -42,12 +53,10 @@ async function fetchWithTimeout<T>(input: RequestInfo, init: RequestInit, timeou
     }
 }
 
-const headers = {'Accept': 'application/json', 'Content-Type': 'application/json'};
-
-export async function rpc<T>(input: string, init: RequestInit): Promise<T> {
-    return await fetchWithTimeout(input, {
+export async function rpc<T>(input: string, init: RequestInit, timeout: number): Promise<T> {
+    return await call(input, {
         method: 'GET',
-        headers: headers,
+        headers: {'Accept': 'application/json', 'Content-Type': 'application/json'},
         ...init
-    });
+    }, timeout);
 }

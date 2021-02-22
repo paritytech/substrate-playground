@@ -1,4 +1,4 @@
-import { rpc } from './rpc';
+import { fetchWithTimeout, rpc } from './rpc';
 import { Playground, Pool, Session, SessionConfiguration, SessionUpdateConfiguration, User, UserConfiguration, UserUpdateConfiguration, } from './types';
 
 export class Client {
@@ -10,11 +10,13 @@ export class Client {
     static poolsResource = 'pools';
 
     private readonly base: string;
+    private readonly timeout: number;
     private readonly defaultInit: RequestInit;
 
-    constructor(base: string, defaultInit?: RequestInit) {
+    constructor(base: string, timeout: number = 10000, defaultInit?: RequestInit) {
         this.base = base;
         this.defaultInit = defaultInit;
+        this.timeout = timeout;
     }
 
     path(...resources: string[]) {
@@ -22,7 +24,7 @@ export class Client {
     }
 
     async get(init: RequestInit = this.defaultInit): Promise<Playground> {
-        return rpc(this.path(), init);
+        return rpc(this.path(), init, this.timeout);
     }
 
     // Current User
@@ -30,17 +32,17 @@ export class Client {
     async getCurrentUser(init: RequestInit = this.defaultInit): Promise<User> {
         return rpc(this.path(Client.userResource), {
             ...init
-        });
+        }, this.timeout);
     }
 
     // Users
 
     async getUser(id: string, init: RequestInit = this.defaultInit): Promise<User | null> {
-        return rpc(this.path(Client.usersResource, id), init);
+        return rpc(this.path(Client.usersResource, id), init, this.timeout);
     }
 
     async listUsers(init: RequestInit = this.defaultInit): Promise<Record<string, User>> {
-        return rpc(this.path(Client.usersResource), init);
+        return rpc(this.path(Client.usersResource), init, this.timeout);
     }
 
     async createUser(id: string, conf: UserConfiguration, init: RequestInit = this.defaultInit): Promise<void> {
@@ -48,7 +50,7 @@ export class Client {
             method: 'PUT',
             body: JSON.stringify(conf),
             ...init
-        });
+        }, this.timeout);
     }
 
     async updateUser(id: string, conf: UserUpdateConfiguration, init: RequestInit = this.defaultInit): Promise<void> {
@@ -56,20 +58,20 @@ export class Client {
             method: 'PATCH',
             body: JSON.stringify(conf),
             ...init
-        });
+        }, this.timeout);
     }
 
     async deleteUser(id: string, init: RequestInit = this.defaultInit): Promise<void> {
         return rpc(this.path(Client.usersResource, id), {
             method: 'DELETE',
             ...init
-        });
+        }, this.timeout);
     }
 
     // Current Session
 
     async getCurrentSession(init: RequestInit = this.defaultInit): Promise<Session | null> {
-        return rpc(this.path(Client.sessionResource), init);
+        return rpc(this.path(Client.sessionResource), init, this.timeout);
     }
 
     async createCurrentSession(conf: SessionConfiguration, init: RequestInit = this.defaultInit): Promise<void> {
@@ -77,7 +79,7 @@ export class Client {
             method: 'PUT',
             body: JSON.stringify(conf),
             ...init
-        });
+        }, this.timeout);
     }
 
     async updateCurrentSession(conf: SessionUpdateConfiguration, init: RequestInit = this.defaultInit): Promise<void> {
@@ -85,20 +87,20 @@ export class Client {
             method: 'PATCH',
             body: JSON.stringify(conf),
             ...init
-        });
+        }, this.timeout);
     }
 
     async deleteCurrentSession(init: RequestInit = this.defaultInit): Promise<void> {
         return rpc(this.path(Client.sessionResource), {
             method: 'DELETE',
             ...init
-        });
+        }, this.timeout);
     }
 
     // Sessions
 
     async listSessions(init: RequestInit = this.defaultInit): Promise<Record<string, Session>> {
-        return rpc(this.path(Client.sessionsResource), init);
+        return rpc(this.path(Client.sessionsResource), init, this.timeout);
     }
 
     async createSession(id: string, conf: SessionConfiguration, init: RequestInit = this.defaultInit): Promise<void> {
@@ -106,7 +108,7 @@ export class Client {
             method: 'PUT',
             body: JSON.stringify(conf),
             ...init
-        });
+        }, this.timeout);
     }
 
     async updateSession(id: string, conf: SessionUpdateConfiguration, init: RequestInit = this.defaultInit): Promise<void> {
@@ -114,36 +116,36 @@ export class Client {
             method: 'PATCH',
             body: JSON.stringify(conf),
             ...init
-        });
+        }, this.timeout);
     }
 
     async deleteSession(id: string, init: RequestInit = this.defaultInit): Promise<void> {
         return rpc(this.path(Client.sessionsResource, id), {
             method: 'DELETE',
             ...init
-        });
+        }, this.timeout);
     }
 
     // Pools
 
     async getPool(id: string, init: RequestInit = this.defaultInit): Promise<Pool | null> {
-        return rpc(this.path(Client.poolsResource, id), init);
+        return rpc(this.path(Client.poolsResource, id), init, this.timeout);
     }
 
     async listPools(init: RequestInit = this.defaultInit): Promise<Record<string, Pool>> {
-        return rpc(this.path(Client.poolsResource), init);
+        return rpc(this.path(Client.poolsResource), init, this.timeout);
     }
 
     // Login
 
-    async login(bearer: string, init: RequestInit = this.defaultInit): Promise<void> {
-        return rpc(`${this.path('login')}?bearer=${bearer}`, {
+    async login(bearer: string, init: RequestInit = this.defaultInit): Promise<Response> {
+        return fetchWithTimeout(`${this.path('login')}?bearer=${bearer}`, {
             ...init
-        });
+        }, this.timeout);
     }
 
-    async logout(init: RequestInit = this.defaultInit): Promise<void> {
-        return rpc(this.path('logout'), init);
+    async logout(init: RequestInit = this.defaultInit): Promise<Response> {
+        return fetchWithTimeout(this.path('logout'), init, this.timeout);
     }
 
 }
