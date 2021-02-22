@@ -804,9 +804,37 @@ function Users({ client, user, conf }: { client: Client, user: LoggedUser, conf:
 }
 
 function DetailsPanel({ conf }: { conf: Configuration }): JSX.Element {
+    const classes = useStyles();
+    const { duration, maxSessionsPerPod, poolAffinity } = conf.sessionDefaults;
     return (
         <Container>
-            Default duration: {conf.sessionDefaults.duration} minutes
+            <Typography style={{float: "left", margin: 20}} variant="h6" id="tableTitle" component="div">
+                Session defaults
+            </Typography>
+            <TableContainer component={Paper}>
+                <Table className={classes.table} aria-label="simple table">
+                    <TableHead>
+                        <TableRow>
+                            <TableCell>Name</TableCell>
+                            <TableCell>Value</TableCell>
+                        </TableRow>
+                    </TableHead>
+                    <TableBody>
+                        <TableRow key="duration">
+                            <TableCell>Duration</TableCell>
+                            <TableCell>{duration}</TableCell>
+                        </TableRow>
+                        <TableRow key="maxSessionsPerPod">
+                            <TableCell>Max sessions per Pod</TableCell>
+                            <TableCell>{maxSessionsPerPod}</TableCell>
+                        </TableRow>
+                        <TableRow key="poolAffinity">
+                            <TableCell>Pool affinity</TableCell>
+                            <TableCell>{poolAffinity}</TableCell>
+                        </TableRow>
+                    </TableBody>
+                </Table>
+            </TableContainer>
         </Container>
     );
 }
