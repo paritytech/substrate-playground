@@ -6,8 +6,9 @@ export interface Verification {
     interval: number,
 }
 
-export async function getVerification(githubClientId: string, scope: string = "user:read"): Promise<Verification> {
-    const res = await fetch(`https://github.com/login/device/code?client_id=${githubClientId}?scope=${scope}`, {
+// Scope can be: https://docs.github.com/en/developers/apps/scopes-for-oauth-apps
+export async function getVerification(githubClientId: string, scope: string = "read:user"): Promise<Verification> {
+    const res = await fetch(`https://github.com/login/device/code?client_id=${githubClientId}&scope=${scope}`, {
         method: 'POST',
         headers: {'Accept': 'application/json'}
     });
