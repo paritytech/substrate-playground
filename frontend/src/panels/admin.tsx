@@ -1,6 +1,6 @@
 import clsx from 'clsx';
 import React, { Dispatch, SetStateAction, useState } from "react";
-import { createStyles, lighten, makeStyles, Theme } from '@material-ui/core/styles';
+import { createStyles, lighten, makeStyles, useTheme, Theme } from '@material-ui/core/styles';
 import Button from '@material-ui/core/Button';
 import ButtonGroup from '@material-ui/core/ButtonGroup';
 import Checkbox from '@material-ui/core/Checkbox';
@@ -26,11 +26,15 @@ import TextField from '@material-ui/core/TextField';
 import Tooltip from '@material-ui/core/Tooltip';
 import Toolbar from '@material-ui/core/Toolbar';
 import Typography from '@material-ui/core/Typography';
+import FirstPageIcon from '@material-ui/icons/FirstPage';
+import KeyboardArrowLeft from '@material-ui/icons/KeyboardArrowLeft';
+import KeyboardArrowRight from '@material-ui/icons/KeyboardArrowRight';
+import LastPageIcon from '@material-ui/icons/LastPage';
 import { Client, Configuration, LoggedUser, Pool, Session, SessionConfiguration, SessionUpdateConfiguration, Template, User, UserConfiguration, UserUpdateConfiguration } from '@substrate/playground-client';
 import { CenteredContainer, ErrorSnackbar, LoadingPanel } from '../components';
 import { useInterval } from '../hooks';
-import { canCustomizeDuration, canCustomizePoolAffinity, hasAdminEditRights, hasAdminReadRights } from '../utils';
-import { DialogActions, DialogContentText, MenuItem } from '@material-ui/core';
+import { canCustomizeDuration, canCustomizePoolAffinity, hasAdminEditRights } from '../utils';
+import { DialogActions, DialogContentText, MenuItem, TableFooter, TablePagination } from '@material-ui/core';
 import { Autocomplete } from '@material-ui/lab';
 
 const useStyles = makeStyles({
@@ -231,6 +235,72 @@ function SessionUpdateDialog({ id, duration, show, onUpdate, onHide }: { id: str
     );
 }
 
+const useStyles1 = makeStyles((theme: Theme) =>
+  createStyles({
+    root: {
+      flexShrink: 0,
+      marginLeft: theme.spacing(2.5),
+    },
+  }),
+);
+interface TablePaginationActionsProps {
+    count: number;
+    page: number;
+    rowsPerPage: number;
+    onChangePage: (event: React.MouseEvent<HTMLButtonElement>, newPage: number) => void;
+  }
+
+  function TablePaginationActions(props: TablePaginationActionsProps) {
+    const classes = useStyles1();
+    const theme = useTheme();
+    const { count, page, rowsPerPage, onChangePage } = props;
+
+    const handleFirstPageButtonClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+      onChangePage(event, 0);
+    };
+
+    const handleBackButtonClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+      onChangePage(event, page - 1);
+    };
+
+    const handleNextButtonClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+      onChangePage(event, page + 1);
+    };
+
+    const handleLastPageButtonClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+      onChangePage(event, Math.max(0, Math.ceil(count / rowsPerPage) - 1));
+    };
+
+    return (
+      <div className={classes.root}>
+        <IconButton
+          onClick={handleFirstPageButtonClick}
+          disabled={page === 0}
+          aria-label="first page"
+        >
+          {theme.direction === 'rtl' ? <LastPageIcon /> : <FirstPageIcon />}
+        </IconButton>
+        <IconButton onClick={handleBackButtonClick} disabled={page === 0} aria-label="previous page">
+          {theme.direction === 'rtl' ? <KeyboardArrowRight /> : <KeyboardArrowLeft />}
+        </IconButton>
+        <IconButton
+          onClick={handleNextButtonClick}
+          disabled={page >= Math.ceil(count / rowsPerPage) - 1}
+          aria-label="next page"
+        >
+          {theme.direction === 'rtl' ? <KeyboardArrowLeft /> : <KeyboardArrowRight />}
+        </IconButton>
+        <IconButton
+          onClick={handleLastPageButtonClick}
+          disabled={page >= Math.ceil(count / rowsPerPage) - 1}
+          aria-label="last page"
+        >
+          {theme.direction === 'rtl' ? <FirstPageIcon /> : <LastPageIcon />}
+        </IconButton>
+      </div>
+    );
+  }
+
 function Sessions({ client, conf, user }: { client: Client, conf: Configuration, user: LoggedUser }): JSX.Element {
     const classes = useStyles();
     const [selected, setSelected] = useState<string | null>(null);
@@ -311,6 +381,19 @@ function Sessions({ client, conf, user }: { client: Client, conf: Configuration,
         }
     }
 
+    const [page, setPage] = React.useState(0);
+    const [rowsPerPage, setRowsPerPage] = React.useState(5);
+    const handleChangePage = (event: React.MouseEvent<HTMLButtonElement> | null, newPage: number) => {
+      setPage(newPage);
+    };
+
+    const handleChangeRowsPerPage = (
+      event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+    ) => {
+      setRowsPerPage(parseInt(event.target.value, 10));
+      setPage(0);
+    };
+
     return (
         <Resources<Session> label="Sessions" callback={async () => await client.listSessions()}>
             {(resources: Record<string, Session>, setSessions: Dispatch<SetStateAction<Record<string, Session> | null>>) => (
@@ -362,6 +445,24 @@ function Sessions({ client, conf, user }: { client: Client, conf: Configuration,
                                     </TableRow>
                                 )})}
                             </TableBody>
+                            <TableFooter>
+                                <TableRow>
+                                    <TablePagination
+                                        rowsPerPageOptions={[5, 10, 25, { label: 'All', value: -1 }]}
+                                        colSpan={3}
+                                        count={Object.entries(resources).length}
+                                        rowsPerPage={rowsPerPage}
+                                        page={page}
+                                        SelectProps={{
+                                            inputProps: { 'aria-label': 'rows per page' },
+                                            native: true,
+                                        }}
+                                        onChangePage={handleChangePage}
+                                        onChangeRowsPerPage={handleChangeRowsPerPage}
+                                        ActionsComponent={TablePaginationActions}
+                                        />
+                                </TableRow>
+                            </TableFooter>
                         </Table>
                     </TableContainer>
                 </>
