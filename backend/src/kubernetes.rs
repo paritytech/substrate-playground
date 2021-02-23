@@ -605,7 +605,7 @@ impl Engine {
         delete_config_map_value(client, &self.env.namespace, USERS_CONFIG_MAP, id.as_str()).await
     }
 
-    pub async fn get_session(self, id: &str) -> Result<Option<Session>, String> {
+    pub async fn get_session(&self, id: &str) -> Result<Option<Session>, String> {
         let config = config().await?;
         let client = Client::try_from(config).map_err(error_to_string)?;
         let pod_api: Api<Pod> = Api::namespaced(client, &self.env.namespace);

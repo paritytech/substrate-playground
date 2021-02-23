@@ -203,7 +203,7 @@ impl Manager {
     }
 
     pub fn list_sessions(&self) -> Result<BTreeMap<String, Session>, String> {
-        new_runtime()?.block_on(self.clone().engine.list_sessions())
+        new_runtime()?.block_on(self.engine.list_sessions())
     }
 
     pub fn create_session(
