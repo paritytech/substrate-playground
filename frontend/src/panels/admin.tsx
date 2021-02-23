@@ -435,7 +435,7 @@ function Sessions({ client, conf, user }: { client: Client, conf: Configuration,
                                             />
                                         </TableCell>
                                         <TableCell component="th" scope="row">
-                                            <a href={`github.com/${id}`}>{id}</a>
+                                            <a href={`https://github.com/${id}`}>{id}</a>
                                         </TableCell>
                                         <TableCell>{session.template.name}</TableCell>
                                         <TableCell><a href={`//${session.url}`}>{session.url}</a></TableCell>
