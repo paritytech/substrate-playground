@@ -724,8 +724,8 @@ impl Engine {
             .unwrap_or(self.configuration.session_defaults.duration);
 
         log::info!(
-            "Creating session for user {} with template {}",
-            user.id,
+            "Creating session {} with template {}",
+            session_id,
             conf.template
         );
 
