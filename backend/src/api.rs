@@ -199,6 +199,12 @@ pub fn get_current_session_unlogged() -> status::Unauthorized<()> {
     status::Unauthorized::<()>(None)
 }
 
+///
+/// Create a new session for `LoggedUser`. A single session can exist at a time.
+///
+/// There is a short time window where multiple concurrent calls can succeed.
+/// As this call is idempotent this won't lead to multiple session creation.
+///
 #[put("/session", data = "<conf>")]
 pub fn create_current_session(
     state: State<'_, Context>,
