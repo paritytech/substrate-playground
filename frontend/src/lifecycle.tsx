@@ -59,7 +59,7 @@ function lifecycle(client: Client, id: PanelId) {
                             callback({type: Events.UNLOGIN, templates: templates, conf: configuration});
                         }
                     } catch (e) {
-                        callback({type: Events.UNLOGIN, error: e.toString()});
+                        callback({type: Events.UNLOGIN, error: JSON.stringify(e)});
                     }
                 },
             },
