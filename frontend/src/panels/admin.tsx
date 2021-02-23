@@ -82,15 +82,19 @@ export function canCustomize(user: LoggedUser): boolean {
     return canCustomizeDuration(user) || canCustomizePoolAffinity(user);
 }
 
-export function SessionCreationDialog({ client, conf, sessions, user, users, template, templates, show, onCreate, onHide, allowUserSelection = false }: { client: Client, conf: Configuration, sessions?: Record<string, Session>, user: LoggedUser, users?: Record<string, User> | null, template?: string, templates: Record<string, Template> | null, show: boolean, onCreate: (conf: SessionConfiguration, id?: string, ) => void, onHide: () => void , allowUserSelection?: boolean}): JSX.Element {
+export function SessionCreationDialog({ client, conf, sessions, user, template, templates, show, onCreate, onHide, allowUserSelection = false }: { client: Client, conf: Configuration, sessions?: Record<string, Session>, user: LoggedUser, template?: string, templates: Record<string, Template> | null, show: boolean, onCreate: (conf: SessionConfiguration, id?: string, ) => void, onHide: () => void , allowUserSelection?: boolean}): JSX.Element {
     const [selectedUser, setUser] = React.useState<string | null>(user.id);
     const [selectedTemplate, setTemplate] = React.useState<string | null>(null);
     const [duration, setDuration] = React.useState(conf.sessionDefaults.duration);
     const [poolAffinity, setPoolAffinity] = React.useState(conf.sessionDefaults.poolAffinity);
     const [pools, setPools] = useState<Record<string, Pool> | null>(null);
+    const [users, setUsers] = useState<Record<string, User> | null>(null);
 
     useInterval(async () => {
         setPools(await client.listPools());
+        if (allowUserSelection) {
+            setUsers(await client.listUsers());
+        }
     }, 5000);
 
     const handleUserChange = (_event: any, newValue: string | null) => setUser(newValue);
@@ -241,13 +245,11 @@ function Sessions({ client, conf, user }: { client: Client, conf: Configuration,
             setSelected(name);
         }
     };
-    const [users, setUsers] = useState<Record<string, User> | null>(null);
     const [templates, setTemplates] = useState<Record<string, Template> | null>(null);
 
     useInterval(async () => {
         const { templates } = await client.get();
         setTemplates(templates);
-        setUsers(await client.listUsers());
     }, 5000);
 
     function sessionMock(conf: SessionConfiguration): Session {
@@ -367,7 +369,7 @@ function Sessions({ client, conf, user }: { client: Client, conf: Configuration,
                 {errorMessage &&
                 <ErrorSnackbar open={true} message={errorMessage} onClose={() => setErrorMessage(null)} />}
                 {showCreationDialog &&
-                <SessionCreationDialog allowUserSelection={true} client={client} conf={conf} sessions={resources} user={user} users={users} templates={templates} show={showCreationDialog} onCreate={(conf, id) => onCreate(conf, id, setSessions)} onHide={() => setShowCreationDialog(false)} />}
+                <SessionCreationDialog allowUserSelection={true} client={client} conf={conf} sessions={resources} user={user} templates={templates} show={showCreationDialog} onCreate={(conf, id) => onCreate(conf, id, setSessions)} onHide={() => setShowCreationDialog(false)} />}
                 {(selected && showUpdateDialog) &&
                 <SessionUpdateDialog id={selected} duration={resources[selected].duration} show={showUpdateDialog} onUpdate={(id, conf) => onUpdate(id, conf, setSessions)} onHide={() => setShowUpdateDialog(false)} />}
             </>
