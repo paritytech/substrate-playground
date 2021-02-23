@@ -24,7 +24,7 @@ export class Client {
     }
 
     async get(init: RequestInit = this.defaultInit): Promise<Playground> {
-        return rpc(this.path(), init, this.timeout);
+        return rpc(this.path(""), init, this.timeout);
     }
 
     // Current User
