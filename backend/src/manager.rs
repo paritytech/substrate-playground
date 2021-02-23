@@ -198,7 +198,7 @@ impl Manager {
 
     // Sessions
 
-    pub fn get_session(self, id: &str) -> Result<Option<Session>, String> {
+    pub fn get_session(&self, id: &str) -> Result<Option<Session>, String> {
         new_runtime()?.block_on(self.engine.get_session(&id))
     }
 
@@ -223,6 +223,10 @@ impl Manager {
             if !user.can_customize_pool_affinity() {
                 return Err("Only admin can customize a session pool affinity".to_string());
             }
+        }
+
+        if self.get_session(id)?.is_some() {
+            return Err("A session is already running".to_string());
         }
 
         let template = conf.clone().template;
