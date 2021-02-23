@@ -323,11 +323,11 @@ function Sessions({ client, conf, user }: { client: Client, conf: Configuration,
                                 <TableRow>
                                     <TableCell></TableCell>
                                     <TableCell>ID</TableCell>
-                                    <TableCell align="right">Template</TableCell>
-                                    <TableCell align="right">URL</TableCell>
-                                    <TableCell align="right">Duration</TableCell>
-                                    <TableCell align="right">Phase</TableCell>
-                                    <TableCell align="right">Node</TableCell>
+                                    <TableCell>Template</TableCell>
+                                    <TableCell>URL</TableCell>
+                                    <TableCell>Duration</TableCell>
+                                    <TableCell>Phase</TableCell>
+                                    <TableCell>Node</TableCell>
                                 </TableRow>
                             </TableHead>
                             <TableBody>
@@ -352,11 +352,11 @@ function Sessions({ client, conf, user }: { client: Client, conf: Configuration,
                                         <TableCell component="th" scope="row">
                                             <a href={`github.com/${id}`}>{id}</a>
                                         </TableCell>
-                                        <TableCell align="right">{session.template.name}</TableCell>
-                                        <TableCell align="right"><a href={`//${session.url}`}>{session.url}</a></TableCell>
-                                        <TableCell align="right">{session.duration}</TableCell>
-                                        <TableCell align="right">{session.pod.phase}</TableCell>
-                                        <TableCell align="right">{session.node}</TableCell>
+                                        <TableCell>{session.template.name}</TableCell>
+                                        <TableCell><a href={`//${session.url}`}>{session.url}</a></TableCell>
+                                        <TableCell>{session.duration}</TableCell>
+                                        <TableCell>{session.pod.phase}</TableCell>
+                                        <TableCell>{session.node}</TableCell>
                                     </TableRow>
                                 )})}
                             </TableBody>
@@ -388,8 +388,8 @@ function Templates({ client, user }: { client: Client, user: LoggedUser }): JSX.
                         <TableHead>
                             <TableRow>
                                 <TableCell>ID</TableCell>
-                                <TableCell align="right">Name</TableCell>
-                                <TableCell align="right">Image</TableCell>
+                                <TableCell>Name</TableCell>
+                                <TableCell>Image</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
@@ -398,8 +398,8 @@ function Templates({ client, user }: { client: Client, user: LoggedUser }): JSX.
                             <TableCell component="th" scope="row">
                                 {template.name}
                             </TableCell>
-                            <TableCell align="right">{template.name}</TableCell>
-                            <TableCell align="right">{template.image}</TableCell>
+                            <TableCell>{template.name}</TableCell>
+                            <TableCell>{template.image}</TableCell>
                         </TableRow>
                         ))}
                         </TableBody>
@@ -754,9 +754,9 @@ function Users({ client, user, conf }: { client: Client, user: LoggedUser, conf:
                                 <TableCell></TableCell>
                                 <TableCell>ID</TableCell>
                                 <TableCell>Pool Affinity</TableCell>
-                                <TableCell align="right">Admin</TableCell>
-                                <TableCell align="right">Can Customize Duration</TableCell>
-                                <TableCell align="right">Can Customize Pool Affinity</TableCell>
+                                <TableCell>Admin</TableCell>
+                                <TableCell>Can Customize Duration</TableCell>
+                                <TableCell>Can Customize Pool Affinity</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
@@ -781,10 +781,10 @@ function Users({ client, user, conf }: { client: Client, user: LoggedUser, conf:
                                     <TableCell component="th" scope="row">
                                         {id}
                                     </TableCell>
-                                    <TableCell align="right">{user.poolAffinity}</TableCell>
-                                    <TableCell align="right">{user.admin.toString()}</TableCell>
-                                    <TableCell align="right">{user.canCustomizeDuration.toString()}</TableCell>
-                                    <TableCell align="right">{user.canCustomizePoolAffinity.toString()}</TableCell>
+                                    <TableCell>{user.poolAffinity}</TableCell>
+                                    <TableCell>{user.admin.toString()}</TableCell>
+                                    <TableCell>{user.canCustomizeDuration.toString()}</TableCell>
+                                    <TableCell>{user.canCustomizePoolAffinity.toString()}</TableCell>
                                 </TableRow>
                                 )})}
                         </TableBody>
@@ -807,7 +807,7 @@ function DetailsPanel({ conf }: { conf: Configuration }): JSX.Element {
     const { duration, maxSessionsPerPod, poolAffinity } = conf.sessionDefaults;
     return (
         <Container>
-            <Typography style={{float: "left", margin: 20}} variant="h6" id="tableTitle" component="div">
+            <Typography variant="h6" id="tableTitle" component="div">
                 Session defaults
             </Typography>
             <TableContainer component={Paper}>
@@ -850,17 +850,17 @@ function Pools({ client, user }: { client: Client, user: LoggedUser }): JSX.Elem
                     <Table className={classes.table} aria-label="simple table">
                         <TableHead>
                             <TableRow>
-                                <TableCell align="right">Name</TableCell>
-                                <TableCell align="right">Instance type</TableCell>
-                                <TableCell align="right"># of nodes</TableCell>
+                                <TableCell>Name</TableCell>
+                                <TableCell>Instance type</TableCell>
+                                <TableCell># of nodes</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
                         {Object.entries(resources).map(([id, pool]) => (
                         <TableRow key={id}>
-                            <TableCell align="right">{pool.name}</TableCell>
-                            <TableCell align="right">{pool.instanceType}</TableCell>
-                            <TableCell align="right">{pool.nodes.length}</TableCell>
+                            <TableCell>{pool.name}</TableCell>
+                            <TableCell>{pool.instanceType}</TableCell>
+                            <TableCell>{pool.nodes.length}</TableCell>
                         </TableRow>
                         ))}
                         </TableBody>
