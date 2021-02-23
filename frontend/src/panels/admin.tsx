@@ -366,7 +366,8 @@ function Sessions({ client, conf, user }: { client: Client, conf: Configuration,
                 : <NoResourcesContainer user={user} label="No sessions" action={() => setShowCreationDialog(true)} />}
                 {errorMessage &&
                 <ErrorSnackbar open={true} message={errorMessage} onClose={() => setErrorMessage(null)} />}
-                <SessionCreationDialog allowUserSelection={true} client={client} conf={conf} sessions={resources} user={user} users={users} templates={templates} show={showCreationDialog} onCreate={(conf, id) => onCreate(conf, id, setSessions)} onHide={() => setShowCreationDialog(false)} />
+                {showCreationDialog &&
+                <SessionCreationDialog allowUserSelection={true} client={client} conf={conf} sessions={resources} user={user} users={users} templates={templates} show={showCreationDialog} onCreate={(conf, id) => onCreate(conf, id, setSessions)} onHide={() => setShowCreationDialog(false)} />}
                 {(selected && showUpdateDialog) &&
                 <SessionUpdateDialog id={selected} duration={resources[selected].duration} show={showUpdateDialog} onUpdate={(id, conf) => onUpdate(id, conf, setSessions)} onHide={() => setShowUpdateDialog(false)} />}
             </>
