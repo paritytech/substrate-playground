@@ -13,6 +13,12 @@ export async function getVerification(githubClientId: string, scope: string = "r
         headers: {'Accept': 'application/json'}
     });
     const { device_code, user_code, verification_uri, expires_in, interval } = await res.json();
+    // TODO handle errors
+    /*
+    { error: 'invalid_scope',
+      error_description: 'The scopes requested are invalid: user:read.',
+      error_uri: 'https://docs.github.com' }
+    */
     return {
         deviceCode: device_code,
         userCode: user_code,
