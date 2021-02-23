@@ -7,7 +7,6 @@ commonLabels:
 
 resources:
 - ../../base
-- resource-quota.yaml
 
 images:
 - name: paritytech/substrate-playground-backend-api
