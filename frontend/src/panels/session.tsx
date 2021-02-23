@@ -37,7 +37,7 @@ const useStyles = makeStyles((theme: Theme) =>
 
 const options = [{id: 'create', label: 'Create'}, {id: 'custom', label: 'Customize and Create'}];
 
-export default function SplitButton({ template, onCreate, onCreateCustom }: { template: string, onCreate: (conf: SessionConfiguration) => void, onCreateCustom: () => void}) {
+export default function SplitButton({ template, disabled, onCreate, onCreateCustom }: { template: string, disabled: boolean, onCreate: (conf: SessionConfiguration) => void, onCreateCustom: () => void}) {
   const [open, setOpen] = React.useState(false);
   const anchorRef = React.useRef<HTMLDivElement>(null);
   const [selectedIndex, setSelectedIndex] = React.useState(0);
@@ -74,7 +74,7 @@ export default function SplitButton({ template, onCreate, onCreateCustom }: { te
   return (
       <>
         <ButtonGroup variant="contained" color="primary" ref={anchorRef} aria-label="split button">
-          <Button onClick={handleClick}>{options[selectedIndex].label}</Button>
+          <Button onClick={handleClick} disabled={disabled}>{options[selectedIndex].label}</Button>
           <Button
             color="primary"
             size="small"
@@ -121,15 +121,26 @@ function TemplateSelector({client, conf, user, templates, onDeployed, onRetry}: 
     const publicTemplates = Object.entries(templates).filter(([k, v]) => v.tags?.public == "true");
     const templatesAvailable = publicTemplates.length > 0;
     const [selection, select] = useState(templatesAvailable ? publicTemplates[0] : null);
+    const [deploying, setDeploying] = useState(false);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [openCustom, setOpenCustom] = React.useState(false);
     const classes = useStyles();
 
     async function onCreateClick(conf: SessionConfiguration): Promise<void> {
         try {
+            setDeploying(true);
             await onDeployed(conf);
+            setDeploying(false);
         } catch (e) {
             setErrorMessage(`Failed to create a new session: ${e}`);
+        }
+    }
+
+    function createEnabled(): boolean {
+        if (!templatesAvailable) {
+            return false;
+        } else {
+            return !deploying;
         }
     }
 
@@ -162,8 +173,8 @@ function TemplateSelector({client, conf, user, templates, onDeployed, onRetry}: 
                 <Divider orientation="horizontal" />
                 <Container style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", paddingTop: 10, paddingBottom: 10 }}>
                     {canCustomize(user)
-                    ? <SplitButton template={selection[0]} onCreate={() => onCreateClick({template: selection[0]})} onCreateCustom={() => setOpenCustom(true)} />
-                    : <Button onClick={() => onCreateClick({template: selection[0]})} color="primary" variant="contained" disableElevation disabled={!templatesAvailable}>
+                    ? <SplitButton template={selection[0]} onCreate={() => onCreateClick({template: selection[0]})} onCreateCustom={() => setOpenCustom(true)} disabled={!createEnabled()} />
+                    : <Button onClick={() => onCreateClick({template: selection[0]})} color="primary" variant="contained" disableElevation disabled={!createEnabled()}>
                           Create
                       </Button>}
                 </Container>
