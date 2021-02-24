@@ -396,85 +396,89 @@ function Sessions({ client, conf, user }: { client: Client, conf: Configuration,
 
     return (
         <Resources<Session> label="Sessions" callback={async () => await client.listSessions()}>
-            {(resources: Record<string, Session>, setSessions: Dispatch<SetStateAction<Record<string, Session> | null>>) => (
-            <>
-                {Object.keys(resources).length > 0
-                ?
-                <>
-                    <EnhancedTableToolbar user={user} label="Sessions" selected={selected} onCreate={() => setShowCreationDialog(true)} onUpdate={() => setShowUpdateDialog(true)} onDelete={() => onDelete(setSessions)} />
-                    <TableContainer component={Paper}>
-                        <Table className={classes.table} aria-label="simple table">
-                            <TableHead>
-                                <TableRow>
-                                    <TableCell></TableCell>
-                                    <TableCell>ID</TableCell>
-                                    <TableCell>Template</TableCell>
-                                    <TableCell>URL</TableCell>
-                                    <TableCell>Duration</TableCell>
-                                    <TableCell>Phase</TableCell>
-                                    <TableCell>Node</TableCell>
-                                </TableRow>
-                            </TableHead>
-                            <TableBody>
-                            {Object.entries(resources).map(([id, session], index) => {
-                                const isItemSelected = isSelected(id);
-                                const labelId = `enhanced-table-checkbox-${index}`;
-                                return (
-                                    <TableRow
-                                        key={id}
-                                        hover
-                                        onClick={(event) => handleClick(event, id)}
-                                        role="checkbox"
-                                        aria-checked={isItemSelected}
-                                        tabIndex={-1}
-                                        selected={isItemSelected}>
-                                        <TableCell padding="checkbox">
-                                            <Checkbox
-                                                checked={isItemSelected}
-                                                inputProps={{ 'aria-labelledby': labelId }}
-                                            />
-                                        </TableCell>
-                                        <TableCell component="th" scope="row">
-                                            <a href={`https://github.com/${id}`}>{id}</a>
-                                        </TableCell>
-                                        <TableCell>{session.template.name}</TableCell>
-                                        <TableCell><a href={`//${session.url}`}>{session.url}</a></TableCell>
-                                        <TableCell>{session.duration}</TableCell>
-                                        <TableCell>{session.pod.phase}</TableCell>
-                                        <TableCell>{session.node}</TableCell>
-                                    </TableRow>
-                                )})}
-                            </TableBody>
-                            <TableFooter>
-                                <TableRow>
-                                    <TablePagination
-                                        rowsPerPageOptions={[5, 10, 25, { label: 'All', value: -1 }]}
-                                        colSpan={3}
-                                        count={Object.entries(resources).length}
-                                        rowsPerPage={rowsPerPage}
-                                        page={page}
-                                        SelectProps={{
-                                            inputProps: { 'aria-label': 'rows per page' },
-                                            native: true,
-                                        }}
-                                        onChangePage={handleChangePage}
-                                        onChangeRowsPerPage={handleChangeRowsPerPage}
-                                        ActionsComponent={TablePaginationActions}
-                                        />
-                                </TableRow>
-                            </TableFooter>
-                        </Table>
-                    </TableContainer>
-                </>
-                : <NoResourcesContainer user={user} label="No sessions" action={() => setShowCreationDialog(true)} />}
-                {errorMessage &&
-                <ErrorSnackbar open={true} message={errorMessage} onClose={() => setErrorMessage(null)} />}
-                {showCreationDialog &&
-                <SessionCreationDialog allowUserSelection={true} client={client} conf={conf} sessions={resources} user={user} templates={templates} show={showCreationDialog} onCreate={(conf, id) => onCreate(conf, id, setSessions)} onHide={() => setShowCreationDialog(false)} />}
-                {(selected && showUpdateDialog) &&
-                <SessionUpdateDialog id={selected} duration={resources[selected].duration} show={showUpdateDialog} onUpdate={(id, conf) => onUpdate(id, conf, setSessions)} onHide={() => setShowUpdateDialog(false)} />}
-            </>
-            )}
+            {(resources: Record<string, Session>, setSessions: Dispatch<SetStateAction<Record<string, Session> | null>>) => {
+                const allResources = Object.entries(resources);
+                const filteredResources = rowsPerPage > 0 ? allResources.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage) : allResources;
+                return (
+                    <>
+                        {allResources.length > 0
+                        ?
+                        <>
+                            <EnhancedTableToolbar user={user} label="Sessions" selected={selected} onCreate={() => setShowCreationDialog(true)} onUpdate={() => setShowUpdateDialog(true)} onDelete={() => onDelete(setSessions)} />
+                            <TableContainer component={Paper}>
+                                <Table className={classes.table} aria-label="simple table">
+                                    <TableHead>
+                                        <TableRow>
+                                            <TableCell></TableCell>
+                                            <TableCell>ID</TableCell>
+                                            <TableCell>Template</TableCell>
+                                            <TableCell>URL</TableCell>
+                                            <TableCell>Duration</TableCell>
+                                            <TableCell>Phase</TableCell>
+                                            <TableCell>Node</TableCell>
+                                        </TableRow>
+                                    </TableHead>
+                                    <TableBody>
+                                    {filteredResources.map(([id, session]: [id: string, session: Session], index: number) => {
+                                        const isItemSelected = isSelected(id);
+                                        const labelId = `enhanced-table-checkbox-${index}`;
+                                        return (
+                                            <TableRow
+                                                key={id}
+                                                hover
+                                                onClick={(event) => handleClick(event, id)}
+                                                role="checkbox"
+                                                aria-checked={isItemSelected}
+                                                tabIndex={-1}
+                                                selected={isItemSelected}>
+                                                <TableCell padding="checkbox">
+                                                    <Checkbox
+                                                        checked={isItemSelected}
+                                                        inputProps={{ 'aria-labelledby': labelId }}
+                                                    />
+                                                </TableCell>
+                                                <TableCell component="th" scope="row">
+                                                    <a href={`https://github.com/${id}`}>{id}</a>
+                                                </TableCell>
+                                                <TableCell>{session.template.name}</TableCell>
+                                                <TableCell><a href={`//${session.url}`}>{session.url}</a></TableCell>
+                                                <TableCell>{session.duration}</TableCell>
+                                                <TableCell>{session.pod.phase}</TableCell>
+                                                <TableCell>{session.node}</TableCell>
+                                            </TableRow>
+                                        )})}
+                                    </TableBody>
+                                    <TableFooter>
+                                        <TableRow>
+                                            <TablePagination
+                                                rowsPerPageOptions={[5, 10, 25, { label: 'All', value: -1 }]}
+                                                colSpan={3}
+                                                count={Object.entries(resources).length}
+                                                rowsPerPage={rowsPerPage}
+                                                page={page}
+                                                SelectProps={{
+                                                    inputProps: { 'aria-label': 'rows per page' },
+                                                    native: true,
+                                                }}
+                                                onChangePage={handleChangePage}
+                                                onChangeRowsPerPage={handleChangeRowsPerPage}
+                                                ActionsComponent={TablePaginationActions}
+                                                />
+                                        </TableRow>
+                                    </TableFooter>
+                                </Table>
+                            </TableContainer>
+                        </>
+                        : <NoResourcesContainer user={user} label="No sessions" action={() => setShowCreationDialog(true)} />}
+                        {errorMessage &&
+                        <ErrorSnackbar open={true} message={errorMessage} onClose={() => setErrorMessage(null)} />}
+                        {showCreationDialog &&
+                        <SessionCreationDialog allowUserSelection={true} client={client} conf={conf} sessions={resources} user={user} templates={templates} show={showCreationDialog} onCreate={(conf, id) => onCreate(conf, id, setSessions)} onHide={() => setShowCreationDialog(false)} />}
+                        {(selected && showUpdateDialog) &&
+                        <SessionUpdateDialog id={selected} duration={resources[selected].duration} show={showUpdateDialog} onUpdate={(id, conf) => onUpdate(id, conf, setSessions)} onHide={() => setShowUpdateDialog(false)} />}
+                    </>
+                );
+            }}
         </Resources>
     );
 }
