@@ -12,7 +12,11 @@ import FormControlLabel from '@material-ui/core/FormControlLabel';
 import IconButton from '@material-ui/core/IconButton';
 import AddIcon from '@material-ui/icons/Add';
 import DeleteIcon from '@material-ui/icons/Delete';
+import DialogActions from '@material-ui/core/DialogActions';
+import DialogContentText from '@material-ui/core/DialogContentText';
 import EditIcon from '@material-ui/icons/Edit';
+import Link from '@material-ui/core/Link';
+import MenuItem from '@material-ui/core/MenuItem';
 import Paper from '@material-ui/core/Paper';
 import Tab from '@material-ui/core/Tab';
 import Table from '@material-ui/core/Table';
@@ -30,12 +34,14 @@ import FirstPageIcon from '@material-ui/icons/FirstPage';
 import KeyboardArrowLeft from '@material-ui/icons/KeyboardArrowLeft';
 import KeyboardArrowRight from '@material-ui/icons/KeyboardArrowRight';
 import LastPageIcon from '@material-ui/icons/LastPage';
+import TableFooter from '@material-ui/core/TableFooter';
+import TablePagination from '@material-ui/core/TablePagination';
+import { Autocomplete } from '@material-ui/lab';
 import { Client, Configuration, LoggedUser, Pool, Session, SessionConfiguration, SessionUpdateConfiguration, Template, User, UserConfiguration, UserUpdateConfiguration } from '@substrate/playground-client';
 import { CenteredContainer, ErrorSnackbar, LoadingPanel } from '../components';
 import { useInterval } from '../hooks';
 import { canCustomizeDuration, canCustomizePoolAffinity, hasAdminEditRights } from '../utils';
-import { DialogActions, DialogContentText, MenuItem, TableFooter, TablePagination } from '@material-ui/core';
-import { Autocomplete } from '@material-ui/lab';
+
 
 const useStyles = makeStyles({
     table: {
@@ -394,6 +400,8 @@ function Sessions({ client, conf, user }: { client: Client, conf: Configuration,
       setPage(0);
     };
 
+    const stopPropagation = (event: React.SyntheticEvent) => event.stopPropagation();
+
     return (
         <Resources<Session> label="Sessions" callback={async () => await client.listSessions()}>
             {(resources: Record<string, Session>, setSessions: Dispatch<SetStateAction<Record<string, Session> | null>>) => {
@@ -438,10 +446,10 @@ function Sessions({ client, conf, user }: { client: Client, conf: Configuration,
                                                     />
                                                 </TableCell>
                                                 <TableCell component="th" scope="row">
-                                                    <a href={`https://github.com/${id}`}>{id}</a>
+                                                    <Link href={`https://github.com/${id}`} target="_blank" rel="noreferrer" onClick={stopPropagation}>{id}</Link>
                                                 </TableCell>
                                                 <TableCell>{session.template.name}</TableCell>
-                                                <TableCell><a href={`//${session.url}`}>{session.url}</a></TableCell>
+                                                <TableCell><Link href={`//${session.url}`} target="_blank" rel="noreferrer" onClick={stopPropagation}>Browse {session.url}</Link></TableCell>
                                                 <TableCell>{session.duration}</TableCell>
                                                 <TableCell>{session.pod.phase}</TableCell>
                                                 <TableCell>{session.node}</TableCell>
