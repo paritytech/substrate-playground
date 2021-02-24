@@ -672,7 +672,7 @@ impl Engine {
     pub async fn create_session(
         self,
         user: &LoggedUser,
-        session_id: String,
+        session_id: &str,
         conf: SessionConfiguration,
     ) -> Result<(), String> {
         // Make sure some node on the right pools still have rooms
@@ -716,37 +716,25 @@ impl Engine {
         // Also deploy proper tcp mapping configmap https://kubernetes.github.io/ingress-nginx/user-guide/exposing-tcp-udp-services/
 
         let mut sessions = BTreeMap::new();
-        sessions.insert(session_id.clone(), template);
+        sessions.insert(session_id.to_string(), template);
         self.patch_ingress(&sessions).await?;
 
         let duration = conf
             .duration
             .unwrap_or(self.configuration.session_defaults.duration);
 
-        log::info!(
-            "Creating session {} with template {}",
-            session_id,
-            conf.template
-        );
-
         // Deploy a new pod for this image
         pod_api
             .create(
                 &PostParams::default(),
-                &create_pod(
-                    &self.env,
-                    &session_id.clone(),
-                    template,
-                    &duration,
-                    &pool_id,
-                )?,
+                &create_pod(&self.env, session_id, template, &duration, &pool_id)?,
             )
             .await
             .map_err(error_to_string)?;
 
         // Deploy the associated service
         let service_api: Api<Service> = Api::namespaced(client.clone(), namespace);
-        let service = create_service(&session_id.clone(), template);
+        let service = create_service(session_id, template);
         service_api
             .create(&PostParams::default(), &service)
             .await
@@ -867,7 +855,7 @@ impl Engine {
                     let nodes = acc.entry(key.clone()).or_insert_with(Vec::new);
                     nodes.push(node.clone());
                 } else {
-                    log::error!("No labels");
+                    error!("No labels");
                 }
                 acc
             });

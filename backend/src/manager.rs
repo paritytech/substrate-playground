@@ -82,7 +82,7 @@ impl Manager {
             if let Ok(mut sessions2) = sessions_thread.lock() {
                 let sessions3 = &mut sessions2.clone();
                 for id in sessions3.iter() {
-                    match self.clone().get_session(&session_id(id)) {
+                    match self.clone().get_session(id) {
                         Ok(Some(session)) => {
                             // Deployed sessions are removed from the set
                             // Additionally the deployment time is tracked
@@ -225,23 +225,29 @@ impl Manager {
             }
         }
 
-        if self.get_session(id)?.is_some() {
+        let session_id = session_id(id);
+        if self.get_session(&session_id)?.is_some() {
             return Err("A session is already running".to_string());
         }
 
         let template = conf.clone().template;
-        let result =
-            new_runtime()?.block_on(self.engine.create_session(user, session_id(id), conf));
-        match result {
+        let result = new_runtime()?.block_on(self.engine.create_session(user, &session_id, conf));
+
+        info!("Created session {} with template {}", session_id, template);
+
+        match &result {
             Ok(_session) => {
                 if let Ok(mut sessions) = self.sessions.lock() {
-                    sessions.insert(id.into());
+                    sessions.insert(session_id);
                 } else {
                     error!("Failed to acquire sessions lock");
                 }
                 self.metrics.inc_deploy_counter(&template);
             }
-            Err(_) => self.metrics.inc_deploy_failures_counter(&template),
+            Err(e) => {
+                self.metrics.inc_deploy_failures_counter(&template);
+                error!("Error during deployment {}", e);
+            }
         }
         result
     }
@@ -263,7 +269,7 @@ impl Manager {
 
     pub fn delete_session(self, id: &str) -> Result<(), String> {
         let result = new_runtime()?.block_on(self.engine.delete_session(&id));
-        match result {
+        match &result {
             Ok(_) => {
                 self.metrics.inc_undeploy_counter();
                 if let Ok(mut sessions) = self.sessions.lock() {
@@ -272,7 +278,10 @@ impl Manager {
                     error!("Failed to acquire sessions lock");
                 }
             }
-            Err(_) => self.metrics.inc_undeploy_failures_counter(),
+            Err(e) => {
+                self.metrics.inc_undeploy_failures_counter();
+                error!("Error during undeployment {}", e);
+            }
         }
         result
     }
