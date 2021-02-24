@@ -12,11 +12,13 @@
   "dependencies": {
     "@substrate/playground-client": "1.4.1",
     "abort-controller": "3.0.0",
-    "cross-fetch": "3.0.6"
+    "cross-fetch": "3.0.6",
+    "yargs": "16.2.0"
   },
   "devDependencies": {
     "@ava/typescript": "1.1.1",
     "@types/node": "14.14.31",
+    "@types/yargs": "16.0.0",
     "ava": "3.15.0",
     "playwright": "1.9.0",
     "ts-node": "9.1.1",
