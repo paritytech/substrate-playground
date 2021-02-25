@@ -10,6 +10,7 @@ on:
       - develop
       - master
     paths:
+      - 'conf/templates/*'
       - 'conf/k8s/overlays/*/templates/*'
 
 jobs:
@@ -46,7 +47,10 @@ jobs:
       - run: gcloud container clusters get-credentials "${{ steps.env.outputs.cluster }}" --zone "${{ steps.env.outputs.zone }}"
 
       - name: Deploy templates
-        run: kubectl create configmap playground-templates --namespace=${{ steps.env.outputs.namespace }} --from-file=conf/k8s/overlays/${{ steps.env.outputs.environment }}/templates/ --dry-run=client -o yaml | kubectl apply -f -
+        run: make k8s-update-templates-config
+        env:
+          ENV: ${{ steps.env.outputs.environment }}
+          SKIP_ACK: true
 
 # TODO test image, rollback commit if fails
 # Do not rollback the rollback itself
