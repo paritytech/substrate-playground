@@ -1,17 +1,1 @@
-image: paritytech/substrate-playground-template-recipes-theia:sha-9a27604
-repository: substrate-developer-hub/recipes
-name: Recipes
-description: '## A Hands-On Cookbook for Aspiring Blockchain Chefs
-
-
-  Contains some real nodes!
-
-  '
-tags:
-    public: true
-runtime:
-  ports:
-    - name: wss
-      protocol: TCP
-      path: /wss
-      port: 9944
+/Users/julien/Documents/Projects/paritytech/substrate-playground/conf/templates/recipes

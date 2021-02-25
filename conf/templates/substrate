@@ -1,0 +1,16 @@
+image: paritytech/substrate-playground-template-substrate-theia:sha-c7e09e6
+repository: jeluard/substrate
+name: Substrate
+description: '## Substrate repository'
+tags:
+  public: true
+runtime:
+  ports:
+    - name: ssh
+      protocol: TCP
+      path: /ssh
+      port: 22
+    - name: wss
+      protocol: TCP
+      path: /wss
+      port: 9944
