@@ -192,7 +192,7 @@ k8s-undeploy-theia: requires-k8s ## Undeploy all theia pods and services from ku
 	kubectl delete pods,services -l app.kubernetes.io/component=theia --namespace=${NAMESPACE}
 
 k8s-update-templates-config: requires-k8s ## Creates or replaces the `templates` config map from `conf/k8s/overlays/ENV/templates`
-	kubectl create configmap playground-templates --namespace=${NAMESPACE} --from-file=conf/k8s/overlays/${ENV}/templates/ --dry-run=client -o yaml | kubectl apply -f -
+	kustomize build --load-restrictor LoadRestrictionsNone conf/k8s/overlays/${ENV}/templates/ | kubectl apply -f -
 
 k8s-update-users-config: requires-k8s ## Creates or replaces the `users` config map from `conf/k8s/overlays/ENV/users`
 	kubectl create configmap playground-users --namespace=${NAMESPACE} --from-file=conf/k8s/overlays/${ENV}/users/ --dry-run=client -o yaml | kubectl apply -f -
