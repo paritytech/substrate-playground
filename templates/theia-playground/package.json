@@ -21,7 +21,7 @@
         "@theia/markers": "1.10.0",
         "@theia/messages": "1.10.0",
         "@theia/metrics": "1.10.0",
-        "@theia/mini-browser": "1.10.0",
+        "@theia/mini-browser": "1.11.0",
         "@theia/monaco": "1.10.0",
         "@theia/navigator": "1.10.0",
         "@theia/outline-view": "1.10.0",
