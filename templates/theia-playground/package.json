@@ -34,7 +34,7 @@
         "@theia/preferences": "1.10.0",
         "@theia/process": "1.10.0",
         "@theia/search-in-workspace": "1.10.0",
-        "@theia/task": "1.10.0",
+        "@theia/task": "1.11.0",
         "@theia/terminal": "1.10.0",
         "@theia/typehierarchy": "1.10.0",
         "@theia/userstorage": "1.10.0",
