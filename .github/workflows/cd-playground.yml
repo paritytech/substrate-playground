@@ -11,7 +11,7 @@ on:
       - 'backend/*'
       - 'frontend/*'
       - 'conf/k8s/base/*'
-      - 'conf/k8s/overlays/staging/kustomizations.yaml'
+      - 'conf/k8s/overlays/staging/kustomization.yaml'
 
 env:
   DOCKER_BUILDKIT: 1
@@ -22,6 +22,8 @@ jobs:
     steps:
 
       - uses: actions/checkout@v2
+        with:
+          token: ${{ secrets.PAT_TOKEN }}
 
       - name: Set environment
         id: env
@@ -133,13 +135,11 @@ jobs:
           ./kustomize edit set image paritytech/substrate-playground-backend-ui:${{ steps.env.outputs.sha }}
         working-directory: conf/k8s/overlays/staging
 
-      - uses: EndBug/add-and-commit@v4
+      - uses: EndBug/add-and-commit@v7
         with:
           message: ":bookmark: upon which, hails onto us a new release of Playground"
           add: "conf/k8s/overlays/staging/kustomization.yaml"
           tag: ${{ steps.env.outputs.sha }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Deploy on GKE
         run:  |-
