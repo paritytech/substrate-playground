@@ -3,7 +3,6 @@ name: Build website
 on:
   push:
     branches:
-    - master
     - develop
     paths:
     - '.github/workflows/cd-website.yml'

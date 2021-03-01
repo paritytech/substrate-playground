@@ -5,22 +5,13 @@ on:
   push:
     branches:
       - develop
-      - master
-    paths-ignore:
-      - 'README.md'
-      - '.github/workflows/book.yml'
-      - '.github/workflows/release.yml'
-      - '.github/workflows/ci-**'
-      - '.github/workflows/cd-base-templates.yml'
-      - '.github/workflows/cd-templates.yml'
-      - '.github/workflows/event-*'
-      - '.github/workflows/templates/*'
-      - '.github/workflow-templates/*'
-      - 'website/**'
-      - 'conf/k8s/overlays/**/templates/**'
-      - 'conf/k8s/overlays/production'
-      - 'conf/k8s/overlays/dev'
-      - 'templates/**'
+    paths:
+      - '.github/workflows/cd-playground.yml'
+      - 'Makefile'
+      - 'backend/*'
+      - 'frontend/*'
+      - 'conf/k8s/base/*'
+      - 'conf/k8s/overlays/staging/kustomizations.yaml'
 
 env:
   DOCKER_BUILDKIT: 1
@@ -37,16 +28,8 @@ jobs:
         run: |
           GKE_PROJECT=`grep GKE_PROJECT .env | cut -d '=' -f2`
           GKE_ZONE=`grep GKE_ZONE .env | cut -d '=' -f2`
-          if [[ $GITHUB_REF == 'refs/heads/master' ]]; then
-              echo ::set-output name=environment::production
-              echo ::set-output name=domain::playground
-              ENVIRONMENT='production'
-          elif [[ $GITHUB_REF == 'refs/heads/develop' ]]; then
-              echo ::set-output name=environment::staging
-              echo ::set-output name=domain::playground-staging
-              ENVIRONMENT='staging'
-          fi
-          GKE_CLUSTER='substrate-playground-'${ENVIRONMENT}
+          GKE_CLUSTER='substrate-playground-staging'
+          echo ::set-output name=domain::playground-staging
           echo ::set-output name=sha::sha-${GITHUB_SHA::7}
           echo ::set-output name=project::$( echo ${GKE_PROJECT} )
           echo ::set-output name=zone::$( echo ${GKE_ZONE} )
@@ -142,18 +125,18 @@ jobs:
           curl -sfLo kustomize https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv3.6.1/kustomize_v3.6.1_linux_amd64.tar.gz
           tar zxvf kustomize*
           chmod u+x ./kustomize
-        working-directory: conf/k8s/overlays/${{ steps.env.outputs.environment }}
+        working-directory: conf/k8s/overlays/staging
 
       - name: Update version
         run: |-
           ./kustomize edit set image paritytech/substrate-playground-backend-api:${{ steps.env.outputs.sha }}
           ./kustomize edit set image paritytech/substrate-playground-backend-ui:${{ steps.env.outputs.sha }}
-        working-directory: conf/k8s/overlays/${{ steps.env.outputs.environment }}
+        working-directory: conf/k8s/overlays/staging
 
       - uses: EndBug/add-and-commit@v4
         with:
           message: ":bookmark: upon which, hails onto us a new release of Playground"
-          add: "conf/k8s/overlays/${{ steps.env.outputs.environment }}/kustomization.yaml"
+          add: "conf/k8s/overlays/staging/kustomization.yaml"
           tag: ${{ steps.env.outputs.sha }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -162,7 +145,7 @@ jobs:
         run:  |-
           ./kustomize build . | kubectl apply --record -f -
           kubectl get services -o wide
-        working-directory: conf/k8s/overlays/${{ steps.env.outputs.environment }}
+        working-directory: conf/k8s/overlays/staging
 
       - name: Audit URLs using Lighthouse
         uses: treosh/lighthouse-ci-action@7.0.0
@@ -177,7 +160,7 @@ jobs:
         working-directory: ./e2e
         continue-on-error: true
         env:
-          ENV: ${{ steps.env.outputs.environment }}
+          ENV: staging
 
       # TODO
       # if not ok, fails and rollback
@@ -190,16 +173,3 @@ jobs:
           access_token: ${{ secrets.MATRIX_ACCESS_TOKEN }}
           message: "Deployment tests failed"
           server: "matrix.parity.io"
-
-      - if: ${{ success() }}
-        name: Create Release
-        uses: actions/create-release@v1
-        with:
-          tag_name: ${{ steps.env.outputs.sha }}-${{ steps.env.outputs.environment }}
-          release_name: Release ${{ steps.env.outputs.sha }}
-          body: |
-            Backend release:
-            - paritytech/substrate-playground-backend-api:${{ steps.env.outputs.sha }}
-            - paritytech/substrate-playground-backend-ui:${{ steps.env.outputs.sha }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}

@@ -113,18 +113,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
 
-      - name: Create Release
-        uses: actions/create-release@v1
-        with:
-          tag_name: base-templates-${{ steps.env.outputs.sha }}
-          release_name: ${{ steps.env.outputs.sha }}
-          body: |
-            Base templates release:
-            - paritytech/substrate-playground-template-base:${{ steps.env.outputs.sha }}
-            - paritytech/substrate-playground-template-theia-base:${{ steps.env.outputs.sha }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
   # Go through existing templates and trigger template rebuilds using newly created base templates
 
   list-existing-templates:
@@ -151,7 +139,6 @@ jobs:
           for FILE in "conf/k8s/overlays/staging/templates"/*
           do
             ID=${FILE##*/}
-            IMAGE=`cat $FILE | yq .base`
             JSONline="{\"id\": \"$ID\"},"
             JSON="$JSON$JSONline"
           done
@@ -162,6 +149,7 @@ jobs:
   rebuild-existing-templates:
     needs: list-existing-templates
     runs-on: ubuntu-latest
+    # TODO update templates
     strategy:
       matrix: ${{fromJson(needs.list-existing-templates.outputs.matrix)}}
     steps:
