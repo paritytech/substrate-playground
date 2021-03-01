@@ -693,6 +693,7 @@ impl Engine {
             pool.nodes.len() * self.configuration.session_defaults.max_sessions_per_pod;
         let sessions = self.list_sessions().await?;
         if sessions.len() >= max_sessions_allowed {
+            // TODO Should trigger pool dynamic scalability. Right now this will only consider the pool lower bound.
             return Err(format!(
                 "Reached maximum number of concurrent sessions allowed: {}",
                 max_sessions_allowed

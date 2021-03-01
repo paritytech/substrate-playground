@@ -3,7 +3,7 @@
 # Changes on branch 'develop' are deployed on staging, while changes on branch 'master' are deployed on production.
 #
 name: Continuous Deployment templates
-
+# TODO only deploy if image has been updated?
 on:
   push:
     branches:
