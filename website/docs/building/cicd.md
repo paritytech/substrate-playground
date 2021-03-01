@@ -10,7 +10,7 @@ title: CI/CD
 ### Playground
 
 The main branch is [develop](https://github.com/paritytech/substrate-playground/tree/develop). Changes can be merged only via PR.
-[develop](https://github.com/paritytech/substrate-playground/tree/develop) and [master](https://github.com/paritytech/substrate-playground/tree/master) are continuously deployed.
+[develop](https://github.com/paritytech/substrate-playground/tree/develop) is continuously deployed.
 
 Once manually approved on the staging environment, changes are promoted to master.
 
