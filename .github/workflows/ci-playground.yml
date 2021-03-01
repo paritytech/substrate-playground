@@ -2,17 +2,18 @@ name: Continuous Integration Playground
 
 on:
   pull_request:
-    paths-ignore:
-      - 'cli/**'
-      - 'conf/**'
-      - 'e2e/**'
-      - 'templates/**'
-      - 'website/**'
+    paths:
+      - '.github/workflows/ci-playground.yml'
+      - 'backend/*'
+      - 'frontend/*'
 
 jobs:
   frontend:
     runs-on: ubuntu-latest
     if: "! contains(github.event.head_commit.message, '[CI Skip]')"
+    defaults:
+      run:
+        working-directory: ./frontend
     steps:
       - uses: actions/checkout@v2
 
@@ -23,27 +24,25 @@ jobs:
 
       - name: Install
         run: yarn install --check-files
-        working-directory: ./frontend
 
       - name: Lint
         run: yarn lint
-        working-directory: ./frontend
 
       - name: Audit
         run: yarn audit
-        working-directory: ./frontend
 
       - name: Build
         run: yarn build
-        working-directory: ./frontend
 
       - name: Test
         run: yarn test
-        working-directory: ./frontend
 
   backend:
     runs-on: ubuntu-latest
     if: "! contains(github.event.head_commit.message, '[CI Skip]')"
+    defaults:
+      run:
+        working-directory: ./backend
     steps:
 
       - uses: actions/checkout@v2
@@ -60,19 +59,15 @@ jobs:
 
       - name: Check Formatting
         run: cargo check-fmt
-        working-directory: ./backend
 
       - name: Lint
         run: cargo lint
-        working-directory: ./backend
 
       - name: Build
         run: cargo build --verbose
-        working-directory: ./backend
 
       - name: Run tests
         run: cargo test --verbose
-        working-directory: ./backend
 
   docker:
     runs-on: ubuntu-latest

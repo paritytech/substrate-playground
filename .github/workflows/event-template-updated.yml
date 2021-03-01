@@ -160,13 +160,3 @@ jobs:
           tag: ${{ steps.env.outputs.tag }}
         env:
           GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
-
-      - name: Create Release for ${{ env.TEMPLATE_ID }}
-        uses: actions/create-release@v1
-        with:
-          tag_name: ${{ steps.env.outputs.tag }}
-          release_name: Release ${{ steps.env.outputs.tag }}
-          body: |
-            Released template for ${{ env.TEMPLATE_ID }} ${{ steps.env.outputs.image }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}

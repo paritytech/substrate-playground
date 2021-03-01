@@ -55,12 +55,3 @@ jobs:
           access_token: ${{ secrets.MATRIX_ACCESS_TOKEN }}
           message: "Integration tests failed"
           server: "matrix.parity.io"
-
-      - if: ${{ failure() }}
-        name: Create Issue
-        uses: peter-evans/create-issue-from-file@v2
-        with:
-          title: Integration tests failed
-          content-filepath: ../workflows-templates/ct-issue.md
-          labels: report, automated issue
-          assignees: jeluard
