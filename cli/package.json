@@ -37,7 +37,7 @@
     "ink-markdown": "1.0.1",
     "ink-select-input": "4.2.0",
     "ink-spinner": "4.0.1",
-    "lookpath": "1.1.0",
+    "lookpath": "1.2.0",
     "react": "16.14.0",
     "yargs": "16.2.0"
   },
