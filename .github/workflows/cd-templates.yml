@@ -1,24 +1,190 @@
 #
-# Deploy templates on playground as soon as changes are commited in conf/../templates/* files
-# Changes on branch 'develop' are deployed on staging, while changes on branch 'master' are deployed on production.
+# Deploy templates on playground as soon as changes are commited in conf/templates/* files or relevant overlays.
+#
+# Build template images from an image and current base templates
+# Then sets the new template image id in the right conf file.
+# This is turns triggers playground ConfigMap update (see `cd-templates.yml`)
+#
+# Templates are automatically deployed on `staging` only.
+#
+# Ideally the repository origin of the event would be matched against the locally configured one to avoid duplicate builds.
+# Unfortunately this information is not part of the event payload. Because the original repository is always used to build the image is always safe.
 #
 name: Continuous Deployment templates
-# TODO only deploy if image has been updated?
 on:
   push:
     branches:
       - develop
-      - master
     paths:
       - 'conf/templates/*'
-      - 'conf/k8s/overlays/*/templates/*'
+      - 'conf/k8s/overlays/staging/templates/kustomization.yaml'
 
 jobs:
-  push-templates:
+  list-modified-templates:
     runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-templates.outputs.matrix }}
+    steps:
+
+# TODO list templates from git diffs
+# https://stackoverflow.com/questions/59288971/retrieving-list-of-modified-files-in-github-action
+# https://github.com/marketplace/actions/get-changed-files
+# https://github.com/lots0logs/gh-action-get-changed-files
+# https://github.com/jitterbit/get-changed-files
+      - name: Set templates
+        id: set-templates
+        run: |
+          JSON="{\"include\":["
+          for FILE in "conf/templates"/*
+          do
+            ID=${FILE##*/}
+            JSONline="{\"id\": \"$ID\"},"
+            JSON="$JSON$JSONline"
+          done
+          JSON="$JSON]}"
+
+          echo ::set-output name=matrix::$( echo "$JSON" )
+
+  build-and-push-template:
+    needs: list-modified-templates
+    name: Building template
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: ${{fromJson(needs.list-modified-templates.outputs.matrix)}}
     steps:
 
       - uses: actions/checkout@v2
+        with:
+          token: ${{ secrets.PAT_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+
+      - name: Install yq
+        run: |
+          python -m pip install --upgrade pip
+          pip install yq
+
+      - name: Set variables
+        run: |-
+          echo ::set-output name=sha::${GITHUB_SHA::7}
+          echo ::set-output name=tag::template-${{ matrix.repository }}-${GITHUB_SHA::7}
+          echo ::set-output name=template::paritytech/substrate-playground-template-${{ matrix.repository }}
+          echo ::set-output name=image::paritytech/substrate-playground-template-${{ matrix.repository }}:sha-${GITHUB_SHA::7}
+          echo ::set-output name=template-theia::paritytech/substrate-playground-template-${{ matrix.repository }}-theia
+          echo ::set-output name=theia-image::paritytech/substrate-playground-template-${{ matrix.repository }}-theia:sha-${GITHUB_SHA::7}
+          FILE=conf/templates/${{ matrix.repository }}
+          REPOSITORY=`cat $FILE | yq -r .repository`
+          REF=`cat $FILE | yq -r .ref`
+          BASE_TEMPLATE_VERSION=`grep BASE_TEMPLATE_VERSION .env | cut -d '=' -f2`
+          echo ::set-output name=repository::$( echo $REPOSITORY )
+          echo ::set-output name=ref::$( echo ${REF:-master} )
+          echo ::set-output name=base::$( echo ${BASE_TEMPLATE_VERSION} )
+        id: env
+
+      - name: Checkout remote repository
+        uses: actions/checkout@v2
+        with:
+          path: template
+          repository: ${{ steps.env.outputs.repository }}
+          ref: ${{ steps.env.outputs.ref }}
+          token: ${{ secrets.PAT_TOKEN }}
+
+      - name: Prepare labels
+        id: prep
+        run: |
+            VERSION=edge
+            if [[ $GITHUB_REF == refs/tags/* ]]; then
+              VERSION=${GITHUB_REF#refs/tags/}
+            elif [[ $GITHUB_REF == refs/heads/* ]]; then
+              VERSION=$(echo ${GITHUB_REF#refs/heads/} | sed -r 's#/+#-#g')
+            elif [[ $GITHUB_REF == refs/pull/* ]]; then
+              VERSION=pr-${{ github.event.number }}
+            fi
+            echo ::set-output name=version::${VERSION}
+            echo ::set-output name=created::$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+
+      - name: Prepare labels template
+        id: prep-template
+        run: |
+            VERSION=edge
+            if [[ $GITHUB_REF == refs/tags/* ]]; then
+              VERSION=${GITHUB_REF#refs/tags/}
+            elif [[ $GITHUB_REF == refs/heads/* ]]; then
+              VERSION=$(echo ${GITHUB_REF#refs/heads/} | sed -r 's#/+#-#g')
+            elif [[ $GITHUB_REF == refs/pull/* ]]; then
+              VERSION=pr-${{ github.event.number }}
+            fi
+            DOCKER_IMAGE=${{ steps.env.outputs.template }}
+            TAGS="${DOCKER_IMAGE}:latest,${DOCKER_IMAGE}:${VERSION},${DOCKER_IMAGE}:sha-${GITHUB_SHA::7}"
+            echo ::set-output name=tags::${TAGS}
+
+      - name: Prepare labels template-theia
+        id: prep-template-theia
+        run: |
+            VERSION=edge
+            if [[ $GITHUB_REF == refs/tags/* ]]; then
+              VERSION=${GITHUB_REF#refs/tags/}
+            elif [[ $GITHUB_REF == refs/heads/* ]]; then
+              VERSION=$(echo ${GITHUB_REF#refs/heads/} | sed -r 's#/+#-#g')
+            elif [[ $GITHUB_REF == refs/pull/* ]]; then
+              VERSION=pr-${{ github.event.number }}
+            fi
+            DOCKER_IMAGE=${{ steps.env.outputs.template-theia }}
+            TAGS="${DOCKER_IMAGE}:latest,${DOCKER_IMAGE}:${VERSION},${DOCKER_IMAGE}:sha-${GITHUB_SHA::7}"
+            echo ::set-output name=tags::${TAGS}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push template Docker image
+        uses: docker/build-push-action@v2
+        with:
+          context: template
+          file: templates/Dockerfile.template
+          build-args: BASE_TEMPLATE_VERSION=${{ steps.env.outputs.base }}
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.prep-template.outputs.tags }}
+          labels: |
+            org.opencontainers.image.source=${{ github.event.repository.clone_url }}
+            org.opencontainers.image.created=${{ steps.prep.outputs.created }}
+            org.opencontainers.image.revision=${{ github.sha }}
+
+      - name: Build and Push theia template image
+        uses: docker/build-push-action@v2
+        with:
+          context: templates
+          file: templates/Dockerfile.theia-template
+          build-args: |
+            BASE_TEMPLATE_VERSION=${{ steps.env.outputs.base }}
+            TEMPLATE_IMAGE=${{ steps.env.outputs.image }}
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.prep-template-theia.outputs.tags }}
+          labels: |
+            org.opencontainers.image.source=${{ github.event.repository.clone_url }}
+            org.opencontainers.image.created=${{ steps.prep.outputs.created }}
+            org.opencontainers.image.revision=${{ github.sha }}
+
+      - name: Update template version
+        run: |-
+          t=$(mktemp)
+          cat conf/templates/${{ matrix.repository }} | yq -y ".image = \"${{ steps.env.outputs.theia-image }}\"" > ${t} && mv ${t} conf/templates/${{ matrix.repository }}
+
+# TODO update name, desc, .. from devcontainer.json
+
+      - name: Commit template version update
+        uses: EndBug/add-and-commit@v7
+        with:
+          message: ":bookmark: yee shall thurst into a new version of ${{ matrix.repository }}"
+          tag: ${{ steps.env.outputs.tag }}
 
       - name: Set environment
         id: env
@@ -26,13 +192,8 @@ jobs:
           NAMESPACE=`grep NAMESPACE .env | cut -d '=' -f2`
           GKE_PROJECT=`grep GKE_PROJECT .env | cut -d '=' -f2`
           GKE_ZONE=`grep GKE_ZONE .env | cut -d '=' -f2`
-          if [[ $GITHUB_REF == 'refs/heads/master' ]]; then
-              ENVIRONMENT='production'
-          elif [[ $GITHUB_REF == 'refs/heads/develop' ]]; then
-              ENVIRONMENT='staging'
-          fi
-          GKE_CLUSTER='substrate-playground-'${ENVIRONMENT}
-          echo ::set-output name=environment::$( echo ${ENVIRONMENT} )
+          GKE_CLUSTER='substrate-playground-staging'
+          echo ::set-output name=environment::staging
           echo ::set-output name=namespace::$( echo ${NAMESPACE} )
           echo ::set-output name=project::$( echo ${GKE_PROJECT} )
           echo ::set-output name=zone::$( echo ${GKE_ZONE} )
@@ -51,8 +212,3 @@ jobs:
         env:
           ENV: ${{ steps.env.outputs.environment }}
           SKIP_ACK: true
-
-# TODO test image, rollback commit if fails
-# Do not rollback the rollback itself
-# GITHUB_REF
-# https://engineering.bitnami.com/articles/rolling-updates-for-configmap-objects.html
