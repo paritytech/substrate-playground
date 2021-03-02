@@ -108,7 +108,6 @@ jobs:
       - uses: EndBug/add-and-commit@v7
         with:
           message: ":bookmark: yee shall thurst into a new version of base templates"
-          add: .env
           tag: base-templates-${{ steps.env.outputs.sha }}
 
   # Go through existing templates and trigger template rebuilds using newly created base templates
