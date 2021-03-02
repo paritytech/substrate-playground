@@ -24,8 +24,10 @@ jobs:
           JSON="{\"include\":["
           for FILE in "conf/templates"/*
           do
+            REPOSITORY=`cat $FILE | yq -r .repository`
+            REF=`cat $FILE | yq -r .ref`
             ID=${FILE##*/}
-            JSONline="{\"id\": \"$ID\"},"
+            JSONline="{\"id\": \"$ID\", \"repository\": \"$REPOSITORY\", \"ref\": \"$REF\"},"
             JSON="$JSON$JSONline"
           done
           JSON="$JSON]}"
@@ -46,15 +48,15 @@ jobs:
       - uses: octokit/request-action@v2.x
         id: latest-commit
         with:
-          route: GET /repos/${{ matrix.id }}/commits/master
+          route: GET /repos/${{ matrix.repository }}/commits/${{ matrix.ref }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Update template version
         run: |-
-          f=conf/templates/${{ matrix.id }}
-          t=$(mktemp)
-          cat ${f} | yq -y ".ref = \"${{ fromJson(steps.latest-commit.outputs.data).sha }}\"" > ${t} && mv ${t} ${f}
+          FILE=conf/templates/${{ matrix.id }}
+          TEMP=$(mktemp)
+          cat $FILE | yq -y ".ref = \"${{ fromJson(steps.latest-commit.outputs.data).sha }}\"" > $TEMP && mv $TEMP $FILE
 
       - name: Commit change
         uses: EndBug/add-and-commit@v7

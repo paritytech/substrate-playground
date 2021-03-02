@@ -1,5 +1,6 @@
 image: paritytech/substrate-playground-template-substrate-theia:sha-c7e09e6
 repository: jeluard/substrate
+ref: master
 name: Substrate
 description: '## Substrate repository'
 tags:

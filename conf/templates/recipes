@@ -1,5 +1,6 @@
 image: paritytech/substrate-playground-template-recipes-theia:sha-9a27604
 repository: substrate-developer-hub/recipes
+ref: master
 name: Recipes
 description: '## A Hands-On Cookbook for Aspiring Blockchain Chefs
 
