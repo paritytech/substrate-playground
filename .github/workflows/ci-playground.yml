@@ -49,7 +49,7 @@ jobs:
 
       # Workaround https://github.com/actions-rs/toolchain/issues/110
       - name: Make toolchain version available in current directory
-        run: cp backend/rust-toolchain .
+        run: cp rust-toolchain .
 
       - uses: actions-rs/toolchain@v1
         with:
