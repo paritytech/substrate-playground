@@ -1,4 +1,4 @@
-name: Continuous Integration Playground
+name: Continuous Integration playground
 
 on:
   pull_request:

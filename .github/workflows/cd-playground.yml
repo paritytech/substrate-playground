@@ -1,4 +1,4 @@
-name: Continuous Deployment Playground
+name: Continuous Deployment playground
 
 on:
   workflow_dispatch:

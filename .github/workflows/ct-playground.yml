@@ -1,4 +1,4 @@
-name: Continuous Testing Playground
+name: Continuous Testing playground
 
 on:
   workflow_dispatch:

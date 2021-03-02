@@ -1,4 +1,4 @@
-name: Build website
+name: Continuous Deployment website
 
 on:
   push:
