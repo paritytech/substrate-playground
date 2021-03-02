@@ -1,6 +1,6 @@
 image: paritytech/substrate-playground-template-recipes-theia:sha-9a27604
 repository: substrate-developer-hub/recipes
-ref: master
+ref: f4493a3ac4eebf8c8905e179a7703bea9303702e
 name: Recipes
 description: '## A Hands-On Cookbook for Aspiring Blockchain Chefs
 
@@ -9,7 +9,7 @@ description: '## A Hands-On Cookbook for Aspiring Blockchain Chefs
 
   '
 tags:
-    public: true
+  public: true
 runtime:
   ports:
     - name: wss
