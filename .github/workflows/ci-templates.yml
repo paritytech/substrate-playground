@@ -32,7 +32,7 @@ jobs:
           install: true
 
       - name: Build Dockerfile.base
-        run: cd templates && docker build -f Dockerfile.base .
+        run: docker build -f Dockerfile.base .
 
       - name: Build Dockerfile.theia-base
-        run: cd templates && docker build -f Dockerfile.theia-base .
+        run: docker build -f Dockerfile.theia-base .
