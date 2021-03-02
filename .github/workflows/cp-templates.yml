@@ -1,0 +1,61 @@
+#
+# Periodically polls latest repository commit for all templates.
+# Update associated template metadata. This in turns triggers `cd-templates`.
+#
+name: Continuous Poll template repositories
+
+on:
+  schedule:
+    # * is a special character in YAML so you have to quote this string
+    - cron:  '*/30 * * * *' # Every 30 minutes
+
+jobs:
+  list-existing-templates:
+    runs-on: ubuntu-latest
+    steps:
+
+      - uses: actions/checkout@v2
+
+      - name: Set templates
+        run: |
+          JSON="{\"include\":["
+          for FILE in "conf/templates"/*
+          do
+            ID=${FILE##*/}
+            JSONline="{\"id\": \"$ID\"},"
+            JSON="$JSON$JSONline"
+          done
+          JSON="$JSON]}"
+
+          echo ::set-output name=matrix::$( echo "$JSON" )
+
+  rebuild-existing-templates:
+    needs: list-existing-templates
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: ${{fromJson(needs.list-existing-templates.outputs.matrix)}}
+    steps:
+
+      - uses: actions/checkout@v2
+        with:
+          token: ${{ secrets.PAT_TOKEN }}
+
+      - uses: octokit/request-action@v2.x
+        id: latest-commit
+        with:
+          route: GET /repos/${{ matrix.id }}/commits/master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update template version
+        run: |-
+          f=conf/templates/${{ matrix.id }}
+          t=$(mktemp)
+          cat ${f} | yq -y ".ref = \"${{ fromJson(steps.latest-commit.outputs.data).sha }}\"" > ${t} && mv ${t} ${f}
+
+      - name: Commit change
+        uses: EndBug/add-and-commit@v7
+        with:
+          message: ":bookmark: yee shall thurst into a new version of template ${{ matrix.id }}"
+          author_name: github-actions
+          author_email: 41898282+github-actions[bot]@users.noreply.github.com
