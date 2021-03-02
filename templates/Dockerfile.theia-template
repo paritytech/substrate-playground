@@ -10,7 +10,7 @@ FROM paritytech/substrate-playground-template-theia-base:$BASE_TEMPLATE_VERSION 
 
 FROM $TEMPLATE_IMAGE
 
-# Env variable must be set by the inherited image
+# Env variable must be set by the inherited image (i.e. $TEMPLATE_IMAGE)
 RUN [ ! -z "${USER}" ] || { echo "USER env variable must be set"; exit 1; } && \
     [ ! -z "${HOME}" ] || { echo "HOME env variable must be set"; exit 1; } && \
     [ ! -z "${WORKSPACE}" ] || { echo "WORKSPACE env variable must be set"; exit 1; }
