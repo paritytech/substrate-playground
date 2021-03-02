@@ -409,7 +409,7 @@ function Sessions({ client, conf, user }: { client: Client, conf: Configuration,
                 const filteredResources = rowsPerPage > 0 ? allResources.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage) : allResources;
                 return (
                     <>
-                        {allResources.length > 0
+                        {filteredResources.length > 0
                         ?
                         <>
                             <EnhancedTableToolbar user={user} label="Sessions" selected={selected} onCreate={() => setShowCreationDialog(true)} onUpdate={() => setShowUpdateDialog(true)} onDelete={() => onDelete(setSessions)} />
