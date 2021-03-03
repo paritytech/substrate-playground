@@ -18,6 +18,17 @@ use crate::{
     },
 };
 
+/*
+
+https://github.com/clux/kube-rs/blob/master/examples/event_watcher.rs
+https://github.com/kubesphere/kube-events
+https://github.com/heptiolabs/eventrouter
+https://github.com/opsgenie/kubernetes-event-exporter
+https://github.com/GoogleCloudPlatform/click-to-deploy/blob/master/k8s/prometheus/manifest/prometheus-statefulset.yaml
+https://github.com/prometheus-operator/kube-prometheus
+
+*/
+
 fn running_sessions(sessions: Vec<&Session>) -> Vec<&Session> {
     sessions
         .into_iter()
