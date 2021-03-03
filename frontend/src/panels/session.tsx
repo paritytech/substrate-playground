@@ -21,7 +21,7 @@ import Typography from '@material-ui/core/Typography';
 import { makeStyles, createStyles, Theme } from '@material-ui/core/styles';
 import { Client, Configuration, NameValuePair, LoggedUser, Port, Session, SessionConfiguration, Template } from '@substrate/playground-client';
 import { SessionCreationDialog, canCustomize } from "./admin";
-import { ErrorMessage, ErrorSnackbar } from "../components";
+import { ErrorMessage, ErrorSnackbar, LoadingPanel } from "../components";
 import { useInterval } from "../hooks";
 import { ClickAwayListener, Grow, MenuItem, MenuList, Popper } from "@material-ui/core";
 
@@ -352,15 +352,16 @@ function ExistingSession({session, onStop, onConnect}: {session: Session, onStop
 }
 
 export function SessionPanel({ client, conf, user, templates, onDeployed, onConnect, onRetry, onStop }: {client: Client, conf: Configuration, user: LoggedUser, templates: Record<string, Template>, onStop: () => void, onConnect: (session: Session) => void, onDeployed: (conf: SessionConfiguration) => Promise<void>, onRetry: () => void}): JSX.Element {
-    const [session, setSession] = useState<Session | null>(null);
+    const [session, setSession] = useState<Session | null | undefined>(undefined);
 
     useInterval(async () => setSession(await client.getCurrentSession()), 5000);
-
     return (
         <Container style={{ display: "flex", flex: 1, justifyContent: "center", alignItems: "center" }}>
             <Paper style={{ display: "flex", flexDirection: "column", height: "60vh", width: "60vw", justifyContent: "center"}} elevation={3}>
-                {session
-                 ? <ExistingSession session={session} onConnect={onConnect} onStop={onStop} />
+                {session === undefined
+                 ? <LoadingPanel />
+                 : session
+                 ?<ExistingSession session={session} onConnect={onConnect} onStop={onStop} />
                  : <TemplateSelector client={client} conf={conf} user={user} templates={templates} onRetry={onRetry} onDeployed={onDeployed} />}
             </Paper>
         </Container>
