@@ -28,6 +28,9 @@ jobs:
 
 # TODO list templates from git diffs
 # https://stackoverflow.com/questions/59288971/retrieving-list-of-modified-files-in-github-action
+# https://github.community/t/can-i-process-only-changed-files-with-github-actions/137814/2
+# https://github.community/t/performing-an-action-only-on-files-that-have-changed/17952/2
+# https://github.community/t/get-changes-from-all-commits-pushed/17639/2
 # https://github.com/marketplace/actions/get-changed-files
 # https://github.com/lots0logs/gh-action-get-changed-files
 # https://github.com/jitterbit/get-changed-files
