@@ -33,7 +33,7 @@ patchesStrategicMerge:
     name: ingress-nginx
     namespace: ingress-nginx
   spec:
-    loadBalancerIP: 35.202.224.243
+    loadBalancerIP: 34.67.124.32
 - |-
   apiVersion: networking.k8s.io/v1beta1
   kind: Ingress
