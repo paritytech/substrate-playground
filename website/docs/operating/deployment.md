@@ -74,6 +74,7 @@ A default machine type is used in the script. It can be changed depending on nee
 
 Create a new [CloudDNS zone](https://console.cloud.google.com/net-services/dns/zones/new/create?authuser=1&project=substrateplayground-252112).
 
+* Public
 * Zone name: playground-*
 * DNS name: playground-*.substrate.dev
 * DNSSec: off
