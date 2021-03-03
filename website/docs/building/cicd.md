@@ -24,12 +24,6 @@ Once manually approved on the staging environment, changes are promoted to maste
 
 A number of `secrets` must be defined:
 
-`GCLOUD_KEY` is the base64 of the gcloud service account JSON file
-             Get the JSON file from https://console.cloud.google.com/iam-admin/serviceaccounts?authuser=1&hl=fr&project=substrateplayground-252112&folder=&organizationId=&supportedpurview=project
-             ... -> Actions -> Create Key
-             then `cat substrateplayground-XXX.json | base64`
-             (see https://github.com/GoogleCloudPlatform/github-actions/blob/master/setup-gcloud/README.md#inputs)
-
 `DOCKER_USERNAME` and `DOCKER_PASSWORD` pointing to a valid dockerhub account having acccess to paritytech organization
 
 `MATRIX_ACCESS_TOKEN` and `MATRIX_ROOM_ID` pointing to a specific Matrix room
