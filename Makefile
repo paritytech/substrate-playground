@@ -5,6 +5,10 @@ ifeq (, $(shell which jq))
     $(error "jq not installed, see https://stedolan.github.io/jq/")
 endif
 
+ifeq (, $(shell which yq))
+    $(error "yq not installed, see https://kislyuk.github.io/yq/")
+endif
+
 ifeq (, $(shell which docker))
     $(error "docker not installed, see https://docs.docker.com/get-docker/")
 endif
@@ -87,6 +91,22 @@ build-template-theia-base:
 push-template-theia-base: build-template-theia-base ## Push a newly built theia image on docker.io
 	docker push ${TEMPLATE_THEIA_BASE}:sha-${THEIA_DOCKER_IMAGE_VERSION}
 
+build-template:
+	@if test "$(TEMPLATE)" = "" ; then \
+		echo "Environment variable TEMPLATE not set"; \
+		exit 1; \
+	fi
+	$(eval FILE=$(shell grep BASE_TEMPLATE_VERSION .env | cut -d '=' -f2))
+	$(eval REPOSITORY=$(shell cat conf/templates/${TEMPLATE} | yq -r .repository))
+	$(eval REF=$(shell cat conf/templates/${TEMPLATE} | yq -r .ref))
+	$(eval TAG=paritytech/substrate-playground-template-${TEMPLATE}:latest)
+	$(eval TAG_THEIA=paritytech/substrate-playground-template-${TEMPLATE}-theia:latest)
+	@cd templates; git clone https://github.com/${REPOSITORY}.git .clone
+	@cd templates/.clone; git checkout ${REF}
+	@cd templates; docker build --force-rm --build-arg BASE_TEMPLATE_VERSION=${BASE_TEMPLATE_VERSION} -t ${TAG} -f Dockerfile.template .clone
+	@cd templates; docker build --force-rm --build-arg BASE_TEMPLATE_VERSION=${BASE_TEMPLATE_VERSION} --build-arg TEMPLATE_IMAGE=${TAG} -t ${TAG_THEIA} -f Dockerfile.theia-template .
+	@cd templates; rm -rf .clone
+
 build-test-templates: push-template-base push-template-theia-base
 	$(eval THEIA_DOCKER_IMAGE_VERSION=$(shell git rev-parse --short HEAD))
 	$(eval TAG=paritytech/substrate-playground-template-test:latest)
@@ -149,7 +169,7 @@ k8s-create-cluster: requires-env
         --release-channel regular \
         --zone us-central1-a \
         --node-locations us-central1-a \
-        --machine-type n2d-standard-32 \
+        --machine-type n2d-standard-8 \
         --preemptible \
         --num-nodes 1 && \
 	kubectl create ns ${NAMESPACE} && \
