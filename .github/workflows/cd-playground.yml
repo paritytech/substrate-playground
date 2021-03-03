@@ -28,22 +28,7 @@ jobs:
       - name: Set environment
         id: env
         run: |
-          GKE_PROJECT=`grep GKE_PROJECT .env | cut -d '=' -f2`
-          GKE_ZONE=`grep GKE_ZONE .env | cut -d '=' -f2`
-          GKE_CLUSTER='substrate-playground-staging'
-          echo ::set-output name=domain::playground-staging
           echo ::set-output name=sha::sha-${GITHUB_SHA::7}
-          echo ::set-output name=project::$( echo ${GKE_PROJECT} )
-          echo ::set-output name=zone::$( echo ${GKE_ZONE} )
-          echo ::set-output name=cluster::$( echo ${GKE_CLUSTER} )
-
-      - uses: google-github-actions/setup-gcloud@master
-        with:
-          service_account_key: ${{ secrets.GCLOUD_KEY }}
-          export_default_credentials: true
-          project_id: ${{ steps.env.outputs.project }}
-      - run: gcloud --quiet auth configure-docker
-      - run: gcloud container clusters get-credentials "${{ steps.env.outputs.cluster }}" --zone "${{ steps.env.outputs.zone }}"
 
       - name: Prepare labels
         id: prep
@@ -140,36 +125,3 @@ jobs:
           message: ":bookmark: upon which, hails onto us a new release of Playground"
           add: conf/k8s/overlays/${{ steps.env.outputs.environment }}/kustomization.yaml
           tag: ${{ steps.env.outputs.sha }}
-
-      - name: Deploy on GKE
-        run:  |-
-          ./kustomize build . | kubectl apply --record -f -
-          kubectl get services -o wide
-        working-directory: conf/k8s/overlays/staging
-
-      - name: Audit URLs using Lighthouse
-        uses: treosh/lighthouse-ci-action@7.0.0
-        with:
-          urls: https://${{ steps.env.outputs.domain }}.substrate.dev/
-          uploadArtifacts: true
-
-      - uses: microsoft/playwright-github-action@v1
-
-      - name: Run tests
-        run: yarn && yarn build && yarn test
-        working-directory: ./e2e
-        continue-on-error: true
-        env:
-          ENV: staging
-
-      # TODO
-      # if not ok, fails and rollback
-      # https://learnk8s.io/kubernetes-rollbacks
-      # https://medium.com/@copyconstruct/testing-in-production-the-safe-way-18ca102d0ef1
-      - if: ${{ failure() }}
-        uses: s3krit/matrix-message-action@v0.0.3
-        with:
-          room_id: ${{ secrets.MATRIX_ROOM_ID }}
-          access_token: ${{ secrets.MATRIX_ACCESS_TOKEN }}
-          message: "Deployment tests failed"
-          server: "matrix.parity.io"
