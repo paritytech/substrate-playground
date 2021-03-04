@@ -96,23 +96,24 @@ build-template:
 		echo "Environment variable TEMPLATE not set"; \
 		exit 1; \
 	fi
-	$(eval FILE=$(shell grep BASE_TEMPLATE_VERSION .env | cut -d '=' -f2))
+	$(eval BASE_TEMPLATE_VERSION=$(shell grep BASE_TEMPLATE_VERSION .env | cut -d '=' -f2))
 	$(eval REPOSITORY=$(shell cat conf/templates/${TEMPLATE} | yq -r .repository))
 	$(eval REF=$(shell cat conf/templates/${TEMPLATE} | yq -r .ref))
-	$(eval TAG=paritytech/substrate-playground-template-${TEMPLATE}:latest)
-	$(eval TAG_THEIA=paritytech/substrate-playground-template-${TEMPLATE}-theia:latest)
-	@cd templates; git clone https://github.com/${REPOSITORY}.git .clone
-	@cd templates/.clone; git checkout ${REF}
-	@cd templates; docker build --force-rm --build-arg BASE_TEMPLATE_VERSION=${BASE_TEMPLATE_VERSION} -t ${TAG} -f Dockerfile.template .clone
+	$(eval TAG=paritytech/substrate-playground-template-${TEMPLATE}:sha-${REF})
+	$(eval TAG_THEIA=paritytech/substrate-playground-template-${TEMPLATE}-theia:sha-${REF})
+	$(eval REPOSITORY_CLONE=.clone)
+	@cd templates; git clone https://github.com/${REPOSITORY}.git ${REPOSITORY_CLONE}
+	@cd templates/${REPOSITORY_CLONE}; git checkout ${REF}
+	@cd templates; docker build --force-rm --build-arg BASE_TEMPLATE_VERSION=${BASE_TEMPLATE_VERSION} -t ${TAG} -f Dockerfile.template ${REPOSITORY_CLONE}
 	@cd templates; docker build --force-rm --build-arg BASE_TEMPLATE_VERSION=${BASE_TEMPLATE_VERSION} --build-arg TEMPLATE_IMAGE=${TAG} -t ${TAG_THEIA} -f Dockerfile.theia-template .
-	@cd templates; rm -rf .clone
+	@cd templates; rm -rf ${REPOSITORY_CLONE}
 
 build-test-templates: push-template-base push-template-theia-base
-	$(eval THEIA_DOCKER_IMAGE_VERSION=$(shell git rev-parse --short HEAD))
+	$(eval BASE_TEMPLATE_VERSION=$(shell grep BASE_TEMPLATE_VERSION .env | cut -d '=' -f2))
 	$(eval TAG=paritytech/substrate-playground-template-test:latest)
 	$(eval TAG_THEIA=paritytech/substrate-playground-template-test-theia:latest)
-	@cd templates; docker build --force-rm --build-arg BASE_TEMPLATE_VERSION=sha-${THEIA_DOCKER_IMAGE_VERSION} -t ${TAG} -f Dockerfile.template test
-	@cd templates; docker build --force-rm --build-arg BASE_TEMPLATE_VERSION=sha-${THEIA_DOCKER_IMAGE_VERSION} --build-arg TEMPLATE_IMAGE=${TAG} -t ${TAG_THEIA} -f Dockerfile.theia-template .
+	@cd templates; docker build --force-rm --build-arg BASE_TEMPLATE_VERSION=sha-${BASE_TEMPLATE_VERSION} -t ${TAG} -f Dockerfile.template test
+	@cd templates; docker build --force-rm --build-arg BASE_TEMPLATE_VERSION=sha-${BASE_TEMPLATE_VERSION} --build-arg TEMPLATE_IMAGE=${TAG} -t ${TAG_THEIA} -f Dockerfile.theia-template .
 
 push-test-templates: build-test-templates
 	docker push paritytech/substrate-playground-template-test:latest
