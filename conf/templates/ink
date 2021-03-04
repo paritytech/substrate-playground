@@ -1,0 +1,12 @@
+repository: jeluard/ink
+ref: 13808d028d388680b3c803e7a6796f5ad72ab9c8
+name: Ink
+description: '## Ink'
+tags:
+  public: true
+runtime:
+  ports:
+    - name: wss
+      protocol: TCP
+      path: /wss
+      port: 9944
