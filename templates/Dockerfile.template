@@ -19,4 +19,4 @@ SHELL ["/bin/bash", "-c"]
 RUN DEFAULT_BUILD_COMMANDS=("cargo build" "cargo check") \
     && eval $(cat .devcontainer/devcontainer.json 2> /dev/null | jq -r '@sh "CONFIGURED_BUILD_COMMANDS=( \(.preCreateCommand) )" // ""') \
     && BUILD_COMMANDS=${CONFIGURED_BUILD_COMMANDS:-$DEFAULT_BUILD_COMMANDS} \
-    && for c in "${BUILD_COMMANDS[@]}";do eval $(echo $c);done
+    && for c in "${BUILD_COMMANDS[@]}";do eval $c;done
