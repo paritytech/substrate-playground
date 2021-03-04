@@ -73,12 +73,12 @@ jobs:
       - name: Set variables
         run: |-
           echo ::set-output name=sha::${GITHUB_SHA::7}
-          echo ::set-output name=tag::template-${{ matrix.repository }}-${GITHUB_SHA::7}
-          echo ::set-output name=template::paritytech/substrate-playground-template-${{ matrix.repository }}
-          echo ::set-output name=image::paritytech/substrate-playground-template-${{ matrix.repository }}:sha-${GITHUB_SHA::7}
-          echo ::set-output name=template-theia::paritytech/substrate-playground-template-${{ matrix.repository }}-theia
-          echo ::set-output name=theia-image::paritytech/substrate-playground-template-${{ matrix.repository }}-theia:sha-${GITHUB_SHA::7}
-          FILE=conf/templates/${{ matrix.repository }}
+          echo ::set-output name=tag::template-${{ matrix.id }}-${GITHUB_SHA::7}
+          echo ::set-output name=template::paritytech/substrate-playground-template-${{ matrix.id }}
+          echo ::set-output name=image::paritytech/substrate-playground-template-${{ matrix.id }}:sha-${GITHUB_SHA::7}
+          echo ::set-output name=template-theia::paritytech/substrate-playground-template-${{ matrix.id }}-theia
+          echo ::set-output name=theia-image::paritytech/substrate-playground-template-${{ matrix.id }}-theia:sha-${GITHUB_SHA::7}
+          FILE=conf/templates/${{ matrix.id }}
           REPOSITORY=`cat $FILE | yq -r .repository`
           REF=`cat $FILE | yq -r .ref`
           BASE_TEMPLATE_VERSION=`grep BASE_TEMPLATE_VERSION .env | cut -d '=' -f2`
@@ -179,12 +179,12 @@ jobs:
       - name: Update template version
         run: |-
           t=$(mktemp)
-          cat conf/templates/${{ matrix.repository }} | yq -y ".image = \"${{ steps.env.outputs.theia-image }}\"" > ${t} && mv ${t} conf/templates/${{ matrix.repository }}
+          cat conf/templates/${{ matrix.id }} | yq -y ".image = \"${{ steps.env.outputs.theia-image }}\"" > ${t} && mv ${t} conf/templates/${{ matrix.id }}
 
 # TODO update name, desc, .. from devcontainer.json
 
       - name: Commit template version update
         uses: EndBug/add-and-commit@v7
         with:
-          message: ":bookmark: yee shall thurst into a new version of ${{ matrix.repository }}"
+          message: ":bookmark: yee shall thurst into a new version of ${{ matrix.id }}"
           tag: ${{ steps.env.outputs.tag }}
