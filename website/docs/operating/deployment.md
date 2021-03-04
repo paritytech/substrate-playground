@@ -59,7 +59,7 @@ Then update `loadBalancerIP` with the newly created IP in `conf/k8s/overlays/$EN
 ### Cluster creation
 
 ```shell
-make k8s-create-cluster
+ENV=XXX make k8s-create-cluster
 ```
 
 #### How to choose a machine type
@@ -98,18 +98,18 @@ Then request new challenges. Two DNS entries will have to be updated.
 #### Update
 
 ```
-make generate-challenge
+ENV=XXX make generate-challenge
 
 # Update CloudDNS by adding a new TXT record as detailed by certbot
 
 # Make sure to check it's been propagated
-make get-challenge
+ENV=XXX make get-challenge
 ```
 
 Then update the tls secret:
 
 ```
-make k8s-update-certificate
+ENV=XXX make k8s-update-certificate
 ```
 
 The new secret will be automatically picked up.
@@ -123,14 +123,6 @@ openssl s_client -connect playground.substrate.dev:443 -servername playground.su
 # Or for client with no SNI support
 openssl s_client -connect  playground.substrate.dev:443 -showcerts
 ```
-# Nginx twist ? TODO check
-
-
-kubectl create clusterrolebinding cluster-admin-binding \
-  --clusterrole cluster-admin \
-  --user $(gcloud config get-value account)
-
-From https://kubernetes.github.io/ingress-nginx/deploy/#gce-gke
 
 ### Deployment
 
