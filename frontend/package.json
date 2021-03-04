@@ -29,7 +29,7 @@
   "devDependencies": {
     "@ava/typescript": "1.1.1",
     "@parcel/optimizer-cssnano": "2.0.0-nightly.612",
-    "@parcel/optimizer-htmlnano": "2.0.0-nightly.612",
+    "@parcel/optimizer-htmlnano": "2.0.0-nightly.616",
     "@parcel/packager-css": "2.0.0-nightly.612",
     "@parcel/packager-html": "2.0.0-nightly.612",
     "@parcel/transformer-css": "2.0.0-nightly.612",
