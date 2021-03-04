@@ -108,14 +108,19 @@ build-template:
 	@cd templates; docker build --force-rm --build-arg BASE_TEMPLATE_VERSION=${BASE_TEMPLATE_VERSION} --build-arg TEMPLATE_IMAGE=${TAG} -t ${TAG_THEIA} -f Dockerfile.theia-template .
 	@cd templates; rm -rf ${REPOSITORY_CLONE}
 
-build-test-templates: push-template-base push-template-theia-base
+push-template: build-template
+	$(eval REF=$(shell cat conf/templates/${TEMPLATE} | yq -r .ref))
+	docker push paritytech/substrate-playground-template-${TEMPLATE}:sha-${REF}
+	docker push paritytech/substrate-playground-template-${TEMPLATE}-theia:sha-${REF}
+
+build-test-template: push-template-base push-template-theia-base
 	$(eval BASE_TEMPLATE_VERSION=$(shell grep BASE_TEMPLATE_VERSION .env | cut -d '=' -f2))
 	$(eval TAG=paritytech/substrate-playground-template-test:latest)
 	$(eval TAG_THEIA=paritytech/substrate-playground-template-test-theia:latest)
 	@cd templates; docker build --force-rm --build-arg BASE_TEMPLATE_VERSION=sha-${BASE_TEMPLATE_VERSION} -t ${TAG} -f Dockerfile.template test
 	@cd templates; docker build --force-rm --build-arg BASE_TEMPLATE_VERSION=sha-${BASE_TEMPLATE_VERSION} --build-arg TEMPLATE_IMAGE=${TAG} -t ${TAG_THEIA} -f Dockerfile.theia-template .
 
-push-test-templates: build-test-templates
+push-test-template: build-test-templates
 	docker push paritytech/substrate-playground-template-test:latest
 	docker push paritytech/substrate-playground-template-test-theia:latest
 
