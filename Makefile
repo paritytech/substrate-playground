@@ -112,9 +112,8 @@ build-template:
 	@rm -rf templates/${REPOSITORY_CLONE}
 
 push-template: build-template
-	$(eval REF=$(shell cat conf/templates/${TEMPLATE} | yq -r .ref))
-	docker push paritytech/substrate-playground-template-${TEMPLATE}:sha-${REF}
-	docker push paritytech/substrate-playground-template-${TEMPLATE}-theia:sha-${REF}
+	docker push paritytech/substrate-playground-template-${TEMPLATE}:sha-${REV}
+	docker push paritytech/substrate-playground-template-${TEMPLATE}-theia:sha-${REV}
 
 build-test-template: push-template-base push-template-theia-base
 	$(eval BASE_TEMPLATE_VERSION=$(shell grep BASE_TEMPLATE_VERSION .env | cut -d '=' -f2))
