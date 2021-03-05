@@ -99,14 +99,16 @@ build-template:
 	$(eval BASE_TEMPLATE_VERSION=$(shell grep BASE_TEMPLATE_VERSION .env | cut -d '=' -f2))
 	$(eval REPOSITORY=$(shell cat conf/templates/${TEMPLATE} | yq -r .repository))
 	$(eval REF=$(shell cat conf/templates/${TEMPLATE} | yq -r .ref))
-	$(eval TAG=paritytech/substrate-playground-template-${TEMPLATE}:sha-${REF})
-	$(eval TAG_THEIA=paritytech/substrate-playground-template-${TEMPLATE}-theia:sha-${REF})
 	$(eval REPOSITORY_CLONE=.clone)
-	@cd templates; git clone https://github.com/${REPOSITORY}.git ${REPOSITORY_CLONE}
-	@cd templates/${REPOSITORY_CLONE}; git checkout ${REF}
-	@cd templates; docker build --force-rm --build-arg BASE_TEMPLATE_VERSION=${BASE_TEMPLATE_VERSION} -t ${TAG} -f Dockerfile.template ${REPOSITORY_CLONE}
-	@cd templates; docker build --force-rm --build-arg BASE_TEMPLATE_VERSION=${BASE_TEMPLATE_VERSION} --build-arg TEMPLATE_IMAGE=${TAG} -t ${TAG_THEIA} -f Dockerfile.theia-template .
-	@cd templates; rm -rf ${REPOSITORY_CLONE}
+	@cd templates; git clone https://github.com/${REPOSITORY}.git ${REPOSITORY_CLONE} \
+    && cd ${REPOSITORY_CLONE} \
+    && git checkout ${REF} \
+    REV:=$(shell git rev-parse --short HEAD)
+	TAG:=paritytech/substrate-playground-template-${TEMPLATE}:sha-$${REV}
+	TAG_THEIA:=paritytech/substrate-playground-template-${TEMPLATE}-theia:sha-$${REV}
+	docker build --force-rm --build-arg BASE_TEMPLATE_VERSION=${BASE_TEMPLATE_VERSION} -t $${TAG} -f Dockerfile.template ${REPOSITORY_CLONE} \
+	&& docker build --force-rm --build-arg BASE_TEMPLATE_VERSION=${BASE_TEMPLATE_VERSION} --build-arg TEMPLATE_IMAGE=${TAG} -t $${TAG_THEIA} -f Dockerfile.theia-template .
+	@rm -rf ${REPOSITORY_CLONE}
 
 push-template: build-template
 	$(eval REF=$(shell cat conf/templates/${TEMPLATE} | yq -r .ref))
