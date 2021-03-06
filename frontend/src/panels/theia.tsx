@@ -19,7 +19,7 @@ export function TheiaPanel({ client, autoDeploy, templates, onMissingSession, on
             }
 
             const phase = session.pod.phase;
-            if (phase == 'Running' || phase == 'Pending') {
+            if (phase == 'Running') {
                 const reason = session.pod.reason;
                 if (reason === "CrashLoopBackOff" || reason === "ErrImagePull" || reason === "ImagePullBackOff" || reason === "InvalidImageName") {
                     setData({ type: "ERROR", value: session.pod.message, action: onSessionFailing });
