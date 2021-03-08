@@ -73,7 +73,7 @@
         "vscode-builtin-theme-monokai": "https://open-vsx.org/api/vscode/theme-monokai/1.54.1/file/vscode.theme-monokai-1.54.1.vsix",
         "vscode-builtin-typescript": "https://open-vsx.org/api/vscode/typescript/1.54.1/file/vscode.typescript-1.54.1.vsix",
         "vscode-builtin-typescript-language-features": "https://open-vsx.org/api/vscode/typescript-language-features/1.54.1/file/vscode.typescript-language-features-1.54.1.vsix",
-        "vscode-editorconfig": "https://open-vsx.org/api/EditorConfig/EditorConfig/0.15.1/file/EditorConfig.EditorConfig-0.15.1.vsix",
+        "vscode-editorconfig": "https://open-vsx.org/api/EditorConfig/EditorConfig/0.16.4/file/EditorConfig.EditorConfig-0.16.4.vsix",
         "vscode-eslint": "https://open-vsx.org/api/dbaeumer/vscode-eslint/2.1.8/file/dbaeumer.vscode-eslint-2.1.8.vsix",
         "vscode-substrate": "https://github.com/paritytech/vscode-substrate/releases/download/v0.5.1/vscode-substrate-0.5.1.vsix",
         "vscode-references-view": "https://open-vsx.org/api/ms-vscode/references-view/0.0.47/file/ms-vscode.references-view-0.0.47.vsix",
