@@ -1,3 +1,6 @@
+#
+# Deploy backend/frontend Docker images and update relevant conf.
+#
 name: Continuous Deployment playground
 
 on:
@@ -11,7 +14,6 @@ on:
       - 'backend/*'
       - 'frontend/*'
       - 'conf/k8s/base/*'
-      - 'conf/k8s/overlays/staging/kustomization.yaml'
 
 env:
   DOCKER_BUILDKIT: 1
