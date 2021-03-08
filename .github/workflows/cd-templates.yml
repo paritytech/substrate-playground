@@ -5,8 +5,6 @@
 # Then sets the new template image id in the right conf file.
 # This is turns triggers playground ConfigMap update (see `cd-templates.yml`)
 #
-# Templates are automatically deployed on `staging` only.
-#
 # Ideally the repository origin of the event would be matched against the locally configured one to avoid duplicate builds.
 # Unfortunately this information is not part of the event payload. Because the original repository is always used to build the image is always safe.
 #
@@ -17,7 +15,6 @@ on:
       - develop
     paths:
       - 'conf/templates/*'
-      - 'conf/k8s/overlays/staging/templates/kustomization.yaml'
 
 jobs:
   list-modified-templates:
@@ -83,7 +80,7 @@ jobs:
           FILE=conf/templates/${{ matrix.id }}
           REPOSITORY=`cat $FILE | yq -r .repository`
           REF=`cat $FILE | yq -r .ref`
-          BASE_TEMPLATE_VERSION=`grep BASE_TEMPLATE_VERSION .env | cut -d '=' -f2`
+          BASE_TEMPLATE_VERSION=`grep BASE_TEMPLATE_VERSION conf/templates/.env | cut -d '=' -f2`
           echo ::set-output name=repository::$( echo $REPOSITORY )
           echo ::set-output name=ref::$( echo ${REF:-master} )
           echo ::set-output name=base::$( echo ${BASE_TEMPLATE_VERSION} )

@@ -103,12 +103,12 @@ jobs:
           cache-to: type=inline
 
       - name: Update .env
-        run: sed -i 's/BASE_TEMPLATE_VERSION=sha-[^. ]*/BASE_TEMPLATE_VERSION=${{ steps.env.outputs.sha }}/g' .env
+        run: sed -i 's/BASE_TEMPLATE_VERSION=sha-[^. ]*/BASE_TEMPLATE_VERSION=${{ steps.env.outputs.sha }}/g' conf/templates/.env
 
       - uses: EndBug/add-and-commit@v7
         with:
           message: ":bookmark: yee shall thurst into a new version of base templates"
-          add: .env
+          add: conf/templates/.env
           tag: base-templates-${{ steps.env.outputs.sha }}
 
   # Go through existing templates and trigger template rebuilds using newly created base templates

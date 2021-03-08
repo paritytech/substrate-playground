@@ -96,7 +96,7 @@ build-template:
 		echo "Environment variable TEMPLATE not set"; \
 		exit 1; \
 	fi
-	$(eval BASE_TEMPLATE_VERSION=$(shell grep BASE_TEMPLATE_VERSION .env | cut -d '=' -f2))
+	$(eval BASE_TEMPLATE_VERSION=$(shell grep BASE_TEMPLATE_VERSION conf/templates/.env | cut -d '=' -f2))
 	$(eval REPOSITORY=$(shell cat conf/templates/${TEMPLATE} | yq -r .repository))
 	$(eval REF=$(shell cat conf/templates/${TEMPLATE} | yq -r .ref))
 	$(eval REPOSITORY_CLONE=.clone)
@@ -116,7 +116,7 @@ push-template: build-template
 	docker push paritytech/substrate-playground-template-${TEMPLATE}-theia:sha-${REV}
 
 build-test-template: push-template-base push-template-theia-base
-	$(eval BASE_TEMPLATE_VERSION=$(shell grep BASE_TEMPLATE_VERSION .env | cut -d '=' -f2))
+	$(eval BASE_TEMPLATE_VERSION=$(shell grep BASE_TEMPLATE_VERSION conf/templates/.env | cut -d '=' -f2))
 	$(eval TAG=paritytech/substrate-playground-template-test:latest)
 	$(eval TAG_THEIA=paritytech/substrate-playground-template-test-theia:latest)
 	@cd templates; docker build --force-rm --build-arg BASE_TEMPLATE_VERSION=sha-${BASE_TEMPLATE_VERSION} -t ${TAG} -f Dockerfile.template test
