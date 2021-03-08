@@ -47,6 +47,22 @@ pub struct Pod {
     pub message: String,
     #[serde(with = "system_time")]
     pub start_time: Option<SystemTime>,
+    pub container: Option<ContainerStatus>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+pub enum ContainerPhase {
+    Running,
+    Terminated,
+    Waiting,
+    Unknown,
+}
+
+#[derive(Serialize, Clone, Debug)]
+pub struct ContainerStatus {
+    pub phase: ContainerPhase,
+    pub reason: Option<String>,
+    pub message: Option<String>,
 }
 
 #[derive(Serialize, Clone, Debug)]

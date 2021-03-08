@@ -2,12 +2,13 @@
 //! * https://docs.rs/k8s-openapi/0.5.1/k8s_openapi/api/core/v1/struct.ServiceStatus.html
 //! * https://docs.rs/k8s-openapi/0.5.1/k8s_openapi/api/core/v1/struct.ServiceSpec.html
 use crate::types::{
-    self, LoggedUser, Pool, Session, SessionConfiguration, SessionDefaults,
+    self, ContainerPhase, LoggedUser, Pool, Session, SessionConfiguration, SessionDefaults,
     SessionUpdateConfiguration, Template, User, UserConfiguration, UserUpdateConfiguration,
 };
 use json_patch::{AddOperation, PatchOperation, RemoveOperation};
 use k8s_openapi::api::core::v1::{
-    Affinity, ConfigMap, Container, EnvVar, Node, Pod, PodSpec, Service, ServicePort, ServiceSpec,
+    Affinity, ConfigMap, Container, ContainerStatus, EnvVar, Node, Pod, PodSpec, Service,
+    ServicePort, ServiceSpec,
 };
 use k8s_openapi::api::{
     core::v1::{NodeAffinity, NodeSelectorRequirement, NodeSelectorTerm, PreferredSchedulingTerm},
@@ -491,8 +492,42 @@ impl Engine {
         })
     }
 
+    fn container_status_to_container_status(
+        self,
+        status: &ContainerStatus,
+    ) -> types::ContainerStatus {
+        let state = status.state.as_ref();
+        types::ContainerStatus {
+            phase: state
+                .and_then(|s| {
+                    if s.running.is_some() {
+                        Some(ContainerPhase::Running)
+                    } else if s.waiting.is_some() {
+                        Some(ContainerPhase::Waiting)
+                    } else {
+                        Some(ContainerPhase::Terminated)
+                    }
+                })
+                .unwrap_or(ContainerPhase::Unknown),
+            reason: state.clone().and_then(|s| {
+                s.waiting
+                    .as_ref()
+                    .and_then(|s| s.reason.clone())
+                    .or_else(|| s.terminated.as_ref().and_then(|s| s.reason.clone()))
+            }),
+            message: state.and_then(|s| {
+                s.waiting
+                    .as_ref()
+                    .and_then(|s| s.message.clone())
+                    .or_else(|| s.terminated.as_ref().and_then(|s| s.message.clone()))
+            }),
+        }
+    }
+
     fn pod_to_details(self, pod: &Pod) -> Result<types::Pod, String> {
         let status = pod.status.as_ref().ok_or("No status")?;
+        let container_statuses = status.clone().container_statuses;
+        let container_status = container_statuses.as_ref().and_then(|v| v.first());
         Ok(types::Pod {
             phase: Phase::from_str(
                 &status
@@ -503,6 +538,7 @@ impl Engine {
             reason: status.clone().reason.unwrap_or_else(|| "".to_string()),
             message: status.clone().message.unwrap_or_else(|| "".to_string()),
             start_time: status.clone().start_time.map(|dt| dt.0.into()),
+            container: container_status.map(|c| self.container_status_to_container_status(c)),
         })
     }
 
