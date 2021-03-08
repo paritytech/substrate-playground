@@ -7,10 +7,10 @@
   resolved "https://registry.yarnpkg.com/@substrate/playground-client/-/playground-client-1.4.1.tgz#1b830d0ff6d482894444db8863b2fad9d928d309"
   integrity sha512-v4K87QeY3nedO/ayGZJQEwdQP9MHuRi8Hk2Esrm49gLmXedZxnom0YK93JdvaQg2mYScfAYS2Iv4DwdeRRQ4Kg==
 
-"@types/node@14.14.31":
-  version "14.14.31"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-14.14.31.tgz#72286bd33d137aa0d152d47ec7c1762563d34055"
-  integrity sha512-vFHy/ezP5qI0rFgJ7aQnjDXwAMrG0KqqIH7tQG5PPv3BWBayOPIQNBjVc/P6hhdZfMx51REc6tfDNXHUio893g==
+"@types/node@14.14.32":
+  version "14.14.32"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-14.14.32.tgz#90c5c4a8d72bbbfe53033f122341343249183448"
+  integrity sha512-/Ctrftx/zp4m8JOujM5ZhwzlWLx22nbQJiVqz8/zE15gOeEW+uly3FSX4fGFpcfEvFzXcMCJwq9lGVWgyARXhg==
 
 "@types/prop-types@*":
   version "15.7.3"
