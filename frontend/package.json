@@ -38,7 +38,7 @@
     "@parcel/transformer-postcss": "2.0.0-nightly.612",
     "@parcel/transformer-posthtml": "2.0.0-nightly.612",
     "@types/marked": "1.2.2",
-    "@types/node": "14.14.31",
+    "@types/node": "14.14.32",
     "@types/react": "17.0.3",
     "@types/react-dom": "17.0.1",
     "@types/react-router-dom": "5.1.7",
