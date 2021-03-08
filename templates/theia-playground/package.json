@@ -82,9 +82,6 @@
         "vscode-lldb": "https://github.com/vadimcn/vscode-lldb/releases/download/v1.5.3/codelldb-x86_64-linux.vsix",
         "better-toml": "https://open-vsx.org/api/bungcip/better-toml/0.3.2/file/bungcip.better-toml-0.3.2.vsix",
         "vscode-pull-request-github": "https://open-vsx.org/api/GitHub/vscode-pull-request-github/0.22.0/file/GitHub.vscode-pull-request-github-0.22.0.vsix"
-
-
-
     },
     "scripts": {
         "prepare": "theia build --mode development",
