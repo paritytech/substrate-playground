@@ -123,5 +123,5 @@ jobs:
       - uses: EndBug/add-and-commit@v7
         with:
           message: ":bookmark: upon which, hails onto us a new release of Playground"
-          add: conf/k8s/overlays/${{ steps.env.outputs.environment }}/kustomization.yaml
+          add: conf/k8s/overlays/staging/kustomization.yaml
           tag: ${{ steps.env.outputs.sha }}
