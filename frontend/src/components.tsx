@@ -215,7 +215,7 @@ function Nav({ conf, onPlayground, onStatsClick, onAdminClick, onLogout, user }:
                          open={open}
                          onClose={handleClose}
                      >
-                         <MenuItem onClick={() => window.open("https://docs.google.com/forms/d/e/1FAIpQLSdXpq_fHqS_ow4nC7EpGmrC_XGX_JCIRzAqB1vaBtoZrDW-ZQ/viewform?edit_requested=true")}>FEEDBACK</MenuItem>
+                         <MenuItem onClick={() => window.open("https://github.com/paritytech/substrate-playground/discussions")}>FEEDBACK</MenuItem>
                          <MenuItem onClick={() => window.open(`https://github.com/settings/connections/applications/${conf.githubClientId}`)}>GITHUB APPLICATION</MenuItem>
 
                          <MenuItem onClick={async () => {handleClose(); onLogout()}}>LOGOUT</MenuItem>
