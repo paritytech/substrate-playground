@@ -1,4 +1,4 @@
-image: paritytech/substrate-playground-template-ink-theia:sha-a4215c8
+image: paritytech/substrate-playground-template-ink-theia:sha-c3afcd7
 repository: jeluard/ink
 ref: 13808d028d388680b3c803e7a6796f5ad72ab9c8
 name: Ink
