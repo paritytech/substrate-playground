@@ -126,4 +126,5 @@ jobs:
         with:
           message: ":bookmark: upon which, hails onto us a new release of Playground"
           add: conf/k8s/overlays/staging/kustomization.yaml
-          tag: ${{ steps.env.outputs.sha }}
+          author_name: github-actions
+          author_email: 41898282+github-actions[bot]@users.noreply.github.com
