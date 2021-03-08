@@ -269,7 +269,8 @@ function formatDuration(s: number): string {
 export function SessionDetails({ session }: {session: Session}): JSX.Element {
     const { pod, template, duration } = session;
     const { name, runtime } = template;
-    const { phase, reason, message, startTime } = pod;
+    const { container, phase, startTime } = pod;
+    const { reason } = container;
     return (
         <Card style={{ margin: 20 }} variant="outlined">
             <CardContent>
@@ -282,7 +283,7 @@ export function SessionDetails({ session }: {session: Session}): JSX.Element {
                 </Typography>
                 }
                 <Typography color="textSecondary" gutterBottom>
-                Phase: <em>{phase}</em> {message} {reason && `(${reason})`}
+                Phase: <em>{phase}</em> {reason && `(${reason})`}
                 </Typography>
                 {runtime &&
                     <div style={{display: "flex", paddingTop: 20}}>
