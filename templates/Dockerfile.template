@@ -17,6 +17,6 @@ SHELL ["/bin/bash", "-c"]
 
 # Run build commands as part of the image creation
 RUN DEFAULT_BUILD_COMMANDS=("cargo build" "cargo check") \
-    && eval $(cat .devcontainer/devcontainer.json 2> /dev/null | jq -r '@sh "CONFIGURED_BUILD_COMMANDS=( \(.preCreateCommand) )" // ""') \
+    && eval $(cat .devcontainer/devcontainer.json 2> /dev/null | jq -r 'select(.preCreateCommand | type == "string") | @sh "CONFIGURED_BUILD_COMMANDS=( \(.preCreateCommand) )" // ""') \
     && BUILD_COMMANDS=("${CONFIGURED_BUILD_COMMANDS[@]:-${DEFAULT_BUILD_COMMANDS[@]}}") \
     && for c in "${BUILD_COMMANDS[@]}";do eval $c;done
