@@ -119,4 +119,13 @@ export interface Pod {
     message: string,
     /* The number of seconds since this session started */
     startTime?: number,
+    container?: ContainerStatus,
+}
+
+export type ContainerPhase = 'Running' | 'Terminated' | 'Waiting' | 'Unknown';
+
+export interface ContainerStatus {
+    phase: ContainerPhase,
+    reason?: string,
+    message?: string,
 }
