@@ -1,5 +1,4 @@
 #![feature(async_closure, proc_macro_hygiene, decl_macro)]
-#![deny(broken_intra_doc_links)]
 
 mod api;
 mod github;
