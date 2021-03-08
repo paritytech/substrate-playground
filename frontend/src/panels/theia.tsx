@@ -20,15 +20,16 @@ export function TheiaPanel({ client, autoDeploy, templates, onMissingSession, on
 
             const phase = session.pod.phase;
             if (phase == 'Running') {
-                const reason = session.pod.reason;
-                if (reason === "CrashLoopBackOff" || reason === "ErrImagePull" || reason === "ImagePullBackOff" || reason === "InvalidImageName") {
-                    setData({ type: "ERROR", value: session.pod.message, action: onSessionFailing });
-                    return;
-                }
                 // Check URL is fine
                 const url = `//${session.url}`;
                 if ((await fetchWithTimeout(url)).ok) {
                     setData({ type: "SUCCESS", url: url });
+                    return;
+                }
+            } else if (phase == 'Pending') {
+                const reason = session.pod.container?.reason;
+                if (reason === "CrashLoopBackOff" || reason === "ErrImagePull" || reason === "ImagePullBackOff" || reason === "InvalidImageName") {
+                    setData({ type: "ERROR", value: session.pod.container?.message, action: onSessionFailing });
                     return;
                 }
             }
