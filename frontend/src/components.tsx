@@ -141,7 +141,7 @@ export function Loading({ phase, retry = 0 }: { phase?: string, retry?: number }
     );
 }
 
-function Nav({ conf, onPlayground, onStatsClick, onAdminClick, onLogout, user }: { conf: Configuration, onPlayground: () => void, onStatsClick: () => void, onAdminClick: () => void, onLogout: () => void, user?: LoggedUser }): JSX.Element  {
+function Nav({ conf, onPlayground, onStatsClick, onAdminClick, onLogout, user, children }: { conf: Configuration, onPlayground: () => void, onStatsClick: () => void, onAdminClick: () => void, onLogout: () => void, user?: LoggedUser, children?: React.ReactElement }): JSX.Element  {
     const [anchorEl, setAnchorEl] = React.useState(null);
     const open = Boolean(anchorEl);
     const handleMenu = (event) => setAnchorEl(event.currentTarget);
@@ -156,6 +156,7 @@ function Nav({ conf, onPlayground, onStatsClick, onAdminClick, onLogout, user }:
                 <Typography variant="h6">
                     <Button onClick={onPlayground}>Playground</Button>
                 </Typography>
+                {children}
                 <div style={{display: "flex", alignItems: "center"}}>
                     {(user && hasAdminReadRights(user)) &&
                     <div style={{paddingLeft: 12}}>
@@ -241,11 +242,13 @@ function Nav({ conf, onPlayground, onStatsClick, onAdminClick, onLogout, user }:
     );
 }
 
-export function Wrapper({ conf, params, thin = false, onPlayground, onStatsClick, onAdminClick, onLogout, user, children}: { conf: Configuration, params: Params, thin?: boolean, onPlayground: () => void, onStatsClick: () => void, onAdminClick: () => void, onLogout: () => void, user?: LoggedUser, children: React.ReactElement}): JSX.Element {
+export function Wrapper({ conf, params, thin = false, onPlayground, onStatsClick, onAdminClick, onLogout, user, children, extraNav}: { conf: Configuration, params: Params, thin?: boolean, onPlayground: () => void, onStatsClick: () => void, onAdminClick: () => void, onLogout: () => void, user?: LoggedUser, children: React.ReactElement, extraNav?: React.ReactElement}): JSX.Element {
     return (
         <div style={{display: "flex", flexDirection: "column", width: "inherit", height: "inherit"}}>
 
-            <Nav conf={conf} onPlayground={onPlayground} onStatsClick={onStatsClick} onAdminClick={onAdminClick} onLogout={onLogout} user={user} />
+            <Nav conf={conf} onPlayground={onPlayground} onStatsClick={onStatsClick} onAdminClick={onAdminClick} onLogout={onLogout} user={user}>
+                {extraNav}
+            </Nav>
 
             <Fade in appear>
                 {children}
