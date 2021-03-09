@@ -25,6 +25,7 @@ jobs:
 
       - uses: actions/checkout@v2
         with:
+          # Use a specific token so that the commit done further the line triggers other workflows
           token: ${{ secrets.PAT_TOKEN }}
 
       - name: Set environment
@@ -122,10 +123,10 @@ jobs:
           ./kustomize edit set image paritytech/substrate-playground-backend-ui:${{ steps.env.outputs.sha }}
         working-directory: conf/k8s/overlays/staging
 
-      - uses: EndBug/add-and-commit@v7
-        with:
-          message: ":bookmark: upon which, hails onto us a new release of Playground"
-          add: conf/k8s/overlays/staging/kustomization.yaml
-          pull_strategy: '--rebase'
-          author_name: github-actions
-          author_email: 41898282+github-actions[bot]@users.noreply.github.com
+      - run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git add conf/k8s/overlays/staging
+          git commit -m ":bookmark: upon which, hails onto us a new release of Playground"
+          git pull --rebase
+          git push
