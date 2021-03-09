@@ -210,7 +210,7 @@ impl Manager {
     // Sessions
 
     pub fn get_session(&self, id: &str) -> Result<Option<Session>, String> {
-        new_runtime()?.block_on(self.engine.get_session(&id))
+        new_runtime()?.block_on(self.engine.get_session(&session_id(id)))
     }
 
     pub fn list_sessions(&self) -> Result<BTreeMap<String, Session>, String> {
@@ -279,12 +279,13 @@ impl Manager {
     }
 
     pub fn delete_session(self, id: &str) -> Result<(), String> {
-        let result = new_runtime()?.block_on(self.engine.delete_session(&id));
+        let session_id = session_id(id);
+        let result = new_runtime()?.block_on(self.engine.delete_session(&session_id));
         match &result {
             Ok(_) => {
                 self.metrics.inc_undeploy_counter();
                 if let Ok(mut sessions) = self.sessions.lock() {
-                    sessions.remove(id);
+                    sessions.remove(session_id.as_str());
                 } else {
                     error!("Failed to acquire sessions lock");
                 }
