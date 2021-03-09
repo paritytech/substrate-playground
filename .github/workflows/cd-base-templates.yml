@@ -109,6 +109,7 @@ jobs:
         with:
           message: ":bookmark: yee shall thurst into a new version of base templates"
           add: conf/templates/.env
+          pull_strategy: '--rebase'
           author_name: github-actions
           author_email: 41898282+github-actions[bot]@users.noreply.github.com
 
