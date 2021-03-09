@@ -499,13 +499,13 @@ impl Engine {
         let state = status.state.as_ref();
         types::ContainerStatus {
             phase: state
-                .and_then(|s| {
+                .map(|s| {
                     if s.running.is_some() {
-                        Some(ContainerPhase::Running)
+                        ContainerPhase::Running
                     } else if s.waiting.is_some() {
-                        Some(ContainerPhase::Waiting)
+                        ContainerPhase::Waiting
                     } else {
-                        Some(ContainerPhase::Terminated)
+                        ContainerPhase::Terminated
                     }
                 })
                 .unwrap_or(ContainerPhase::Unknown),
