@@ -4,8 +4,8 @@ on:
   pull_request:
     paths:
       - '.github/workflows/ci-playground.yml'
-      - 'backend/*'
-      - 'frontend/*'
+      - 'backend/**'
+      - 'frontend/**'
 
 jobs:
   frontend:

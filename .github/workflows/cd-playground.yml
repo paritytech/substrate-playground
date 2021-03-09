@@ -11,9 +11,9 @@ on:
     paths:
       - '.github/workflows/cd-playground.yml'
       - 'Makefile'
-      - 'backend/*'
-      - 'frontend/*'
-      - 'conf/k8s/base/*'
+      - 'backend/**'
+      - 'frontend/**'
+      - 'conf/k8s/base/**'
 
 env:
   DOCKER_BUILDKIT: 1
