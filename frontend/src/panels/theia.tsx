@@ -12,25 +12,21 @@ export function TheiaPanel({ client, autoDeploy, templates, onMissingSession, on
     useEffect(() => {
         async function fetchData() {
             const session = await client.getCurrentSession();
-            if (!session) {
-                // No session exist, this state shouldn't be reached
-                setData({ type: "ERROR", value: "Couldn't locate the theia session", action: onMissingSession});
-                return;
-            }
-
-            const phase = session.pod.phase;
-            if (phase == 'Running') {
-                // Check URL is fine
-                const url = `//${session.url}`;
-                if ((await fetchWithTimeout(url)).ok) {
-                    setData({ type: "SUCCESS", url: url });
-                    return;
-                }
-            } else if (phase == 'Pending') {
-                const reason = session.pod.container?.reason;
-                if (reason === "CrashLoopBackOff" || reason === "ErrImagePull" || reason === "ImagePullBackOff" || reason === "InvalidImageName") {
-                    setData({ type: "ERROR", value: session.pod.container?.message, action: onSessionFailing });
-                    return;
+            if (session) {
+                const phase = session.pod.phase;
+                if (phase == 'Running') {
+                    // Check URL is fine
+                    const url = `//${session.url}`;
+                    if ((await fetchWithTimeout(url)).ok) {
+                        setData({ type: "SUCCESS", url: url });
+                        return;
+                    }
+                } else if (phase == 'Pending') {
+                    const reason = session.pod.container?.reason;
+                    if (reason === "CrashLoopBackOff" || reason === "ErrImagePull" || reason === "ImagePullBackOff" || reason === "InvalidImageName") {
+                        setData({ type: "ERROR", value: session.pod.container?.message, action: onSessionFailing });
+                        return;
+                    }
                 }
             }
 
