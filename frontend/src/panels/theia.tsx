@@ -32,7 +32,7 @@ export function TheiaPanel({ client, autoDeploy, templates, onMissingSession, on
 
             const retry = data.retry ?? 0;
             if (retry < maxRetries) {
-                setTimeout(() => setData({ type: "LOADING", phase: phase, retry: retry + 1 }), 1000);
+                setTimeout(() => setData({ type: "LOADING", phase: session?.pod.phase, retry: retry + 1 }), 1000);
             } else if (retry == maxRetries) {
                 setData({ type: "ERROR", value: "Couldn't access the theia session in time", action: onSessionTimeout });
             }
