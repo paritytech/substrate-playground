@@ -5,12 +5,17 @@ import Button from '@material-ui/core/Button';
 import ButtonGroup from "@material-ui/core/ButtonGroup";
 import Card from '@material-ui/core/Card';
 import CardContent from '@material-ui/core/CardContent';
+import ClickAwayListener from "@material-ui/core/ClickAwayListener";
 import Container from "@material-ui/core/Container";
 import Divider from '@material-ui/core/Divider';
+import Grow from '@material-ui/core/Grow';
 import List from '@material-ui/core/List';
 import ListItem from '@material-ui/core/ListItem';
 import ListItemText from '@material-ui/core/ListItemText';
+import MenuItem from '@material-ui/core/MenuItem';
+import MenuList from '@material-ui/core/MenuList';
 import Paper from '@material-ui/core/Paper';
+import Popper from '@material-ui/core/Popper';
 import Table from '@material-ui/core/Table';
 import TableBody from '@material-ui/core/TableBody';
 import TableCell from '@material-ui/core/TableCell';
@@ -23,7 +28,7 @@ import { Client, Configuration, NameValuePair, LoggedUser, Port, Session, Sessio
 import { SessionCreationDialog, canCustomize } from "./admin";
 import { ErrorMessage, ErrorSnackbar, LoadingPanel } from "../components";
 import { useInterval } from "../hooks";
-import { ClickAwayListener, Grow, MenuItem, MenuList, Popper } from "@material-ui/core";
+import { formatDuration } from "../utils";
 
 const useStyles = makeStyles((theme: Theme) =>
     createStyles({
@@ -247,23 +252,6 @@ function PortsTable({ ports }: {ports?: Port[]}): JSX.Element {
             </Table>
         </TableContainer>
     );
-}
-
-function formatDuration(s: number): string {
-    const date = new Date(0);
-    date.setSeconds(s);
-    const hours = date.getUTCHours();
-    const minutes = date.getUTCMinutes();
-    const seconds = date.getUTCSeconds();
-    const withSeconds = `${seconds}s`;
-    const withMinutes = `${minutes}min ${withSeconds}`;
-    if (hours) {
-        return `${hours}h ${withMinutes}`;
-    } else if (minutes) {
-        return `${withMinutes}`;
-    } else {
-        return `${withSeconds}`;
-    }
 }
 
 export function SessionDetails({ session }: {session: Session}): JSX.Element {

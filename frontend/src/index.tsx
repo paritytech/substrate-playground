@@ -1,8 +1,11 @@
-import React from "react";
+import React, { useState } from "react";
 import ReactDOM from "react-dom";
 import { Client, Configuration, LoggedUser, Template } from '@substrate/playground-client';
 import { createMuiTheme, ThemeProvider } from '@material-ui/core/styles';
+import Typography from "@material-ui/core/Typography";
+import { Session } from '@substrate/playground-client';
 import { CenteredContainer, ErrorMessage, LoadingPanel, Wrapper } from './components';
+import { useInterval } from "./hooks";
 import { useLifecycle, Events, PanelId, States } from './lifecycle';
 import { AdminPanel } from './panels/admin';
 import { LoginPanel } from './panels/login';
@@ -11,6 +14,7 @@ import { StatsPanel } from './panels/stats';
 import { TermsPanel } from './panels/terms';
 import { TheiaPanel } from './panels/theia';
 import { terms } from "./terms";
+import { formatDuration } from "./utils";
 
 function MainPanel({ client, conf, user, params, id, templates, onConnect, onDeployed, restartAction }: { client: Client, conf: Configuration, user: LoggedUser, params: Params, id: PanelId, templates: Record<string, Template>, restartAction: () => void, onConnect: () => void, onDeployed: () => void}): JSX.Element {
     switch(id) {
@@ -33,6 +37,24 @@ function MainPanel({ client, conf, user, params, id, templates, onConnect, onDep
       }
 }
 
+function ExtraTheiaNav({ client }: { client: Client }): JSX.Element {
+    const [session, setSession] = useState<Session | null | undefined>(undefined);
+
+    useInterval(async () => setSession(await client.getCurrentSession()), 5000);
+
+    if (session) {
+        const { pod, duration } = session;
+        const { startTime } = pod;
+        return (
+            <Typography variant="h6">
+                {formatDuration(duration*60-startTime)} before the session's end
+            </Typography>
+        );
+    } else {
+        return <></>;
+    }
+}
+
 function App({ params }: { params: Params }): JSX.Element {
     const client = new Client(params.base, 30000, {credentials: "include"});
     const { deploy } = params;
@@ -47,10 +69,11 @@ function App({ params }: { params: Params }): JSX.Element {
         },
     });
 
+    const isTheia = state.matches(States.LOGGED) && panel == PanelId.Theia;
     return (
         <ThemeProvider theme={theme}>
             <div style={{ display: "flex", width: "100vw", height: "100vh", alignItems: "center", justifyContent: "center" }}>
-                <Wrapper conf={conf} params={params} thin={state.matches(States.LOGGED) && panel == PanelId.Theia} onPlayground={() => selectPanel(PanelId.Session)} onAdminClick={() => selectPanel(PanelId.Admin)} onStatsClick={() => selectPanel(PanelId.Stats)} onLogout={() => send(Events.LOGOUT)} user={user}>
+                <Wrapper conf={conf} extraNav={isTheia ? <ExtraTheiaNav client={client} /> : <></>} params={params} thin={isTheia} onPlayground={() => selectPanel(PanelId.Session)} onAdminClick={() => selectPanel(PanelId.Admin)} onStatsClick={() => selectPanel(PanelId.Stats)} onLogout={() => send(Events.LOGOUT)} user={user}>
                     {state.matches(States.LOGGED)
                     ? <MainPanel client={client} conf={conf} user={user} params={params} id={panel} templates={templates} onConnect={() => selectPanel(PanelId.Theia)} onDeployed={() => selectPanel(PanelId.Theia)} restartAction={restartAction} />
                     : state.matches(States.TERMS_UNAPPROVED)

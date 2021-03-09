@@ -13,6 +13,19 @@ export async function fetchWithTimeout(url: string, opts: Object = {cache: "no-s
     return timeout(fetch(url, opts), ms).catch(error => error);
 }
 
+export function formatDuration(s: number): string {
+    const date = new Date(0);
+    date.setSeconds(s);
+    const hours = date.getUTCHours();
+    const minutes = date.getUTCMinutes();
+    const withMinutes = `${minutes}min`;
+    if (hours) {
+        return `${hours}h ${withMinutes}`;
+    } else {
+        return `${withMinutes}`;
+    }
+}
+
 // User helpers
 
 export function isParitytechMember(user: LoggedUser): boolean {
