@@ -105,13 +105,13 @@ jobs:
       - name: Update .env
         run: sed -i 's/BASE_TEMPLATE_VERSION=sha-[^. ]*/BASE_TEMPLATE_VERSION=${{ steps.env.outputs.sha }}/g' conf/templates/.env
 
-      - uses: EndBug/add-and-commit@v7
-        with:
-          message: ":bookmark: yee shall thurst into a new version of base templates"
-          add: conf/templates/.env
-          pull_strategy: '--rebase'
-          author_name: github-actions
-          author_email: 41898282+github-actions[bot]@users.noreply.github.com
+      - run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git add conf/templates/.env
+          git commit -m ":bookmark: yee shall thurst into a new version of base templates"
+          git pull --rebase
+          git push
 
   # Go through existing templates and trigger template rebuilds using newly created base templates
 
