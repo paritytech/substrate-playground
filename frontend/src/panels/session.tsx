@@ -42,7 +42,7 @@ const useStyles = makeStyles((theme: Theme) =>
 
 const options = [{id: 'create', label: 'Create'}, {id: 'custom', label: 'Customize and Create'}];
 
-export default function SplitButton({ template, disabled, onCreate, onCreateCustom }: { template: string, disabled: boolean, onCreate: (conf: SessionConfiguration) => void, onCreateCustom: () => void}) {
+export default function SplitButton({ template, disabled, onCreate, onCreateCustom }: { template: string, disabled: boolean, onCreate: (conf: SessionConfiguration) => void, onCreateCustom: () => void}): JSX.Element {
   const [open, setOpen] = React.useState(false);
   const anchorRef = React.useRef<HTMLDivElement>(null);
   const [selectedIndex, setSelectedIndex] = React.useState(0);
@@ -123,7 +123,7 @@ export default function SplitButton({ template, disabled, onCreate, onCreateCust
 }
 
 function TemplateSelector({client, conf, user, templates, onDeployed, onRetry}: {client: Client, conf: Configuration, user: LoggedUser, templates: Record<string, Template>, onDeployed: (conf: SessionConfiguration) => Promise<void>, onRetry: () => void}): JSX.Element {
-    const publicTemplates = Object.entries(templates).filter(([k, v]) => v.tags?.public == "true");
+    const publicTemplates = Object.entries(templates).filter(([, v]) => v.tags?.public == "true");
     const templatesAvailable = publicTemplates.length > 0;
     const [selection, select] = useState(templatesAvailable ? publicTemplates[0] : null);
     const [deploying, setDeploying] = useState(false);

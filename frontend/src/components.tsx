@@ -23,7 +23,7 @@ import { useInterval } from './hooks';
 import { Params } from "./index";
 import { hasAdminReadRights } from './utils';
 
-function wrapAction(action: (() => void) | Promise<void>, call: (flag: boolean) => void):(() => void) | Promise<void> {
+function wrapAction(action: (() => void) | Promise<void>, call: (_: boolean) => void): (() => void) | Promise<void> {
     if (action instanceof Promise) {
         call(true);
         return new Promise<void>((resolve, reject) => {
@@ -276,7 +276,7 @@ export function Wrapper({ conf, params, thin = false, onPlayground, onStatsClick
     );
 }
 
-export function LoadingPanel() {
+export function LoadingPanel(): JSX.Element {
     return (
         <CenteredContainer>
             <Typography style={{margin: 20}} variant="h6">

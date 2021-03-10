@@ -108,6 +108,6 @@ function lifecycle(client: Client, id: PanelId) {
   });
 }
 
-export function useLifecycle(client: Client, id: PanelId) {
+export function useLifecycle(client: Client, id: PanelId): unknown {
     return useMachine(lifecycle(client, id), { devTools: true });
 }

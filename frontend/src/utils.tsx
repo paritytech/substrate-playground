@@ -1,4 +1,4 @@
-import { LoggedUser, User } from "@substrate/playground-client";
+import { LoggedUser } from "@substrate/playground-client";
 
 function timeout<T>(promise: Promise<T>, ms: number): Promise<T> {
     return new Promise(function(resolve, reject) {
@@ -9,8 +9,8 @@ function timeout<T>(promise: Promise<T>, ms: number): Promise<T> {
     });
   }
 
-export async function fetchWithTimeout(url: string, opts: Object = {cache: "no-store"}, ms: number = 30000): Promise<Response>  {
-    return timeout(fetch(url, opts), ms).catch(error => error);
+export async function fetchWithTimeout(url: string, init: RequestInit = {cache: "no-store"}, ms = 30000): Promise<Response>  {
+    return timeout(fetch(url, init), ms).catch(error => error);
 }
 
 export function formatDuration(s: number): string {

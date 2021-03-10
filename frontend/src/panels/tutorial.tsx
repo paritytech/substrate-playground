@@ -37,7 +37,7 @@ const useStyles = makeStyles((theme: Theme) =>
   }),
 );
 
-function createSpecs(instance: Instance): object {
+function createSpecs(instance: Instance): Record<string, unknown> {
   const url = `wss://${instance.uuid}.playground-staging.substrate.dev/wss`;
   return {template: "node-template",
           steps:
@@ -54,7 +54,7 @@ function createSpecs(instance: Instance): object {
             actions: {launch: () => startNode(instance, "/home/substrate/workspace")}}]};
 }
 
-function VerticalLinearStepper({ steps }) {
+function VerticalLinearStepper({ steps }: { steps: Record<string, unknown> }) {
     const classes = useStyles();
     const [activeStep, setActiveStep] = useState(0);
 
@@ -139,7 +139,7 @@ function VerticalLinearStepper({ steps }) {
     }
   }
 
-function Cartouche({children}) {
+function Cartouche({ children }: { children: React.ReactElement }) {
     return (
     <Paper style={{display: "flex", flex: 1, alignItems: "center"}}>
         <div style={{display: "flex", flex: 1, alignItems: "center", justifyContent: "center", height: "50vh", padding: 20}}>
@@ -149,7 +149,7 @@ function Cartouche({children}) {
     );
 }
 
-function TutorialController({steps, uuid}) {
+function TutorialController({steps, uuid}: { steps: Record<string, unknown>, uuid: string }) {
     return (
       <div style={{display: "flex", flex: 1, alignItems: "center", justifyContent: "center", border: "1px #424242 solid", overflow: "auto"}}>
         <div style={{flex: 1, padding: 20, maxWidth: "300px"}}>
@@ -185,7 +185,7 @@ function login(): void {
   window.location.href = '/api/login/github';
 }
 
-export function TutorialPanel({ client, user }) {
+export function TutorialPanel({ user }: { user: string }): JSX.Element {
     const [instanceUUID, setInstanceUUID] = useState(null);
 
     useEffect(() => {
@@ -204,7 +204,7 @@ export function TutorialPanel({ client, user }) {
       }, []);
 
     async function createInstance(template: string) {
-        const {result, error} = await new Client().deployInstance(template);
+        const { result } = await new Client().deployInstance(template);
         if (result) {
           setInstanceUUID(result);
         }

@@ -15,7 +15,7 @@ export class Discoverer {
     channel = new BroadcastChannel(GLOBAL_CHANNEL);
     instances = new Map<string, Instance>();
 
-    constructor(onInstanceAppeared: (Instance) => void, onInstanceLeft?: (string) => void) {
+    constructor(onInstanceAppeared: (instance: Instance) => void, onInstanceLeft?: (id: string) => void) {
         this.channel.onmessage = (oo) => {
             const o = JSON.parse(oo);
             const type = o.type;
@@ -66,7 +66,7 @@ export class Responder {
     uuid;
     online;
 
-    constructor(uuid: string, onInstanceMessage: (o: any) => void) {
+    constructor(uuid: string, onInstanceMessage: (o: Record<string, unknown>) => void) {
         this.online = false;
         this.uuid = uuid;
         this.channel.onmessage = (oo: string) => {
@@ -103,7 +103,7 @@ export class Responder {
         this.channel.postMessage(JSON.stringify({type: TYPE_INSTANCE_LEFT, uuid: this.uuid}));
     }
 
-    respond(data: object): void {
+    respond(data: Record<string, unknown>): void {
         this.instanceChannel.postMessage(JSON.stringify(data));
     }
 
@@ -127,7 +127,7 @@ export class Instance {
         this.channel = new BroadcastChannel(instanceChannelId(uuid));
     }
 
-    async sendMessage(data: object): Promise<object> {
+    async sendMessage(data: Record<string, unknown>): Promise<Record<string, unknown>> {
         return new Promise((resolve, reject) => {
             const messageUuid = uuidv4();
             const callback = (oo: string) => {
@@ -157,11 +157,11 @@ export class Instance {
         });
     }
 
-    async execute(action: string, data = {}): Promise<object> {
+    async execute(action: string, data = {}): Promise<Record<string, unknown>> {
         return this.sendMessage({type: "action", name: action, data: data});
     }
 
-    async list(): Promise<object> {
+    async list(): Promise<Record<string, unknown>> {
         return this.sendMessage({type: "list-actions"});
     }
 

@@ -6,6 +6,7 @@ module.exports = {
     "extends": [
         "eslint:recommended",
         "plugin:react/recommended",
+        "plugin:@typescript-eslint/recommended",
         "plugin:@typescript-eslint/eslint-recommended"
     ],
     "globals": {
@@ -24,12 +25,6 @@ module.exports = {
         "react",
         "@typescript-eslint"
     ],
-    "rules": {
-        "no-unused-vars": "warn",
-        "no-irregular-whitespace": "warn",
-        "no-fallthrough": "warn",
-        "react/prop-types": "warn",
-    },
     "settings": {
         "react": {
             "version": "detect"

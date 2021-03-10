@@ -9,11 +9,11 @@ import Typography from '@material-ui/core/Typography';
 import { startNode, gotoLine, cursorMove } from "../commands";
 import { Discoverer, Instance } from "../connect";
 
-function useDiscovery() {
+export function useDiscovery(): Arrays<Instance> {
     const [instances, setInstances] = useState([]);
 
     useEffect(() => {
-        const refresher = (_) => setInstances(Array.from(discoverer.instances.entries()));
+        const refresher = () => setInstances(Array.from(discoverer.instances.entries()));
         const discoverer = new Discoverer(refresher, refresher);
         return () => discoverer.close();
     }, []);
@@ -21,11 +21,11 @@ function useDiscovery() {
     return instances;
 }
 
-function InstanceController({ instances }) {
+export function InstanceController({ instances }: { instances: Record<string, unknown> }): JSX.Element {
     const [selectedInstance, setInstance] = useState(null);
     const [commands, setCommands] = useState(null);
     const [command, setCommand] = useState(null);
-    const [result, setResult] = useState(null);
+    const [, setResult] = useState(null);
 
     useEffect(() => {
         const onlyInstance = instances.length == 1 ? instances[0] : null;
@@ -34,7 +34,7 @@ function InstanceController({ instances }) {
         }
     }, [instances]);
 
-    async function selectInstance(instance: Instance): void {
+    async function selectInstance(instance: Instance): Promise<void> {
         setInstance(instance);
         const commands = await instance.list();
         setCommands(commands);
@@ -82,7 +82,7 @@ function InstanceController({ instances }) {
                 value={command}
                 onChange={handleChange}
                 >
-                {commands.filter(({id, label}) => id && label && label != "").map(({id, label}, index) =>
+                {commands.filter(({id, label}) => id && label && label != "").map(({id, label}) =>
                      <MenuItem key={id} value={id}>{label}</MenuItem>
                 )}
                             </Select>

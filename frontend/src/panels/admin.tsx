@@ -65,7 +65,7 @@ function NoResourcesContainer({ user, label, action }: { user: LoggedUser, label
     );
 }
 
-function Resources<T>( { children, label, callback }: { children: (resources: Record<string, T>, setter: Dispatch<SetStateAction<Record<string, T> | null>>) => NonNullable<React.ReactNode>, label: string, callback: () => Promise<Record<string, T>> }): JSX.Element {
+function Resources<T>( { children, callback }: { children: (resources: Record<string, T>, setter: Dispatch<SetStateAction<Record<string, T> | null>>) => NonNullable<React.ReactNode>, callback: () => Promise<Record<string, T>> }): JSX.Element {
     const [resources, setResources] = useState<Record<string, T> | null>(null);
 
     useInterval(async () => {
@@ -107,7 +107,7 @@ export function SessionCreationDialog({ client, conf, sessions, user, template, 
         }
     }, 5000);
 
-    const handleUserChange = (_event: any, newValue: string | null) => setUser(newValue);
+    const handleUserChange = (_event: unknown, newValue: string | null) => setUser(newValue);
     const handleTemplateChange = (event: React.ChangeEvent<HTMLInputElement>) => setTemplate(event.target.value);
     const handleDurationChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const duration = Number.parseInt(event.target.value);
@@ -403,7 +403,7 @@ function Sessions({ client, conf, user }: { client: Client, conf: Configuration,
     const stopPropagation = (event: React.SyntheticEvent) => event.stopPropagation();
 
     return (
-        <Resources<Session> label="Sessions" callback={async () => await client.listSessions()}>
+        <Resources<Session> callback={async () => await client.listSessions()}>
             {(resources: Record<string, Session>, setSessions: Dispatch<SetStateAction<Record<string, Session> | null>>) => {
                 const allResources = Object.entries(resources);
                 const filteredResources = rowsPerPage > 0 ? allResources.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage) : allResources;
@@ -495,7 +495,7 @@ function Templates({ client, user }: { client: Client, user: LoggedUser }): JSX.
     const classes = useStyles();
 
     return (
-        <Resources<Template> label="Templates" callback={async () => (await client.get()).templates}>
+        <Resources<Template> callback={async () => (await client.get()).templates}>
         {(resources: Record<string, Template>) => (
             <>
                 <EnhancedTableToolbar user={user} label="Templates" />
@@ -859,10 +859,10 @@ function Users({ client, user, conf }: { client: Client, user: LoggedUser, conf:
     }
 
     return (
-        <Resources<User> label="Users" callback={async () => await client.listUsers()}>
+        <Resources<User> callback={async () => await client.listUsers()}>
         {(resources: Record<string, User>, setUsers: Dispatch<SetStateAction<Record<string, User> | null>>) => (
             <>
-                <EnhancedTableToolbar user={user} label="Users" selected={selected} onCreate={() => setShowCreationDialog(true)} onUpdate={() => setShowUpdateDialog(true)} onDelete={() => onDelete(setUsers)} />
+                <EnhancedTableToolbar user={user} label="Users" selected={selected} onCreate={() => setShowCreationDialog(true)} onUpdate={() => setShowUpdateDialog(true)} onDelete={() => onDelete(setUsers)} />
                 <TableContainer component={Paper}>
                     <Table className={classes.table} aria-label="simple table">
                         <TableHead>
@@ -958,7 +958,7 @@ function Pools({ client, user }: { client: Client, user: LoggedUser }): JSX.Elem
     const classes = useStyles();
 
     return (
-        <Resources<Pool> label="Pools" callback={async () => await client.listPools()}>
+        <Resources<Pool> callback={async () => await client.listPools()}>
         {(resources: Record<string, Pool>) => (
             <>
                 <EnhancedTableToolbar user={user} label="Pools" />
@@ -991,7 +991,7 @@ function Pools({ client, user }: { client: Client, user: LoggedUser }): JSX.Elem
 export function AdminPanel({ client, user, conf }: { client: Client, user: LoggedUser, conf: Configuration }): JSX.Element {
     const [value, setValue] = React.useState(0);
 
-    const handleChange = (_: React.ChangeEvent<{}>, newValue: number) => {
+    const handleChange = (_: React.ChangeEvent<Record<string, unknown>>, newValue: number) => {
         setValue(newValue);
     };
 
