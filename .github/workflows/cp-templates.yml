@@ -6,6 +6,11 @@ name: Continuous Poll template repositories
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - develop
+    paths:
+      - '.github/workflows/cp-templates.yml'
   schedule:
     # * is a special character in YAML so you have to quote this string
     - cron:  '0 * * * *' # Every hour
