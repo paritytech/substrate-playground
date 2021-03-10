@@ -79,10 +79,10 @@ jobs:
           TEMP=$(mktemp)
           cat $FILE | yq -y ".ref = \"${{ fromJson(steps.latest-commit.outputs.data).sha }}\"" > $TEMP && mv $TEMP $FILE
 
-      - name: Commit change
-        uses: EndBug/add-and-commit@v7
-        with:
-          message: ":bookmark: yee shall thurst into an updated remote repository for ${{ matrix.id }}"
-          add: conf/templates/${{ matrix.id }}
-          author_name: github-actions
-          author_email: 41898282+github-actions[bot]@users.noreply.github.com
+      - run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git add conf/templates/${{ matrix.id }}
+          git commit -m ":bookmark: yee shall thurst into an updated remote repository for ${{ matrix.id }}"
+          git pull --rebase
+          git push
