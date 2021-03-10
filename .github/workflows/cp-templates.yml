@@ -85,9 +85,11 @@ jobs:
           cat $FILE | yq -y ".ref = \"${{ fromJson(steps.latest-commit.outputs.data).sha }}\"" > $TEMP && mv $TEMP $FILE
 
       - run: |
-          git config user.name github-actions
-          git config user.email github-actions@github.com
-          git add conf/templates/${{ matrix.id }}
-          git commit -m ":bookmark: yee shall thurst into an updated remote repository for ${{ matrix.id }}"
-          git pull --rebase
-          git push
+          if ! git diff-index --quiet HEAD --; then
+            git config user.name github-actions
+            git config user.email github-actions@github.com
+            git add conf/templates/${{ matrix.id }}
+            git commit -m ":bookmark: yee shall thurst into an updated remote repository for ${{ matrix.id }}"
+            git pull --rebase
+            git push
+          fi
