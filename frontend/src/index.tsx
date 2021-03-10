@@ -47,7 +47,7 @@ function ExtraTheiaNav({ client }: { client: Client }): JSX.Element {
         const { startTime } = pod;
         return (
             <Typography variant="h6">
-                {formatDuration(duration*60-startTime)} before the session's end
+                {formatDuration(duration*60-startTime)} before the session&apos;s end
             </Typography>
         );
     } else {
