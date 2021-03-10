@@ -45,7 +45,7 @@ jobs:
 
           echo ::set-output name=matrix::$( echo "$JSON" )
 
-  rebuild-existing-templates:
+  update-template-commit:
     needs: list-existing-templates
     runs-on: ubuntu-latest
     strategy:
