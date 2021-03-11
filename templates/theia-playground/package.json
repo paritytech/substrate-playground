@@ -58,6 +58,7 @@
         "vscode-builtin-debug-auto-launch": "https://open-vsx.org/api/vscode/configuration-editing/1.54.1/file/vscode.configuration-editing-1.54.1.vsix",
         "vscode-builtin-docker": "https://open-vsx.org/api/vscode/docker/1.54.1/file/vscode.docker-1.54.1.vsix",
         "vscode-builtin-git": "https://open-vsx.org/api/vscode/git/1.54.1/file/vscode.git-1.54.1.vsix",
+        "vscode-builtin-git-ui": "https://open-vsx.org/api/vscode/git-ui/1.54.1/file/vscode.git-ui-1.54.1.vsix",
         "vscode-builtin-html": "https://open-vsx.org/api/vscode/html/1.54.1/file/vscode.html-1.54.1.vsix",
         "vscode-builtin-javascript": "https://open-vsx.org/api/vscode/javascript/1.54.1/file/vscode.javascript-1.54.1.vsix",
         "vscode-builtin-json": "https://open-vsx.org/api/vscode/json/1.54.1/file/vscode.json-1.54.1.vsix",
@@ -80,7 +81,8 @@
         "rust-analyzer": "https://open-vsx.org/api/matklad/rust-analyzer/0.2.497/file/matklad.rust-analyzer-0.2.497.vsix",
         "vscode-yaml": "https://open-vsx.org/api/redhat/vscode-yaml/0.12.0/file/redhat.vscode-yaml-0.12.0.vsix",
         "vscode-lldb": "https://github.com/vadimcn/vscode-lldb/releases/download/v1.5.3/codelldb-x86_64-linux.vsix",
-        "better-toml": "https://open-vsx.org/api/bungcip/better-toml/0.3.2/file/bungcip.better-toml-0.3.2.vsix"
+        "better-toml": "https://open-vsx.org/api/bungcip/better-toml/0.3.2/file/bungcip.better-toml-0.3.2.vsix",
+        "vscode-pull-request-github": "https://open-vsx.org/api/GitHub/vscode-pull-request-github/0.22.0/file/GitHub.vscode-pull-request-github-0.22.0.vsix"
     },
     "scripts": {
         "prepare": "theia build --mode development",
