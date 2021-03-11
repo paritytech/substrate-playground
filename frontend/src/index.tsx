@@ -1,9 +1,8 @@
 import React, { useState } from "react";
 import ReactDOM from "react-dom";
-import { Client, Configuration, LoggedUser, Template } from '@substrate/playground-client';
+import { Client, Configuration, LoggedUser, Session, Template } from '@substrate/playground-client';
 import { createMuiTheme, ThemeProvider } from '@material-ui/core/styles';
 import Typography from "@material-ui/core/Typography";
-import { Session } from '@substrate/playground-client';
 import { CenteredContainer, ErrorMessage, LoadingPanel, Wrapper } from './components';
 import { useInterval } from "./hooks";
 import { useLifecycle, Events, PanelId, States } from './lifecycle';
