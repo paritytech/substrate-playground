@@ -121,8 +121,8 @@ pub fn get_user(
     user: LoggedUser,
     id: String,
 ) -> Result<JsonValue, status::Unauthorized<()>> {
-    let manager = state.manager.clone();
     if user.has_admin_read_rights() {
+        let manager = state.manager.clone();
         Ok(result_to_jsonrpc(manager.get_user(&id)))
     } else {
         Err(status::Unauthorized::<()>(None))
@@ -134,8 +134,8 @@ pub fn list_users(
     state: State<'_, Context>,
     user: LoggedUser,
 ) -> Result<JsonValue, status::Unauthorized<()>> {
-    let manager = state.manager.clone();
     if user.has_admin_read_rights() {
+        let manager = state.manager.clone();
         Ok(result_to_jsonrpc(manager.list_users()))
     } else {
         Err(status::Unauthorized::<()>(None))
@@ -149,8 +149,8 @@ pub fn create_user(
     id: String,
     conf: Json<UserConfiguration>,
 ) -> Result<JsonValue, status::Unauthorized<()>> {
-    let manager = state.manager.clone();
     if user.has_admin_edit_rights() {
+        let manager = state.manager.clone();
         Ok(result_to_jsonrpc(manager.create_user(id, conf.0)))
     } else {
         Err(status::Unauthorized::<()>(None))
@@ -164,8 +164,8 @@ pub fn update_user(
     id: String,
     conf: Json<UserUpdateConfiguration>,
 ) -> Result<JsonValue, status::Unauthorized<()>> {
-    let manager = state.manager.clone();
     if user.has_admin_edit_rights() {
+        let manager = state.manager.clone();
         Ok(result_to_jsonrpc(manager.update_user(id, conf.0)))
     } else {
         Err(status::Unauthorized::<()>(None))
@@ -178,8 +178,8 @@ pub fn delete_user(
     user: LoggedUser,
     id: String,
 ) -> Result<JsonValue, status::Unauthorized<()>> {
-    let manager = state.manager.clone();
     if user.has_admin_edit_rights() {
+        let manager = state.manager.clone();
         Ok(result_to_jsonrpc(manager.delete_user(id)))
     } else {
         Err(status::Unauthorized::<()>(None))
@@ -258,8 +258,8 @@ pub fn get_session(
     user: LoggedUser,
     id: String,
 ) -> Result<JsonValue, status::Unauthorized<()>> {
-    let manager = state.manager.clone();
     if user.has_admin_read_rights() {
+        let manager = state.manager.clone();
         Ok(result_to_jsonrpc(manager.get_session(&id)))
     } else {
         Err(status::Unauthorized::<()>(None))
@@ -271,8 +271,8 @@ pub fn list_sessions(
     state: State<'_, Context>,
     user: LoggedUser,
 ) -> Result<JsonValue, status::Unauthorized<()>> {
-    let manager = state.manager.clone();
     if user.has_admin_read_rights() {
+        let manager = state.manager.clone();
         Ok(result_to_jsonrpc(manager.list_sessions()))
     } else {
         Err(status::Unauthorized::<()>(None))
@@ -286,8 +286,8 @@ pub fn create_session(
     id: String,
     conf: Json<SessionConfiguration>,
 ) -> Result<JsonValue, status::Unauthorized<()>> {
-    let manager = state.manager.clone();
     if user.has_admin_edit_rights() {
+        let manager = state.manager.clone();
         Ok(result_to_jsonrpc(
             manager.create_session(&id, &user, conf.0),
         ))
@@ -303,8 +303,8 @@ pub fn update_session(
     id: String,
     conf: Json<SessionUpdateConfiguration>,
 ) -> Result<JsonValue, status::Unauthorized<()>> {
-    let manager = state.manager.clone();
-    if user.has_admin_edit_rights() {
+    if user.has_admin_edit_rights() { // TODO owners can edit
+        let manager = state.manager.clone();
         Ok(result_to_jsonrpc(
             manager.update_session(&id, &user, conf.0),
         ))
@@ -319,8 +319,8 @@ pub fn delete_session(
     user: LoggedUser,
     id: String,
 ) -> Result<JsonValue, status::Unauthorized<()>> {
-    let manager = state.manager.clone();
     if user.has_admin_edit_rights() {
+        let manager = state.manager.clone();
         Ok(result_to_jsonrpc(manager.delete_session(&id)))
     } else {
         Err(status::Unauthorized::<()>(None))
@@ -335,8 +335,8 @@ pub fn get_pool(
     user: LoggedUser,
     id: String,
 ) -> Result<JsonValue, status::Unauthorized<()>> {
-    let manager = state.manager.clone();
     if user.has_admin_read_rights() {
+        let manager = state.manager.clone();
         Ok(result_to_jsonrpc(manager.get_pool(&id)))
     } else {
         Err(status::Unauthorized::<()>(None))
@@ -348,15 +348,13 @@ pub fn list_pools(
     state: State<'_, Context>,
     user: LoggedUser,
 ) -> Result<JsonValue, status::Unauthorized<()>> {
-    let manager = state.manager.clone();
     if user.has_admin_read_rights() {
+        let manager = state.manager.clone();
         Ok(result_to_jsonrpc(manager.list_pools()))
     } else {
         Err(status::Unauthorized::<()>(None))
     }
 }
-
-// kubectl get pod -o=custom-columns=NAME:.metadata.name,STATUS:.status.phase,NODE:.spec.nodeName --namespace playground
 
 // GitHub login logic
 
