@@ -35,7 +35,7 @@
     "@parcel/transformer-css": "2.0.0-nightly.621",
     "@parcel/transformer-html": "2.0.0-nightly.621",
     "@parcel/transformer-inline-string": "2.0.0-nightly.621",
-    "@parcel/transformer-postcss": "2.0.0-nightly.621",
+    "@parcel/transformer-postcss": "2.0.0-nightly.629",
     "@parcel/transformer-posthtml": "2.0.0-nightly.621",
     "@types/marked": "2.0.0",
     "@types/node": "14.14.34",
