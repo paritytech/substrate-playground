@@ -28,7 +28,7 @@ npm install -g @substrate/playground-cli
 substrate-playground
 # or
 npx @substrate/playground-cli
-``
+```
 
 Then browse a locally accessible web IDE at http://localhost.
 
