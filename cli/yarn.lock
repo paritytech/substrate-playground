@@ -232,10 +232,10 @@ convert-to-spaces@^1.0.1:
   resolved "https://registry.yarnpkg.com/convert-to-spaces/-/convert-to-spaces-1.0.2.tgz#7e3e48bbe6d997b1417ddca2868204b4d3d85715"
   integrity sha1-fj5Iu+bZl7FBfdyihoIEtNPYVxU=
 
-cross-fetch@3.1.1:
-  version "3.1.1"
-  resolved "https://registry.yarnpkg.com/cross-fetch/-/cross-fetch-3.1.1.tgz#a7ed5a9201d46223d805c5e9ecdc23ea600219eb"
-  integrity sha512-eIF+IHQpRzoGd/0zPrwQmHwDC90mdvjk+hcbYhKoaRrEk4GEIDqdjs/MljmdPPoHTQudbmWS+f0hZsEpFaEvWw==
+cross-fetch@3.1.2:
+  version "3.1.2"
+  resolved "https://registry.yarnpkg.com/cross-fetch/-/cross-fetch-3.1.2.tgz#ee0c2f18844c4fde36150c2a4ddc068d20c1bc41"
+  integrity sha512-+JhD65rDNqLbGmB3Gzs3HrEKC0aQnD+XA3SY6RjgkF88jV2q5cTc5+CwxlS3sdmLk98gpPt5CF9XRnPdlxZe6w==
   dependencies:
     node-fetch "2.6.1"
 

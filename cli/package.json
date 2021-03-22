@@ -29,7 +29,7 @@
   "dependencies": {
     "@substrate/playground-client": "1.4.2",
     "abort-controller": "3.0.0",
-    "cross-fetch": "3.1.1",
+    "cross-fetch": "3.1.2",
     "ink": "3.0.8",
     "ink-big-text": "1.2.0",
     "ink-gradient": "2.0.0",
