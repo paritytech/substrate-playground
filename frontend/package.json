@@ -24,7 +24,7 @@
     "react-dom": "17.0.1",
     "react-spring": "8.0.27",
     "uuid": "8.3.2",
-    "xstate": "4.16.2"
+    "xstate": "4.17.0"
   },
   "devDependencies": {
     "@ava/typescript": "1.1.1",
