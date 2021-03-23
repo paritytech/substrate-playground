@@ -303,7 +303,8 @@ pub fn update_session(
     id: String,
     conf: Json<SessionUpdateConfiguration>,
 ) -> Result<JsonValue, status::Unauthorized<()>> {
-    if user.has_admin_edit_rights() { // TODO owners can edit
+    if user.has_admin_edit_rights() {
+        // TODO owners can edit
         let manager = state.manager.clone();
         Ok(result_to_jsonrpc(
             manager.update_session(&id, &user, conf.0),
