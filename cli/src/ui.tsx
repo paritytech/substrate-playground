@@ -175,7 +175,7 @@ function App({web, port, env, template, templates, debug}: {web: boolean, port: 
 				<Text>Locally deploy a playground <Text bold>template</Text> from CLI (<Text bold color="green">{env}</Text>)</Text>
 			</Box>
 
-			{state
+			{state != null
 			? <Status state={state} web={web} templateId={template || (selectedTemplate && selectedTemplate.name)} port={port} />
 			: <TemplateSelector templates={templates} onSelect={item => setTemplate(item.value)} />}
 		</Box>
