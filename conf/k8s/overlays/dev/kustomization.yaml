@@ -22,19 +22,6 @@ configMapGenerator:
     - session.defaultDuration=180
     - session.defaultPoolAffinity=default
     - session.defaultMaxPerNode=2
-# TODO make immutable
-# Requires k8s 1.19
-# See https://github.com/kubernetes-sigs/kustomize/issues/2895
-# and https://kubernetes.io/docs/concepts/configuration/configmap/#configmap-immutable
-#generatorOptions:
-#  immutable: true
-
-secretGenerator:
-  - name: playground-secrets
-    literals:
-    # Both secrets are safe to be stored in repository as they are specific to this dev env whose TLD can't be registered (.test).
-    - github.clientSecret=abdcf38dd290429b98f43074d010b989cf970461
-    - rocket.secretKey=tNxYqkQ5o9KiT8mQPVxqxu+H2Sl+Jd4CxkpFZmkw6Kw=
 
 images:
 - name: paritytech/substrate-playground-backend-api
