@@ -1,6 +1,6 @@
-use prometheus::Registry;
-use prometheus::{exponential_buckets, histogram_opts, opts, HistogramVec, IntCounterVec};
-use std::error::Error;
+use prometheus::{
+    exponential_buckets, histogram_opts, opts, Error, HistogramVec, IntCounterVec, Registry,
+};
 
 #[derive(Debug, Clone)]
 pub struct Metrics {
@@ -14,7 +14,7 @@ pub struct Metrics {
 impl Metrics {
     const TEMPLATE_LABEL: &'static str = "template";
 
-    pub fn new() -> Result<Self, Box<dyn Error>> {
+    pub fn new() -> Result<Self, Error> {
         let opts = histogram_opts!(
             "deploy_duration",
             "Deployment duration in seconds",
@@ -44,39 +44,38 @@ impl Metrics {
         })
     }
 
-    pub fn create_registry(self) -> Result<Registry, Box<dyn Error>> {
-        let registry = Registry::new_custom(Some("playground".to_string()), None)?;
+    /// Register all metrics in provided `Registry`
+    pub fn register(self, registry: Registry) -> Result<(), Error> {
         registry.register(Box::new(self.deploy_counter))?;
         registry.register(Box::new(self.deploy_failures_counter))?;
         registry.register(Box::new(self.undeploy_counter))?;
         registry.register(Box::new(self.undeploy_failures_counter))?;
         registry.register(Box::new(self.deploy_duration))?;
-
-        Ok(registry)
+        Ok(())
     }
 }
 
 // Helper functions
 impl Metrics {
-    pub fn inc_deploy_counter(self, template: &str) {
+    pub fn inc_deploy_counter(&self, template: &str) {
         self.deploy_counter.with_label_values(&[template]).inc();
     }
 
-    pub fn inc_deploy_failures_counter(self, template: &str) {
+    pub fn inc_deploy_failures_counter(&self, template: &str) {
         self.deploy_failures_counter
             .with_label_values(&[template])
             .inc();
     }
 
-    pub fn inc_undeploy_counter(self) {
+    pub fn inc_undeploy_counter(&self) {
         self.undeploy_counter.with_label_values(&[]).inc();
     }
 
-    pub fn inc_undeploy_failures_counter(self) {
+    pub fn inc_undeploy_failures_counter(&self) {
         self.undeploy_failures_counter.with_label_values(&[]).inc();
     }
 
-    pub fn observe_deploy_duration(self, duration: f64) {
+    pub fn observe_deploy_duration(&self, duration: f64) {
         self.deploy_duration
             .with_label_values(&[])
             .observe(duration);

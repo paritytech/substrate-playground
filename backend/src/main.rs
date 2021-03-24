@@ -1,6 +1,7 @@
 #![feature(async_closure, proc_macro_hygiene, decl_macro)]
 
 mod api;
+mod error;
 mod github;
 mod kubernetes;
 mod manager;
@@ -10,6 +11,7 @@ mod types;
 
 use crate::manager::Manager;
 use crate::prometheus::PrometheusMetrics;
+use ::prometheus::Registry;
 use github::GitHubUser;
 use rocket::fairing::AdHoc;
 use rocket::{catchers, config::Environment, http::Method, routes};
@@ -53,7 +55,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
     }
     .to_cors()?;
 
-    let prometheus = PrometheusMetrics::with_registry(manager.clone().metrics.create_registry()?);
+    let registry = Registry::new_custom(Some("playground".to_string()), None)?;
+    manager.clone().metrics.register(registry.clone())?;
+    let prometheus = PrometheusMetrics::with_registry(registry);
     let error = rocket::ignite()
         .register(catchers![api::bad_request_catcher])
         .attach(cors)
