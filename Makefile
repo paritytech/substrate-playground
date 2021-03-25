@@ -168,9 +168,9 @@ k8s-setup-env: requires-k8s
 	# See https://cloud.google.com/compute/docs/machine-types
 	@read -p "GH client ID?" CLIENT_ID; \
 	read -p "GH client secret?" CLIENT_SECRET; \
-	kubectl create ns ${NAMESPACE} && \
-	kubectl create configmap playground-config --namespace=playground --from-literal=github.clientId="$${CLIENT_ID}" --from-literal=session.defaultDuration="180" --from-literal=session.defaultMaxPerNode="2" --from-literal=session.defaultPoolAffinity="default-session" && \
-	kubectl create secret generic playground-secrets --namespace=playground --from-literal=github.clientSecret="$${CLIENT_SECRET}" --from-literal=rocket.secretKey=`openssl rand -base64 32` && \
+	kubectl create ns ${NAMESPACE} --dry-run=client -o yaml | kubectl apply -f - && \
+	kubectl create configmap playground-config --namespace=playground --from-literal=github.clientId="$${CLIENT_ID}" --from-literal=session.defaultDuration="180" --from-literal=session.defaultMaxPerNode="2" --from-literal=session.defaultPoolAffinity="default-session" --dry-run=client -o yaml | kubectl apply -f - && \
+	kubectl create secret generic playground-secrets --namespace=playground --from-literal=github.clientSecret="$${CLIENT_SECRET}" --from-literal=rocket.secretKey=`openssl rand -base64 32` --dry-run=client -o yaml | kubectl apply -f - && \
 	kubectl create configmap playground-templates --namespace=${NAMESPACE} --from-file=conf/k8s/overlays/${ENV}/templates/ --dry-run=client -o yaml | kubectl apply -f - && \
 	kubectl create configmap playground-users --namespace=${NAMESPACE} --from-file=conf/k8s/overlays/${ENV}/users/ --dry-run=client -o yaml | kubectl apply -f -
 
