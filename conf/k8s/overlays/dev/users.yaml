@@ -1,9 +1,0 @@
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: playground-users
-data:
-  jeluard: |
-    admin: true
-  john: |
-    admin: true

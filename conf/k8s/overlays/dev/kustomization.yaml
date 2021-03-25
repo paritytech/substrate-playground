@@ -7,21 +7,9 @@ commonLabels:
 
 resources:
 - ../../base
-- templates.yaml
-- users.yaml
 
 generatorOptions:
   disableNameSuffixHash: true
-
-configMapGenerator:
-  - name: playground-config
-    literals:
-    # Github client ID can be safely shared publicly.
-    # Also it is specific to this dev env whose TLD can't be registered (.test).
-    - github.clientId=dd81163290c118582a1a
-    - session.defaultDuration=180
-    - session.defaultPoolAffinity=default
-    - session.defaultMaxPerNode=2
 
 images:
 - name: paritytech/substrate-playground-backend-api
