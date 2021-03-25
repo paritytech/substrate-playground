@@ -171,15 +171,18 @@ endif
 
 k8s-create-cluster: requires-env
 	# See https://cloud.google.com/compute/docs/machine-types
-	@read -p "Client ID?" CLIENT_ID; \
-	read -p "Client secret?" CLIENT_SECRET; \
 	gcloud container clusters create ${GKE_CLUSTER} \
         --release-channel regular \
         --zone us-central1-a \
         --node-locations us-central1-a \
         --machine-type n2d-standard-8 \
         --preemptible \
-        --num-nodes 1 && \
+        --num-nodes 1
+
+k8s-setup-env: requires-k8s
+	# See https://cloud.google.com/compute/docs/machine-types
+	@read -p "GH client ID?" CLIENT_ID; \
+	read -p "GH client secret?" CLIENT_SECRET; \
 	kubectl create ns ${NAMESPACE} && \
 	kubectl create configmap playground-config --namespace=playground --from-literal=github.clientId="$${CLIENT_ID}" --from-literal=session.defaultDuration="180" --from-literal=session.defaultMaxPerNode="2" --from-literal=session.defaultPoolAffinity="default-session" && \
 	kubectl create secret generic playground-secrets --namespace=playground --from-literal=github.clientSecret="$${CLIENT_SECRET}" --from-literal=rocket.secretKey=`openssl rand -base64 32` && \
@@ -203,9 +206,13 @@ k8s-gke-static-ip: requires-k8s
 	gcloud compute addresses describe ${NAMESPACE} --region=${GKE_REGION} --format="value(address)"
 
 k8s-dev: requires-k8s
-	@kubectl label nodes docker-desktop cloud.google.com/gke-nodepool=default --overwrite
+    # Adds required nodepool annotation, default on GKE
+	@kubectl label nodes docker-desktop cloud.google.com/gke-nodepool=default-session --overwrite
 	@kubectl create ns ${NAMESPACE} --dry-run=client -o yaml | kubectl apply -f -
-	@cd conf/k8s; skaffold dev
+	@cd conf/k8s; skaffold dev --cleanup=false
+
+k8s-dev-delete: requires-k8s
+	@cd conf/k8s; skaffold delete
 
 k8s-deploy-playground: requires-k8s ## Deploy playground on kubernetes
 	kustomize build conf/k8s/overlays/${ENV}/ | kubectl apply --record -f -

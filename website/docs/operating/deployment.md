@@ -60,6 +60,7 @@ Then update `loadBalancerIP` with the newly created IP in `conf/k8s/overlays/$EN
 
 ```shell
 ENV=XXX make k8s-create-cluster
+ENV=XXX make k8s-setup-env
 ```
 
 #### How to choose a machine type
