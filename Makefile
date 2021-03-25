@@ -115,21 +115,6 @@ push-template: build-template
 	docker push paritytech/substrate-playground-template-${TEMPLATE}:sha-${REV}
 	docker push paritytech/substrate-playground-template-${TEMPLATE}-theia:sha-${REV}
 
-build-test-template: push-template-base push-template-theia-base
-	$(eval BASE_TEMPLATE_VERSION=$(shell grep BASE_TEMPLATE_VERSION conf/templates/.env | cut -d '=' -f2))
-	$(eval TAG=paritytech/substrate-playground-template-test:latest)
-	$(eval TAG_THEIA=paritytech/substrate-playground-template-test-theia:latest)
-	@cd templates; docker build --force-rm --build-arg BASE_TEMPLATE_VERSION=sha-${BASE_TEMPLATE_VERSION} -t ${TAG} -f Dockerfile.template test
-	@cd templates; docker build --force-rm --build-arg BASE_TEMPLATE_VERSION=sha-${BASE_TEMPLATE_VERSION} --build-arg TEMPLATE_IMAGE=${TAG} -t ${TAG_THEIA} -f Dockerfile.theia-template .
-
-push-test-template: build-test-templates
-	docker push paritytech/substrate-playground-template-test:latest
-	docker push paritytech/substrate-playground-template-test-theia:latest
-
-run-test-template: push-test-templates ## Run a fresh Test theia template
-	docker run -p 3000:3000 paritytech/substrate-playground-template-test-theia:latest
-	python -m webbrowser -t http://localhost:3000
-
 build-backend-docker-images: ## Build backend docker images
 	$(eval PLAYGROUND_DOCKER_IMAGE_VERSION=$(shell git rev-parse --short HEAD))
 	@cd backend; docker build --force-rm -f Dockerfile --build-arg GITHUB_SHA="${PLAYGROUND_DOCKER_IMAGE_VERSION}" --label org.opencontainers.image.version=${PLAYGROUND_DOCKER_IMAGE_VERSION} -t ${PLAYGROUND_BACKEND_API_DOCKER_IMAGE_NAME}:sha-${PLAYGROUND_DOCKER_IMAGE_VERSION} .
