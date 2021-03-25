@@ -26,7 +26,7 @@ import Typography from '@material-ui/core/Typography';
 import { makeStyles, createStyles, Theme } from '@material-ui/core/styles';
 import { Client, Configuration, NameValuePair, LoggedUser, Port, Session, SessionConfiguration, Template } from '@substrate/playground-client';
 import { SessionCreationDialog, canCustomize } from "./admin";
-import { ErrorMessage, ErrorSnackbar, LoadingPanel } from "../components";
+import { CenteredContainer, ErrorMessage, ErrorSnackbar, LoadingPanel } from "../components";
 import { useInterval } from "../hooks";
 import { formatDuration } from "../utils";
 
@@ -191,9 +191,9 @@ function TemplateSelector({client, conf, user, templates, onDeployed, onRetry}: 
         );
     } else {
         return (
-            <Container style={{display: "flex", flex: 1, padding: 0, alignItems: "center", overflowY: "auto"}}>
+            <CenteredContainer>
                 <ErrorMessage reason="Can't find any public template. The templates configuration might be incorrect." action={onRetry} />
-            </Container>
+            </CenteredContainer>
         );
     }
 }
