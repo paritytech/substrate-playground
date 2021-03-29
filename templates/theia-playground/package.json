@@ -14,7 +14,7 @@
         "@theia/console": "1.11.0",
         "@theia/core": "1.11.0",
         "@theia/debug": "1.11.0",
-        "@theia/editor": "1.11.0",
+        "@theia/editor": "1.12.0",
         "@theia/editor-preview": "1.11.0",
         "@theia/file-search": "1.11.0",
         "@theia/keymaps": "1.11.0",
