@@ -36,7 +36,6 @@ impl StdError for Error {
 #[derive(Clone, Default, Debug, serde::Serialize, serde::Deserialize)]
 pub struct GitHubUser {
     pub login: String,
-    pub avatar_url: String,
     pub organizations_url: String,
 }
 

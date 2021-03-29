@@ -25,7 +25,6 @@ export interface SessionDefaults {
 
 export interface LoggedUser {
     id: string,
-    avatar: string,
     admin: boolean,
     organizations: string[],
     poolAffinity: string,

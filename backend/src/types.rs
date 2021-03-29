@@ -140,7 +140,6 @@ pub struct UserUpdateConfiguration {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct LoggedUser {
     pub id: String,
-    pub avatar: String,
     pub admin: bool,
     pub organizations: Vec<String>,
     pub pool_affinity: Option<String>,
