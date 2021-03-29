@@ -2,7 +2,7 @@
   "private": true,
   "scripts": {
     "prepare": "lerna run prepare",
-    "dev": "yarn workspace @parity/theia-playground theia download:plugins && yarn workspace @parity/theia-playground start --plugins=local-dir:plugins ..",
+    "dev": "yarn workspace @parity/theia-playground theia download:plugins && yarn workspace @parity/theia-playground start --vscode-api-version=1.54.0 --plugins=local-dir:plugins ..",
     "build": "yarn workspace @parity/theia-playground theia download:plugins && yarn workspace @parity/theia-playground theia build",
     "clean": "lerna run clean && rm -rf node_modules/"
   },
