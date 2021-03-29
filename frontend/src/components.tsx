@@ -199,7 +199,7 @@ function Nav({ conf, onPlayground, onStatsClick, onAdminClick, onLogout, user, c
                          color="inherit"
                          size="small"
                      >
-                         <Avatar alt={user.id} src={user.avatar} />
+                         <Avatar alt={user.id} src={`https://github.com/${user.id}.png`} />
                      </IconButton>
                      <Menu
                          id="menu-appbar"
