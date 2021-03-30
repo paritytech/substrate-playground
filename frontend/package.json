@@ -32,7 +32,7 @@
     "@parcel/optimizer-htmlnano": "2.0.0-nightly.632",
     "@parcel/packager-css": "2.0.0-nightly.632",
     "@parcel/packager-html": "2.0.0-nightly.632",
-    "@parcel/transformer-css": "2.0.0-nightly.632",
+    "@parcel/transformer-css": "2.0.0-nightly.634",
     "@parcel/transformer-html": "2.0.0-nightly.632",
     "@parcel/transformer-inline-string": "2.0.0-nightly.632",
     "@parcel/transformer-postcss": "2.0.0-nightly.632",
