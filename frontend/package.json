@@ -37,7 +37,7 @@
     "@parcel/transformer-inline-string": "2.0.0-nightly.634",
     "@parcel/transformer-postcss": "2.0.0-nightly.634",
     "@parcel/transformer-posthtml": "2.0.0-nightly.634",
-    "@types/marked": "2.0.0",
+    "@types/marked": "2.0.1",
     "@types/node": "14.14.37",
     "@types/react": "17.0.3",
     "@types/react-dom": "17.0.3",
