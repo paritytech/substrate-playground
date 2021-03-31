@@ -278,7 +278,7 @@ async fn get_config_map(
         .get(name)
         .await
         .map_err(|err| Error::Failure(err.into()))
-        .and_then(|o| o.data.ok_or_else(|| Error::MissingData("config map")))
+        .and_then(|o| o.data.ok_or(Error::MissingData("config map")))
 }
 
 //
@@ -484,7 +484,7 @@ impl Engine {
     fn nodes_to_pool(self, id: String, nodes: Vec<Node>) -> Result<Pool> {
         let node = nodes
             .first()
-            .ok_or_else(|| Error::MissingData("empty vec of nodes"))?;
+            .ok_or(Error::MissingData("empty vec of nodes"))?;
         let labels = node
             .metadata
             .labels
@@ -737,7 +737,7 @@ impl Engine {
         let pool = self
             .get_pool(&pool_id)
             .await?
-            .ok_or_else(|| Error::MissingData("no matching pool"))?;
+            .ok_or(Error::MissingData("no matching pool"))?;
         let max_sessions_allowed =
             pool.nodes.len() * self.configuration.session.max_sessions_per_pod;
         let sessions = self.list_sessions().await?;

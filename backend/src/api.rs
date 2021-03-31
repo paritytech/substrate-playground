@@ -325,12 +325,12 @@ pub fn login(mut cookies: Cookies<'_>, bearer: String) {
         Cookie::build(COOKIE_TOKEN, bearer)
             .same_site(SameSite::Lax)
             .finish(),
-    );
+    )
 }
 
 #[get("/logout")]
 pub fn logout(cookies: Cookies<'_>) {
-    clear(cookies);
+    clear(cookies)
 }
 
 fn clear(mut cookies: Cookies<'_>) {
