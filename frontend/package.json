@@ -49,7 +49,7 @@
     "eslint": "7.23.0",
     "eslint-plugin-react": "7.23.1",
     "parcel": "nightly",
-    "postcss": "^8.2.8",
+    "postcss": "^8.2.9",
     "typescript": "4.2.3"
   },
   "browserslist": [
