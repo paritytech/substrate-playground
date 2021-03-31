@@ -191,3 +191,6 @@ jobs:
           git commit -m ":bookmark: yee shall thurst into a new version of ${{ matrix.id }}"
           git pull --rebase
           git push
+
+      - name: Cleanup
+        run: docker system prune -f
