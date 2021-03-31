@@ -4,12 +4,13 @@ use crate::{
     github::{current_user, orgs, GitHubUser},
     kubernetes::Environment,
     types::{
-        LoggedUser, SessionConfiguration, SessionUpdateConfiguration,
-        UserConfiguration, UserUpdateConfiguration,
+        LoggedUser, SessionConfiguration, SessionUpdateConfiguration, UserConfiguration,
+        UserUpdateConfiguration,
     },
     Context,
 };
 use request::FormItems;
+use rocket::response::{content, status, Redirect};
 use rocket::{
     catch, delete, get,
     http::{Cookie, Cookies, SameSite, Status},
@@ -18,9 +19,6 @@ use rocket::{
 use rocket::{
     http::uri::Origin,
     request::{self, FromRequest, Request},
-};
-use rocket::{
-    response::{content, status, Redirect},
 };
 use rocket_contrib::{
     json,
@@ -213,19 +211,12 @@ pub fn delete_current_session_unlogged() -> status::Unauthorized<()> {
 // Sessions
 
 #[get("/sessions/<id>")]
-pub fn get_session(
-    state: State<'_, Context>,
-    user: LoggedUser,
-    id: String,
-) -> JsonValue {
+pub fn get_session(state: State<'_, Context>, user: LoggedUser, id: String) -> JsonValue {
     result_to_jsonrpc(state.manager.get_session(&user, &id))
 }
 
 #[get("/sessions")]
-pub fn list_sessions(
-    state: State<'_, Context>,
-    user: LoggedUser,
-) -> JsonValue {
+pub fn list_sessions(state: State<'_, Context>, user: LoggedUser) -> JsonValue {
     result_to_jsonrpc(state.manager.list_sessions(&user))
 }
 

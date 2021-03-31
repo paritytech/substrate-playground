@@ -565,7 +565,8 @@ impl Engine {
     }
 
     fn yaml_to_user(self, s: &str) -> Result<User> {
-        let user_configuration: UserConfiguration = serde_yaml::from_str(s).map_err(|err| Error::Failure(err.into()))?;
+        let user_configuration: UserConfiguration =
+            serde_yaml::from_str(s).map_err(|err| Error::Failure(err.into()))?;
         Ok(User {
             admin: user_configuration.admin,
             pool_affinity: user_configuration.pool_affinity,
@@ -621,7 +622,9 @@ impl Engine {
             &self.env.namespace,
             USERS_CONFIG_MAP,
             id.as_str(),
-            serde_yaml::to_string(&conf).map_err(|err| Error::Failure(err.into()))?.as_str(),
+            serde_yaml::to_string(&conf)
+                .map_err(|err| Error::Failure(err.into()))?
+                .as_str(),
         )
         .await?;
 
@@ -636,7 +639,9 @@ impl Engine {
             &self.env.namespace,
             USERS_CONFIG_MAP,
             id.as_str(),
-            serde_yaml::to_string(&conf).map_err(|err| Error::Failure(err.into()))?.as_str(),
+            serde_yaml::to_string(&conf)
+                .map_err(|err| Error::Failure(err.into()))?
+                .as_str(),
         )
         .await?;
 
@@ -761,9 +766,7 @@ impl Engine {
         sessions.insert(session_id.to_string(), template);
         self.patch_ingress(&sessions).await?;
 
-        let duration = conf
-            .duration
-            .unwrap_or(self.configuration.session.duration);
+        let duration = conf.duration.unwrap_or(self.configuration.session.duration);
 
         // Deploy a new pod for this image
         pod_api
@@ -796,9 +799,7 @@ impl Engine {
             .await?
             .ok_or(Error::MissingData("no matching session"))?;
 
-        let duration = conf
-            .duration
-            .unwrap_or(self.configuration.session.duration);
+        let duration = conf.duration.unwrap_or(self.configuration.session.duration);
         let max_duration = self.configuration.session.max_duration;
         if duration > max_duration {
             return Err(Error::Unauthorized());

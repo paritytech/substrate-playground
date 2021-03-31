@@ -123,7 +123,9 @@ impl Manager {
                                 if duration > &session.duration {
                                     info!("Undeploying {}", session.user_id);
 
-                                    match runtime.block_on(self.engine.delete_session(&session_id(&session.user_id))) {
+                                    match runtime.block_on(
+                                        self.engine.delete_session(&session_id(&session.user_id)),
+                                    ) {
                                         Ok(()) => (),
                                         Err(err) => {
                                             warn!(
