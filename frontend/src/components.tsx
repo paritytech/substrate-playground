@@ -120,13 +120,13 @@ function Phase({ value }: { value: string }): JSX.Element {
 
 export function Loading({ phase, retry = 0 }: { phase?: string, retry?: number }): JSX.Element {
     const [phrase, setPhrase] = useState(loadingPhrases[0]);
-    const [props, set] = useSpring(() => ({ opacity: 1 }));
+    const [props, spring] = useSpring(() => ({ opacity: 1 }));
 
     useInterval(() => {
-        set({ opacity: 0 });
+        spring.update({ opacity: 0 });
 
         setTimeout(function () { setPhrase(loadingPhrases[Math.floor(Math.random() * loadingPhrases.length)]); }, 500);
-        setTimeout(function () { set({ opacity: 1 }); }, 1000);
+        setTimeout(function () { spring.update({ opacity: 1 }); }, 1000);
     }, 3000);
 
     return (
