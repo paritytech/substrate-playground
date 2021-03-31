@@ -12,6 +12,7 @@ jobs:
     strategy:
       matrix:
         env: [staging, production]
+      max-parallel: 1
     steps:
       - uses: actions/checkout@v2
         with:

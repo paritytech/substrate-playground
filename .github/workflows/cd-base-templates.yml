@@ -152,6 +152,7 @@ jobs:
     # TODO update templates
     strategy:
       matrix: ${{fromJson(needs.list-existing-templates.outputs.matrix)}}
+      max-parallel: 1
     steps:
       - name: Rebuild template ${{ matrix.id }}
         uses: peter-evans/repository-dispatch@v1

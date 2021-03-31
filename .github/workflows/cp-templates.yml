@@ -55,6 +55,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix: ${{fromJson(needs.list-existing-templates.outputs.matrix)}}
+      max-parallel: 1
     steps:
 
       - uses: actions/checkout@v2
