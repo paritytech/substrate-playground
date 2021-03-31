@@ -13,12 +13,13 @@ export interface Environment {
 
 export interface Configuration {
     githubClientId: string,
-    sessionDefaults: SessionDefaults,
+    session: SessionDefaults,
 }
 
 export interface SessionDefaults {
     /* The default number of minutes sessions can last */
     duration: number,
+    maxDuration: number,
     poolAffinity: string,
     maxSessionsPerPod: string,
 }
@@ -60,6 +61,7 @@ export interface Session {
     pod: Pod,
     /* The number of minutes this session can last */
     duration: number,
+    maxDuration: number,
     node: string,
 }
 

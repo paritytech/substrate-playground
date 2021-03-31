@@ -101,6 +101,8 @@ pub struct SessionUpdateConfiguration {
 pub struct SessionDefaults {
     #[serde(with = "duration")]
     pub duration: Duration,
+    #[serde(with = "duration")]
+    pub max_duration: Duration,
     pub pool_affinity: String,
     pub max_sessions_per_pod: usize,
 }

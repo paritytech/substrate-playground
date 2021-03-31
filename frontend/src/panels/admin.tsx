@@ -95,8 +95,8 @@ export function canCustomize(user: LoggedUser): boolean {
 export function SessionCreationDialog({ client, conf, sessions, user, template, templates, show, onCreate, onHide, allowUserSelection = false }: { client: Client, conf: Configuration, sessions?: Record<string, Session>, user: LoggedUser, template?: string, templates: Record<string, Template> | null, show: boolean, onCreate: (conf: SessionConfiguration, id?: string, ) => void, onHide: () => void , allowUserSelection?: boolean}): JSX.Element {
     const [selectedUser, setUser] = React.useState<string | null>(user.id);
     const [selectedTemplate, setTemplate] = React.useState<string | null>(null);
-    const [duration, setDuration] = React.useState(conf.sessionDefaults.duration);
-    const [poolAffinity, setPoolAffinity] = React.useState(conf.sessionDefaults.poolAffinity);
+    const [duration, setDuration] = React.useState(conf.session.duration);
+    const [poolAffinity, setPoolAffinity] = React.useState(conf.session.poolAffinity);
     const [pools, setPools] = useState<Record<string, Pool> | null>(null);
     const [users, setUsers] = useState<Record<string, User> | null>(null);
 
@@ -635,7 +635,7 @@ function EnhancedTableToolbar({ user, label, selected = null, onCreate, onUpdate
 function UserCreationDialog({ client, conf, users, show, onCreate, onHide }: { client: Client, conf: Configuration, users: Record<string, User>, show: boolean, onCreate: (id: string, conf: UserConfiguration) => void, onHide: () => void }): JSX.Element {
     const [id, setID] = React.useState('');
     const [adminChecked, setAdminChecked] = React.useState(false);
-    const [poolAffinity, setPoolAffinity] = React.useState<string>(conf.sessionDefaults.poolAffinity);
+    const [poolAffinity, setPoolAffinity] = React.useState<string>(conf.session.poolAffinity);
     const [customizeDurationChecked, setCustomizeDurationChecked] = React.useState(false);
     const [customizePoolAffinityChecked, setCustomizePoolAffinityChecked] = React.useState(false);
     const [pools, setPools] = useState<Record<string, Pool> | null>(null);
@@ -920,7 +920,7 @@ function Users({ client, user, conf }: { client: Client, user: LoggedUser, conf:
 
 function DetailsPanel({ conf }: { conf: Configuration }): JSX.Element {
     const classes = useStyles();
-    const { duration, maxSessionsPerPod, poolAffinity } = conf.sessionDefaults;
+    const { duration, maxSessionsPerPod, poolAffinity } = conf.session;
     return (
         <Container>
             <Typography variant="h6" id="tableTitle" component="div">

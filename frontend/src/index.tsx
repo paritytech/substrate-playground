@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import ReactDOM from "react-dom";
-import { Client, Configuration, LoggedUser, Session, Template } from '@substrate/playground-client';
+import { Client, Configuration, LoggedUser, Session, Template, User } from '@substrate/playground-client';
 import { createMuiTheme, ThemeProvider } from '@material-ui/core/styles';
+import Button from "@material-ui/core/Button";
 import Typography from "@material-ui/core/Typography";
 import { CenteredContainer, ErrorMessage, LoadingPanel, Wrapper } from './components';
 import { useInterval } from "./hooks";
@@ -15,7 +16,7 @@ import { TheiaPanel } from './panels/theia';
 import { terms } from "./terms";
 import { formatDuration } from "./utils";
 
-function MainPanel({ client, conf, user, params, id, templates, onConnect, onDeployed, restartAction }: { client: Client, conf: Configuration, user: LoggedUser, params: Params, id: PanelId, templates: Record<string, Template>, restartAction: () => void, onConnect: () => void, onDeployed: () => void}): JSX.Element {
+function MainPanel({ client, conf, user, id, templates, restartAction, onConnect, onDeployed }: { client: Client, conf: Configuration, user: LoggedUser, id: PanelId, templates: Record<string, Template>, restartAction: () => void, onConnect: () => void, onDeployed: () => void }): JSX.Element {
     switch(id) {
         case PanelId.Session:
           return <SessionPanel client={client} conf={conf} user={user} templates={templates} onRetry={restartAction}
@@ -31,27 +32,55 @@ function MainPanel({ client, conf, user, params, id, templates, onConnect, onDep
           return <StatsPanel />;
         case PanelId.Admin:
           return <AdminPanel client={client} conf={conf} user={user} />;
-        case PanelId.Theia:
-          return <TheiaPanel client={client} autoDeploy={params.deploy} templates={templates} onMissingSession={restartAction} onSessionFailing={restartAction} onSessionTimeout={restartAction} />;
-      }
+        default:
+            return <></>;
+    }
 }
 
-function ExtraTheiaNav({ client }: { client: Client }): JSX.Element {
-    const [session, setSession] = useState<Session | null | undefined>(undefined);
-
-    useInterval(async () => setSession(await client.getCurrentSession()), 5000);
-
+function ExtraTheiaNav({ session, restartAction }: { session: Session | null | undefined, restartAction: () => void }): JSX.Element {
     if (session) {
         const { pod, duration } = session;
-        const { startTime } = pod;
-        return (
-            <Typography variant="h6">
-                {formatDuration(duration*60-startTime)} before the session&apos;s end
-            </Typography>
-        );
-    } else {
-        return <></>;
+        if (pod.phase == 'Running') {
+            const { startTime } = pod;
+            const remaining = duration * 60 - (startTime || 0);
+            if (remaining < 300) { // 5 minutes
+                return (
+                    <Typography variant="h6">
+                        Your session is about to end. Make sure your changes have been exported.
+                    </Typography>
+                );
+            }
+        } else {
+            return (
+                <Typography variant="h6">
+                    Your session is over. <Button onClick={restartAction}>Restart it</Button>
+                </Typography>
+            );
+        }
     }
+    return <></>;
+}
+
+function WrappedSessionPanel({ params, conf, client, user, templates, selectPanel, restartAction, send }: { params: Params, client: Client, conf: Configuration, user: LoggedUser, templates: Record<string, Template>, selectPanel: (id: PanelId) => void, restartAction: () => void, send: (event: Events) => void }): JSX.Element {
+    const [session, setSession] = useState<Session | null | undefined>(undefined);
+
+    useInterval(async () => {
+        const session = await client.getCurrentSession();
+        setSession(session);
+
+        const duration = session?.duration || 0;
+        const maxDuration = conf.session.maxDuration;
+        if (maxDuration - duration < 600) { // 10 minutes
+            const newDuration = Math.max(maxDuration, duration + 60*30);
+            await client.updateCurrentSession({duration: newDuration}); // Increase session duration
+        }
+    }, 5000);
+
+    return (
+        <Wrapper conf={conf} extraNav={<ExtraTheiaNav session={session} restartAction={restartAction} />} params={params} thin={true} onPlayground={() => selectPanel(PanelId.Session)} onAdminClick={() => selectPanel(PanelId.Admin)} onStatsClick={() => selectPanel(PanelId.Stats)} onLogout={() => send(Events.LOGOUT)} user={user}>
+            <TheiaPanel client={client} autoDeploy={params.deploy} templates={templates} onMissingSession={restartAction} onSessionFailing={restartAction} onSessionTimeout={restartAction} />
+        </Wrapper>
+    );
 }
 
 function App({ params }: { params: Params }): JSX.Element {
@@ -72,19 +101,22 @@ function App({ params }: { params: Params }): JSX.Element {
     return (
         <ThemeProvider theme={theme}>
             <div style={{ display: "flex", width: "100vw", height: "100vh", alignItems: "center", justifyContent: "center" }}>
-                <Wrapper conf={conf} extraNav={isTheia ? <ExtraTheiaNav client={client} /> : <></>} params={params} thin={isTheia} onPlayground={() => selectPanel(PanelId.Session)} onAdminClick={() => selectPanel(PanelId.Admin)} onStatsClick={() => selectPanel(PanelId.Stats)} onLogout={() => send(Events.LOGOUT)} user={user}>
+                {isTheia
+                 ? <WrappedSessionPanel client={client} conf={conf} params={params} user={user} templates={templates} selectPanel={selectPanel} restartAction={restartAction} send={send} />
+                 :
+                 <Wrapper conf={conf} params={params} onPlayground={() => selectPanel(PanelId.Session)} onAdminClick={() => selectPanel(PanelId.Admin)} onStatsClick={() => selectPanel(PanelId.Stats)} onLogout={() => send(Events.LOGOUT)} user={user}>
                     {state.matches(States.LOGGED)
-                    ? <MainPanel client={client} conf={conf} user={user} params={params} id={panel} templates={templates} onConnect={() => selectPanel(PanelId.Theia)} onDeployed={() => selectPanel(PanelId.Theia)} restartAction={restartAction} />
+                    ? <MainPanel client={client} conf={conf} user={user} id={panel} templates={templates} restartAction={restartAction} onDeployed={() => selectPanel(PanelId.Theia)} onConnect={() => selectPanel(PanelId.Theia)} />
                     : state.matches(States.TERMS_UNAPPROVED)
                         ? <TermsPanel terms={terms} onTermsApproved={() => send(Events.TERMS_APPROVAL)} />
                         : state.matches(States.UNLOGGED)
                         ? error
                         ? <CenteredContainer>
                             <ErrorMessage reason={error} action={restartAction} />
-                          </CenteredContainer>
+                        </CenteredContainer>
                         : <LoginPanel />
                         : <LoadingPanel />}
-                </Wrapper>
+                </Wrapper>}
             </div>
         </ThemeProvider>
     );

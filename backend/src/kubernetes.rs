@@ -356,7 +356,7 @@ pub struct Environment {
 #[serde(rename_all = "camelCase")]
 pub struct Configuration {
     pub github_client_id: String,
-    pub session_defaults: SessionDefaults,
+    pub session: SessionDefaults,
 }
 
 #[derive(Clone)]
@@ -410,6 +410,8 @@ impl Engine {
             env::var("GITHUB_CLIENT_SECRET").map_err(|_| Error::MissingData("GITHUB_CLIENT_ID"))?;
         let session_default_duration = env::var("SESSION_DEFAULT_DURATION")
             .map_err(|_| Error::MissingData("SESSION_DEFAULT_DURATION"))?;
+        let session_max_duration = env::var("SESSION_DEFAULT_DURATION")
+            .map_err(|_| Error::MissingData("SESSION_MAX_DURATION"))?;
         let session_default_pool_affinity = env::var("SESSION_DEFAULT_POOL_AFFINITY")
             .map_err(|_| Error::MissingData("SESSION_DEFAULT_POOL_AFFINITY"))?;
         let session_default_max_per_node = env::var("SESSION_DEFAULT_MAX_PER_NODE")
@@ -423,8 +425,9 @@ impl Engine {
             },
             configuration: Configuration {
                 github_client_id,
-                session_defaults: SessionDefaults {
+                session: SessionDefaults {
                     duration: str_to_session_duration_minutes(&session_default_duration)?,
+                    max_duration: str_to_session_duration_minutes(&session_max_duration)?,
                     pool_affinity: session_default_pool_affinity,
                     max_sessions_per_pod: session_default_max_per_node
                         .parse()
@@ -724,14 +727,14 @@ impl Engine {
         let pool_id = conf.clone().pool_affinity.unwrap_or_else(|| {
             user.clone()
                 .pool_affinity
-                .unwrap_or(self.clone().configuration.session_defaults.pool_affinity)
+                .unwrap_or(self.clone().configuration.session.pool_affinity)
         });
         let pool = self
             .get_pool(&pool_id)
             .await?
             .ok_or_else(|| Error::MissingData("no matching pool"))?;
         let max_sessions_allowed =
-            pool.nodes.len() * self.configuration.session_defaults.max_sessions_per_pod;
+            pool.nodes.len() * self.configuration.session.max_sessions_per_pod;
         let sessions = self.list_sessions().await?;
         if sessions.len() >= max_sessions_allowed {
             // TODO Should trigger pool dynamic scalability. Right now this will only consider the pool lower bound.
@@ -760,7 +763,7 @@ impl Engine {
 
         let duration = conf
             .duration
-            .unwrap_or(self.configuration.session_defaults.duration);
+            .unwrap_or(self.configuration.session.duration);
 
         // Deploy a new pod for this image
         pod_api
@@ -795,7 +798,11 @@ impl Engine {
 
         let duration = conf
             .duration
-            .unwrap_or(self.configuration.session_defaults.duration);
+            .unwrap_or(self.configuration.session.duration);
+        let max_duration = self.configuration.session.max_duration;
+        if duration > max_duration {
+            return Err(Error::Unauthorized());
+        }
         if duration != session.duration {
             let client = new_client().await?;
             let pod_api: Api<Pod> = Api::namespaced(client, &self.env.namespace);
