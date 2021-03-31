@@ -126,7 +126,7 @@ jobs:
       - run: |
           git config user.name github-actions
           git config user.email github-actions@github.com
-          git add conf/k8s/overlays/staging
+          git add conf/k8s/overlays/staging/kustomization.yaml
           git commit -m ":bookmark: upon which, hails onto us a new release of Playground"
           git pull --rebase
           git push
