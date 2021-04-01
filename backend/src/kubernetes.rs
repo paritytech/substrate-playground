@@ -20,7 +20,7 @@ use k8s_openapi::api::{
 };
 use k8s_openapi::apimachinery::pkg::{apis::meta::v1::ObjectMeta, util::intstr::IntOrString};
 use kube::{
-    api::{Api, DeleteParams, ListParams, Meta, Patch, PatchParams, PostParams},
+    api::{Api, DeleteParams, ListParams, Patch, PatchParams, PostParams},
     config::KubeConfigOptions,
     Client, Config,
 };
@@ -28,7 +28,7 @@ use log::error;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::json;
 use std::{
-    collections::BTreeMap, convert::TryFrom, env, num::ParseIntError, str::FromStr, time::Duration,
+    collections::BTreeMap, convert::TryFrom, env, fmt::Debug, num::ParseIntError, str::FromStr, time::Duration,
 };
 
 const NODE_POOL_LABEL: &str = "cloud.google.com/gke-nodepool";
@@ -46,7 +46,7 @@ const USERS_CONFIG_MAP: &str = "playground-users";
 const TEMPLATES_CONFIG_MAP: &str = "playground-templates";
 const THEIA_WEB_PORT: i32 = 3000;
 
-async fn list_by_selector<K: Clone + DeserializeOwned + Meta>(
+async fn list_by_selector<K: Clone + DeserializeOwned + Debug>(
     api: &Api<K>,
     selector: String,
 ) -> Result<Vec<K>> {
