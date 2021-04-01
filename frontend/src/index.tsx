@@ -50,7 +50,7 @@ function ExtraTheiaNav({ session, restartAction }: { session: Session | null | u
                     </Typography>
                 );
             }
-        } else {
+        } else if (pod.phase == 'Failed') {
             return (
                 <Typography variant="h6">
                     Your session is over. <Button onClick={restartAction}>Restart it</Button>
@@ -68,11 +68,15 @@ function WrappedSessionPanel({ params, conf, client, user, templates, selectPane
         const session = await client.getCurrentSession();
         setSession(session);
 
-        const duration = session?.duration || 0;
-        const maxDuration = conf.session.maxDuration;
-        if (maxDuration - duration < 600) { // 10 minutes
-            const newDuration = Math.max(maxDuration, duration + 60*30);
-            await client.updateCurrentSession({duration: newDuration}); // Increase session duration
+        // Periodically extend duration of running sessions
+        if (session?.pod.phase == 'Running') {
+            const duration = session?.duration || 0;
+            const maxDuration = conf.session.maxDuration;
+            console.log(duration, (maxDuration - duration))
+            if (maxDuration - duration < 600) { // 10 minutes
+                const newDuration = Math.max(maxDuration, duration + 60*30);
+                await client.updateCurrentSession({duration: newDuration}); // Increase session duration
+            }
         }
     }, 5000);
 
