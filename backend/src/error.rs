@@ -8,10 +8,10 @@ pub type Result<T> = result::Result<T, Error>;
 
 #[derive(Error, Debug)]
 pub enum Error {
-    #[error("data store disconnected")]
+    #[error("Unauthorized")]
     Unauthorized(/*Permission*/),
-    #[error("data store disconnected")]
+    #[error("Missing data {0}")]
     MissingData(&'static str),
-    #[error("data store disconnected")]
+    #[error("Failure: {0}")]
     Failure(#[from] Box<dyn std::error::Error>),
 }
