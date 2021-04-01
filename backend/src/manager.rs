@@ -298,16 +298,13 @@ impl Manager {
         user: &LoggedUser,
         conf: SessionUpdateConfiguration,
     ) -> Result<()> {
-        if !user.has_admin_edit_rights() {
-            return Err(Error::Unauthorized());
-        }
-
         if conf.duration.is_some() {
             // Duration can only customized by users with proper rights
-            if !user.can_customize_duration() {
+            if id != user.id && !user.can_customize_duration() {
                 return Err(Error::Unauthorized());
             }
         }
+
         new_runtime()?.block_on(self.engine.update_session(&session_id(id), conf))
     }
 
