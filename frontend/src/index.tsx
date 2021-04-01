@@ -41,8 +41,7 @@ function ExtraTheiaNav({ session, restartAction }: { session: Session | null | u
     if (session) {
         const { pod, duration } = session;
         if (pod.phase == 'Running') {
-            const { startTime } = pod;
-            const remaining = duration * 60 - (startTime || 0);
+            const remaining = duration * 60 - (pod.startTime || 0);
             if (remaining < 300) { // 5 minutes
                 return (
                     <Typography variant="h6">
@@ -69,13 +68,16 @@ function WrappedSessionPanel({ params, conf, client, user, templates, selectPane
         setSession(session);
 
         // Periodically extend duration of running sessions
-        if (session?.pod.phase == 'Running') {
-            const duration = session?.duration || 0;
-            const maxDuration = conf.session.maxDuration;
-            console.log(duration, (maxDuration - duration))
-            if (maxDuration - duration < 600) { // 10 minutes
-                const newDuration = Math.max(maxDuration, duration + 60*30);
-                await client.updateCurrentSession({duration: newDuration}); // Increase session duration
+        if (session) {
+            const { pod, duration } = session;
+            if (pod && pod.phase == 'Running') {
+                const remaining = duration - (pod.startTime || 0) / 60; // In minutes
+                const maxDuration = conf.session.maxDuration;
+                // Increase session duration
+                if (remaining < 10 && duration < maxDuration) {
+                    const newDuration = Math.min(maxDuration, duration + 30);
+                    await client.updateCurrentSession({duration: newDuration});
+                }
             }
         }
     }, 5000);
