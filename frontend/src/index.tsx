@@ -130,7 +130,13 @@ export interface Params {
 
 function extractParams(): Params {
     const params = new URLSearchParams(window.location.search);
-    return {deploy: params.get('deploy'),
+    const deploy = params.get('deploy');
+    if (deploy) {
+        params.delete('deploy');
+        const paramsStr = params.toString();
+        window.history.replaceState({}, '', `${location.pathname}${paramsStr != "" ? params : ""}`);
+    }
+    return {deploy: deploy,
             version: process.env.GITHUB_SHA,
             base: process.env.BASE || "/api"};
 }
