@@ -410,7 +410,7 @@ impl Engine {
             env::var("GITHUB_CLIENT_SECRET").map_err(|_| Error::MissingData("GITHUB_CLIENT_ID"))?;
         let session_default_duration = env::var("SESSION_DEFAULT_DURATION")
             .map_err(|_| Error::MissingData("SESSION_DEFAULT_DURATION"))?;
-        let session_max_duration = env::var("SESSION_DEFAULT_DURATION")
+        let session_max_duration = env::var("SESSION_MAX_DURATION")
             .map_err(|_| Error::MissingData("SESSION_MAX_DURATION"))?;
         let session_default_pool_affinity = env::var("SESSION_DEFAULT_POOL_AFFINITY")
             .map_err(|_| Error::MissingData("SESSION_DEFAULT_POOL_AFFINITY"))?;
