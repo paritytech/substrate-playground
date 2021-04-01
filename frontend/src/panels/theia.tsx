@@ -48,7 +48,7 @@ export function TheiaPanel({ client, autoDeploy, templates, onMissingSession, on
                 try {
                     client.getCurrentSession().then((session) => {
                         if (session) {
-                            setData({ type: "ERROR", value: "A session is still active", action: onMissingSession});
+                            setData({ type: "ERROR", value: "You can only have one active substrate playground session open at a time. \n Please close all other sessions to open a new one", action: onMissingSession});
                         } else {
                             client.createCurrentSession({template: autoDeploy}).then(fetchData);
                         }
