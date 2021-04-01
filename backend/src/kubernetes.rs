@@ -801,7 +801,7 @@ impl Engine {
 
         let duration = conf.duration.unwrap_or(self.configuration.session.duration);
         let max_duration = self.configuration.session.max_duration;
-        if duration > max_duration {
+        if duration >= max_duration {
             return Err(Error::Unauthorized());
         }
         if duration != session.duration {
