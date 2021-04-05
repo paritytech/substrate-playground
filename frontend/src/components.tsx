@@ -142,13 +142,13 @@ export function Loading({ phase, retry = 0 }: { phase?: string, retry?: number }
 }
 
 function Nav({ conf, onPlayground, onStatsClick, onAdminClick, onLogout, user, children }: { conf: Configuration, onPlayground: () => void, onStatsClick: () => void, onAdminClick: () => void, onLogout: () => void, user?: LoggedUser, children?: React.ReactElement }): JSX.Element  {
-    const [anchorEl, setAnchorEl] = React.useState(null);
+    const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
     const open = Boolean(anchorEl);
-    const handleMenu = (event) => setAnchorEl(event.currentTarget);
+    const handleMenu = (event: React.MouseEvent<HTMLElement>) => setAnchorEl(event.currentTarget);
     const handleClose = () => setAnchorEl(null);
-    const [anchorElAdmin, setAnchorElAdmin] = React.useState(null);
+    const [anchorElAdmin, setAnchorElAdmin] = React.useState<null | HTMLElement>(null);
     const openAdmin = Boolean(anchorElAdmin);
-    const handleMenuAdmin = (event) => setAnchorElAdmin(event.currentTarget);
+    const handleMenuAdmin = (event: React.MouseEvent<HTMLElement>) => setAnchorElAdmin(event.currentTarget);
     const handleCloseAdmin = () => setAnchorElAdmin(null);
     return (
         <AppBar position="sticky">

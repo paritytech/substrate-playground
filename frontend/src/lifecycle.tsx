@@ -1,5 +1,4 @@
 import { assign, Machine } from 'xstate';
-import { useMachine } from '@xstate/react';
 import { Client, Configuration, LoggedUser, Template } from '@substrate/playground-client';
 import { approve, approved } from './terms';
 
@@ -34,11 +33,13 @@ export enum Actions {
     STORE_TERMS_HASH = '@action/STORE_TERMS_HASH',
 }
 
-function lifecycle(client: Client, id: PanelId) {
+export function newMachine(client: Client, id: PanelId) {
   return Machine<Context>({
     initial: approved()? States.SETUP: States.TERMS_UNAPPROVED,
     context: {
         panel: id,
+        templates: {},
+
     },
     states: {
         [States.TERMS_UNAPPROVED]: {
@@ -74,7 +75,7 @@ function lifecycle(client: Client, id: PanelId) {
                  [Events.UNLOGIN]: {target: States.UNLOGGED,
                                     actions: assign((_, event) => {
                                       return {
-                                        user: null,
+                                        user: undefined,
                                         templates: event.templates,
                                         conf: event.conf,
                                         error: event.error,
@@ -106,8 +107,4 @@ function lifecycle(client: Client, id: PanelId) {
       },
     }
   });
-}
-
-export function useLifecycle(client: Client, id: PanelId): unknown {
-    return useMachine(lifecycle(client, id), { devTools: true });
 }

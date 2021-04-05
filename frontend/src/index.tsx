@@ -4,9 +4,10 @@ import { Client, Configuration, LoggedUser, Session, Template, User } from '@sub
 import { createMuiTheme, ThemeProvider } from '@material-ui/core/styles';
 import Button from "@material-ui/core/Button";
 import Typography from "@material-ui/core/Typography";
+import { useMachine } from '@xstate/react';
 import { CenteredContainer, ErrorMessage, LoadingPanel, Wrapper } from './components';
 import { useInterval } from "./hooks";
-import { useLifecycle, Events, PanelId, States } from './lifecycle';
+import { newMachine, Events, PanelId, States } from './lifecycle';
 import { AdminPanel } from './panels/admin';
 import { LoginPanel } from './panels/login';
 import { SessionPanel } from './panels/session';
@@ -14,7 +15,6 @@ import { StatsPanel } from './panels/stats';
 import { TermsPanel } from './panels/terms';
 import { TheiaPanel } from './panels/theia';
 import { terms } from "./terms";
-import { formatDuration } from "./utils";
 
 function MainPanel({ client, conf, user, id, templates, restartAction, onConnect, onDeployed }: { client: Client, conf: Configuration, user: LoggedUser, id: PanelId, templates: Record<string, Template>, restartAction: () => void, onConnect: () => void, onDeployed: () => void }): JSX.Element {
     switch(id) {
@@ -92,7 +92,7 @@ function WrappedSessionPanel({ params, conf, client, user, templates, selectPane
 function App({ params }: { params: Params }): JSX.Element {
     const client = new Client(params.base, 30000, {credentials: "include"});
     const { deploy } = params;
-    const [state, send] = useLifecycle(client, deploy? PanelId.Theia: PanelId.Session);
+    const [state, send] = useMachine(newMachine(client, deploy? PanelId.Theia: PanelId.Session), { devTools: true });
     const { panel, templates, user, conf, error } = state.context;
 
     const restartAction = () => send(Events.RESTART);

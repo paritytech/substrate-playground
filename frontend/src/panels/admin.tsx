@@ -197,7 +197,7 @@ export function SessionCreationDialog({ client, conf, sessions, user, template, 
                         label="Duration"
                         />}
                     <ButtonGroup style={{alignSelf: "flex-end", marginTop: 20}} size="small">
-                        <Button disabled={!valid()} onClick={() => {onCreate({template: currentTemplate, duration: duration, poolAffinity: poolAffinity}, currentUser); onHide();}}>CREATE</Button>
+                        <Button disabled={!valid()} onClick={() => {onCreate({template: currentTemplate || "", duration: duration, poolAffinity: poolAffinity}, currentUser); onHide();}}>CREATE</Button>
                         <Button onClick={onHide}>CLOSE</Button>
                     </ButtonGroup>
                 </Container>
@@ -329,10 +329,18 @@ function Sessions({ client, conf, user }: { client: Client, conf: Configuration,
     }, 5000);
 
     function sessionMock(conf: SessionConfiguration): Session {
-        return {duration: conf.duration || 0, template: {name: "", image: "", description: ""}, userId: "", url: "", pod: {phase: 'Pending', reason: "", message: ""}};
+        return {
+            duration: conf.duration || 0,
+            maxDuration: 0,
+            template: {name: "", image: "", description: ""},
+            userId: "",
+            url: "",
+            pod: {phase: 'Pending', reason: "", message: ""},
+            node: ""
+        };
     }
 
-    async function onCreate(conf: SessionConfiguration, id: string | null, setSessions: Dispatch<SetStateAction<Record<string, Session> | null>>): Promise<void> {
+    async function onCreate(conf: SessionConfiguration, id: string | null | undefined, setSessions: Dispatch<SetStateAction<Record<string, Session> | null>>): Promise<void> {
         try {
             if (id) {
                 await client.createSession(id, conf);
@@ -808,7 +816,7 @@ function Users({ client, user, conf }: { client: Client, user: LoggedUser, conf:
             await client.createUser(id, conf);
             setUsers((users: Record<string, User> | null) => {
                 if (users) {
-                    users[id] = conf;
+                    users[id] = updatedUserMock(conf);
                 }
                 return {...users};
             });
@@ -818,8 +826,8 @@ function Users({ client, user, conf }: { client: Client, user: LoggedUser, conf:
         }
     }
 
-    function updatedUserMock(user: User, conf: UserUpdateConfiguration): User {
-        return {admin: conf.admin, poolAffinity: user.poolAffinity, canCustomizeDuration: conf.canCustomizeDuration, canCustomizePoolAffinity: user.canCustomizePoolAffinity};
+    function updatedUserMock(conf: UserUpdateConfiguration, user?: User): User {
+        return {admin: conf.admin, poolAffinity: user?.poolAffinity || "", canCustomizeDuration: conf.canCustomizeDuration, canCustomizePoolAffinity: user?.canCustomizePoolAffinity || false};
     }
 
     async function onUpdate(id: string, conf: UserUpdateConfiguration, setUsers: Dispatch<SetStateAction<Record<string, User> | null>>): Promise<void> {
@@ -827,7 +835,7 @@ function Users({ client, user, conf }: { client: Client, user: LoggedUser, conf:
             await client.updateUser(id, conf);
             setUsers((users: Record<string, User> | null) => {
                 if (users) {
-                    users[id] = updatedUserMock(users[id], conf);
+                    users[id] = updatedUserMock(conf, users[id]);
                 }
                 return {...users};
             });

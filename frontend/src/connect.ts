@@ -62,7 +62,7 @@ export class Discoverer {
 export class Responder {
 
     channel = new BroadcastChannel(GLOBAL_CHANNEL);
-    instanceChannel;
+    instanceChannel: BroadcastChannel;
     uuid;
     online;
 
@@ -120,7 +120,7 @@ export class Responder {
 export class Instance {
 
     uuid;
-    channel;
+    channel: BroadcastChannel;
 
     constructor(uuid: string) {
         this.uuid = uuid;
