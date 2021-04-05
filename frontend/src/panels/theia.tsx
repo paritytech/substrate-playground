@@ -4,10 +4,22 @@ import { Client, Template } from '@substrate/playground-client';
 import { CenteredContainer, ErrorMessage, Loading } from '../components';
 import { fetchWithTimeout } from '../utils';
 
+interface Error {
+    reason: string,
+    action: () => void,
+}
+
+interface Loading {
+    phase: string,
+    retry: number,
+}
+
 export function TheiaPanel({ client, autoDeploy, templates, onMissingSession, onSessionFailing, onSessionTimeout }: { client: Client, autoDeploy: string | null, templates: Record<string, Template>, onMissingSession: () => void, onSessionFailing: () => void, onSessionTimeout: () => void }): JSX.Element {
     const maxRetries = 5*60;
     const ref = useRef(null);
-    const [data, setData] = useState({ type: "LOADING", phase: "Preparing", retry: 0, value: "", url: "" });
+    const [error, setError] = useState<Error>();
+    const [url, setUrl] = useState<string>();
+    const [loading, setLoading] = useState<Loading>();
 
     useEffect(() => {
         async function fetchData() {
@@ -18,59 +30,63 @@ export function TheiaPanel({ client, autoDeploy, templates, onMissingSession, on
                     // Check URL is fine
                     const url = `//${session.url}`;
                     if ((await fetchWithTimeout(url)).ok) {
-                        setData({ type: "SUCCESS", url: url });
+                        setUrl(url);
                         return;
                     }
                 } else if (phase == 'Pending') {
                     const reason = session.pod.container?.reason;
                     if (reason === "CrashLoopBackOff" || reason === "ErrImagePull" || reason === "ImagePullBackOff" || reason === "InvalidImageName") {
-                        setData({ type: "ERROR", value: session.pod.container?.message, action: onSessionFailing });
+                        setError({reason: session.pod.container?.message || 'Pod crashed',
+                                  action: onSessionFailing});
                         return;
                     }
                 }
             }
 
-            const retry = data.retry ?? 0;
+            const retry = loading?.retry ?? 0;
             if (retry < maxRetries) {
-                setTimeout(() => setData({ type: "LOADING", phase: session?.pod.phase, retry: retry + 1 }), 1000);
+                setTimeout(() => setLoading({phase: session?.pod.phase || 'Unknown', retry: retry + 1}), 1000);
             } else if (retry == maxRetries) {
-                setData({ type: "ERROR", value: "Couldn't access the theia session in time", action: onSessionTimeout });
+                setError({reason: "Couldn't access the theia session in time",
+                          action: onSessionTimeout});
             }
         }
 
-        if (data.type != "ERROR" && data.type != "SUCCESS") {
+        if (!error?.reason && !url) {
             if (autoDeploy) {
                 if (!templates[autoDeploy]) {
-                    setData({ type: "ERROR", value: `Unknown template ${autoDeploy}`, action: onMissingSession});
+                    setError({reason: `Unknown template ${autoDeploy}`,
+                              action: onMissingSession});
                     return;
                 }
 
                 try {
                     client.getCurrentSession().then((session) => {
                         if (session) {
-                            setData({ type: "ERROR", value: "You can only have one active substrate playground session open at a time. \n Please close all other sessions to open a new one", action: onMissingSession});
+                            setError({reason: "You can only have one active substrate playground session open at a time. \n Please close all other sessions to open a new one",
+                                      action: onMissingSession});
                         } else {
                             client.createCurrentSession({template: autoDeploy}).then(fetchData);
                         }
                     })
                 } catch {
-                    setData({ type: "ERROR", value: `Error`, action: onMissingSession});
+                    setError({ reason: 'Error', action: onMissingSession});
                 }
             } else {
                 fetchData();
             }
         }
-    }, [data]);
+    }, [loading]);
 
-    if (data.type == "SUCCESS") {
-        return <iframe ref={ref} src={data.url} frameBorder="0" width="100%" height="100%"></iframe>
+    if (url) {
+        return <iframe ref={ref} src={url} frameBorder="0" width="100%" height="100%"></iframe>
     } else {
         return (
             <CenteredContainer>
                 <Paper style={{ display: "flex", flexDirection: "column", height: "60vh", width: "60vw", justifyContent: "center"}} elevation={3}>
-                    {data.type == 'ERROR'
-                     ? <ErrorMessage reason={data.value} action={data.action} />
-                     : <Loading phase={data.phase} retry={data.retry} />}
+                    {error?.reason
+                     ? <ErrorMessage reason={error.reason} action={error.action} />
+                     : <Loading phase={loading?.phase} retry={loading?.retry} />}
                 </Paper>
             </CenteredContainer>
         );
