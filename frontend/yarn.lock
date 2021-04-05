@@ -1387,6 +1387,13 @@
   dependencies:
     "@parcel/types" "2.0.0-nightly.634+59e6f1c8"
 
+"@parcel/plugin@2.0.0-nightly.636+82276043":
+  version "2.0.0-nightly.636"
+  resolved "https://registry.yarnpkg.com/@parcel/plugin/-/plugin-2.0.0-nightly.636.tgz#fce85bbb05acee72f1657b9a88dbfd679f1e63bf"
+  integrity sha512-PrunZ7ZmcFRnD3maZag4OWQ+P0Uf6wOwoY2RTsTCMcvID6zl9p1O9s0co/PxUTWPl9o2ijhroZ3LL/vCi1GqRQ==
+  dependencies:
+    "@parcel/types" "2.0.0-nightly.636+82276043"
+
 "@parcel/reporter-cli@2.0.0-nightly.634+59e6f1c8":
   version "2.0.0-nightly.634"
   resolved "https://registry.yarnpkg.com/@parcel/reporter-cli/-/reporter-cli-2.0.0-nightly.634.tgz#f30979a4fd113eb6aeeabca1ba467646e8b912b4"
@@ -1521,12 +1528,12 @@
     posthtml-render "^1.4.0"
     semver "^5.4.1"
 
-"@parcel/transformer-inline-string@2.0.0-nightly.634":
-  version "2.0.0-nightly.634"
-  resolved "https://registry.yarnpkg.com/@parcel/transformer-inline-string/-/transformer-inline-string-2.0.0-nightly.634.tgz#9bda44905626b2213acce43e323e943bf414b605"
-  integrity sha512-bt9TgtyW9Jxo+pJe4WJP+T70exd85yfFxdP6F4lUPEsgHgHIno6CBx3T+KY/fEIY5oEnlR3CArAH9h2XjC/7zA==
+"@parcel/transformer-inline-string@2.0.0-nightly.636":
+  version "2.0.0-nightly.636"
+  resolved "https://registry.yarnpkg.com/@parcel/transformer-inline-string/-/transformer-inline-string-2.0.0-nightly.636.tgz#09066873ee2ccfab793c1b7803c863c5a43650d2"
+  integrity sha512-hzEXJ5gRLS+pW4gYCRUqsNH+b6OKbwD78/79+uvOwhzMiMwAum6ZJT8w3V/bEK0uCPRhAGhy/qL72oC5vNYS8Q==
   dependencies:
-    "@parcel/plugin" "2.0.0-nightly.634+59e6f1c8"
+    "@parcel/plugin" "2.0.0-nightly.636+82276043"
 
 "@parcel/transformer-js@2.0.0-nightly.634+59e6f1c8":
   version "2.0.0-nightly.634"
@@ -1615,6 +1622,11 @@
   version "2.0.0-nightly.634"
   resolved "https://registry.yarnpkg.com/@parcel/types/-/types-2.0.0-nightly.634.tgz#70cc6e05f906a73dde8b995c31021948d7b3107a"
   integrity sha512-rIdALTEg/spyji/knWN1mjo1g4Knxd0Jh7Ik0MMx0gg2oehCgXqSfx6sGBJwfWtAlLMop/ZU3yI/WIY2JcwcCw==
+
+"@parcel/types@2.0.0-nightly.636+82276043":
+  version "2.0.0-nightly.636"
+  resolved "https://registry.yarnpkg.com/@parcel/types/-/types-2.0.0-nightly.636.tgz#eec747fe0254a6dc48c940a0043fcbe9035f8922"
+  integrity sha512-8XIZtEe0J8GC+Fr3ooCbrk6CRkor/v0riuuvLZ1B5kAoIvgjkMz94lWVcp7eYLNuanYYAgJf534OiJHEkOmzEA==
 
 "@parcel/utils@2.0.0-nightly.634+59e6f1c8":
   version "2.0.0-nightly.634"

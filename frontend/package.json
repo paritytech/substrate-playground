@@ -34,7 +34,7 @@
     "@parcel/packager-html": "2.0.0-nightly.634",
     "@parcel/transformer-css": "2.0.0-nightly.634",
     "@parcel/transformer-html": "2.0.0-nightly.634",
-    "@parcel/transformer-inline-string": "2.0.0-nightly.634",
+    "@parcel/transformer-inline-string": "2.0.0-nightly.636",
     "@parcel/transformer-postcss": "2.0.0-nightly.634",
     "@parcel/transformer-posthtml": "2.0.0-nightly.634",
     "@types/marked": "2.0.1",
