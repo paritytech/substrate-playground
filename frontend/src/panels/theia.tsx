@@ -7,6 +7,7 @@ import { fetchWithTimeout } from '../utils';
 interface Error {
     reason: string,
     action: () => void,
+    actionTitle?: string,
 }
 
 interface Loading {
@@ -64,7 +65,8 @@ export function TheiaPanel({ client, autoDeploy, templates, onMissingSession, on
                     client.getCurrentSession().then((session) => {
                         if (session) {
                             setError({reason: "You can only have one active substrate playground session open at a time. \n Please close all other sessions to open a new one",
-                                      action: onMissingSession});
+                                      action: () => client.deleteCurrentSession().then(() => setLoading(undefined)),
+                                      actionTitle: "Replace existing session"});
                         } else {
                             client.createCurrentSession({template: autoDeploy}).then(fetchData);
                         }
@@ -85,7 +87,7 @@ export function TheiaPanel({ client, autoDeploy, templates, onMissingSession, on
             <CenteredContainer>
                 <Paper style={{ display: "flex", flexDirection: "column", height: "60vh", width: "60vw", justifyContent: "center"}} elevation={3}>
                     {error?.reason
-                     ? <ErrorMessage reason={error.reason} action={error.action} />
+                     ? <ErrorMessage reason={error.reason} action={error.action} actionTitle={error.actionTitle} />
                      : <Loading phase={loading?.phase} retry={loading?.retry} />}
                 </Paper>
             </CenteredContainer>

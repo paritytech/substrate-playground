@@ -23,39 +23,22 @@ import { useInterval } from './hooks';
 import { Params } from "./index";
 import { hasAdminReadRights } from './utils';
 
-function wrapAction(action: (() => void) | Promise<void>, call: (_: boolean) => void): (() => void) | Promise<void> {
-    if (action instanceof Promise) {
-        call(true);
-        return new Promise<void>((resolve, reject) => {
-            action.then(() => {
-                resolve();
-            }).catch(() => {
-                reject();
-            }).finally(() => {
-                call(false);
-            });
-        });
-    }
-    return action;
-}
-
-function ErrorMessageAction({action, actionTitle = "TRY AGAIN"}: {action: (() => void) | Promise<void> , actionTitle?: string}): JSX.Element {
-    if (action instanceof Promise) {
-        const [executing, setExecuting] = useState(false);
-        return (
-            <Button onClick={async () => {wrapAction(action, setExecuting)}}>
-                {executing &&
-                <CircularProgress size={20} />}
-                {actionTitle}
-            </Button>
-        );
-    } else {
-        return (
-            <Button onClick={action}>
-                {actionTitle}
-            </Button>
-        );
-    }
+function ErrorMessageAction({action, actionTitle = "TRY AGAIN"}: {action: (() => void) | (() => Promise<void>), actionTitle?: string}): JSX.Element {
+    const [executing, setExecuting] = useState(false);
+    return (
+        <Button disabled={executing}
+                onClick={() => {
+                    const res = action();
+                    if (res instanceof Promise) {
+                        setExecuting(true);
+                        res.finally(() => setExecuting(false));
+                    }
+                }}>
+            {executing &&
+            <CircularProgress size={20} />}
+            {actionTitle}
+        </Button>
+    );
 }
 
 export function ErrorMessage({ title = "Oops! Looks like something went wrong :(", reason, action, actionTitle }: { title?: string, reason?: string, action: (() => void) | Promise<void> , actionTitle?: string}): JSX.Element {
