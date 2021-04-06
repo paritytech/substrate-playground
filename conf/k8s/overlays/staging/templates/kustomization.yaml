@@ -7,6 +7,5 @@ generatorOptions:
 configMapGenerator:
 - name: playground-templates
   files:
-    - ../../../../templates/ink
     - ../../../../templates/node-template
     - ../../../../templates/recipes
