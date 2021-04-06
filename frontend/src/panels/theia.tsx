@@ -41,6 +41,7 @@ export function TheiaPanel({ client, autoDeploy, templates, onMissingSession, on
                                   action: onSessionFailing});
                         return;
                     }
+                    // The template is being deployed, nothing to do
                 }
             }
 
@@ -64,14 +65,23 @@ export function TheiaPanel({ client, autoDeploy, templates, onMissingSession, on
                 return;
             }
 
+            function createSession(template: string) {
+                client.createCurrentSession({template: template}).then(fetchData);
+            }
+
             try {
                 client.getCurrentSession().then((session) => {
                     if (session) {
-                        setError({reason: "You can only have one active substrate playground session open at a time. \n Please close all other sessions to open a new one",
-                                  action: () => client.deleteCurrentSession().then(() => setLoading(undefined)),
-                                  actionTitle: "Replace existing session"});
+                        if (session.template.name != autoDeploy) {
+                            // Auto deploying currently running template, connecting
+                            fetchData();
+                        } else {
+                            setError({reason: "You can only have one active substrate playground session open at a time. \n Please close all other sessions to open a new one",
+                                      action: () => client.deleteCurrentSession().then(() => createSession(autoDeploy)),
+                                      actionTitle: "Replace existing session"});
+                        }
                     } else {
-                        client.createCurrentSession({template: autoDeploy}).then(fetchData);
+                        createSession(autoDeploy);
                     }
                 })
             } catch {
