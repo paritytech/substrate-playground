@@ -46,39 +46,41 @@ export function TheiaPanel({ client, autoDeploy, templates, onMissingSession, on
 
             const retry = loading?.retry ?? 0;
             if (retry < maxRetries) {
-                setTimeout(() => setLoading({phase: session?.pod.phase || 'Unknown', retry: retry + 1}), 1000);
+                setLoading({phase: session?.pod.phase || 'Unknown', retry: retry + 1});
+                setTimeout(fetchData, 1000);
             } else if (retry == maxRetries) {
                 setError({reason: "Couldn't access the theia session in time",
                           action: onSessionTimeout});
             }
         }
 
-        if (!error?.reason && !url) {
-            if (autoDeploy) {
-                if (!templates[autoDeploy]) {
-                    setError({reason: `Unknown template ${autoDeploy}`,
-                              action: onMissingSession});
-                    return;
-                }
-
-                try {
-                    client.getCurrentSession().then((session) => {
-                        if (session) {
-                            setError({reason: "You can only have one active substrate playground session open at a time. \n Please close all other sessions to open a new one",
-                                      action: () => client.deleteCurrentSession().then(() => setLoading(undefined)),
-                                      actionTitle: "Replace existing session"});
-                        } else {
-                            client.createCurrentSession({template: autoDeploy}).then(fetchData);
-                        }
-                    })
-                } catch {
-                    setError({ reason: 'Error', action: onMissingSession});
-                }
-            } else {
-                fetchData();
+        // Entry point.
+        // If autoDeploy, first attempt to locate the associated template and deploy it.
+        // In all cases, delegates to `fetchData`
+        if (autoDeploy) {
+            if (!templates[autoDeploy]) {
+                setError({reason: `Unknown template ${autoDeploy}`,
+                          action: onMissingSession});
+                return;
             }
+
+            try {
+                client.getCurrentSession().then((session) => {
+                    if (session) {
+                        setError({reason: "You can only have one active substrate playground session open at a time. \n Please close all other sessions to open a new one",
+                                  action: () => client.deleteCurrentSession().then(() => setLoading(undefined)),
+                                  actionTitle: "Replace existing session"});
+                    } else {
+                        client.createCurrentSession({template: autoDeploy}).then(fetchData);
+                    }
+                })
+            } catch {
+                setError({ reason: 'Error', action: onMissingSession});
+            }
+        } else {
+            fetchData();
         }
-    }, [loading]);
+    }, []);
 
     if (url) {
         return <iframe ref={ref} src={url} frameBorder="0" width="100%" height="100%"></iframe>
