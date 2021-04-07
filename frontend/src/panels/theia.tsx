@@ -70,16 +70,27 @@ export function TheiaPanel({ client, autoDeploy, templates, onMissingSession, on
             }
 
             try {
-                client.getCurrentSession().then((session) => {
+                client.getCurrentSession().then(session => {
                     if (session) {
-                        if (session.template.name != autoDeploy) {
-                            // Auto deploying currently running template, connecting
-                            fetchData();
-                        } else {
-                            setError({reason: "You can only have one active substrate playground session open at a time. \n Please close all other sessions to open a new one",
-                                      action: () => client.deleteCurrentSession().then(() => createSession(autoDeploy)),
-                                      actionTitle: "Replace existing session"});
-                        }
+                        setError({reason: "You can only have one active substrate playground session open at a time. \n Please close all other sessions to open a new one",
+                                  action: () => {
+                                      // Trigger current session deletion, wait for deletion then re-create a new one
+                                      return client.deleteCurrentSession()
+                                        .then(function() {
+                                            return new Promise<void>(function(resolve) {
+                                                const id = setInterval(async function() {
+                                                    const session = await client.getCurrentSession();
+                                                    if (!session) {
+                                                        clearInterval(id);
+                                                        resolve();
+                                                    }
+                                                }, 1000);
+                                            }
+                                        )})
+                                        .then(() => setError(undefined))
+                                        .then(() => createSession(autoDeploy));
+                                  },
+                                  actionTitle: "Replace existing session"});
                     } else {
                         createSession(autoDeploy);
                     }
