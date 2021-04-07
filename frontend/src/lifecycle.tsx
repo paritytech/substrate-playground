@@ -60,7 +60,8 @@ export function newMachine(client: Client, id: PanelId) {
                             callback({type: Events.UNLOGIN, templates: templates, conf: configuration});
                         }
                     } catch (e) {
-                        callback({type: Events.UNLOGIN, error: JSON.stringify(e)});
+                        const error = e.message || JSON.stringify(e);
+                        callback({type: Events.UNLOGIN, error: error});
                     }
                 },
             },
