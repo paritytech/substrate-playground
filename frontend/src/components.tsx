@@ -35,7 +35,7 @@ function ErrorMessageAction({action, actionTitle = "TRY AGAIN"}: {action: (() =>
                     }
                 }}>
             {executing &&
-            <CircularProgress size={20} />}
+              <CircularProgress style={{marginRight: 10}} size={20} />}
             {actionTitle}
         </Button>
     );
@@ -47,7 +47,7 @@ export function ErrorMessage({ title = "Oops! Looks like something went wrong :(
             action={<ErrorMessageAction action={action} actionTitle={actionTitle} />}>
             <AlertTitle style={{margin: "unset"}}>{title}</AlertTitle>
             {reason &&
-            <Box component="span" display="block">{reason}</Box>}
+              <Box component="span" display="block">{reason}</Box>}
         </Alert>
     );
 }
@@ -118,8 +118,9 @@ export function Loading({ phase, retry = 0 }: { phase?: string, retry?: number }
             <animated.h1 style={props}>{phrase}</animated.h1>
             {(retry > 10) &&
                 <div>It looks like it takes longer than expected to load. Please be patient :)</div>}
-            {phase &&
-                <Phase value={phase} />}
+            {phase
+              ? <Phase value={phase} />
+              : <CircularProgress size={20} />}
         </div>
     );
 }
