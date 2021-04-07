@@ -478,7 +478,7 @@ impl Engine {
                 .spec
                 .ok_or(Error::MissingData("pod#spec"))?
                 .node_name
-                .ok_or(Error::MissingData("pod#spec#node_name"))?,
+                .unwrap_or_else(|| "<Unknown>".to_string()),
         })
     }
 
