@@ -41,7 +41,7 @@ function ErrorMessageAction({action, actionTitle = "TRY AGAIN"}: {action: (() =>
     );
 }
 
-export function ErrorMessage({ title = "Oops! Looks like something went wrong :(", reason, action, actionTitle }: { title?: string, reason?: string, action: (() => void) | Promise<void> , actionTitle?: string}): JSX.Element {
+export function ErrorMessage({ title = "Oops! Looks like something went wrong :(", reason, action, actionTitle }: { title?: string, reason?: string, action: (() => void) | (() => Promise<void>), actionTitle?: string}): JSX.Element {
     return (
         <Alert severity="error" style={{ margin: 20, alignItems: "center" }}
             action={<ErrorMessageAction action={action} actionTitle={actionTitle} />}>
