@@ -23,6 +23,10 @@ export function TheiaPanel({ client, autoDeploy, templates, onMissingSession, on
     const [loading, setLoading] = useState<Loading>();
 
     useEffect(() => {
+        function createSession(template: string) {
+            client.createCurrentSession({template: template}).then(fetchData);
+        }
+
         async function fetchData() {
             const session = await client.getCurrentSession();
             if (session) {
@@ -63,10 +67,6 @@ export function TheiaPanel({ client, autoDeploy, templates, onMissingSession, on
                 setError({reason: `Unknown template ${autoDeploy}`,
                           action: onMissingSession});
                 return;
-            }
-
-            function createSession(template: string) {
-                client.createCurrentSession({template: template}).then(fetchData);
             }
 
             try {
