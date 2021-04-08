@@ -60,7 +60,7 @@ function ExtraTheiaNav({ session, restartAction }: { session: Session | null | u
     return <></>;
 }
 
-function WrappedSessionPanel({ params, conf, client, user, templates, selectPanel, restartAction, send }: { params: Params, client: Client, conf: Configuration, user: LoggedUser, templates: Record<string, Template>, selectPanel: (id: PanelId) => void, restartAction: () => void, send: (event: Events) => void }): JSX.Element {
+function WrappedTheiaPanel({ params, conf, client, user, templates, selectPanel, restartAction, send }: { params: Params, client: Client, conf: Configuration, user: LoggedUser, templates: Record<string, Template>, selectPanel: (id: PanelId) => void, restartAction: () => void, send: (event: Events) => void }): JSX.Element {
     const [session, setSession] = useState<Session | null | undefined>(undefined);
 
     useInterval(async () => {
@@ -75,7 +75,7 @@ function WrappedSessionPanel({ params, conf, client, user, templates, selectPane
                 const maxDuration = conf.session.maxDuration;
                 // Increase session duration
                 if (remaining < 10 && duration < maxDuration) {
-                    const newDuration = Math.min(maxDuration, duration + 30);
+                    const newDuration = Math.min(maxDuration, duration + 10);
                     await client.updateCurrentSession({duration: newDuration});
                 }
             }
@@ -108,7 +108,7 @@ function App({ params }: { params: Params }): JSX.Element {
         <ThemeProvider theme={theme}>
             <div style={{ display: "flex", width: "100vw", height: "100vh", alignItems: "center", justifyContent: "center" }}>
                 {isTheia
-                 ? <WrappedSessionPanel client={client} conf={conf} params={params} user={user} templates={templates} selectPanel={selectPanel} restartAction={restartAction} send={send} />
+                 ? <WrappedTheiaPanel client={client} conf={conf} params={params} user={user} templates={templates} selectPanel={selectPanel} restartAction={restartAction} send={send} />
                  :
                  <Wrapper conf={conf} params={params} onPlayground={() => selectPanel(PanelId.Session)} onAdminClick={() => selectPanel(PanelId.Admin)} onStatsClick={() => selectPanel(PanelId.Stats)} onLogout={() => send(Events.LOGOUT)} user={user}>
                     {state.matches(States.LOGGED)
