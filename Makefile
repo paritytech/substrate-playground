@@ -105,7 +105,7 @@ build-template:
     && git checkout ${REF} \
     $(eval REV = $(shell git rev-parse --short HEAD))
 
-	$(eval TAG = paritytech/substrate-playground-template-${TEMPLATE}:sha-${REV})
+	$(eval TAG=paritytech/substrate-playground-template-${TEMPLATE}:sha-${REV})
 	$(eval TAG_THEIA=paritytech/substrate-playground-template-${TEMPLATE}-theia:sha-${REV})
 	@cd templates; docker build --force-rm --build-arg BASE_TEMPLATE_VERSION=${BASE_TEMPLATE_VERSION} -t ${TAG} -f Dockerfile.template ${REPOSITORY_CLONE} \
 	&& docker build --force-rm --build-arg BASE_TEMPLATE_VERSION=${BASE_TEMPLATE_VERSION} --build-arg TEMPLATE_IMAGE=${TAG} -t ${TAG_THEIA} -f Dockerfile.theia-template .
@@ -217,7 +217,7 @@ k8s-update-users-config: requires-k8s ## Creates or replaces the `users` config 
 ##@ DNS certificates
 
 generate-challenge: requires-env
-	sudo certbot certonly --manual --preferred-challenges dns --server https://acme-v02.api.letsencrypt.org/directory --manual-public-ip-logging-ok --agree-tos -m admin@parity.io -d *.${PLAYGROUND_ID}.substrate.dev -d ${PLAYGROUND_ID}.substrate.dev
+	sudo certbot certonly --manual --preferred-challenges dns --server https://acme-v02.api.letsencrypt.org/directory --agree-tos -m admin@parity.io -d *.${PLAYGROUND_ID}.substrate.dev -d ${PLAYGROUND_ID}.substrate.dev
 
 get-challenge: requires-env
 	dig +short TXT _acme-challenge.${PLAYGROUND_ID}.substrate.dev @8.8.8.8
