@@ -30,6 +30,9 @@
   "bugs": {
     "url": "https://github.com/paritytech/substrate-playground/issues"
   },
+  "dependencies": {
+    "uuid": "8.3.2"
+  },
   "devDependencies": {
     "typescript": "4.2.4"
   }
