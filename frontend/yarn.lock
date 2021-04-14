@@ -1382,6 +1382,13 @@
   dependencies:
     "@parcel/types" "2.0.0-beta.2"
 
+"@parcel/plugin@2.0.0-nightly.642+bbc79c1a":
+  version "2.0.0-nightly.642"
+  resolved "https://registry.yarnpkg.com/@parcel/plugin/-/plugin-2.0.0-nightly.642.tgz#a7243afc2caf01f8635403974010c8d005950909"
+  integrity sha512-/MStNA+uGJ5diaW25Pfn3Y/lEBYzXtzjhRhV2NwOfXcLgeKE5eWxo7B6B4q2qV/AWrCkRsNngEzbR7+4hLwIRg==
+  dependencies:
+    "@parcel/types" "2.0.0-nightly.642+bbc79c1a"
+
 "@parcel/reporter-cli@2.0.0-beta.2":
   version "2.0.0-beta.2"
   resolved "https://registry.yarnpkg.com/@parcel/reporter-cli/-/reporter-cli-2.0.0-beta.2.tgz#367faf7dacf40141d56cc26fd02e59c40dbaf9f6"
@@ -1516,12 +1523,12 @@
     posthtml-render "^1.4.0"
     semver "^5.4.1"
 
-"@parcel/transformer-inline-string@2.0.0-beta.2":
-  version "2.0.0-beta.2"
-  resolved "https://registry.yarnpkg.com/@parcel/transformer-inline-string/-/transformer-inline-string-2.0.0-beta.2.tgz#eccac77726e59217be3ea79753ce9f8122eeb75a"
-  integrity sha512-d4/qGq8c5kALgIE2+SE/m3JP2sZOMZhlRKW0DPhiDjPjgyhjKRgX1M0TA0TXETC9Be7av4Lwjf/1lw3AxV35qw==
+"@parcel/transformer-inline-string@2.0.0-nightly.642":
+  version "2.0.0-nightly.642"
+  resolved "https://registry.yarnpkg.com/@parcel/transformer-inline-string/-/transformer-inline-string-2.0.0-nightly.642.tgz#c7567b99416b983e205385185c0ac69bb67e2366"
+  integrity sha512-3vfoQxsie/cSuE2RJwTzXyTzTN0fRUdN4Msq7sZd4Su082dW6k/RrIVwZyQtbGp8isOFZZPZB7yw6X8dJ+Amkg==
   dependencies:
-    "@parcel/plugin" "2.0.0-beta.2"
+    "@parcel/plugin" "2.0.0-nightly.642+bbc79c1a"
 
 "@parcel/transformer-js@2.0.0-beta.2":
   version "2.0.0-beta.2"
@@ -1610,6 +1617,11 @@
   version "2.0.0-beta.2"
   resolved "https://registry.yarnpkg.com/@parcel/types/-/types-2.0.0-beta.2.tgz#39530f885a546ccc8759ba8b970440bb7aadc146"
   integrity sha512-ri2BPGAFDntQbA5p3m/4QgnEqWYToUMkAtLelXSPbwnTM0KARavTAwSRqz1xwTdXa8gQyv4SSV7xURwaPaZ3GA==
+
+"@parcel/types@2.0.0-nightly.642+bbc79c1a":
+  version "2.0.0-nightly.642"
+  resolved "https://registry.yarnpkg.com/@parcel/types/-/types-2.0.0-nightly.642.tgz#e08f8864316d5934db0afe23b528cd7250196575"
+  integrity sha512-s5+79Kfjt3yj6ZrAocOncvEHoTdhqZDocfWtn3r0cvN3kLV9KQGilljQyvCpVKcT4gfy+38yS8b4khbGAYFu0Q==
 
 "@parcel/utils@2.0.0-beta.2":
   version "2.0.0-beta.2"
