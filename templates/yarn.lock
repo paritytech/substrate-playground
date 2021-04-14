@@ -1845,6 +1845,13 @@
   resolved "https://registry.yarnpkg.com/@stroncium/procfs/-/procfs-1.2.1.tgz#6b9be6fd20fb0a4c20e99a8695e083c699bb2b45"
   integrity sha512-X1Iui3FUNZP18EUvysTHxt+Avu2nlVzyf90YM8OYgP6SGzTzzX/0JgObfO1AQQDzuZtNNz29bVh8h5R97JrjxA==
 
+"@substrate/playground-client@1.5.0":
+  version "1.5.0"
+  resolved "https://registry.yarnpkg.com/@substrate/playground-client/-/playground-client-1.5.0.tgz#2f5a9d50d552c0aca62aab7c493f44f46b50b111"
+  integrity sha512-FQ9xybLQmDFEk1kFXOkuy7cHZdgVsvbVknhRzQdBXxprcT+KqNEg3eRT7VRC8XClbQsSCIME/Gi7LYzdp5IpoQ==
+  dependencies:
+    uuid "8.3.2"
+
 "@theia/application-manager@1.12.1":
   version "1.12.1"
   resolved "https://registry.yarnpkg.com/@theia/application-manager/-/application-manager-1.12.1.tgz#e954bf6a3869b29e533409ede019c37334f43755"
@@ -13487,6 +13494,11 @@ utils-merge@1.0.1:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/utils-merge/-/utils-merge-1.0.1.tgz#9f95710f50a267947b2ccc124741c1028427e713"
   integrity sha1-n5VxD1CiZ5R7LMwSR0HBAoQn5xM=
+
+uuid@8.3.2:
+  version "8.3.2"
+  resolved "https://registry.yarnpkg.com/uuid/-/uuid-8.3.2.tgz#80d5b5ced271bb9af6c445f21a1a04c606cefbe2"
+  integrity sha512-+NYs2QeMWy+GWFOEm9xnn6HCDp0l7QBD7ml8zLUmJ+93Q5NF0NocErnwkTkXVFNiX3/fpC6afS8Dhb/gz7R7eg==
 
 uuid@^3.3.2:
   version "3.4.0"
