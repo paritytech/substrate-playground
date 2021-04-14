@@ -19,8 +19,12 @@ export class Client {
         this.timeout = timeout;
     }
 
-    path(...resources: string[]) {
+    path(...resources: string[]): string {
         return [this.base, ...resources].join("/");
+    }
+
+    loginPath(queryParams: string = window.location.search): string {
+        return this.path(`login/github${queryParams}`);
     }
 
     async get(init: RequestInit = this.defaultInit): Promise<Playground> {
