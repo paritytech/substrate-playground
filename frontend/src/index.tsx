@@ -120,7 +120,7 @@ function App({ params }: { params: Params }): JSX.Element {
                         ? <CenteredContainer>
                             <ErrorMessage reason={error} action={restartAction} />
                         </CenteredContainer>
-                        : <LoginPanel />
+                        : <LoginPanel client={client} />
                         : <LoadingPanel />}
                 </Wrapper>}
             </div>
