@@ -531,7 +531,7 @@ impl Engine {
                     }
                 })
                 .unwrap_or(ContainerPhase::Unknown),
-            reason: state.clone().and_then(|s| {
+            reason: state.and_then(|s| {
                 s.waiting
                     .as_ref()
                     .and_then(|s| s.reason.clone())
