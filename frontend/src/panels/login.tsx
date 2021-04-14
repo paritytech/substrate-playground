@@ -6,8 +6,7 @@ import { Client } from "@substrate/playground-client";
 import { CenteredContainer } from "../components";
 
 function login(client: Client): void {
-    const url = client.path(`login/github${window.location.search}`);
-    window.location.href = url;
+    window.location.href = client.loginPath();
 }
 
 export function LoginPanel({ client }: { client: Client }): JSX.Element {
