@@ -235,7 +235,7 @@ impl Manager {
     }
 
     pub fn list_sessions(&self, user: &LoggedUser) -> Result<BTreeMap<String, Session>> {
-        if user.id != id && !user.has_admin_read_rights() {
+        if !user.has_admin_read_rights() {
             return Err(Error::Unauthorized());
         }
 
