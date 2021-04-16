@@ -180,27 +180,27 @@ impl Manager {
     // Users
 
     pub fn get_user(&self, user: &LoggedUser, id: &str) -> Result<Option<User>> {
-        if user.has_admin_read_rights() {
-            new_runtime()?.block_on(self.engine.get_user(&id))
-        } else {
-            Err(Error::Unauthorized())
+        if user.id != id && !user.has_admin_read_rights() {
+            return Err(Error::Unauthorized());
         }
+
+        new_runtime()?.block_on(self.engine.get_user(&id))
     }
 
     pub fn list_users(&self, user: &LoggedUser) -> Result<BTreeMap<String, User>> {
-        if user.has_admin_read_rights() {
-            new_runtime()?.block_on(self.engine.list_users())
-        } else {
-            Err(Error::Unauthorized())
+        if !user.has_admin_read_rights() {
+            return Err(Error::Unauthorized());
         }
+
+        new_runtime()?.block_on(self.engine.list_users())
     }
 
     pub fn create_user(self, user: &LoggedUser, id: String, conf: UserConfiguration) -> Result<()> {
-        if user.has_admin_edit_rights() {
-            new_runtime()?.block_on(self.engine.create_user(id, conf))
-        } else {
-            Err(Error::Unauthorized())
+        if !user.has_admin_edit_rights() {
+            return Err(Error::Unauthorized());
         }
+
+        new_runtime()?.block_on(self.engine.create_user(id, conf))
     }
 
     pub fn update_user(
@@ -209,25 +209,25 @@ impl Manager {
         id: String,
         conf: UserUpdateConfiguration,
     ) -> Result<()> {
-        if user.has_admin_edit_rights() {
-            new_runtime()?.block_on(self.engine.update_user(id, conf))
-        } else {
-            Err(Error::Unauthorized())
+        if user.id != id && !user.has_admin_edit_rights() {
+            return Err(Error::Unauthorized());
         }
+
+        new_runtime()?.block_on(self.engine.update_user(id, conf))
     }
 
     pub fn delete_user(self, user: &LoggedUser, id: String) -> Result<()> {
-        if user.has_admin_edit_rights() {
-            new_runtime()?.block_on(self.engine.delete_user(id))
-        } else {
-            Err(Error::Unauthorized())
+        if user.id != id && !user.has_admin_edit_rights() {
+            return Err(Error::Unauthorized());
         }
+
+        new_runtime()?.block_on(self.engine.delete_user(id))
     }
 
     // Sessions
 
     pub fn get_session(&self, user: &LoggedUser, id: &str) -> Result<Option<Session>> {
-        if !user.has_admin_read_rights() {
+        if user.id != id && !user.has_admin_read_rights() {
             return Err(Error::Unauthorized());
         }
 
@@ -235,11 +235,11 @@ impl Manager {
     }
 
     pub fn list_sessions(&self, user: &LoggedUser) -> Result<BTreeMap<String, Session>> {
-        if user.has_admin_read_rights() {
-            new_runtime()?.block_on(self.engine.list_sessions())
-        } else {
-            Err(Error::Unauthorized())
+        if user.id != id && !user.has_admin_read_rights() {
+            return Err(Error::Unauthorized());
         }
+
+        new_runtime()?.block_on(self.engine.list_sessions())
     }
 
     pub fn create_session(
@@ -248,7 +248,7 @@ impl Manager {
         id: &str,
         conf: SessionConfiguration,
     ) -> Result<()> {
-        if !user.has_admin_edit_rights() {
+        if user.id != id && !user.has_admin_edit_rights() {
             return Err(Error::Unauthorized());
         }
 
@@ -309,7 +309,7 @@ impl Manager {
     }
 
     pub fn delete_session(&self, user: &LoggedUser, id: &str) -> Result<()> {
-        if !user.has_admin_edit_rights() {
+        if user.id != id && !user.has_admin_edit_rights() {
             return Err(Error::Unauthorized());
         }
 
