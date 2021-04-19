@@ -2,17 +2,18 @@
 use crate::{
     error::{Error, Result},
     types::{
-        self, ContainerPhase, LoggedUser, Phase, Pool, Session, SessionConfiguration,
-        SessionDefaults, SessionUpdateConfiguration, Template, User, UserConfiguration,
-        UserUpdateConfiguration,
+        self, ConditionType, ContainerPhase, LoggedUser, Phase, Pool, Session,
+        SessionConfiguration, SessionDefaults, SessionUpdateConfiguration, Status, Template, User,
+        UserConfiguration, UserUpdateConfiguration,
     },
 };
 use json_patch::{AddOperation, PatchOperation, RemoveOperation};
 use k8s_openapi::api::{
     core::v1::{
         Affinity, ConfigMap, Container, ContainerStatus, EnvVar, Node, NodeAffinity,
-        NodeSelectorRequirement, NodeSelectorTerm, Pod, PodSpec, PreferredSchedulingTerm, Service,
-        ServicePort, ServiceSpec,
+        NodeSelectorRequirement, NodeSelectorTerm, PersistentVolumeClaimVolumeSource, Pod,
+        PodCondition, PodSpec, PreferredSchedulingTerm, Service, ServicePort, ServiceSpec, Volume,
+        VolumeMount,
     },
     extensions::v1beta1::{
         HTTPIngressPath, HTTPIngressRuleValue, Ingress, IngressBackend, IngressRule,
@@ -167,9 +168,22 @@ fn create_pod(
                 name: format!("{}-container", COMPONENT_VALUE),
                 image: Some(template.image.to_string()),
                 env: Some(pod_env_variables(template, &env.host, session_id)),
+                volume_mounts: Some(vec![VolumeMount {
+                    name: "repo".to_string(),
+                    mount_path: "/repository".to_string(),
+                    ..Default::default()
+                }]),
                 ..Default::default()
             }],
             termination_grace_period_seconds: Some(1),
+            volumes: Some(vec![Volume {
+                name: "repo".to_string(),
+                persistent_volume_claim: Some(PersistentVolumeClaimVolumeSource {
+                    claim_name: "claim".to_string(),
+                    ..Default::default()
+                }),
+                ..Default::default()
+            }]),
             ..Default::default()
         }),
         ..Default::default()
@@ -514,6 +528,15 @@ impl Engine {
         })
     }
 
+    fn condition_to_condition(self, condition: &PodCondition) -> types::PodCondition {
+        types::PodCondition {
+            type_: ConditionType::from_str(condition.type_.as_str())
+                .unwrap_or(ConditionType::Unknown),
+            status: Status::from_str(condition.status.as_str()).unwrap_or(Status::Unknown),
+            reason: condition.clone().reason,
+            message: condition.clone().message,
+        }
+    }
     fn container_status_to_container_status(
         self,
         status: &ContainerStatus,
@@ -548,6 +571,8 @@ impl Engine {
 
     fn pod_to_details(self, pod: &Pod) -> Result<types::Pod> {
         let status = pod.status.as_ref().ok_or(Error::MissingData("status"))?;
+        log::info!("{:?}", status);
+        let conditions = status.clone().conditions;
         let container_statuses = status.clone().container_statuses;
         let container_status = container_statuses.as_ref().and_then(|v| v.first());
         Ok(types::Pod {
@@ -561,6 +586,11 @@ impl Engine {
             reason: status.clone().reason.unwrap_or_else(|| "".to_string()),
             message: status.clone().message.unwrap_or_else(|| "".to_string()),
             start_time: status.clone().start_time.map(|dt| dt.0.into()),
+            conditions: conditions.map(|v| {
+                v.iter()
+                    .map(|c| self.clone().condition_to_condition(c))
+                    .collect()
+            }),
             container: container_status.map(|c| self.container_status_to_container_status(c)),
         })
     }

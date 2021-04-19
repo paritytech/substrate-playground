@@ -47,6 +47,7 @@ pub struct Pod {
     pub message: String,
     #[serde(with = "system_time")]
     pub start_time: Option<SystemTime>,
+    pub conditions: Option<Vec<PodCondition>>,
     pub container: Option<ContainerStatus>,
 }
 
@@ -63,6 +64,57 @@ pub struct ContainerStatus {
     pub phase: ContainerPhase,
     pub reason: Option<String>,
     pub message: Option<String>,
+}
+
+#[derive(Serialize, Clone, Debug)]
+pub struct PodCondition {
+    pub type_: ConditionType,
+    pub status: Status,
+    pub reason: Option<String>,
+    pub message: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+pub enum Status {
+    True,
+    False,
+    Unknown,
+}
+
+impl FromStr for Status {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Status, Self::Err> {
+        match s {
+            "True" => Ok(Status::True),
+            "False" => Ok(Status::False),
+            "Unknown" => Ok(Status::Unknown),
+            _ => Err(format!("'{}' is not a valid value for Status", s)),
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+pub enum ConditionType {
+    PodScheduled,
+    ContainersReady,
+    Initialized,
+    Ready,
+    Unknown,
+}
+
+impl FromStr for ConditionType {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<ConditionType, Self::Err> {
+        match s {
+            "PodScheduled" => Ok(ConditionType::PodScheduled),
+            "ContainersReady" => Ok(ConditionType::ContainersReady),
+            "Initialized" => Ok(ConditionType::Initialized),
+            "Ready" => Ok(ConditionType::Ready),
+            _ => Err(format!("'{}' is not a valid value for ConditionType", s)),
+        }
+    }
 }
 
 #[derive(Serialize, Clone, Debug)]
