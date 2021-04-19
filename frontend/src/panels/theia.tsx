@@ -30,7 +30,8 @@ export function TheiaPanel({ client, autoDeploy, templates, onMissingSession, on
         async function fetchData() {
             const session = await client.getCurrentSession();
             if (session) {
-                const phase = session.pod.phase;
+                const { pod } = session;
+                const phase = pod.phase;
                 if (phase == 'Running') {
                     // Check URL is fine
                     const url = `//${session.url}`;
@@ -39,9 +40,10 @@ export function TheiaPanel({ client, autoDeploy, templates, onMissingSession, on
                         return;
                     }
                 } else if (phase == 'Pending') {
-                    const reason = session.pod.container?.reason;
-                    if (reason === "CrashLoopBackOff" || reason === "ErrImagePull" || reason === "ImagePullBackOff" || reason === "InvalidImageName") {
-                        setError({reason: session.pod.container?.message || 'Pod crashed',
+                    const { conditions, container } = pod;
+                    const reason = (conditions && conditions[0].reason) || container?.reason;
+                    if (reason === "Unschedulable" || reason === "CrashLoopBackOff" || reason === "ErrImagePull" || reason === "ImagePullBackOff" || reason === "InvalidImageName") {
+                        setError({reason: container?.message || (conditions && conditions[0].message) || 'Pod crashed',
                                   action: onSessionFailing});
                         return;
                     }
