@@ -257,7 +257,8 @@ function PortsTable({ ports }: {ports?: Port[]}): JSX.Element {
 export function SessionDetails({ session }: {session: Session}): JSX.Element {
     const { pod, template, duration } = session;
     const { name, runtime } = template;
-    const { container, phase, startTime } = pod;
+    const { container, phase, startTime, conditions } = pod;
+    const reason = container?.reason || (conditions && conditions.length > 0 && conditions[0].reason);
     return (
         <Card style={{ margin: 20 }} variant="outlined">
             <CardContent>
@@ -270,7 +271,7 @@ export function SessionDetails({ session }: {session: Session}): JSX.Element {
                 </Typography>
                 }
                 <Typography color="textSecondary" gutterBottom>
-                Phase: <em>{phase}</em> {container?.reason && `(${container.reason})`}
+                Phase: <em>{phase}</em> {reason && `(${reason})`}
                 </Typography>
                 {runtime &&
                     <div style={{display: "flex", paddingTop: 20}}>
