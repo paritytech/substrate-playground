@@ -120,6 +120,7 @@ export interface Pod {
     message: string,
     /* The number of seconds since this session started */
     startTime?: number,
+    conditions?: PodCondition[],
     container?: ContainerStatus,
 }
 
@@ -130,3 +131,14 @@ export interface ContainerStatus {
     reason?: string,
     message?: string,
 }
+
+export interface PodCondition {
+    type_: ConditionType,
+    status: Status,
+    reason?: string,
+    message?: string,
+}
+
+export type ConditionType = 'PodScheduled' | 'ContainersReady' | 'Initialized' | 'Ready' | 'Unknown';
+
+export type Status = 'True' | 'False' | 'Unknown';
