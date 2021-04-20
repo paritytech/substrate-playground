@@ -1,5 +1,5 @@
 import { fetchWithTimeout, rpc } from './rpc';
-import { Playground, Pool, Session, SessionConfiguration, SessionUpdateConfiguration, User, UserConfiguration, UserUpdateConfiguration, } from './types';
+import { Playground, Pool, Session, SessionConfiguration, SessionUpdateConfiguration, Template, User, UserConfiguration, UserUpdateConfiguration, } from './types';
 
 export class Client {
 
@@ -137,7 +137,7 @@ export class Client {
 
     // Templates
 
-    async listTemplates(init: RequestInit = this.defaultInit): Promise<Record<string, Session>> {
+    async listTemplates(init: RequestInit = this.defaultInit): Promise<Record<string, Template>> {
         return rpc(this.path(Client.templatesResource), init, this.timeout);
     }
 
