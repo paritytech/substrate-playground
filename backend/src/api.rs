@@ -245,6 +245,13 @@ pub fn delete_session(state: State<'_, Context>, user: LoggedUser, id: String) -
     result_to_jsonrpc(state.manager.delete_session(&user, &id))
 }
 
+// Templates
+
+#[get("/templates")]
+pub fn list_templates(state: State<'_, Context>) -> JsonValue {
+    result_to_jsonrpc(state.manager.list_templates())
+}
+
 // Pools
 
 #[get("/pools/<id>")]

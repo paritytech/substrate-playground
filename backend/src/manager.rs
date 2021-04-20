@@ -35,7 +35,6 @@ pub struct Manager {
 pub struct Playground {
     pub env: Environment,
     pub configuration: Configuration,
-    pub templates: BTreeMap<String, Template>,
     pub user: Option<LoggedUser>,
 }
 
@@ -158,9 +157,7 @@ fn session_id(id: &str) -> String {
 
 impl Manager {
     pub fn get(self, user: LoggedUser) -> Result<Playground> {
-        let templates = new_runtime()?.block_on(self.clone().engine.list_templates())?;
         Ok(Playground {
-            templates,
             user: Some(user),
             env: self.engine.env,
             configuration: self.engine.configuration,
@@ -168,9 +165,7 @@ impl Manager {
     }
 
     pub fn get_unlogged(&self) -> Result<Playground> {
-        let templates = new_runtime()?.block_on(self.clone().engine.list_templates())?;
         Ok(Playground {
-            templates,
             user: None,
             env: self.clone().engine.env,
             configuration: self.clone().engine.configuration,
@@ -330,6 +325,12 @@ impl Manager {
             }
         }
         result
+    }
+
+    // Templates
+
+    pub fn list_templates(&self) -> Result<BTreeMap<String, Template>> {
+        new_runtime()?.block_on(self.clone().engine.list_templates())
     }
 
     // Pools

@@ -102,6 +102,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 api::create_session,
                 api::update_session,
                 api::delete_session,
+                // Templates
+                api::list_templates,
                 // Pools
                 api::get_pool,
                 api::list_pools,
