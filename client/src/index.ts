@@ -103,6 +103,10 @@ export class Client {
 
     // Sessions
 
+    async getSession(id: string, init: RequestInit = this.defaultInit): Promise<Session | null> {
+        return rpc(this.path(Client.sessionsResource, id), init, this.timeout);
+    }
+
     async listSessions(init: RequestInit = this.defaultInit): Promise<Record<string, Session>> {
         return rpc(this.path(Client.sessionsResource), init, this.timeout);
     }
