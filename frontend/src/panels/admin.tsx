@@ -49,12 +49,12 @@ const useStyles = makeStyles({
     },
 });
 
-function NoResourcesContainer({ user, label, action }: { user: LoggedUser, label: string, action?: () => void}): JSX.Element {
+function NoResourcesContainer({ user, label, action }: { user?: LoggedUser, label: string, action?: () => void}): JSX.Element {
     return (
         <Container>
             <Typography variant="h6">
                 {label}
-                {(action && hasAdminEditRights(user)) &&
+                {(action && user && hasAdminEditRights(user)) &&
                  <Tooltip title="Create">
                     <IconButton aria-label="create" onClick={action}>
                         <AddIcon />
@@ -92,8 +92,8 @@ export function canCustomize(user: LoggedUser): boolean {
     return canCustomizeDuration(user) || canCustomizePoolAffinity(user);
 }
 
-export function SessionCreationDialog({ client, conf, sessions, user, template, templates, show, onCreate, onHide, allowUserSelection = false }: { client: Client, conf: Configuration, sessions?: Record<string, Session>, user: LoggedUser, template?: string, templates: Record<string, Template> | null, show: boolean, onCreate: (conf: SessionConfiguration, id?: string, ) => void, onHide: () => void , allowUserSelection?: boolean}): JSX.Element {
-    const [selectedUser, setUser] = React.useState<string | null>(user.id);
+export function SessionCreationDialog({ client, conf, sessions, user, template, templates, show, onCreate, onHide, allowUserSelection = false }: { client: Client, conf: Configuration, sessions?: Record<string, Session>, user?: LoggedUser, template?: string, templates: Record<string, Template> | undefined, show: boolean, onCreate: (conf: SessionConfiguration, id?: string, ) => void, onHide: () => void , allowUserSelection?: boolean}): JSX.Element {
+    const [selectedUser, setUser] = React.useState<string | undefined | null>(user?.id);
     const [selectedTemplate, setTemplate] = React.useState<string | null>(null);
     const [duration, setDuration] = React.useState(conf.session.duration);
     const [poolAffinity, setPoolAffinity] = React.useState(conf.session.poolAffinity);
@@ -115,7 +115,7 @@ export function SessionCreationDialog({ client, conf, sessions, user, template, 
     };
     const handlePoolAffinityChange = (event: React.ChangeEvent<HTMLInputElement>) => setPoolAffinity(event.target.value);
 
-    const currentUser = selectedUser || user.id;
+    const currentUser = selectedUser || user?.id;
     const currentTemplate = template || selectedTemplate;
 
     function valid(): boolean {
@@ -148,7 +148,7 @@ export function SessionCreationDialog({ client, conf, sessions, user, template, 
                         freeSolo
                         onInputChange={handleUserChange}
                         options={users ? Object.keys(users) : []}
-                        defaultValue={user.id}
+                        defaultValue={user?.id}
                         getOptionLabel={(user) => user}
                         renderInput={(params) => <TextField {...params} label="User" />}
                       />
@@ -170,7 +170,7 @@ export function SessionCreationDialog({ client, conf, sessions, user, template, 
                     }
                     </TextField>
                     }
-                    {canCustomizePoolAffinity(user) &&
+                    {user && canCustomizePoolAffinity(user) &&
                     <TextField
                         style={{marginBottom: 20}}
                         select
@@ -187,7 +187,7 @@ export function SessionCreationDialog({ client, conf, sessions, user, template, 
                     }
                     </TextField>
                     }
-                    {canCustomizeDuration(user) &&
+                    {user && canCustomizeDuration(user) &&
                     <TextField
                         style={{marginBottom: 20}}
                         value={duration}
@@ -307,7 +307,7 @@ interface TablePaginationActionsProps {
     );
   }
 
-function Sessions({ client, conf, user }: { client: Client, conf: Configuration, user: LoggedUser }): JSX.Element {
+function Sessions({ client, conf, user }: { client: Client, conf: Configuration, user?: LoggedUser }): JSX.Element {
     const classes = useStyles();
     const [selected, setSelected] = useState<string | null>(null);
     const [showCreationDialog, setShowCreationDialog] = useState(false);
@@ -321,11 +321,10 @@ function Sessions({ client, conf, user }: { client: Client, conf: Configuration,
             setSelected(name);
         }
     };
-    const [templates, setTemplates] = useState<Record<string, Template> | null>(null);
+    const [templates, setTemplates] = useState<Record<string, Template> | undefined>();
 
     useInterval(async () => {
-        const { templates } = await client.get();
-        setTemplates(templates);
+        setTemplates(await client.listTemplates());
     }, 5000);
 
     function sessionMock(conf: SessionConfiguration): Session {
@@ -499,11 +498,11 @@ function Sessions({ client, conf, user }: { client: Client, conf: Configuration,
     );
 }
 
-function Templates({ client, user }: { client: Client, user: LoggedUser }): JSX.Element {
+function Templates({ client, user }: { client: Client, user?: LoggedUser }): JSX.Element {
     const classes = useStyles();
 
     return (
-        <Resources<Template> callback={async () => (await client.get()).templates}>
+        <Resources<Template> callback={async () => await client.listTemplates()}>
         {(resources: Record<string, Template>) => (
             <>
                 <EnhancedTableToolbar user={user} label="Templates" />
@@ -621,7 +620,7 @@ function EditToolbar({ selected, onCreate, onUpdate, onDelete }: {selected?: str
     }
 }
 
-function EnhancedTableToolbar({ user, label, selected = null, onCreate, onUpdate, onDelete }: { user: LoggedUser, label: string, selected?: string | null, onCreate?: () => void, onUpdate?: () => void, onDelete?: () => void}): JSX.Element {
+function EnhancedTableToolbar({ user, label, selected = null, onCreate, onUpdate, onDelete }: { user?: LoggedUser, label: string, selected?: string | null, onCreate?: () => void, onUpdate?: () => void, onDelete?: () => void}): JSX.Element {
     const classes = useToolbarStyles();
     return (
         <>
@@ -633,7 +632,7 @@ function EnhancedTableToolbar({ user, label, selected = null, onCreate, onUpdate
             <Typography className={classes.title} variant="h6" id="tableTitle" component="div">
                 {label}
             </Typography>
-            {hasAdminEditRights(user) &&
+            {user && hasAdminEditRights(user) &&
             <EditToolbar selected={selected} onCreate={onCreate} onUpdate={onUpdate} onDelete={onDelete} />}
             </Toolbar>
         </>
@@ -796,7 +795,7 @@ function UserUpdateDialog({ client, id, user, show, onUpdate, onHide }: { client
     );
 }
 
-function Users({ client, user, conf }: { client: Client, user: LoggedUser, conf: Configuration }): JSX.Element {
+function Users({ client, user, conf }: { client: Client, user?: LoggedUser, conf: Configuration }): JSX.Element {
     const classes = useStyles();
     const [selected, setSelected] = useState<string | null>(null);
     const [showCreationDialog, setShowCreationDialog] = useState(false);
@@ -846,7 +845,7 @@ function Users({ client, user, conf }: { client: Client, user: LoggedUser, conf:
     }
 
     async function onDelete(setUsers: Dispatch<SetStateAction<Record<string, User> | null>>): Promise<void> {
-        if (selected && selected != user.id) {
+        if (selected && selected != user?.id) {
             try {
                 await deleteUser(client, selected);
 
@@ -962,7 +961,7 @@ function DetailsPanel({ conf }: { conf: Configuration }): JSX.Element {
     );
 }
 
-function Pools({ client, user }: { client: Client, user: LoggedUser }): JSX.Element {
+function Pools({ client, user }: { client: Client, user?: LoggedUser }): JSX.Element {
     const classes = useStyles();
 
     return (
@@ -996,7 +995,7 @@ function Pools({ client, user }: { client: Client, user: LoggedUser }): JSX.Elem
     );
 }
 
-export function AdminPanel({ client, user, conf }: { client: Client, user: LoggedUser, conf: Configuration }): JSX.Element {
+export function AdminPanel({ client, user, conf }: { client: Client, user?: LoggedUser, conf: Configuration }): JSX.Element {
     const [value, setValue] = React.useState(0);
 
     const handleChange = (_: React.ChangeEvent<Record<string, unknown>>, newValue: number) => {

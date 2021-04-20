@@ -8,7 +8,6 @@ export interface Context {
   panel: PanelId,
   conf: Configuration,
   user?: LoggedUser,
-  templates: Record<string, Template>,
   error?: string,
 }
 
@@ -38,8 +37,6 @@ export function newMachine(client: Client, id: PanelId) {
     initial: approved()? States.SETUP: States.TERMS_UNAPPROVED,
     context: {
         panel: id,
-        templates: {},
-
     },
     states: {
         [States.TERMS_UNAPPROVED]: {
@@ -53,11 +50,11 @@ export function newMachine(client: Client, id: PanelId) {
             invoke: {
                 src: () => async (callback) => {
                     try {
-                        const { configuration, templates, user } = (await client.get());
+                        const { configuration, user } = (await client.get());
                         if (user) {
-                            callback({type: Events.LOGIN, user: user, templates: templates, conf: configuration});
+                            callback({type: Events.LOGIN, user: user, conf: configuration});
                         } else {
-                            callback({type: Events.UNLOGIN, templates: templates, conf: configuration});
+                            callback({type: Events.UNLOGIN, conf: configuration});
                         }
                     } catch (e) {
                         const error = e.message || JSON.stringify(e);
@@ -69,7 +66,6 @@ export function newMachine(client: Client, id: PanelId) {
                                   actions: assign((_, event) => {
                                     return {
                                       user: event.user,
-                                      templates: event.templates,
                                       conf: event.conf,
                                     }
                                   })},
@@ -77,7 +73,6 @@ export function newMachine(client: Client, id: PanelId) {
                                     actions: assign((_, event) => {
                                       return {
                                         user: undefined,
-                                        templates: event.templates,
                                         conf: event.conf,
                                         error: event.error,
                                       }

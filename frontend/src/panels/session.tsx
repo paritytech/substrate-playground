@@ -122,8 +122,12 @@ export default function SplitButton({ template, disabled, onCreate, onCreateCust
   );
 }
 
-function TemplateSelector({client, conf, user, templates, onDeployed, onRetry}: {client: Client, conf: Configuration, user: LoggedUser, templates: Record<string, Template>, onDeployed: (conf: SessionConfiguration) => Promise<void>, onRetry: () => void}): JSX.Element {
-    const publicTemplates = Object.entries(templates).filter(([, v]) => v.tags?.public == "true");
+function TemplateSelector({client, conf, user, onDeployed, onRetry}: {client: Client, conf: Configuration, user?: LoggedUser, onDeployed: (conf: SessionConfiguration) => Promise<void>, onRetry: () => void}): JSX.Element {
+    const [templates, setTemplates] = useState<Record<string, Template> | undefined>();
+
+    useInterval(async () => setTemplates(await client.listTemplates()), 5000);
+
+    const publicTemplates = Object.entries(templates || {}).filter(([, v]) => v.tags?.public == "true");
     const templatesAvailable = publicTemplates.length > 0;
     const [selection, select] = useState(templatesAvailable ? publicTemplates[0] : null);
     const [deploying, setDeploying] = useState(false);
@@ -177,7 +181,7 @@ function TemplateSelector({client, conf, user, templates, onDeployed, onRetry}: 
                 </Container>
                 <Divider orientation="horizontal" />
                 <Container style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", paddingTop: 10, paddingBottom: 10 }}>
-                    {canCustomize(user)
+                    {user && canCustomize(user)
                     ? <SplitButton template={selection[0]} onCreate={() => onCreateClick({template: selection[0]})} onCreateCustom={() => setOpenCustom(true)} disabled={!createEnabled()} />
                     : <Button onClick={() => onCreateClick({template: selection[0]})} color="primary" variant="contained" disableElevation disabled={!createEnabled()}>
                           Create
@@ -340,10 +344,11 @@ function ExistingSession({session, onStop, onConnect}: {session: Session, onStop
     );
 }
 
-export function SessionPanel({ client, conf, user, templates, onDeployed, onConnect, onRetry, onStop }: {client: Client, conf: Configuration, user: LoggedUser, templates: Record<string, Template>, onStop: () => void, onConnect: (session: Session) => void, onDeployed: (conf: SessionConfiguration) => Promise<void>, onRetry: () => void}): JSX.Element {
+export function SessionPanel({ client, conf, user, onDeployed, onConnect, onRetry, onStop }: {client: Client, conf: Configuration, user?: LoggedUser, onStop: () => void, onConnect: (session: Session) => void, onDeployed: (conf: SessionConfiguration) => Promise<void>, onRetry: () => void}): JSX.Element {
     const [session, setSession] = useState<Session | null | undefined>(undefined);
 
     useInterval(async () => setSession(await client.getCurrentSession()), 5000);
+
     return (
         <Container style={{ display: "flex", flex: 1, justifyContent: "center", alignItems: "center" }}>
             <Paper style={{ display: "flex", flexDirection: "column", height: "60vh", width: "60vw", justifyContent: "center"}} elevation={3}>
@@ -351,7 +356,7 @@ export function SessionPanel({ client, conf, user, templates, onDeployed, onConn
                  ? <LoadingPanel />
                  : session
                  ?<ExistingSession session={session} onConnect={onConnect} onStop={onStop} />
-                 : <TemplateSelector client={client} conf={conf} user={user} templates={templates} onRetry={onRetry} onDeployed={onDeployed} />}
+                 : <TemplateSelector client={client} conf={conf} user={user} onRetry={onRetry} onDeployed={onDeployed} />}
             </Paper>
         </Container>
     );

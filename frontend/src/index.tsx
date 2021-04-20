@@ -16,10 +16,10 @@ import { TermsPanel } from './panels/terms';
 import { TheiaPanel } from './panels/theia';
 import { terms } from "./terms";
 
-function MainPanel({ client, conf, user, id, templates, restartAction, onConnect, onDeployed }: { client: Client, conf: Configuration, user: LoggedUser, id: PanelId, templates: Record<string, Template>, restartAction: () => void, onConnect: () => void, onDeployed: () => void }): JSX.Element {
+function MainPanel({ client, conf, user, id, restartAction, onConnect, onDeployed }: { client: Client, conf: Configuration, user?: LoggedUser, id: PanelId, restartAction: () => void, onConnect: () => void, onDeployed: () => void }): JSX.Element {
     switch(id) {
         case PanelId.Session:
-          return <SessionPanel client={client} conf={conf} user={user} templates={templates} onRetry={restartAction}
+          return <SessionPanel client={client} conf={conf} user={user} onRetry={restartAction}
                     onStop={async () => {
                         await client.deleteCurrentSession();
                     }}
@@ -60,7 +60,7 @@ function ExtraTheiaNav({ session, restartAction }: { session: Session | null | u
     return <></>;
 }
 
-function WrappedTheiaPanel({ params, conf, client, user, templates, selectPanel, restartAction, send }: { params: Params, client: Client, conf: Configuration, user: LoggedUser, templates: Record<string, Template>, selectPanel: (id: PanelId) => void, restartAction: () => void, send: (event: Events) => void }): JSX.Element {
+function WrappedTheiaPanel({ params, conf, client, user, selectPanel, restartAction, send }: { params: Params, client: Client, conf: Configuration, user?: LoggedUser, selectPanel: (id: PanelId) => void, restartAction: () => void, send: (event: Events) => void }): JSX.Element {
     const [session, setSession] = useState<Session | null | undefined>(undefined);
 
     useInterval(async () => {
@@ -84,7 +84,7 @@ function WrappedTheiaPanel({ params, conf, client, user, templates, selectPanel,
 
     return (
         <Wrapper conf={conf} extraNav={<ExtraTheiaNav session={session} restartAction={restartAction} />} params={params} thin={true} onPlayground={() => selectPanel(PanelId.Session)} onAdminClick={() => selectPanel(PanelId.Admin)} onStatsClick={() => selectPanel(PanelId.Stats)} onLogout={() => send(Events.LOGOUT)} user={user}>
-            <TheiaPanel client={client} autoDeploy={params.deploy} templates={templates} onMissingSession={restartAction} onSessionFailing={restartAction} onSessionTimeout={restartAction} />
+            <TheiaPanel client={client} autoDeploy={params.deploy} onMissingSession={restartAction} onSessionFailing={restartAction} onSessionTimeout={restartAction} />
         </Wrapper>
     );
 }
@@ -93,7 +93,7 @@ function App({ params }: { params: Params }): JSX.Element {
     const client = new Client(params.base, 30000, {credentials: "include"});
     const { deploy } = params;
     const [state, send] = useMachine(newMachine(client, deploy? PanelId.Theia: PanelId.Session), { devTools: true });
-    const { panel, templates, user, conf, error } = state.context;
+    const { panel, user, conf, error } = state.context;
 
     const restartAction = () => send(Events.RESTART);
     const selectPanel = (id: PanelId) => send(Events.SELECT, {panel: id});
@@ -108,11 +108,11 @@ function App({ params }: { params: Params }): JSX.Element {
         <ThemeProvider theme={theme}>
             <div style={{ display: "flex", width: "100vw", height: "100vh", alignItems: "center", justifyContent: "center" }}>
                 {isTheia
-                 ? <WrappedTheiaPanel client={client} conf={conf} params={params} user={user} templates={templates} selectPanel={selectPanel} restartAction={restartAction} send={send} />
+                 ? <WrappedTheiaPanel client={client} conf={conf} params={params} user={user} selectPanel={selectPanel} restartAction={restartAction} send={send} />
                  :
                  <Wrapper conf={conf} params={params} onPlayground={() => selectPanel(PanelId.Session)} onAdminClick={() => selectPanel(PanelId.Admin)} onStatsClick={() => selectPanel(PanelId.Stats)} onLogout={() => send(Events.LOGOUT)} user={user}>
                     {state.matches(States.LOGGED)
-                    ? <MainPanel client={client} conf={conf} user={user} id={panel} templates={templates} restartAction={restartAction} onDeployed={() => selectPanel(PanelId.Theia)} onConnect={() => selectPanel(PanelId.Theia)} />
+                    ? <MainPanel client={client} conf={conf} user={user} id={panel} restartAction={restartAction} onDeployed={() => selectPanel(PanelId.Theia)} onConnect={() => selectPanel(PanelId.Theia)} />
                     : state.matches(States.TERMS_UNAPPROVED)
                         ? <TermsPanel terms={terms} onTermsApproved={() => send(Events.TERMS_APPROVAL)} />
                         : state.matches(States.UNLOGGED)
