@@ -1,5 +1,5 @@
 import { assign, Machine } from 'xstate';
-import { Client, Configuration, LoggedUser, Template } from '@substrate/playground-client';
+import { Client, Configuration, LoggedUser } from '@substrate/playground-client';
 import { approve, approved } from './terms';
 
 export enum PanelId {Session, Admin, Stats, Theia}

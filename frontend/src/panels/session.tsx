@@ -124,16 +124,21 @@ export default function SplitButton({ template, disabled, onCreate, onCreateCust
 
 function TemplateSelector({client, conf, user, onDeployed, onRetry}: {client: Client, conf: Configuration, user?: LoggedUser, onDeployed: (conf: SessionConfiguration) => Promise<void>, onRetry: () => void}): JSX.Element {
     const [templates, setTemplates] = useState<Record<string, Template> | undefined>();
+    const publicTemplates = Object.entries(templates || {}).filter(([, v]) => v.tags?.public == "true");
+    const templatesAvailable = publicTemplates.length > 0;
+    const [selection, select] = useState<[string, Template]>();
+    const [deploying, setDeploying] = useState(false);
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
+    const [openCustom, setOpenCustom] = useState(false);
+    const classes = useStyles();
 
     useInterval(async () => setTemplates(await client.listTemplates()), 5000);
 
-    const publicTemplates = Object.entries(templates || {}).filter(([, v]) => v.tags?.public == "true");
-    const templatesAvailable = publicTemplates.length > 0;
-    const [selection, select] = useState(templatesAvailable ? publicTemplates[0] : null);
-    const [deploying, setDeploying] = useState(false);
-    const [errorMessage, setErrorMessage] = useState<string | null>(null);
-    const [openCustom, setOpenCustom] = React.useState(false);
-    const classes = useStyles();
+    React.useEffect(() => {
+        if (!selection) {
+            select(publicTemplates?.[0] || null);
+        }
+    }, [publicTemplates]);
 
     async function onCreateClick(conf: SessionConfiguration): Promise<void> {
         try {
@@ -153,7 +158,9 @@ function TemplateSelector({client, conf, user, onDeployed, onRetry}: {client: Cl
         }
     }
 
-    if (selection) {
+    if (templates == undefined) {
+        return <LoadingPanel />;
+    } else if (selection) {
         return (
             <>
                 <Typography variant="h5" style={{padding: 20}}>Select a template</Typography>

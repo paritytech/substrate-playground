@@ -15,7 +15,7 @@ interface Loading {
     retry: number,
 }
 
-export function TheiaPanel({ client, autoDeploy, templates, onMissingSession, onSessionFailing, onSessionTimeout }: { client: Client, autoDeploy: string | null, templates: Record<string, Template>, onMissingSession: () => void, onSessionFailing: () => void, onSessionTimeout: () => void }): JSX.Element {
+export function TheiaPanel({ client, autoDeploy, onMissingSession, onSessionFailing, onSessionTimeout }: { client: Client, autoDeploy: string | null, onMissingSession: () => void, onSessionFailing: () => void, onSessionTimeout: () => void }): JSX.Element {
     const maxRetries = 5*60;
     const ref = useRef(null);
     const [error, setError] = useState<Error>();
@@ -65,41 +65,43 @@ export function TheiaPanel({ client, autoDeploy, templates, onMissingSession, on
         // If autoDeploy, first attempt to locate the associated template and deploy it.
         // In all cases, delegates to `fetchData`
         if (autoDeploy) {
-            if (!templates[autoDeploy]) {
-                setError({reason: `Unknown template ${autoDeploy}`,
-                          action: onMissingSession});
-                return;
-            }
+            client.listTemplates().then(templates => {
+                if (!templates[autoDeploy]) {
+                    setError({reason: `Unknown template ${autoDeploy}`,
+                              action: onMissingSession});
+                    return;
+                }
 
-            try {
-                client.getCurrentSession().then(session => {
-                    if (session) {
-                        setError({reason: "You can only have one active substrate playground session open at a time. \n Please close all other sessions to open a new one",
-                                  action: () => {
-                                      // Trigger current session deletion, wait for deletion then re-create a new one
-                                      return client.deleteCurrentSession()
-                                        .then(function() {
-                                            return new Promise<void>(function(resolve) {
-                                                const id = setInterval(async function() {
-                                                    const session = await client.getCurrentSession();
-                                                    if (!session) {
-                                                        clearInterval(id);
-                                                        resolve();
-                                                    }
-                                                }, 1000);
-                                            }
-                                        )})
-                                        .then(() => setError(undefined))
-                                        .then(() => createSession(autoDeploy));
-                                  },
-                                  actionTitle: "Replace existing session"});
-                    } else {
-                        createSession(autoDeploy);
-                    }
-                })
-            } catch {
-                setError({ reason: 'Error', action: onMissingSession});
-            }
+                try {
+                    client.getCurrentSession().then(session => {
+                        if (session) {
+                            setError({reason: "You can only have one active substrate playground session open at a time. \n Please close all other sessions to open a new one",
+                                      action: () => {
+                                          // Trigger current session deletion, wait for deletion then re-create a new one
+                                          return client.deleteCurrentSession()
+                                            .then(function() {
+                                                return new Promise<void>(function(resolve) {
+                                                    const id = setInterval(async function() {
+                                                        const session = await client.getCurrentSession();
+                                                        if (!session) {
+                                                            clearInterval(id);
+                                                            resolve();
+                                                        }
+                                                    }, 1000);
+                                                }
+                                            )})
+                                            .then(() => setError(undefined))
+                                            .then(() => createSession(autoDeploy));
+                                      },
+                                      actionTitle: "Replace existing session"});
+                        } else {
+                            createSession(autoDeploy);
+                        }
+                    })
+                } catch {
+                    setError({ reason: 'Error', action: onMissingSession});
+                }
+            });
         } else {
             fetchData();
         }
