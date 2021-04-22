@@ -1,4 +1,4 @@
-import { assign, Machine } from 'xstate';
+import { assign, createMachine } from 'xstate';
 import { Client, Configuration, LoggedUser } from '@substrate/playground-client';
 import { approve, approved } from './terms';
 
@@ -6,17 +6,7 @@ export enum PanelId {Session, Admin, Stats, Theia}
 
 export interface Context {
   panel: PanelId,
-  conf: Configuration,
-  user?: LoggedUser,
   error?: string,
-}
-
-export enum States {
-    TERMS_UNAPPROVED = '@state/TERMS_UNAPPROVED',
-    SETUP = '@state/SETUP',
-    LOGGED = '@state/LOGGED',
-    UNLOGGED = '@state/UNLOGGED',
-    UNLOGGING = '@state/UNLOGGING',
 }
 
 export enum Events {
@@ -32,8 +22,46 @@ export enum Actions {
     STORE_TERMS_HASH = '@action/STORE_TERMS_HASH',
 }
 
+type Event =
+  | { type: Events.TERMS_APPROVAL; id: string }
+  | { type: Events.LOGIN; user: LoggedUser; conf: Configuration }
+  | { type: Events.SELECT; panel: PanelId }
+  | { type: Events.RESTART; }
+  | { type: Events.UNLOGIN; conf: Configuration; error?: string }
+  | { type: Events.LOGOUT; };
+
+export enum States {
+    TERMS_UNAPPROVED = '@state/TERMS_UNAPPROVED',
+    SETUP = '@state/SETUP',
+    LOGGED = '@state/LOGGED',
+    UNLOGGED = '@state/UNLOGGED',
+    UNLOGGING = '@state/UNLOGGING',
+}
+
+type State =
+  | {
+      value: States.SETUP;
+      context: Context;
+    }
+  | {
+      value: States.TERMS_UNAPPROVED;
+      context: Context;
+    }
+  | {
+      value: States.LOGGED;
+      context: Context & {  user: LoggedUser, conf: Configuration };
+    }
+  | {
+      value: States.UNLOGGED;
+      context: Context;
+    }
+  | {
+      value: States.UNLOGGING;
+      context: Context;
+     };
+
 export function newMachine(client: Client, id: PanelId) {
-  return Machine<Context>({
+  return createMachine<Context, Event, State>({
     initial: approved()? States.SETUP: States.TERMS_UNAPPROVED,
     context: {
         panel: id,
@@ -58,7 +86,7 @@ export function newMachine(client: Client, id: PanelId) {
                         }
                     } catch (e) {
                         const error = e.message || JSON.stringify(e);
-                        callback({type: Events.UNLOGIN, error: error});
+                        callback({type: Events.UNLOGIN});
                     }
                 },
             },
@@ -67,12 +95,12 @@ export function newMachine(client: Client, id: PanelId) {
                                     return {
                                       user: event.user,
                                       conf: event.conf,
+                                      error: undefined,
                                     }
                                   })},
                  [Events.UNLOGIN]: {target: States.UNLOGGED,
                                     actions: assign((_, event) => {
                                       return {
-                                        user: undefined,
                                         conf: event.conf,
                                         error: event.error,
                                       }

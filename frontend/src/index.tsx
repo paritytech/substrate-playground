@@ -93,7 +93,7 @@ function App({ params }: { params: Params }): JSX.Element {
     const client = new Client(params.base, 30000, {credentials: "include"});
     const { deploy } = params;
     const [state, send] = useMachine(newMachine(client, deploy? PanelId.Theia: PanelId.Session), { devTools: true });
-    const { panel, user, conf, error } = state.context;
+    const { panel, error } = state.context;
 
     const restartAction = () => send(Events.RESTART);
     const selectPanel = (id: PanelId) => send(Events.SELECT, {panel: id});
