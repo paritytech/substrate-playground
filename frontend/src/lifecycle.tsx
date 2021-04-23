@@ -1,4 +1,4 @@
-import { assign, createMachine } from 'xstate';
+import { assign, createMachine, State } from 'xstate';
 import { Client, Configuration, LoggedUser } from '@substrate/playground-client';
 import { approve, approved } from './terms';
 
@@ -22,7 +22,7 @@ export enum Actions {
     STORE_TERMS_HASH = '@action/STORE_TERMS_HASH',
 }
 
-type Event =
+export type Event =
   | { type: Events.TERMS_APPROVAL; id: string }
   | { type: Events.LOGIN; user: LoggedUser; conf: Configuration }
   | { type: Events.SELECT; panel: PanelId }
@@ -38,7 +38,7 @@ export enum States {
     UNLOGGING = '@state/UNLOGGING',
 }
 
-type State =
+export type Typestate =
   | {
       value: States.SETUP;
       context: Context;
@@ -61,7 +61,7 @@ type State =
      };
 
 export function newMachine(client: Client, id: PanelId) {
-  return createMachine<Context, Event, State>({
+  return createMachine<Context, Event, Typestate>({
     initial: approved()? States.SETUP: States.TERMS_UNAPPROVED,
     context: {
         panel: id,

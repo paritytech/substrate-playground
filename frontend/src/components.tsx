@@ -125,15 +125,105 @@ export function Loading({ phase, retry = 0 }: { phase?: string, retry?: number }
     );
 }
 
-function Nav({ conf, onPlayground, onStatsClick, onAdminClick, onLogout, user, children }: { conf: Configuration, onPlayground: () => void, onStatsClick: () => void, onAdminClick: () => void, onLogout: () => void, user?: LoggedUser, children?: React.ReactElement }): JSX.Element  {
-    const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
-    const open = Boolean(anchorEl);
-    const handleMenu = (event: React.MouseEvent<HTMLElement>) => setAnchorEl(event.currentTarget);
-    const handleClose = () => setAnchorEl(null);
+export function NavSecondMenuAdmin({ onStatsClick, onAdminClick }: { onStatsClick: () => void, onAdminClick: () => void }): JSX.Element {
     const [anchorElAdmin, setAnchorElAdmin] = React.useState<null | HTMLElement>(null);
     const openAdmin = Boolean(anchorElAdmin);
     const handleMenuAdmin = (event: React.MouseEvent<HTMLElement>) => setAnchorElAdmin(event.currentTarget);
     const handleCloseAdmin = () => setAnchorElAdmin(null);
+    return (
+        <div style={{paddingLeft: 12}}>
+            <IconButton
+                aria-label="account of current user"
+                aria-controls="menu-admin"
+                aria-haspopup="true"
+                onClick={handleMenuAdmin}
+                color="inherit"
+                size="small"
+            >
+                <MoreVertIcon />
+            </IconButton>
+            <Menu
+                id="menu-admin"
+                anchorEl={anchorElAdmin}
+                anchorOrigin={{
+                vertical: 'top',
+                horizontal: 'right',
+                }}
+                keepMounted
+                transformOrigin={{
+                vertical: 'top',
+                horizontal: 'right',
+                }}
+                open={openAdmin}
+                onClose={handleCloseAdmin}
+            >
+                <MenuItem onClick={async () => {handleCloseAdmin(); onStatsClick();}}>STATS</MenuItem>
+                <MenuItem onClick={async () => {handleCloseAdmin(); onAdminClick();}}>ADMIN</MenuItem>
+            </Menu>
+        </div>
+    );
+}
+
+export function NavMenuUnlogged(): JSX.Element {
+    return (
+        <div style={{paddingLeft: 12}}>
+            <IconButton
+                aria-label="account of current user"
+                aria-controls="menu-appbar"
+                aria-haspopup="true"
+                color="inherit"
+                size="small"
+            >
+                <Avatar alt="Not logged">
+                    <GitHubIcon />
+                </Avatar>
+            </IconButton>
+        </div>
+    );
+}
+
+export function NavMenuLogged({ conf, user, onLogout }: { conf: Configuration, user: LoggedUser, onLogout: () => void}): JSX.Element {
+    const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+    const open = Boolean(anchorEl);
+    const handleMenu = (event: React.MouseEvent<HTMLElement>) => setAnchorEl(event.currentTarget);
+    const handleClose = () => setAnchorEl(null);
+    return (
+        <div style={{paddingLeft: 12}}>
+                <IconButton
+                    aria-label="account of current user"
+                    aria-controls="menu-appbar"
+                    aria-haspopup="true"
+                    onClick={handleMenu}
+                    color="inherit"
+                    size="small"
+                >
+                    <Avatar alt={user.id} src={`https://github.com/${user.id}.png`} />
+                </IconButton>
+                <Menu
+                    id="menu-appbar"
+                    anchorEl={anchorEl}
+                    anchorOrigin={{
+                    vertical: 'top',
+                    horizontal: 'right',
+                    }}
+                    keepMounted
+                    transformOrigin={{
+                    vertical: 'top',
+                    horizontal: 'right',
+                    }}
+                    open={open}
+                    onClose={handleClose}
+                >
+                    <MenuItem onClick={() => window.open("https://github.com/paritytech/substrate-playground/discussions")}>FEEDBACK</MenuItem>
+                    <MenuItem onClick={() => window.open(`https://github.com/settings/connections/applications/${conf.githubClientId}`)}>GITHUB APPLICATION</MenuItem>
+
+                    <MenuItem onClick={async () => {handleClose(); onLogout()}}>LOGOUT</MenuItem>
+                </Menu>
+            </div>
+    );
+}
+
+export function Nav({ onPlayground, children }: { onPlayground: () => void, children?: React.ReactElement }): JSX.Element {
     return (
         <AppBar position="sticky">
             <Toolbar style={{ justifyContent: "space-between" }} variant="dense">
@@ -141,98 +231,16 @@ function Nav({ conf, onPlayground, onStatsClick, onAdminClick, onLogout, user, c
                     <Button onClick={onPlayground}>Playground</Button>
                 </Typography>
                 {children}
-                <div style={{display: "flex", alignItems: "center"}}>
-                    {(user && hasAdminReadRights(user)) &&
-                    <div style={{paddingLeft: 12}}>
-                        <IconButton
-                            aria-label="account of current user"
-                            aria-controls="menu-admin"
-                            aria-haspopup="true"
-                            onClick={handleMenuAdmin}
-                            color="inherit"
-                            size="small"
-                        >
-                            <MoreVertIcon />
-                        </IconButton>
-                        <Menu
-                            id="menu-admin"
-                            anchorEl={anchorElAdmin}
-                            anchorOrigin={{
-                            vertical: 'top',
-                            horizontal: 'right',
-                            }}
-                            keepMounted
-                            transformOrigin={{
-                            vertical: 'top',
-                            horizontal: 'right',
-                            }}
-                            open={openAdmin}
-                            onClose={handleCloseAdmin}
-                        >
-                            <MenuItem onClick={async () => {handleCloseAdmin(); onStatsClick();}}>STATS</MenuItem>
-                            <MenuItem onClick={async () => {handleCloseAdmin(); onAdminClick();}}>ADMIN</MenuItem>
-                        </Menu>
-                    </div>}
-                    {user
-                     ? <div style={{paddingLeft: 12}}>
-                     <IconButton
-                         aria-label="account of current user"
-                         aria-controls="menu-appbar"
-                         aria-haspopup="true"
-                         onClick={handleMenu}
-                         color="inherit"
-                         size="small"
-                     >
-                         <Avatar alt={user.id} src={`https://github.com/${user.id}.png`} />
-                     </IconButton>
-                     <Menu
-                         id="menu-appbar"
-                         anchorEl={anchorEl}
-                         anchorOrigin={{
-                         vertical: 'top',
-                         horizontal: 'right',
-                         }}
-                         keepMounted
-                         transformOrigin={{
-                         vertical: 'top',
-                         horizontal: 'right',
-                         }}
-                         open={open}
-                         onClose={handleClose}
-                     >
-                         <MenuItem onClick={() => window.open("https://github.com/paritytech/substrate-playground/discussions")}>FEEDBACK</MenuItem>
-                         <MenuItem onClick={() => window.open(`https://github.com/settings/connections/applications/${conf.githubClientId}`)}>GITHUB APPLICATION</MenuItem>
-
-                         <MenuItem onClick={async () => {handleClose(); onLogout()}}>LOGOUT</MenuItem>
-                     </Menu>
-                 </div>
-                        :
-                        <div style={{paddingLeft: 12}}>
-                        <IconButton
-                            aria-label="account of current user"
-                            aria-controls="menu-appbar"
-                            aria-haspopup="true"
-                            color="inherit"
-                            size="small"
-                        >
-                            <Avatar alt="Not logged">
-                                <GitHubIcon />
-                            </Avatar>
-                        </IconButton>
-                        </div>}
-                </div>
             </Toolbar>
         </AppBar>
     );
 }
 
-export function Wrapper({ conf, params, thin = false, onPlayground, onStatsClick, onAdminClick, onLogout, user, children, extraNav}: { conf: Configuration, params: Params, thin?: boolean, onPlayground: () => void, onStatsClick: () => void, onAdminClick: () => void, onLogout: () => void, user?: LoggedUser, children: React.ReactElement, extraNav?: React.ReactElement}): JSX.Element {
+export function Wrapper({ params, thin = false, children, nav}: { params: Params, thin?: boolean, children: React.ReactElement, nav?: React.ReactElement}): JSX.Element {
     return (
         <div style={{display: "flex", flexDirection: "column", width: "inherit", height: "inherit"}}>
 
-            <Nav conf={conf} onPlayground={onPlayground} onStatsClick={onStatsClick} onAdminClick={onAdminClick} onLogout={onLogout} user={user}>
-                {extraNav}
-            </Nav>
+            {nav}
 
             <Fade in appear>
                 {children}
