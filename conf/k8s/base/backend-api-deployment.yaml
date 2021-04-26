@@ -68,3 +68,13 @@ spec:
               secretKeyRef:
                 name: playground-secrets
                 key: rocket.secretKey
+      readinessProbe:
+        httpGet:
+          path: /api
+        initialDelaySeconds: 5
+        periodSeconds: 5
+      livenessProbe:
+        httpGet:
+          path: /api
+        initialDelaySeconds: 5
+        periodSeconds: 5
