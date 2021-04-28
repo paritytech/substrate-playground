@@ -1,4 +1,4 @@
-import { assign, createMachine } from 'xstate';
+import { assign, createMachine, StateMachine } from 'xstate';
 import { Client, Configuration, LoggedUser } from '@substrate/playground-client';
 import { approve, approved } from './terms';
 
@@ -60,7 +60,7 @@ export type Typestate =
       context: Context;
      };
 
-export function newMachine(client: Client, id: PanelId) {
+export function newMachine(client: Client, id: PanelId): StateMachine<Context, any, Event, Typestate> {
   return createMachine<Context, Event, Typestate>({
     initial: approved()? States.SETUP: States.TERMS_UNAPPROVED,
     context: {

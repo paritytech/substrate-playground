@@ -87,7 +87,7 @@ function ExtraTheiaNav({ client, conf, restartAction }: { client: Client, conf: 
 
 function restart(send: (event: Events) => void) { send(Events.RESTART)}
 
-function selectPanel(send: (event: Events, payload: any) => void, id: PanelId) { send(Events.SELECT, {panel: id})}
+function selectPanel(send: (event: Events, payload: Record<string, unknown>) => void, id: PanelId) { send(Events.SELECT, {panel: id})}
 
 function CustomNav({ client, send, state }: { client: Client, send: (event: Events) => void, state: State<Context, Event, any, Typestate> }): JSX.Element  {
     const { panel } = state.context;
