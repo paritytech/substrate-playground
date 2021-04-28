@@ -1,4 +1,4 @@
-import { assign, createMachine, StateMachine } from 'xstate';
+import { assign, createMachine, StateMachine, StateSchema } from 'xstate';
 import { Client, Configuration, LoggedUser } from '@substrate/playground-client';
 import { approve, approved } from './terms';
 
@@ -30,6 +30,7 @@ export type Event =
   | { type: Events.UNLOGIN; conf: Configuration; error?: string }
   | { type: Events.LOGOUT; };
 
+
 export enum States {
     TERMS_UNAPPROVED = '@state/TERMS_UNAPPROVED',
     SETUP = '@state/SETUP',
@@ -60,7 +61,17 @@ export type Typestate =
       context: Context;
      };
 
-export function newMachine(client: Client, id: PanelId): StateMachine<Context, any, Event, Typestate> {
+export interface SchemaType extends StateSchema {
+    states: {
+        [States.TERMS_UNAPPROVED]: Record<string, unknown>;
+        [States.SETUP]: Record<string, unknown>;
+        [States.LOGGED]: Record<string, unknown>;
+        [States.UNLOGGED]: Record<string, unknown>;
+        [States.UNLOGGING]: Record<string, unknown>;
+    };
+}
+
+export function newMachine(client: Client, id: PanelId): StateMachine<Context, SchemaType, Event, Typestate> {
   return createMachine<Context, Event, Typestate>({
     initial: approved()? States.SETUP: States.TERMS_UNAPPROVED,
     context: {

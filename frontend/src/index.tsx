@@ -8,7 +8,7 @@ import Typography from "@material-ui/core/Typography";
 import { useMachine } from '@xstate/react';
 import { CenteredContainer, ErrorMessage, LoadingPanel, Nav, NavMenuLogged, NavMenuUnlogged, NavSecondMenuAdmin, Wrapper } from './components';
 import { useInterval } from "./hooks";
-import { newMachine, Context, Event, Events, PanelId, States, Typestate } from './lifecycle';
+import { newMachine, Context, Event, Events, PanelId, States, Typestate, SchemaType } from './lifecycle';
 import { AdminPanel } from './panels/admin';
 import { LoginPanel } from './panels/login';
 import { SessionPanel } from './panels/session';
@@ -89,7 +89,7 @@ function restart(send: (event: Events) => void) { send(Events.RESTART)}
 
 function selectPanel(send: (event: Events, payload: Record<string, unknown>) => void, id: PanelId) { send(Events.SELECT, {panel: id})}
 
-function CustomNav({ client, send, state }: { client: Client, send: (event: Events) => void, state: State<Context, Event, any, Typestate> }): JSX.Element  {
+function CustomNav({ client, send, state }: { client: Client, send: (event: Events) => void, state: State<Context, Event, SchemaType, Typestate> }): JSX.Element  {
     const { panel } = state.context;
     return (
         <Nav onPlayground={() => selectPanel(send, PanelId.Session)}>
