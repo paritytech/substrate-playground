@@ -1,6 +1,6 @@
 import { injectable, inject } from "inversify";
+import { Request, Type } from '@substrate/playground-client';
 import { MAIN_MENU_BAR, CommandContribution, CommandRegistry, MenuContribution, MenuModelRegistry } from "@theia/core/lib/common";
-import { ConnectionStatusService, ConnectionStatus } from '@theia/core/lib/browser/connection-status-service';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
 import { FileNavigatorContribution } from '@theia/navigator/lib/browser/navigator-contribution';
@@ -20,24 +20,16 @@ async function openTerminal(terminalService: TerminalService, options: TerminalW
    return terminalWidget;
 }
 
-function answer(type: string, uuid?: string, data?: any): void {
-    window.parent.postMessage({type: type, uuid: uuid, data: data}, "*");
+function postMessage(id: string, data: Record<string, unknown>): void {
+    window.parent.postMessage({id: id, ...data}, "*");
 }
 
-function updateStatus(status: ConnectionStatus): void {
-    if (status === ConnectionStatus.OFFLINE) {
-        answer("extension-offline");
-    } else {
-        answer("extension-online");
-    }
-}
-
-function unmarshall(payload) {
+function unmarshall(payload: Record<string, unknown>): unknown {
     const {type, data} = payload;
     if (type) {
         switch(type) {
             case "URI":
-                return VSCodeURI.parse(data);
+                return VSCodeURI.parse(data as string);
             default:
                 throw new Error(`Failed to unmarshall unknown type ${type}`);
         }
@@ -46,47 +38,32 @@ function unmarshall(payload) {
     }
 }
 
-function registerBridge(registry, connectionStatusService, messageService) {
+function registerBridge(registry: CommandRegistry): void {
     // Listen to message from parent frame
-    window.addEventListener('message', async (o) => {
-        const {type, name, data, uuid} = o.data;
-        if (type) { // Filter extension related message
-            const status = connectionStatusService.currentStatus;
-            if (status === ConnectionStatus.OFFLINE) {
-                answer("extension-answer-offline", uuid);
-                return;
-            }
-
-            switch (type) {
-                case "action": {
-                    try {
-                        const result = await registry.executeCommand(name, unmarshall(data));
-                        answer("extension-answer", uuid, result);
-                    } catch (error) {
-                        messageService.error(`Error while executing ${name}.`, error.message);
-                        answer("extension-answer-error", uuid, {name: name, message: error.message, data: data});
-                    }
-                    break;
+    window.addEventListener('message', async (o: MessageEvent<Request>) => {
+        const {type, data, id} = o.data;
+        switch (type) {
+            case Type.EXEC: {
+                const {command, parameters } = data;
+                try {
+                    const result = await registry.executeCommand.apply(null, [command].concat((parameters as unknown[]).map(unmarshall)));
+                    postMessage(id, {result: result});
+                } catch (error) {
+                    postMessage(id, {error: error.message});
                 }
-                case "list-actions": {
-                    answer("extension-answer", uuid, registry.commands);
-                    break;
-                }
-                default:
-                    if (type) {
-                        const message = `Unknown extension type ${type}`;
-                        console.error(message, o);
-                        answer("extension-answer-error", uuid, message);
-                    }
-                    break;
+                break;
             }
+            case Type.LIST: {
+                postMessage(id, {result: registry.commands});
+                break;
+            }
+            default:
+                if (type) {
+                    postMessage(id, {error: `Unknown extension type ${type}`});
+                }
+                break;
         }
     }, false);
-
-    connectionStatusService.onStatusChange(() => updateStatus(connectionStatusService.currentStatus));
-
-    const online = connectionStatusService.currentStatus === ConnectionStatus.ONLINE;
-    answer("extension-advertise", "", {online: online});
 }
 
 async function locateDevcontainer(workspaceService: WorkspaceService, fileService: FileService): Promise<URI | undefined> {
@@ -150,9 +127,6 @@ export class TheiaSubstrateExtensionCommandContribution implements CommandContri
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
 
-    @inject(ConnectionStatusService)
-    protected readonly connectionStatusService: ConnectionStatusService;
-
     @inject(MessageService)
     protected readonly messageService: MessageService;
 
@@ -165,7 +139,7 @@ export class TheiaSubstrateExtensionCommandContribution implements CommandContri
     registerCommands(registry: CommandRegistry): void {
         if (window !== window.parent) {
             // Running in a iframe
-            registerBridge(registry, this.connectionStatusService, this.messageService);
+            registerBridge(registry);
             const members = document.domain.split(".");
             document.domain = members.slice(members.length-2).join(".");
         }
