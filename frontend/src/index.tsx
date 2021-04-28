@@ -18,24 +18,24 @@ import { TheiaPanel } from './panels/theia';
 import { terms } from "./terms";
 import { hasAdminReadRights } from "./utils";
 
-function MainPanel({ client, params, conf, user, id, restartAction, onConnect, onDeployed }: { client: Client, params: Params, conf: Configuration, user?: LoggedUser, id: PanelId, restartAction: () => void, onConnect: () => void, onDeployed: () => void }): JSX.Element {
+function MainPanel({ client, params, conf, user, id, onRetry, onConnect, onAfterDeployed }: { client: Client, params: Params, conf: Configuration, user?: LoggedUser, id: PanelId, onRetry: () => void, onConnect: () => void, onAfterDeployed: () => void }): JSX.Element {
     switch(id) {
         case PanelId.Session:
-          return <SessionPanel client={client} conf={conf} user={user} onRetry={restartAction}
+          return <SessionPanel client={client} conf={conf} user={user} onRetry={onRetry}
                     onStop={async () => {
                         await client.deleteCurrentSession();
                     }}
                     onDeployed={async conf => {
                         await client.createCurrentSession(conf);
-                        onDeployed();
+                        onAfterDeployed();
                     }}
                     onConnect={onConnect} />;
         case PanelId.Stats:
           return <StatsPanel />;
         case PanelId.Admin:
           return <AdminPanel client={client} conf={conf} user={user} />;
-        case PanelId.Admin:
-          return <TheiaPanel client={client} autoDeploy={params.deploy} onMissingSession={restartAction} onSessionFailing={restartAction} onSessionTimeout={restartAction} />;
+        case PanelId.Theia:
+          return <TheiaPanel client={client} autoDeploy={params.deploy} onMissingSession={onRetry} onSessionFailing={onRetry} onSessionTimeout={onRetry} />;
     }
     return <></>;
 }
@@ -131,8 +131,8 @@ function App({ params }: { params: Params }): JSX.Element {
                          params={params}>
                    {state.matches(States.LOGGED)
                    ? <MainPanel client={client} params={params} conf={state.context.conf} user={state.context.user} id={panel}
-                                restartAction={() => restart(send)}
-                                onDeployed={() => selectPanel(send, PanelId.Theia)}
+                                onRetry={() => restart(send)}
+                                onAfterDeployed={() => selectPanel(send, PanelId.Theia)}
                                 onConnect={() => selectPanel(send, PanelId.Theia)} />
                    : state.matches(States.TERMS_UNAPPROVED)
                      ? <TermsPanel terms={terms} onTermsApproved={() => send(Events.TERMS_APPROVAL)} />
