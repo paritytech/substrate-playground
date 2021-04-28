@@ -41,7 +41,7 @@
     "eslint": "7.25.0",
     "eslint-plugin-react": "7.23.2",
     "parcel": "2.0.0-beta.2",
-    "postcss": "^8.2.12",
+    "postcss": "^8.2.13",
     "typescript": "4.2.4"
   },
   "browserslist": [
