@@ -167,5 +167,6 @@ export class Client {
 
 export * from "./login";
 export * from "./rpc";
+export * from "./session";
 export * from "./types";
 export * from "./utils";

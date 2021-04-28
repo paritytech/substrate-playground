@@ -7,13 +7,13 @@ export interface Params {
 export interface Request {
     id: string,
     type: Type,
-    data: Record<string, string>,
+    data: Record<string, unknown>,
 }
 
-export interface Response {
+export interface Response<T> {
     id: string,
-    result?: any,
-    error?: {message: string},
+    result?: T,
+    error?: string,
 }
 
 export enum Type {
@@ -31,20 +31,28 @@ export class SessionClient {
         this.defaultParams = defaultParams || {timeout: 5000};
     }
 
-    async send(type: Type, data: Record<string, string>, {timeout: timeout}: Params = this.defaultParams): Promise<string> {
+    async exec<T>(command: string, ...parameters: Array<unknown>): Promise<T> {
+        return this.send(Type.EXEC, {command: command, parameters: parameters});
+    }
+
+    async list(): Promise<Record<string, unknown>> {
+        return this.send(Type.LIST);
+    }
+
+    async send<T>(type: Type, data: Record<string, unknown> = {}, {timeout: timeout}: Params = this.defaultParams): Promise<T> {
         return new Promise((resolve, reject) => {
             const timeoutId = setTimeout(async () => {
                 window.removeEventListener('message', callback, false);
                 reject({type: 'timeout', message: `No message after ${timeout} ms`});
             }, timeout);
             const id = uuidv4();
-            const callback = (event: MessageEvent<Response>) => {
+            const callback = (event: MessageEvent<Response<T>>) => {
                 if (event.data.id == id) {
                     window.removeEventListener('message', callback, false);
                     clearTimeout(timeoutId);
                     const { result, error } = event.data;
                     if (error) {
-                        reject(error);
+                        reject({type: 'failure', message: error});
                     } else {
                         resolve(result);
                     }
