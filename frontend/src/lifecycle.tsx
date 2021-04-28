@@ -1,4 +1,4 @@
-import { assign, createMachine, State } from 'xstate';
+import { assign, createMachine } from 'xstate';
 import { Client, Configuration, LoggedUser } from '@substrate/playground-client';
 import { approve, approved } from './terms';
 
