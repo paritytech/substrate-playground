@@ -21,7 +21,6 @@ import Typography from '@material-ui/core/Typography';
 import { Configuration, LoggedUser } from "@substrate/playground-client";
 import { useInterval } from './hooks';
 import { Params } from "./index";
-import { hasAdminReadRights } from './utils';
 
 function ErrorMessageAction({action, actionTitle = "TRY AGAIN"}: {action: (() => void) | (() => Promise<void>), actionTitle?: string}): JSX.Element {
     const [executing, setExecuting] = useState(false);
