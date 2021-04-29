@@ -57,7 +57,7 @@ export default function SplitButton({ template, disabled, onCreate, onCreateCust
   };
 
   const handleMenuItemClick = (
-    event: React.MouseEvent<HTMLLIElement, MouseEvent>,
+    _event: React.MouseEvent<HTMLLIElement, MouseEvent>,
     index: number,
   ) => {
     setSelectedIndex(index);
@@ -144,9 +144,10 @@ function TemplateSelector({client, conf, user, onDeployed, onRetry}: {client: Cl
         try {
             setDeploying(true);
             await onDeployed(conf);
-            setDeploying(false);
         } catch (e) {
             setErrorMessage(`Failed to create a new session: ${e}`);
+        } finally {
+            setDeploying(false);
         }
     }
 
