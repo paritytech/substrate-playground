@@ -1852,16 +1852,16 @@
   dependencies:
     uuid "8.3.2"
 
-"@theia/application-manager@1.12.1":
-  version "1.12.1"
-  resolved "https://registry.yarnpkg.com/@theia/application-manager/-/application-manager-1.12.1.tgz#e954bf6a3869b29e533409ede019c37334f43755"
-  integrity sha512-ZKCW8LOre57WQnl/Py3tbDzN9WmPFTg8YnrciBbswBPqpJZ5Ve4PH08E3jOlLnUdI4DaVayOmsz0JP/XBltKGg==
+"@theia/application-manager@1.13.0":
+  version "1.13.0"
+  resolved "https://registry.yarnpkg.com/@theia/application-manager/-/application-manager-1.13.0.tgz#6094984f09880556020203c50475e7788e306c7f"
+  integrity sha512-KblS+ONEbypZy3u2KYeVxF6nNRxmT6PDdLkcfZ42dSkpAjte94fM0Fi+ofC6k5t2yzX5kAtqLM5cncOl5GTgfA==
   dependencies:
     "@babel/core" "^7.10.0"
     "@babel/plugin-transform-classes" "^7.10.0"
     "@babel/plugin-transform-runtime" "^7.10.0"
     "@babel/preset-env" "^7.10.0"
-    "@theia/application-package" "1.12.1"
+    "@theia/application-package" "1.13.0"
     "@theia/compression-webpack-plugin" "^3.0.0"
     "@types/fs-extra" "^4.0.2"
     "@types/webpack" "^4.41.2"
@@ -1883,11 +1883,29 @@
     webpack "^4.0.0"
     webpack-cli "2.0.12"
     worker-loader "^1.1.1"
+    yargs "^15.3.1"
 
 "@theia/application-package@1.12.1":
   version "1.12.1"
   resolved "https://registry.yarnpkg.com/@theia/application-package/-/application-package-1.12.1.tgz#42521336f8cb7ee565d2c3927ffd46d0f66a7f00"
   integrity sha512-att1V0D5pSzkbn4uRAIKNLElwht0ZwIJn+TRuqd1OlVXWqzZ24lVJBFGdxMIR8GBSblu172bVJTU2QymB5aFmw==
+  dependencies:
+    "@types/fs-extra" "^4.0.2"
+    "@types/request" "^2.0.3"
+    "@types/semver" "^5.4.0"
+    "@types/write-json-file" "^2.2.1"
+    changes-stream "^2.2.0"
+    deepmerge "2.0.1"
+    fs-extra "^4.0.2"
+    is-electron "^2.1.0"
+    request "^2.82.0"
+    semver "^5.4.1"
+    write-json-file "^2.2.0"
+
+"@theia/application-package@1.13.0":
+  version "1.13.0"
+  resolved "https://registry.yarnpkg.com/@theia/application-package/-/application-package-1.13.0.tgz#b9f877b11499fd5ec584e7e32bedb4b81d58a667"
+  integrity sha512-HojiIghD3DOPcmLSORsgHjWD4/0/y0BoATRFRv1HpXuBqlWv4bWgdba35xDiuVwDRiNc2Gbg/EFYtLHjyINmxg==
   dependencies:
     "@types/fs-extra" "^4.0.2"
     "@types/request" "^2.0.3"
@@ -1922,13 +1940,13 @@
     "@theia/monaco" "1.12.1"
     ts-md5 "^1.2.2"
 
-"@theia/cli@1.12.1":
-  version "1.12.1"
-  resolved "https://registry.yarnpkg.com/@theia/cli/-/cli-1.12.1.tgz#83c450f98596f78cdeb62b1666acb123adfd690e"
-  integrity sha512-iP+wcb42N9KIUeAyYxYYWFB2qSSn9I0VxToAKSPzlUmbPqmrhhTEzvrcBboJfY75ekWr9ME7Kb6T0PgCvEwh2A==
+"@theia/cli@1.13.0":
+  version "1.13.0"
+  resolved "https://registry.yarnpkg.com/@theia/cli/-/cli-1.13.0.tgz#a6870fa3e5134e8bc052cfefde94dc7e8d6750c8"
+  integrity sha512-QMdVnH6lkNI3x1PLvnXPUqq/ydGF0vEasBjbOMFymyux6e3Tfi/yeUmEv3POIurDQiHczvMoIfoSCHiL4+D2Rw==
   dependencies:
-    "@theia/application-manager" "1.12.1"
-    "@theia/application-package" "1.12.1"
+    "@theia/application-manager" "1.13.0"
+    "@theia/application-package" "1.13.0"
     "@types/chai" "^4.2.7"
     "@types/mkdirp" "^0.5.2"
     "@types/mocha" "^5.2.7"
