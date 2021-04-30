@@ -11,7 +11,7 @@
     },
     "dependencies": {
         "@theia/callhierarchy": "1.12.1",
-        "@theia/console": "1.12.1",
+        "@theia/console": "1.13.0",
         "@theia/core": "1.12.1",
         "@theia/debug": "1.12.1",
         "@theia/editor": "1.12.1",
