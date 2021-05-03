@@ -9,6 +9,10 @@ resources:
 images:
 - name: grafana/grafana
   newTag: 7.3.2
+
+generatorOptions:
+  disableNameSuffixHash: true
+
 configMapGenerator:
 - name: grafana-dashboards
   files:

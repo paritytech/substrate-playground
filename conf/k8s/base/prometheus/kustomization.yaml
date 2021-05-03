@@ -10,6 +10,10 @@ resources:
 images:
 - name: prom/prometheus
   newTag: v2.22.1
+
+generatorOptions:
+  disableNameSuffixHash: true
+
 configMapGenerator:
 - name: prometheus-configuration
   files:

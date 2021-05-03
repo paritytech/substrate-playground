@@ -6,7 +6,6 @@ spec:
   serviceName: "prometheus"
   replicas: 1
   selector:
-
     matchLabels:
       app.kubernetes.io/component: prometheus
   template:
