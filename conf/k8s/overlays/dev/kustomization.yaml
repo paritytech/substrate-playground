@@ -4,6 +4,7 @@ kind: Kustomization
 commonLabels:
   app.kubernetes.io/environment: dev
   app.kubernetes.io/version: "1.0"
+  skaffold.dev/run-id: static
 
 resources:
 - ../../base
