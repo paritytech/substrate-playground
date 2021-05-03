@@ -120,7 +120,7 @@ impl Manager {
                                 &session.pod.start_time.and_then(|p| p.elapsed().ok())
                             {
                                 if duration > &session.duration {
-                                    info!("Undeploying {}", session.user_id);
+                                    info!("Undeploying {} after {}", session.user_id, duration.as_secs() / 60);
 
                                     match runtime.block_on(
                                         self.engine.delete_session(&session_id(&session.user_id)),
