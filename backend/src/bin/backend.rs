@@ -1,27 +1,17 @@
 #![feature(async_closure, proc_macro_hygiene, decl_macro)]
 
-mod api;
-mod error;
-mod github;
-mod kubernetes;
-mod manager;
-mod metrics;
-mod prometheus;
-mod types;
+extern crate playground;
 
-use crate::manager::Manager;
-use crate::prometheus::PrometheusMetrics;
+use playground::Context;
+use playground::manager::Manager;
+use playground::prometheus::PrometheusMetrics;
 use ::prometheus::Registry;
-use github::GitHubUser;
+use playground::github::GitHubUser;
 use rocket::fairing::AdHoc;
 use rocket::{catchers, config::Environment, http::Method, routes};
 use rocket_cors::{AllowedOrigins, CorsOptions};
 use rocket_oauth2::{HyperSyncRustlsAdapter, OAuth2, OAuthConfig, StaticProvider};
 use std::{env, error::Error};
-
-pub struct Context {
-    manager: Manager,
-}
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
@@ -59,7 +49,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     manager.clone().metrics.register(registry.clone())?;
     let prometheus = PrometheusMetrics::with_registry(registry);
     let error = rocket::ignite()
-        .register(catchers![api::bad_request_catcher])
+        .register(catchers![playground::api::bad_request_catcher])
         .attach(cors)
         .attach(AdHoc::on_attach("github", |rocket| {
             let config = OAuthConfig::new(
@@ -79,39 +69,39 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .mount(
             "/api",
             routes![
-                api::get,
-                api::get_unlogged,
+                playground::api::get,
+                playground::api::get_unlogged,
                 // Users
-                api::get_user,
-                api::list_users,
-                api::create_user,
-                api::update_user,
-                api::delete_user,
+                playground::api::get_user,
+                playground::api::list_users,
+                playground::api::create_user,
+                playground::api::update_user,
+                playground::api::delete_user,
                 // Current Session
-                api::get_current_session,
-                api::get_current_session_unlogged,
-                api::create_current_session,
-                api::create_current_session_unlogged,
-                api::update_current_session,
-                api::update_current_session_unlogged,
-                api::delete_current_session,
-                api::delete_current_session_unlogged,
+                playground::api::get_current_session,
+                playground::api::get_current_session_unlogged,
+                playground::api::create_current_session,
+                playground::api::create_current_session_unlogged,
+                playground::api::update_current_session,
+                playground::api::update_current_session_unlogged,
+                playground::api::delete_current_session,
+                playground::api::delete_current_session_unlogged,
                 // Sessions
-                api::get_session,
-                api::list_sessions,
-                api::create_session,
-                api::update_session,
-                api::delete_session,
+                playground::api::get_session,
+                playground::api::list_sessions,
+                playground::api::create_session,
+                playground::api::update_session,
+                playground::api::delete_session,
                 // Templates
-                api::list_templates,
+                playground::api::list_templates,
                 // Pools
-                api::get_pool,
-                api::list_pools,
+                playground::api::get_pool,
+                playground::api::list_pools,
                 // Login
-                api::github_login,
-                api::post_install_callback,
-                api::login,
-                api::logout,
+                playground::api::github_login,
+                playground::api::post_install_callback,
+                playground::api::login,
+                playground::api::logout,
             ],
         )
         .mount("/metrics", prometheus)

@@ -7,7 +7,7 @@ FROM clux/muslrust:1.50.0-nightly-2020-11-27 AS builder
 
 WORKDIR /opt
 
-ENV BINARY_NAME=playground
+ENV BINARY_NAME=backend
 
 # Build the project with target x86_64-unknown-linux-musl
 
@@ -17,8 +17,8 @@ ENV BINARY_NAME=playground
 
 COPY Cargo.* ./
 
-RUN mkdir src \
-    && echo "fn main() {print!(\"Dummy main\");} // dummy file" > src/main.rs \
+RUN mkdir -p src/bin \
+    && echo "fn main() {print!(\"Dummy main\");} // dummy file" > src/bin/backend.rs \
     && set -x && cargo build --locked --target x86_64-unknown-linux-musl --release \
     && set -x && rm target/x86_64-unknown-linux-musl/release/deps/$BINARY_NAME*
 
@@ -48,4 +48,4 @@ ENV SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt\
 
 COPY --from=builder /opt/bin/$BINARY_NAME /
 
-CMD ["/playground"]
+CMD ["/backend"]
