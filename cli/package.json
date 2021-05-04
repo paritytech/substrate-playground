@@ -39,7 +39,7 @@
     "ink-spinner": "4.0.1",
     "lookpath": "1.2.0",
     "react": "16.14.0",
-    "yargs": "17.0.0"
+    "yargs": "17.0.1"
   },
   "devDependencies": {
     "@types/node": "15.0.1",
