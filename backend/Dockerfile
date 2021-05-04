@@ -7,8 +7,6 @@ FROM clux/muslrust:1.50.0-nightly-2020-11-27 AS builder
 
 WORKDIR /opt
 
-ENV BINARY_NAME=backend
-
 # Build the project with target x86_64-unknown-linux-musl
 
 # Build dummy main with the project's Cargo lock and toml
@@ -19,8 +17,7 @@ COPY Cargo.* ./
 
 RUN mkdir -p src/bin \
     && echo "fn main() {print!(\"Dummy main\");} // dummy file" > src/bin/backend.rs \
-    && set -x && cargo build --locked --target x86_64-unknown-linux-musl --release \
-    && set -x && rm target/x86_64-unknown-linux-musl/release/deps/$BINARY_NAME*
+    && set -x && cargo build --locked --target x86_64-unknown-linux-musl --release
 
 # Now add the rest of the project and build the real main
 
@@ -46,6 +43,4 @@ ENV SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt\
     RUST_BACKTRACE=full\
     RUST_LOG="warn,playground=info"
 
-COPY --from=builder /opt/bin/$BINARY_NAME /
-
-CMD ["/backend"]
+COPY --from=builder /opt/bin/* /

@@ -21,6 +21,7 @@ spec:
       containers:
       - name: backend-api
         image: paritytech/substrate-playground-backend-api
+        command: ["backend"]
         ports:
         - containerPort: 80
         env:
@@ -68,13 +69,15 @@ spec:
               secretKeyRef:
                 name: playground-secrets
                 key: rocket.secretKey
-      readinessProbe:
-        httpGet:
-          path: /api
-        initialDelaySeconds: 5
-        periodSeconds: 5
-      livenessProbe:
-        httpGet:
-          path: /api
-        initialDelaySeconds: 5
-        periodSeconds: 5
+        readinessProbe:
+          httpGet:
+            path: /api
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        livenessProbe:
+          httpGet:
+            path: /api
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 5
