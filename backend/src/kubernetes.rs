@@ -76,7 +76,7 @@ fn pod_env_variables(runtime: &Runtime, host: &str, workspace_id: &str) -> Vec<E
 fn runtime() -> Runtime {
     // TODO
     Runtime {
-        container_configuration: ContainerConfiguration::IMAGE("".to_string()),
+        container_configuration: ContainerConfiguration::IMAGE{ value: "".to_string()},
         env: None,
         ports: None,
     }
@@ -742,10 +742,11 @@ impl Engine {
         // TODO use conf.version to access right workspace
         let volume = get_or_create_volume(&volume_api, user_id, &conf.repository_id).await?;
 
+        let reference = conf.repository_reference.unwrap_or_else(|| "latest".to_string()); // TODO
         let version = repository
             .versions
             .into_iter()
-            .find(|version| version.reference == conf.repository_reference)
+            .find(|version| version.reference == reference)
             .ok_or(Error::MissingData("repository#version"))?;
         if version.state != RepositoryVersionState::BUILT {
             return Err(Error::MissingData("repository#version#built"));
