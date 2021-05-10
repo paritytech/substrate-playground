@@ -112,8 +112,8 @@ build-template:
 	@rm -rf templates/${REPOSITORY_CLONE}
 
 push-template: build-template
-	docker push paritytech/substrate-playground-template-${TEMPLATE}:sha-${REV}
-	docker push paritytech/substrate-playground-template-${TEMPLATE}-theia:sha-${REV}
+	docker push ${TAG}
+	docker push ${TAG_THEIA}
 
 build-backend-docker-images: ## Build backend docker images
 	$(eval PLAYGROUND_DOCKER_IMAGE_VERSION=$(shell git rev-parse --short HEAD))
@@ -169,7 +169,7 @@ k8s-setup-env: requires-k8s
 	@read -p "GH client ID?" CLIENT_ID; \
 	read -p "GH client secret?" CLIENT_SECRET; \
 	kubectl create ns ${NAMESPACE} --dry-run=client -o yaml | kubectl apply -f - && \
-	kubectl create configmap playground-config --namespace=playground --from-literal=github.clientId="$${CLIENT_ID}" --from-literal=session.defaultDuration="45" --from-literal=session.maxDuration="1440" --from-literal=session.defaultMaxPerNode="2" --from-literal=session.defaultPoolAffinity="default-session" --dry-run=client -o yaml | kubectl apply -f - && \
+	kubectl create configmap playground-config --namespace=playground --from-literal=github.clientId="$${CLIENT_ID}" --from-literal=workspace.defaultDuration="45" --from-literal=workspace.maxDuration="1440" --from-literal=workspace.defaultMaxPerNode="2" --from-literal=workspace.defaultPoolAffinity="default-workspace" --dry-run=client -o yaml | kubectl apply -f - && \
 	kubectl create secret generic playground-secrets --namespace=playground --from-literal=github.clientSecret="$${CLIENT_SECRET}" --from-literal=rocket.secretKey=`openssl rand -base64 32` --dry-run=client -o yaml | kubectl apply -f - && \
 	kubectl create configmap playground-templates --namespace=${NAMESPACE} --from-file=conf/k8s/overlays/${ENV}/templates/ --dry-run=client -o yaml | kubectl apply -f - && \
 	kubectl create configmap playground-users --namespace=${NAMESPACE} --from-file=conf/k8s/overlays/${ENV}/users/ --dry-run=client -o yaml | kubectl apply -f -
@@ -192,7 +192,7 @@ k8s-gke-static-ip: requires-k8s
 
 k8s-dev: requires-k8s
     # Adds required nodepool annotation, default on GKE
-	@kubectl label nodes docker-desktop cloud.google.com/gke-nodepool=default-session --overwrite
+	@kubectl label nodes docker-desktop cloud.google.com/gke-nodepool=default-workspace --overwrite
 	@kubectl create ns ${NAMESPACE} --dry-run=client -o yaml | kubectl apply -f -
 	@cd conf/k8s; skaffold dev --cleanup=false
 
