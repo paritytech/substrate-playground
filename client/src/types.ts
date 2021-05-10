@@ -61,27 +61,21 @@ export interface UserUpdateConfiguration {
 }
 
 export interface Workspace extends IdentifiedResource, OwnedResource {
-    repository_version: RepositoryVersion,
+    repositoryVersion: RepositoryVersion,
     state: WorkspaceState,
     maxDuration: number,
 }
 
-export type WorkspaceState = 'Deploying' | 'Running' | 'Paused' | 'Failed' | 'Unknown';
+export interface WorkspaceStateRunning {
+    startTime: number,
+    node: Node,
+}
+export interface WorkspaceStateFailed {
+    message: string,
+    reason: string,
+}
 
-/*
-export enum WorkspaceState {
-    Deploying,
-    Running {
-        start_time: SystemTime,
-        node: Node,
-    },
-    Paused,
-    Failed {
-        message: String,
-        reason: String,
-    },
-    Unknown,
-}*/
+export type WorkspaceState = 'WorkspaceStateDeploying' | WorkspaceStateRunning | 'WorkspaceStatePaused' | WorkspaceStateFailed | 'WorkspaceStateUnknown';
 
 export interface Pool {
     name: string,
@@ -142,21 +136,24 @@ export interface RepositoryVersion {
     runtime: Runtime,
 }
 
-export type RepositoryVersionState = 'BUILDING' | 'BUILT';
+export interface BUILT {
+    progress: number,
+}
 
-/*
-export interface RepositoryVersionState {
-    BUILDING { progress: i32 },
-    BUILT,
-}*/
+export type RepositoryVersionState = 'BUILDING' | BUILT;
 
 export interface Runtime {
-    container_configuration: ContainerConfiguration,
+    containerConfiguration: ContainerConfiguration,
     env?: NameValuePair[],
     ports?: Port[],
 }
 
-export interface ContainerConfiguration {
-    IMAGE(String),
-    DOCKERFILE(String),
+export type ContainerConfiguration = IMAGE | DOCKERFILE;
+
+export interface IMAGE {
+    value: string,
+}
+
+export interface DOCKERFILE {
+    value: string,
 }
