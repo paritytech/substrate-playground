@@ -1845,10 +1845,10 @@
   resolved "https://registry.yarnpkg.com/@stroncium/procfs/-/procfs-1.2.1.tgz#6b9be6fd20fb0a4c20e99a8695e083c699bb2b45"
   integrity sha512-X1Iui3FUNZP18EUvysTHxt+Avu2nlVzyf90YM8OYgP6SGzTzzX/0JgObfO1AQQDzuZtNNz29bVh8h5R97JrjxA==
 
-"@substrate/playground-client@1.5.4":
-  version "1.5.4"
-  resolved "https://registry.yarnpkg.com/@substrate/playground-client/-/playground-client-1.5.4.tgz#fead9624dad2828a7505afce71ffb0ae4235f753"
-  integrity sha512-wVqQsZVeaAs5w454kEZrBTnDenp6lRnp1gcUGsJl96JwOpjkMz0TUbwQTGdCDZjO93MCrceduOvaEkcSw6lPpQ==
+"@substrate/playground-client@1.6.0":
+  version "1.6.0"
+  resolved "https://registry.yarnpkg.com/@substrate/playground-client/-/playground-client-1.6.0.tgz#b672addc8c5444b580ac12c5dd49dc3c102b59c1"
+  integrity sha512-XI62e4ldvETvjTBXifQ58wzqEpaH4Ss6KNhHVkTqNaszKtsjnh4H1l3qxWNQgsVL2LJN0BKknXFVlbtI9vJx0w==
   dependencies:
     uuid "8.3.2"
 
