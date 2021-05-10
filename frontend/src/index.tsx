@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import ReactDOM from "react-dom";
 import { State } from "xstate";
-import { Client, Configuration, LoggedUser, Session } from '@substrate/playground-client';
+import { Client, Configuration, LoggedUser, Workspace } from '@substrate/playground-client';
 import { createMuiTheme, ThemeProvider } from '@material-ui/core/styles';
 import Button from "@material-ui/core/Button";
 import Typography from "@material-ui/core/Typography";
@@ -11,22 +11,22 @@ import { useInterval } from "./hooks";
 import { newMachine, Context, Event, Events, PanelId, States, Typestate, SchemaType } from './lifecycle';
 import { AdminPanel } from './panels/admin';
 import { LoginPanel } from './panels/login';
-import { SessionPanel } from './panels/session';
 import { StatsPanel } from './panels/stats';
 import { TermsPanel } from './panels/terms';
 import { TheiaPanel } from './panels/theia';
+import { WorkspacePanel } from './panels/workspace';
 import { terms } from "./terms";
 import { hasAdminReadRights } from "./utils";
 
 function MainPanel({ client, params, conf, user, id, onRetry, onConnect, onAfterDeployed }: { client: Client, params: Params, conf: Configuration, user?: LoggedUser, id: PanelId, onRetry: () => void, onConnect: () => void, onAfterDeployed: () => void }): JSX.Element {
     switch(id) {
-        case PanelId.Session:
-          return <SessionPanel client={client} conf={conf} user={user} onRetry={onRetry}
+        case PanelId.Workspace:
+          return <WorkspacePanel client={client} conf={conf} user={user} onRetry={onRetry}
                     onStop={async () => {
-                        await client.deleteCurrentSession();
+                        await client.deleteCurrentWorkspace();
                     }}
                     onDeployed={async conf => {
-                        await client.createCurrentSession(conf);
+                        await client.createCurrentWorkspace(conf);
                         onAfterDeployed();
                     }}
                     onConnect={onConnect} />;
@@ -35,48 +35,48 @@ function MainPanel({ client, params, conf, user, id, onRetry, onConnect, onAfter
         case PanelId.Admin:
           return <AdminPanel client={client} conf={conf} user={user} />;
         case PanelId.Theia:
-          return <TheiaPanel client={client} autoDeploy={params.deploy} onMissingSession={onRetry} onSessionFailing={onRetry} onSessionTimeout={onRetry} />;
+          return <TheiaPanel client={client} autoDeploy={params.deploy} onMissingWorkspace={onRetry} onWorkspaceFailing={onRetry} onWorkspaceTimeout={onRetry} />;
     }
     return <></>;
 }
 
 function ExtraTheiaNav({ client, conf, restartAction }: { client: Client, conf: Configuration, restartAction: () => void }): JSX.Element {
-    const [session, setSession] = useState<Session | null | undefined>(undefined);
+    const [workspace, setWorkspace] = useState<Workspace | null | undefined>(undefined);
 
     useInterval(async () => {
-        const session = await client.getCurrentSession();
-        setSession(session);
+        const workspace = await client.getCurrentWorkspace();
+        setWorkspace(workspace);
 
-        // Periodically extend duration of running sessions
-        if (session) {
-            const { pod, duration } = session;
+        // Periodically extend duration of running workspaces
+        if (workspace) {
+            const { pod, duration } = workspace;
             if (pod.phase == 'Running') {
                 const remaining = duration - (pod.startTime || 0) / 60; // In minutes
-                const maxDuration = conf.session.maxDuration;
-                // Increase session duration
+                const maxDuration = conf.workspace.maxDuration;
+                // Increase workspace duration
                 if (remaining < 10 && duration < maxDuration) {
                     const newDuration = Math.min(maxDuration, duration + 10);
-                    await client.updateCurrentSession({duration: newDuration});
+                    await client.updateCurrentWorkspace({duration: newDuration});
                 }
             }
         }
     }, 5000);
 
-    if (session) {
-        const { pod, duration } = session;
+    if (workspace) {
+        const { pod, duration } = workspace;
         if (pod.phase == 'Running') {
             const remaining = duration * 60 - (pod.startTime || 0);
             if (remaining < 300) { // 5 minutes
                 return (
                     <Typography variant="h6">
-                        Your session is about to end. Make sure your changes have been exported.
+                        Your workspace is about to end. Make sure your changes have been exported.
                     </Typography>
                 );
             }
         } else if (pod.phase == 'Failed') {
             return (
                 <Typography variant="h6">
-                    Your session is over. <Button onClick={restartAction}>Restart it</Button>
+                    Your workspace is over. <Button onClick={restartAction}>Restart it</Button>
                 </Typography>
             );
         }
@@ -92,7 +92,7 @@ function selectPanel(send: (event: Events, payload: Record<string, unknown>) => 
 function CustomNav({ client, send, state }: { client: Client, send: (event: Events) => void, state: State<Context, Event, SchemaType, Typestate> }): JSX.Element  {
     const { panel } = state.context;
     return (
-        <Nav onPlayground={() => selectPanel(send, PanelId.Session)}>
+        <Nav onPlayground={() => selectPanel(send, PanelId.Workspace)}>
             <>
             {state.matches(States.LOGGED)
             ? <>
@@ -113,7 +113,7 @@ function CustomNav({ client, send, state }: { client: Client, send: (event: Even
 function App({ params }: { params: Params }): JSX.Element {
     const client = new Client(params.base, 30000, {credentials: "include"});
     const { deploy } = params;
-    const [state, send] = useMachine(newMachine(client, deploy? PanelId.Theia: PanelId.Session), { devTools: true });
+    const [state, send] = useMachine(newMachine(client, deploy? PanelId.Theia: PanelId.Workspace), { devTools: true });
     const { panel, error } = state.context;
 
     const theme = createMuiTheme({

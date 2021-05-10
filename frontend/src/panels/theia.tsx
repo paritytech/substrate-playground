@@ -15,7 +15,7 @@ interface Loading {
     retry: number,
 }
 
-export function TheiaPanel({ client, autoDeploy, onMissingSession, onSessionFailing, onSessionTimeout }: { client: Client, autoDeploy: string | null, onMissingSession: () => void, onSessionFailing: () => void, onSessionTimeout: () => void }): JSX.Element {
+export function TheiaPanel({ client, autoDeploy, onMissingWorkspace, onWorkspaceFailing, onWorkspaceTimeout }: { client: Client, autoDeploy: string | null, onMissingWorkspace: () => void, onWorkspaceFailing: () => void, onWorkspaceTimeout: () => void }): JSX.Element {
     const maxRetries = 5*60;
     const ref = useRef(null);
     const [error, setError] = useState<Error>();
@@ -23,18 +23,18 @@ export function TheiaPanel({ client, autoDeploy, onMissingSession, onSessionFail
     const [loading, setLoading] = useState<Loading>();
 
     useEffect(() => {
-        function createSession(template: string) {
-            client.createCurrentSession({template: template}).then(fetchData);
+        function createWorkspace(template: string) {
+            client.createCurrentWorkspace({template: template}).then(fetchData);
         }
 
         async function fetchData() {
-            const session = await client.getCurrentSession();
-            if (session) {
-                const { pod } = session;
+            const workspace = await client.getCurrentWorkspace();
+            if (workspace) {
+                const { pod } = workspace;
                 const phase = pod.phase;
                 if (phase == 'Running') {
                     // Check URL is fine
-                    const url = `//${session.url}`;
+                    const url = `//${workspace.url}`;
                     if ((await fetchWithTimeout(url)).ok) {
                         setUrl(url);
                         return;
@@ -44,7 +44,7 @@ export function TheiaPanel({ client, autoDeploy, onMissingSession, onSessionFail
                     const reason = (conditions && conditions[0].reason) || container?.reason;
                     if (reason === "Unschedulable" || reason === "CrashLoopBackOff" || reason === "ErrImagePull" || reason === "ImagePullBackOff" || reason === "InvalidImageName") {
                         setError({reason: container?.message || (conditions && conditions[0].message) || 'Pod crashed',
-                                  action: onSessionFailing});
+                                  action: onWorkspaceFailing});
                         return;
                     }
                     // The template is being deployed, nothing to do
@@ -53,11 +53,11 @@ export function TheiaPanel({ client, autoDeploy, onMissingSession, onSessionFail
 
             const retry = loading?.retry ?? 0;
             if (retry < maxRetries) {
-                setLoading({phase: session?.pod.phase || 'Unknown', retry: retry + 1});
+                setLoading({phase: workspace?.pod.phase || 'Unknown', retry: retry + 1});
                 setTimeout(fetchData, 1000);
             } else if (retry == maxRetries) {
-                setError({reason: "Couldn't access the theia session in time",
-                          action: onSessionTimeout});
+                setError({reason: "Couldn't access the theia workspace in time",
+                          action: onWorkspaceTimeout});
             }
         }
 
@@ -68,22 +68,22 @@ export function TheiaPanel({ client, autoDeploy, onMissingSession, onSessionFail
             client.listTemplates().then(templates => {
                 if (!templates[autoDeploy]) {
                     setError({reason: `Unknown template ${autoDeploy}`,
-                              action: onMissingSession});
+                              action: onMissingWorkspace});
                     return;
                 }
 
                 try {
-                    client.getCurrentSession().then(session => {
-                        if (session) {
-                            setError({reason: "You can only have one active substrate playground session open at a time. \n Please close all other sessions to open a new one",
+                    client.getCurrentWorkspace().then(workspace => {
+                        if (workspace) {
+                            setError({reason: "You can only have one active substrate playground workspace open at a time. \n Please close all other workspaces to open a new one",
                                       action: () => {
-                                          // Trigger current session deletion, wait for deletion then re-create a new one
-                                          return client.deleteCurrentSession()
+                                          // Trigger current workspace deletion, wait for deletion then re-create a new one
+                                          return client.deleteCurrentWorkspace()
                                             .then(function() {
                                                 return new Promise<void>(function(resolve) {
                                                     const id = setInterval(async function() {
-                                                        const session = await client.getCurrentSession();
-                                                        if (!session) {
+                                                        const workspace = await client.getCurrentWorkspace();
+                                                        if (!workspace) {
                                                             clearInterval(id);
                                                             resolve();
                                                         }
@@ -91,15 +91,15 @@ export function TheiaPanel({ client, autoDeploy, onMissingSession, onSessionFail
                                                 }
                                             )})
                                             .then(() => setError(undefined))
-                                            .then(() => createSession(autoDeploy));
+                                            .then(() => createWorkspace(autoDeploy));
                                       },
-                                      actionTitle: "Replace existing session"});
+                                      actionTitle: "Replace existing workspace"});
                         } else {
-                            createSession(autoDeploy);
+                            createWorkspace(autoDeploy);
                         }
                     })
                 } catch {
-                    setError({ reason: 'Error', action: onMissingSession});
+                    setError({ reason: 'Error', action: onMissingWorkspace});
                 }
             });
         } else {

@@ -24,8 +24,8 @@ import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
 import Typography from '@material-ui/core/Typography';
 import { makeStyles, createStyles, Theme } from '@material-ui/core/styles';
-import { Client, Configuration, NameValuePair, LoggedUser, Port, Session, SessionConfiguration, Template } from '@substrate/playground-client';
-import { SessionCreationDialog, canCustomize } from "./admin";
+import { Client, Configuration, NameValuePair, LoggedUser, Port, Workspace, WorkspaceConfiguration, Template } from '@substrate/playground-client';
+import { WorkspaceCreationDialog, canCustomize } from "./admin";
 import { CenteredContainer, ErrorMessage, ErrorSnackbar, LoadingPanel } from "../components";
 import { useInterval } from "../hooks";
 import { formatDuration } from "../utils";
@@ -42,7 +42,7 @@ const useStyles = makeStyles((theme: Theme) =>
 
 const options = [{id: 'create', label: 'Create'}, {id: 'custom', label: 'Customize and Create'}];
 
-export default function SplitButton({ template, disabled, onCreate, onCreateCustom }: { template: string, disabled: boolean, onCreate: (conf: SessionConfiguration) => void, onCreateCustom: () => void}): JSX.Element {
+export default function SplitButton({ template, disabled, onCreate, onCreateCustom }: { template: string, disabled: boolean, onCreate: (conf: WorkspaceConfiguration) => void, onCreateCustom: () => void}): JSX.Element {
   const [open, setOpen] = React.useState(false);
   const anchorRef = React.useRef<HTMLDivElement>(null);
   const [selectedIndex, setSelectedIndex] = React.useState(0);
@@ -122,7 +122,7 @@ export default function SplitButton({ template, disabled, onCreate, onCreateCust
   );
 }
 
-function TemplateSelector({client, conf, user, onDeployed, onRetry}: {client: Client, conf: Configuration, user?: LoggedUser, onDeployed: (conf: SessionConfiguration) => Promise<void>, onRetry: () => void}): JSX.Element {
+function TemplateSelector({client, conf, user, onDeployed, onRetry}: {client: Client, conf: Configuration, user?: LoggedUser, onDeployed: (conf: WorkspaceConfiguration) => Promise<void>, onRetry: () => void}): JSX.Element {
     const [templates, setTemplates] = useState<Record<string, Template> | undefined>();
     const publicTemplates = Object.entries(templates || {}).filter(([, v]) => v.tags?.public == "true");
     const templatesAvailable = publicTemplates.length > 0;
@@ -140,12 +140,12 @@ function TemplateSelector({client, conf, user, onDeployed, onRetry}: {client: Cl
         }
     }, [publicTemplates]);
 
-    async function onCreateClick(conf: SessionConfiguration): Promise<void> {
+    async function onCreateClick(conf: WorkspaceConfiguration): Promise<void> {
         try {
             setDeploying(true);
             await onDeployed(conf);
         } catch (e) {
-            setErrorMessage(`Failed to create a new session: ${e}`);
+            setErrorMessage(`Failed to create a new workspace: ${e}`);
         } finally {
             setDeploying(false);
         }
@@ -198,7 +198,7 @@ function TemplateSelector({client, conf, user, onDeployed, onRetry}: {client: Cl
                 {errorMessage &&
                 <ErrorSnackbar open={true} message={errorMessage} onClose={() => setErrorMessage(null)} />}
                 {openCustom &&
-                <SessionCreationDialog client={client} user={user} template={selection[0]} conf={conf} templates={templates} show={openCustom} onCreate={onCreateClick} onHide={() => setOpenCustom(false)} />}
+                <WorkspaceCreationDialog client={client} user={user} template={selection[0]} conf={conf} templates={templates} show={openCustom} onCreate={onCreateClick} onHide={() => setOpenCustom(false)} />}
             </>
         );
     } else {
@@ -266,8 +266,8 @@ function PortsTable({ ports }: {ports?: Port[]}): JSX.Element {
     );
 }
 
-export function SessionDetails({ session }: {session: Session}): JSX.Element {
-    const { pod, template, duration } = session;
+export function WorkspaceDetails({ workspace }: {workspace: Workspace}): JSX.Element {
+    const { pod, template, duration } = workspace;
     const { name, runtime } = template;
     const { container, phase, startTime, conditions } = pod;
     const reason = container?.reason || (conditions && conditions.length > 0 && conditions[0].reason);
@@ -306,15 +306,15 @@ export function SessionDetails({ session }: {session: Session}): JSX.Element {
     );
 }
 
-function ExistingSession({session, onStop, onConnect}: {session: Session, onStop: () => void, onConnect: (session: Session) => void}): JSX.Element {
+function ExistingWorkspace({workspace, onStop, onConnect}: {workspace: Workspace, onStop: () => void, onConnect: (workspace: Workspace) => void}): JSX.Element {
     const [stopping, setStopping] = useState(false);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-    function onConnectClick(session: Session): void {
+    function onConnectClick(workspace: Workspace): void {
         try {
-            onConnect(session);
+            onConnect(workspace);
         } catch {
-            setErrorMessage("Failed to connect to the session");
+            setErrorMessage("Failed to connect to the workspace");
         }
     }
 
@@ -324,16 +324,16 @@ function ExistingSession({session, onStop, onConnect}: {session: Session, onStop
             onStop();
         } catch {
             setStopping(false);
-            setErrorMessage("Failed to stop the session");
+            setErrorMessage("Failed to stop the workspace");
         }
     }
 
     return (
         <>
-            <Typography variant="h5" style={{padding: 20}}>Existing session</Typography>
+            <Typography variant="h5" style={{padding: 20}}>Existing workspace</Typography>
             <Divider orientation="horizontal" />
             <Container style={{display: "flex", flex: 1, padding: 0, justifyContent: "center", alignItems: "center", overflowY: "auto"}}>
-                <SessionDetails session={session} />
+                <WorkspaceDetails workspace={workspace} />
             </Container>
             <Divider orientation="horizontal" />
             <Container style={{display: "flex", flexDirection: "column", alignItems: "flex-end", paddingTop: 10, paddingBottom: 10}}>
@@ -341,7 +341,7 @@ function ExistingSession({session, onStop, onConnect}: {session: Session, onStop
                     <Button onClick={onStopClick} disabled={stopping} color="secondary" disableElevation>
                         Stop
                     </Button>
-                    <Button onClick={() => onConnectClick(session)} disabled={stopping || session.pod.phase !== 'Running'} disableElevation>
+                    <Button onClick={() => onConnectClick(workspace)} disabled={stopping || workspace.state !== 'Deployed'} disableElevation>
                         Connect
                     </Button>
                 </ButtonGroup>
@@ -352,18 +352,18 @@ function ExistingSession({session, onStop, onConnect}: {session: Session, onStop
     );
 }
 
-export function SessionPanel({ client, conf, user, onDeployed, onConnect, onRetry, onStop }: {client: Client, conf: Configuration, user?: LoggedUser, onStop: () => void, onConnect: (session: Session) => void, onDeployed: (conf: SessionConfiguration) => Promise<void>, onRetry: () => void}): JSX.Element {
-    const [session, setSession] = useState<Session | null | undefined>(undefined);
+export function WorkspacePanel({ client, conf, user, onDeployed, onConnect, onRetry, onStop }: {client: Client, conf: Configuration, user?: LoggedUser, onStop: () => void, onConnect: (workspace: Workspace) => void, onDeployed: (conf: WorkspaceConfiguration) => Promise<void>, onRetry: () => void}): JSX.Element {
+    const [workspace, setWorkspace] = useState<Workspace | null | undefined>(undefined);
 
-    useInterval(async () => setSession(await client.getCurrentSession()), 5000);
+    useInterval(async () => setWorkspace(await client.getCurrentWorkspace()), 5000);
 
     return (
         <Container style={{ display: "flex", flex: 1, justifyContent: "center", alignItems: "center" }}>
             <Paper style={{ display: "flex", flexDirection: "column", height: "60vh", width: "60vw", justifyContent: "center"}} elevation={3}>
-                {session === undefined
+                {workspace === undefined
                  ? <LoadingPanel />
-                 : session
-                 ?<ExistingSession session={session} onConnect={onConnect} onStop={onStop} />
+                 : workspace
+                 ?<ExistingWorkspace workspace={workspace} onConnect={onConnect} onStop={onStop} />
                  : <TemplateSelector client={client} conf={conf} user={user} onRetry={onRetry} onDeployed={onDeployed} />}
             </Paper>
         </Container>

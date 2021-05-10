@@ -6,10 +6,10 @@ import 'abort-controller/polyfill';
 const env = EnvironmentType[process.env.ENV];
 const client = new Client(playgroundBaseURL(env), 30000, {credentials: "include"});
 
-test('unauthenticated - should not be able to create a new session', async (t) => {
+test('unauthenticated - should not be able to create a new workspace', async (t) => {
     try {
-        await client.createCurrentSession({template: 'node-template'});
-        t.fail('Can create a session w/o login');
+        await client.createCurrentWorkspace({template: 'node-template'});
+        t.fail('Can create a workspace w/o login');
     } catch {
         t.pass();
     }

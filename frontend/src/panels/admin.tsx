@@ -37,7 +37,7 @@ import LastPageIcon from '@material-ui/icons/LastPage';
 import TableFooter from '@material-ui/core/TableFooter';
 import TablePagination from '@material-ui/core/TablePagination';
 import { Autocomplete } from '@material-ui/lab';
-import { Client, Configuration, LoggedUser, Pool, Session, SessionConfiguration, SessionUpdateConfiguration, Template, User, UserConfiguration, UserUpdateConfiguration } from '@substrate/playground-client';
+import { Client, Configuration, LoggedUser, Pool, Workspace, WorkspaceConfiguration, WorkspaceUpdateConfiguration, Template, User, UserConfiguration, UserUpdateConfiguration } from '@substrate/playground-client';
 import { CenteredContainer, ErrorSnackbar, LoadingPanel } from '../components';
 import { useInterval } from '../hooks';
 import { canCustomizeDuration, canCustomizePoolAffinity, hasAdminEditRights } from '../utils';
@@ -92,11 +92,11 @@ export function canCustomize(user: LoggedUser): boolean {
     return canCustomizeDuration(user) || canCustomizePoolAffinity(user);
 }
 
-export function SessionCreationDialog({ client, conf, sessions, user, template, templates, show, onCreate, onHide, allowUserSelection = false }: { client: Client, conf: Configuration, sessions?: Record<string, Session>, user?: LoggedUser, template?: string, templates: Record<string, Template> | undefined, show: boolean, onCreate: (conf: SessionConfiguration, id?: string, ) => void, onHide: () => void , allowUserSelection?: boolean}): JSX.Element {
+export function WorkspaceCreationDialog({ client, conf, workspaces, user, template, templates, show, onCreate, onHide, allowUserSelection = false }: { client: Client, conf: Configuration, workspaces?: Record<string, Workspace>, user?: LoggedUser, template?: string, templates: Record<string, Template> | undefined, show: boolean, onCreate: (conf: WorkspaceConfiguration, id?: string, ) => void, onHide: () => void , allowUserSelection?: boolean}): JSX.Element {
     const [selectedUser, setUser] = React.useState<string | undefined | null>(user?.id);
     const [selectedTemplate, setTemplate] = React.useState<string | null>(null);
-    const [duration, setDuration] = React.useState(conf.session.duration);
-    const [poolAffinity, setPoolAffinity] = React.useState(conf.session.poolAffinity);
+    const [duration, setDuration] = React.useState(conf.workspace.duration);
+    const [poolAffinity, setPoolAffinity] = React.useState(conf.workspace.poolAffinity);
     const [pools, setPools] = useState<Record<string, Pool> | null>(null);
     const [users, setUsers] = useState<Record<string, User> | null>(null);
 
@@ -131,7 +131,7 @@ export function SessionCreationDialog({ client, conf, sessions, user, template, 
         if (!poolAffinity) {
             return false;
         }
-        if (sessions && sessions[currentUser] != null) {
+        if (workspaces && workspaces[currentUser] != null) {
             return false;
         }
         return true;
@@ -139,7 +139,7 @@ export function SessionCreationDialog({ client, conf, sessions, user, template, 
 
     return (
         <Dialog open={show} onClose={onHide} maxWidth="md">
-            <DialogTitle>Session details</DialogTitle>
+            <DialogTitle>Workspace details</DialogTitle>
             <DialogContent>
                 <Container style={{display: "flex", flexDirection: "column"}}>
                     {allowUserSelection &&
@@ -206,7 +206,7 @@ export function SessionCreationDialog({ client, conf, sessions, user, template, 
     );
 }
 
-function SessionUpdateDialog({ id, duration, show, onUpdate, onHide }: { id: string, duration: number, show: boolean, onUpdate: (id: string, conf: SessionUpdateConfiguration) => void, onHide: () => void }): JSX.Element {
+function WorkspaceUpdateDialog({ id, duration, show, onUpdate, onHide }: { id: string, duration: number, show: boolean, onUpdate: (id: string, conf: WorkspaceUpdateConfiguration) => void, onHide: () => void }): JSX.Element {
     const [newDuration, setDuration] = React.useState(0);
 
     React.useEffect(() => {
@@ -219,7 +219,7 @@ function SessionUpdateDialog({ id, duration, show, onUpdate, onHide }: { id: str
     };
     return (
         <Dialog open={show} onClose={onHide} maxWidth="md">
-            <DialogTitle>Session details</DialogTitle>
+            <DialogTitle>Workspace details</DialogTitle>
             <DialogContent>
                 <Container style={{display: "flex", flexDirection: "column"}}>
                     <TextField
@@ -307,7 +307,7 @@ interface TablePaginationActionsProps {
     );
   }
 
-function Sessions({ client, conf, user }: { client: Client, conf: Configuration, user?: LoggedUser }): JSX.Element {
+function Workspaces({ client, conf, user }: { client: Client, conf: Configuration, user?: LoggedUser }): JSX.Element {
     const classes = useStyles();
     const [selected, setSelected] = useState<string | null>(null);
     const [showCreationDialog, setShowCreationDialog] = useState(false);
@@ -327,70 +327,65 @@ function Sessions({ client, conf, user }: { client: Client, conf: Configuration,
         setTemplates(await client.listTemplates());
     }, 5000);
 
-    function sessionMock(conf: SessionConfiguration): Session {
+    function workspaceMock(conf: WorkspaceConfiguration): Workspace {
         return {
-            duration: conf.duration || 0,
             maxDuration: 0,
-            template: {name: "", image: "", description: ""},
             userId: "",
-            url: "",
-            pod: {phase: 'Pending', reason: "", message: ""},
-            node: ""
         };
     }
 
-    async function onCreate(conf: SessionConfiguration, id: string | null | undefined, setSessions: Dispatch<SetStateAction<Record<string, Session> | null>>): Promise<void> {
+    async function onCreate(conf: WorkspaceConfiguration, id: string | null | undefined, setWorkspaces: Dispatch<SetStateAction<Record<string, Workspace> | null>>): Promise<void> {
         try {
             if (id) {
-                await client.createSession(id, conf);
-                setSessions((sessions: Record<string, Session> | null) => {
-                    if (sessions) {
-                        sessions[id] = sessionMock(conf);
+                await client.createWorkspace(id, conf);
+                setWorkspaces((workspaces: Record<string, Workspace> | null) => {
+                    if (workspaces) {
+                        workspaces[id] = workspaceMock(conf);
                     }
-                    return {...sessions};
+                    return {...workspaces};
                 });
             } else {
-                await client.createCurrentSession(conf);
+                await client.createCurrentWorkspace(conf);
             }
         } catch (e) {
             console.error(e);
-            setErrorMessage(`Failed to create session: ${e}`);
+            setErrorMessage(`Failed to create workspace: ${e}`);
         }
     }
 
-    async function onUpdate(id: string, conf: SessionUpdateConfiguration, setSessions: Dispatch<SetStateAction<Record<string, Session> | null>>): Promise<void> {
+    async function onUpdate(id: string, conf: WorkspaceUpdateConfiguration, setWorkspaces: Dispatch<SetStateAction<Record<string, Workspace> | null>>): Promise<void> {
         try {
-            await client.updateSession(id, conf);
-            setSessions((sessions: Record<string, Session> | null) => {
-                if (sessions && conf.duration) {
-                    sessions[id].duration = conf.duration;
+            await client.updateWorkspace(id, conf);
+            setWorkspaces((workspaces: Record<string, Workspace> | null) => {
+                if (workspaces && conf.duration) {
+                    workspaces[id].duration = conf.duration;
                 }
-                return {...sessions};
+                return {...workspaces};
             });
         } catch (e) {
             console.error(e);
-            setErrorMessage("Failed to update session");
+            setErrorMessage("Failed to update workspace");
         }
     }
 
-    async function onDelete(setSessions: Dispatch<SetStateAction<Record<string, Session> | null>>): Promise<void> {
+    async function onDelete(setWorkspaces: Dispatch<SetStateAction<Record<string, Workspace> | null>>): Promise<void> {
         if (selected) {
             try {
-                await client.deleteSession(selected);
+                await client.deleteWorkspace(selected);
 
-                setSessions((sessions: Record<string, Session> | null) => {
-                    if (sessions) {
-                        delete sessions[selected];
+                setWorkspaces((workspaces: Record<string, Workspace> | null) => {
+                    if (workspaces) {
+                        delete workspaces[selected];
                     }
-                    return sessions;
+                    return workspaces;
                 });
                 setSelected(null);
             } catch (e) {
                 console.error(e);
-                setErrorMessage("Failed to delete session");
+                setErrorMessage("Failed to delete workspace");
             }
         } else {
-            setErrorMessage("Can't delete currently logged session");
+            setErrorMessage("Can't delete currently logged workspace");
         }
     }
 
@@ -410,8 +405,8 @@ function Sessions({ client, conf, user }: { client: Client, conf: Configuration,
     const stopPropagation = (event: React.SyntheticEvent) => event.stopPropagation();
 
     return (
-        <Resources<Session> callback={async () => await client.listSessions()}>
-            {(resources: Record<string, Session>, setSessions: Dispatch<SetStateAction<Record<string, Session> | null>>) => {
+        <Resources<Workspace> callback={async () => await client.listWorkspaces()}>
+            {(resources: Record<string, Workspace>, setWorkspaces: Dispatch<SetStateAction<Record<string, Workspace> | null>>) => {
                 const allResources = Object.entries(resources);
                 const filteredResources = rowsPerPage > 0 ? allResources.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage) : allResources;
                 return (
@@ -419,7 +414,7 @@ function Sessions({ client, conf, user }: { client: Client, conf: Configuration,
                         {filteredResources.length > 0
                         ?
                         <>
-                            <EnhancedTableToolbar user={user} label="Sessions" selected={selected} onCreate={() => setShowCreationDialog(true)} onUpdate={() => setShowUpdateDialog(true)} onDelete={() => onDelete(setSessions)} />
+                            <EnhancedTableToolbar user={user} label="Workspaces" selected={selected} onCreate={() => setShowCreationDialog(true)} onUpdate={() => setShowUpdateDialog(true)} onDelete={() => onDelete(setWorkspaces)} />
                             <TableContainer component={Paper}>
                                 <Table className={classes.table} aria-label="simple table">
                                     <TableHead>
@@ -434,7 +429,7 @@ function Sessions({ client, conf, user }: { client: Client, conf: Configuration,
                                         </TableRow>
                                     </TableHead>
                                     <TableBody>
-                                    {filteredResources.map(([id, session]: [id: string, session: Session], index: number) => {
+                                    {filteredResources.map(([id, workspace]: [id: string, workspace: Workspace], index: number) => {
                                         const isItemSelected = isSelected(id);
                                         const labelId = `enhanced-table-checkbox-${index}`;
                                         return (
@@ -455,11 +450,11 @@ function Sessions({ client, conf, user }: { client: Client, conf: Configuration,
                                                 <TableCell component="th" scope="row">
                                                     <Link href={`https://github.com/${id}`} target="_blank" rel="noreferrer" onClick={stopPropagation}>{id}</Link>
                                                 </TableCell>
-                                                <TableCell>{session.template.name}</TableCell>
-                                                <TableCell><Link href={`//${session.url}`} target="_blank" rel="noreferrer" onClick={stopPropagation}>Browse {session.url}</Link></TableCell>
-                                                <TableCell>{session.duration}</TableCell>
-                                                <TableCell>{session.pod.phase}</TableCell>
-                                                <TableCell>{session.node}</TableCell>
+                                                <TableCell>{workspace.template.name}</TableCell>
+                                                <TableCell><Link href={`//${workspace.url}`} target="_blank" rel="noreferrer" onClick={stopPropagation}>Browse {workspace.url}</Link></TableCell>
+                                                <TableCell>{workspace.duration}</TableCell>
+                                                <TableCell>{workspace.pod.phase}</TableCell>
+                                                <TableCell>{workspace.node}</TableCell>
                                             </TableRow>
                                         )})}
                                     </TableBody>
@@ -484,13 +479,13 @@ function Sessions({ client, conf, user }: { client: Client, conf: Configuration,
                                 </Table>
                             </TableContainer>
                         </>
-                        : <NoResourcesContainer user={user} label="No sessions" action={() => setShowCreationDialog(true)} />}
+                        : <NoResourcesContainer user={user} label="No workspaces" action={() => setShowCreationDialog(true)} />}
                         {errorMessage &&
                         <ErrorSnackbar open={true} message={errorMessage} onClose={() => setErrorMessage(null)} />}
                         {showCreationDialog &&
-                        <SessionCreationDialog allowUserSelection={true} client={client} conf={conf} sessions={resources} user={user} templates={templates} show={showCreationDialog} onCreate={(conf, id) => onCreate(conf, id, setSessions)} onHide={() => setShowCreationDialog(false)} />}
+                        <WorkspaceCreationDialog allowUserSelection={true} client={client} conf={conf} workspaces={resources} user={user} templates={templates} show={showCreationDialog} onCreate={(conf, id) => onCreate(conf, id, setWorkspaces)} onHide={() => setShowCreationDialog(false)} />}
                         {(selected && showUpdateDialog) &&
-                        <SessionUpdateDialog id={selected} duration={resources[selected].duration} show={showUpdateDialog} onUpdate={(id, conf) => onUpdate(id, conf, setSessions)} onHide={() => setShowUpdateDialog(false)} />}
+                        <WorkspaceUpdateDialog id={selected} duration={resources[selected].duration} show={showUpdateDialog} onUpdate={(id, conf) => onUpdate(id, conf, setWorkspaces)} onHide={() => setShowUpdateDialog(false)} />}
                     </>
                 );
             }}
@@ -642,7 +637,7 @@ function EnhancedTableToolbar({ user, label, selected = null, onCreate, onUpdate
 function UserCreationDialog({ client, conf, users, show, onCreate, onHide }: { client: Client, conf: Configuration, users: Record<string, User>, show: boolean, onCreate: (id: string, conf: UserConfiguration) => void, onHide: () => void }): JSX.Element {
     const [id, setID] = React.useState('');
     const [adminChecked, setAdminChecked] = React.useState(false);
-    const [poolAffinity, setPoolAffinity] = React.useState<string>(conf.session.poolAffinity);
+    const [poolAffinity, setPoolAffinity] = React.useState<string>(conf.workspace.poolAffinity);
     const [customizeDurationChecked, setCustomizeDurationChecked] = React.useState(false);
     const [customizePoolAffinityChecked, setCustomizePoolAffinityChecked] = React.useState(false);
     const [pools, setPools] = useState<Record<string, Pool> | null>(null);
@@ -927,11 +922,11 @@ function Users({ client, user, conf }: { client: Client, user?: LoggedUser, conf
 
 function DetailsPanel({ conf }: { conf: Configuration }): JSX.Element {
     const classes = useStyles();
-    const { duration, maxSessionsPerPod, poolAffinity } = conf.session;
+    const { duration, maxWorkspacesPerPod, poolAffinity } = conf.workspace;
     return (
         <Container>
             <Typography variant="h6" id="tableTitle" component="div">
-                Session defaults
+            Workspace defaults
             </Typography>
             <TableContainer component={Paper}>
                 <Table className={classes.table} aria-label="simple table">
@@ -946,9 +941,9 @@ function DetailsPanel({ conf }: { conf: Configuration }): JSX.Element {
                             <TableCell>Duration</TableCell>
                             <TableCell>{duration}</TableCell>
                         </TableRow>
-                        <TableRow key="maxSessionsPerPod">
-                            <TableCell>Max sessions per Pod</TableCell>
-                            <TableCell>{maxSessionsPerPod}</TableCell>
+                        <TableRow key="maxWorkspacesPerPod">
+                            <TableCell>Max workspaces per Pod</TableCell>
+                            <TableCell>{maxWorkspacesPerPod}</TableCell>
                         </TableRow>
                         <TableRow key="poolAffinity">
                             <TableCell>Pool affinity</TableCell>
@@ -1008,7 +1003,7 @@ export function AdminPanel({ client, user, conf }: { client: Client, user?: Logg
                 <Tab label="Details" />
                 <Tab label="Templates" />
                 <Tab label="Users" />
-                <Tab label="Sessions" />
+                <Tab label="Workspaces" />
                 <Tab label="Pools" />
             </Tabs>
 
@@ -1020,7 +1015,7 @@ export function AdminPanel({ client, user, conf }: { client: Client, user?: Logg
                 : value == 2
                 ? <Users client={client} user={user} conf={conf} />
                 : value == 3
-                ? <Sessions client={client} conf={conf} user={user} />
+                ? <Workspaces client={client} conf={conf} user={user} />
                 : <Pools client={client} user={user} />}
             </Paper>
         </CenteredContainer>

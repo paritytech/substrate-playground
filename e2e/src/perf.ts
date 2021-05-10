@@ -71,8 +71,8 @@ async function main() {
             for (let i = 0; i < argv.instances; i++) {
                 const id = Math.floor(Math.random() * Number.MAX_SAFE_INTEGER);
                 const name = `perftest-${id}`;
-                await loggedClient.createSession(name, {template: argv.template});
-                console.log(`Created session ${name}`);
+                await loggedClient.createWorkspace(name, {template: argv.template});
+                console.log(`Created workspace ${name}`);
             }
             console.log("Done");
         } catch (e) {

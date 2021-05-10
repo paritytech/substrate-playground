@@ -2,7 +2,7 @@ import { assign, createMachine, StateMachine, StateSchema } from 'xstate';
 import { Client, Configuration, LoggedUser } from '@substrate/playground-client';
 import { approve, approved } from './terms';
 
-export enum PanelId {Session, Admin, Stats, Theia}
+export enum PanelId {Workspace, Admin, Stats, Theia}
 
 export interface Context {
   panel: PanelId,
@@ -27,7 +27,7 @@ export type Event =
   | { type: Events.LOGIN; user: LoggedUser; conf: Configuration }
   | { type: Events.SELECT; panel: PanelId }
   | { type: Events.RESTART; }
-  | { type: Events.UNLOGIN; conf: Configuration; error?: string }
+  | { type: Events.UNLOGIN; conf?: Configuration; error?: string }
   | { type: Events.LOGOUT; };
 
 
