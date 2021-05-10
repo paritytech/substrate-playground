@@ -1,4 +1,3 @@
-
 use std::{env, error::Error};
 
 extern crate playground;
@@ -13,6 +12,6 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     // Prints basic details
     log::info!("Running");
-
+    println!("error");
     Ok(())
 }

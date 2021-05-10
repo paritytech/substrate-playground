@@ -2,11 +2,11 @@
 
 extern crate playground;
 
-use playground::Context;
-use playground::manager::Manager;
-use playground::prometheus::PrometheusMetrics;
 use ::prometheus::Registry;
 use playground::github::GitHubUser;
+use playground::manager::Manager;
+use playground::prometheus::PrometheusMetrics;
+use playground::Context;
 use rocket::fairing::AdHoc;
 use rocket::{catchers, config::Environment, http::Method, routes};
 use rocket_cors::{AllowedOrigins, CorsOptions};
@@ -77,23 +77,20 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 playground::api::create_user,
                 playground::api::update_user,
                 playground::api::delete_user,
-                // Current Session
-                playground::api::get_current_session,
-                playground::api::get_current_session_unlogged,
-                playground::api::create_current_session,
-                playground::api::create_current_session_unlogged,
-                playground::api::update_current_session,
-                playground::api::update_current_session_unlogged,
-                playground::api::delete_current_session,
-                playground::api::delete_current_session_unlogged,
-                // Sessions
-                playground::api::get_session,
-                playground::api::list_sessions,
-                playground::api::create_session,
-                playground::api::update_session,
-                playground::api::delete_session,
-                // Templates
-                playground::api::list_templates,
+                // Current Workspace
+                playground::api::get_current_workspace,
+                playground::api::get_current_workspace_unlogged,
+                playground::api::create_current_workspace,
+                playground::api::create_current_workspace_unlogged,
+                playground::api::update_current_workspace,
+                playground::api::update_current_workspace_unlogged,
+                playground::api::delete_current_workspace,
+                playground::api::delete_current_workspace_unlogged,
+                // Workspaces
+                playground::api::list_workspaces,
+                playground::api::create_workspace,
+                playground::api::update_workspace,
+                playground::api::delete_workspace,
                 // Pools
                 playground::api::get_pool,
                 playground::api::list_pools,

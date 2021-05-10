@@ -34,26 +34,26 @@ spec:
             value: "debug"
           - name: ROCKET_ADDRESS
             value: "0.0.0.0"
-          - name: SESSION_DEFAULT_DURATION
+          - name: WORKSPACE_DEFAULT_DURATION
             valueFrom:
               configMapKeyRef:
                 name: playground-config
-                key: session.defaultDuration
-          - name: SESSION_MAX_DURATION
+                key: workspace.defaultDuration
+          - name: WORKSPACE_MAX_DURATION
             valueFrom:
               configMapKeyRef:
                 name: playground-config
-                key: session.maxDuration
-          - name: SESSION_DEFAULT_POOL_AFFINITY
+                key: workspace.maxDuration
+          - name: WORKSPACE_DEFAULT_POOL_AFFINITY
             valueFrom:
               configMapKeyRef:
                 name: playground-config
-                key: session.defaultPoolAffinity
-          - name: SESSION_DEFAULT_MAX_PER_NODE
+                key: workspace.defaultPoolAffinity
+          - name: WORKSPACE_DEFAULT_MAX_PER_NODE
             valueFrom:
               configMapKeyRef:
                 name: playground-config
-                key: session.defaultMaxPerNode
+                key: workspace.defaultMaxPerNode
           - name: GITHUB_CLIENT_ID
             valueFrom:
               configMapKeyRef:

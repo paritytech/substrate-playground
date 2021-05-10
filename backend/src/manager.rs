@@ -1,10 +1,11 @@
 use crate::{
     error::{Error, Result},
-    kubernetes::{Configuration, Engine, Environment},
+    kubernetes::Engine,
     metrics::Metrics,
     types::{
-        LoggedUser, Phase, Pool, Session, SessionConfiguration, SessionUpdateConfiguration,
-        Template, User, UserConfiguration, UserUpdateConfiguration,
+        Configuration, Environment, LoggedUser, Pool, User, UserConfiguration,
+        UserUpdateConfiguration, Workspace, WorkspaceConfiguration, WorkspaceState,
+        WorkspaceUpdateConfiguration,
     },
 };
 use log::{error, info, warn};
@@ -17,18 +18,11 @@ use std::{
 };
 use tokio::runtime::Runtime;
 
-fn running_sessions(sessions: Vec<&Session>) -> Vec<&Session> {
-    sessions
-        .into_iter()
-        .filter(|session| session.pod.phase == Phase::Running)
-        .collect()
-}
-
 #[derive(Clone)]
 pub struct Manager {
     pub engine: Engine,
     pub metrics: Metrics,
-    sessions: Arc<Mutex<HashSet<String>>>,
+    workspaces: Arc<Mutex<HashSet<String>>>,
 }
 
 #[derive(Serialize, Clone, Debug)]
@@ -44,12 +38,17 @@ impl Manager {
     pub async fn new() -> Result<Self> {
         let metrics = Metrics::new().map_err(|err| Error::Failure(err.into()))?;
         let engine = Engine::new().await?;
-        // Go through all existing sessions and update the ingress
-        match engine.clone().list_sessions().await {
-            Ok(sessions) => {
-                let running = running_sessions(sessions.values().collect())
+        // Go through all existing workspaces and update the ingress
+        match engine.clone().list_workspaces().await {
+            Ok(workspaces) => {
+                let running = workspaces
                     .iter()
-                    .map(|i| (i.user_id.clone(), &i.template))
+                    .flat_map(|i| match &i.1.state {
+                        WorkspaceState::Running { .. } => {
+                            Some((i.0.clone(), &i.1.repository_version.runtime))
+                        }
+                        _ => None,
+                    })
                     .collect();
                 engine.clone().patch_ingress(&running).await?;
 
@@ -60,14 +59,14 @@ impl Manager {
                 }
             }
             Err(err) => error!(
-                "Failed to call list_all: {}. Existing sessions won't be accessible",
+                "Failed to call list_all: {}. Existing workspaces won't be accessible",
                 err
             ),
         }
         Ok(Manager {
             engine,
             metrics,
-            sessions: Arc::new(Mutex::new(HashSet::new())), // Temp map used to track session deployment time
+            workspaces: Arc::new(Mutex::new(HashSet::new())), // Temp map used to track workspaces deployment time
         })
     }
 
@@ -77,65 +76,73 @@ impl Manager {
 
             // Track some deployments metrics
             if let Ok(runtime) = new_runtime() {
-                let sessions_thread = self.clone().sessions.clone();
-                if let Ok(mut sessions2) = sessions_thread.lock() {
-                    let sessions3 = &mut sessions2.clone();
-                    for id in sessions3.iter() {
-                        match runtime.block_on(self.engine.get_session(&session_id(id))) {
-                            Ok(Some(session)) => {
-                                // Deployed sessions are removed from the set
+                let workspaces_thread = self.clone().workspaces.clone();
+                if let Ok(mut workspaces2) = workspaces_thread.lock() {
+                    let workspaces3 = &mut workspaces2.clone();
+                    for id in workspaces3.iter() {
+                        match runtime.block_on(self.engine.get_workspace(&workspace_id(id))) {
+                            Ok(Some(workspace)) => {
+                                // Deployed workspaces are removed from the set
                                 // Additionally the deployment time is tracked
-                                match session.pod.phase {
-                                    Phase::Running | Phase::Failed => {
-                                        sessions2.remove(&session.user_id);
-                                        if let Some(duration) =
-                                            &session.pod.start_time.and_then(|p| p.elapsed().ok())
-                                        {
+                                match workspace.state {
+                                    WorkspaceState::Running { start_time, .. } => {
+                                        workspaces2.remove(&workspace.user_id);
+                                        if let Some(duration) = start_time.elapsed().ok() {
                                             self.clone()
                                                 .metrics
                                                 .observe_deploy_duration(duration.as_secs_f64());
                                         } else {
-                                            error!("Failed to compute this session lifetime");
+                                            error!("Failed to compute this workspace lifetime");
                                         }
+                                    }
+                                    WorkspaceState::Failed { .. } => {
+                                        workspaces2.remove(&workspace.user_id);
                                     }
                                     _ => {}
                                 }
                             }
                             Err(err) => {
                                 warn!("Failed to call get: {}", err);
-                                sessions2.remove(id);
+                                workspaces2.remove(id);
                             }
                             Ok(None) => warn!("No matching pod: {}", id),
                         }
                     }
                 } else {
-                    error!("Failed to acquire sessions lock");
+                    error!("Failed to acquire workspaces lock");
                 }
 
                 // Go through all Running pods and figure out if they have to be undeployed
-                match runtime.block_on(self.engine.list_sessions()) {
-                    Ok(sessions) => {
-                        for session in running_sessions(sessions.values().collect()) {
-                            if let Some(duration) =
-                                &session.pod.start_time.and_then(|p| p.elapsed().ok())
-                            {
-                                if duration > &session.duration {
-                                    info!("Undeploying {} after {}", session.user_id, duration.as_secs() / 60);
+                match runtime.block_on(self.engine.list_workspaces()) {
+                    Ok(workspaces) => {
+                        for workspace in workspaces.values() {
+                            match workspace.state {
+                                WorkspaceState::Running { start_time, .. } => {
+                                    if let Some(duration) = &start_time.elapsed().ok() {
+                                        if duration > &workspace.max_duration {
+                                            info!(
+                                                "Undeploying {} after {}",
+                                                workspace.user_id,
+                                                duration.as_secs() / 60
+                                            );
 
-                                    match runtime.block_on(
-                                        self.engine.delete_session(&session_id(&session.user_id)),
-                                    ) {
-                                        Ok(()) => (),
-                                        Err(err) => {
-                                            warn!(
-                                                "Error while undeploying {}: {}",
-                                                session.user_id, err
-                                            )
+                                            match runtime.block_on(self.engine.delete_workspace(
+                                                &workspace_id(&workspace.user_id),
+                                            )) {
+                                                Ok(()) => (),
+                                                Err(err) => {
+                                                    warn!(
+                                                        "Error while undeploying {}: {}",
+                                                        workspace.user_id, err
+                                                    )
+                                                }
+                                            }
                                         }
+                                    } else {
+                                        error!("Failed to compute this workspace lifetime");
                                     }
                                 }
-                            } else {
-                                error!("Failed to compute this session lifetime");
+                                _ => {}
                             }
                         }
                     }
@@ -150,8 +157,8 @@ fn new_runtime() -> Result<Runtime> {
     Runtime::new().map_err(|err| Error::Failure(err.into()))
 }
 
-fn session_id(id: &str) -> String {
-    // Create a unique ID for this session. Use lowercase to make sure the result can be used as part of a DNS
+fn workspace_id(id: &str) -> String {
+    // Create a unique ID for this workspace. Use lowercase to make sure the result can be used as part of a DNS
     id.to_string().to_lowercase()
 }
 
@@ -219,29 +226,29 @@ impl Manager {
         new_runtime()?.block_on(self.engine.delete_user(id))
     }
 
-    // Sessions
+    // Workspaces
 
-    pub fn get_session(&self, user: &LoggedUser, id: &str) -> Result<Option<Session>> {
+    pub fn get_workspace(&self, user: &LoggedUser, id: &str) -> Result<Option<Workspace>> {
         if user.id != id && !user.has_admin_read_rights() {
             return Err(Error::Unauthorized());
         }
 
-        new_runtime()?.block_on(self.engine.get_session(&session_id(id)))
+        new_runtime()?.block_on(self.engine.get_workspace(&workspace_id(id)))
     }
 
-    pub fn list_sessions(&self, user: &LoggedUser) -> Result<BTreeMap<String, Session>> {
+    pub fn list_workspaces(&self, user: &LoggedUser) -> Result<BTreeMap<String, Workspace>> {
         if !user.has_admin_read_rights() {
             return Err(Error::Unauthorized());
         }
 
-        new_runtime()?.block_on(self.engine.list_sessions())
+        new_runtime()?.block_on(self.engine.list_workspaces())
     }
 
-    pub fn create_session(
+    pub fn create_workspace(
         &self,
         user: &LoggedUser,
         id: &str,
-        conf: SessionConfiguration,
+        conf: WorkspaceConfiguration,
     ) -> Result<()> {
         if user.id != id && !user.has_admin_edit_rights() {
             return Err(Error::Unauthorized());
@@ -260,38 +267,37 @@ impl Manager {
             }
         }
 
-        let session_id = session_id(id);
-        if self.get_session(user, &session_id)?.is_some() {
+        let workspace_id = workspace_id(id);
+        if self.get_workspace(user, &workspace_id)?.is_some() {
             return Err(Error::Unauthorized());
         }
 
-        let template = conf.clone().template;
-        let result = new_runtime()?.block_on(self.engine.create_session(user, &session_id, conf));
-
-        info!("Created session {} with template {}", session_id, template);
-
+        let result =
+            new_runtime()?.block_on(self.engine.create_workspace(user, &workspace_id, conf));
         match &result {
-            Ok(_session) => {
-                if let Ok(mut sessions) = self.sessions.lock() {
-                    sessions.insert(session_id);
+            Ok(()) => {
+                info!("Created workspace {}", workspace_id);
+
+                if let Ok(mut workspaces) = self.workspaces.lock() {
+                    workspaces.insert(workspace_id);
                 } else {
-                    error!("Failed to acquire sessions lock");
+                    error!("Failed to acquire workspaces lock");
                 }
-                self.metrics.inc_deploy_counter(&template);
+                self.metrics.inc_deploy_counter();
             }
             Err(e) => {
-                self.metrics.inc_deploy_failures_counter(&template);
+                self.metrics.inc_deploy_failures_counter();
                 error!("Error during deployment {}", e);
             }
         }
         result
     }
 
-    pub fn update_session(
+    pub fn update_workspace(
         &self,
         id: &str,
         user: &LoggedUser,
-        conf: SessionUpdateConfiguration,
+        conf: WorkspaceUpdateConfiguration,
     ) -> Result<()> {
         if conf.duration.is_some() {
             // Duration can only customized by users with proper rights
@@ -300,23 +306,23 @@ impl Manager {
             }
         }
 
-        new_runtime()?.block_on(self.engine.update_session(&session_id(id), conf))
+        new_runtime()?.block_on(self.engine.update_workspace(&workspace_id(id), conf))
     }
 
-    pub fn delete_session(&self, user: &LoggedUser, id: &str) -> Result<()> {
+    pub fn delete_workspace(&self, user: &LoggedUser, id: &str) -> Result<()> {
         if user.id != id && !user.has_admin_edit_rights() {
             return Err(Error::Unauthorized());
         }
 
-        let session_id = session_id(id);
-        let result = new_runtime()?.block_on(self.engine.delete_session(&session_id));
+        let workspace_id = workspace_id(id);
+        let result = new_runtime()?.block_on(self.engine.delete_workspace(&workspace_id));
         match &result {
             Ok(_) => {
                 self.metrics.inc_undeploy_counter();
-                if let Ok(mut sessions) = self.sessions.lock() {
-                    sessions.remove(session_id.as_str());
+                if let Ok(mut workspaces) = self.workspaces.lock() {
+                    workspaces.remove(workspace_id.as_str());
                 } else {
-                    error!("Failed to acquire sessions lock");
+                    error!("Failed to acquire workspaces lock");
                 }
             }
             Err(e) => {
@@ -325,12 +331,6 @@ impl Manager {
             }
         }
         result
-    }
-
-    // Templates
-
-    pub fn list_templates(&self) -> Result<BTreeMap<String, Template>> {
-        new_runtime()?.block_on(self.clone().engine.list_templates())
     }
 
     // Pools

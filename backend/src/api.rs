@@ -2,10 +2,9 @@
 use crate::{
     error::Result,
     github::{current_user, orgs, GitHubUser},
-    kubernetes::Environment,
     types::{
-        LoggedUser, SessionConfiguration, SessionUpdateConfiguration, UserConfiguration,
-        UserUpdateConfiguration,
+        Environment, LoggedUser, UserConfiguration, UserUpdateConfiguration,
+        WorkspaceConfiguration, WorkspaceUpdateConfiguration,
     },
     Context,
 };
@@ -148,110 +147,126 @@ pub fn delete_user(state: State<'_, Context>, user: LoggedUser, id: String) -> J
     result_to_jsonrpc(state.manager.clone().delete_user(&user, id))
 }
 
-// Current Session
+// Current Workspace
 
-#[get("/session")]
-pub fn get_current_session(state: State<'_, Context>, user: LoggedUser) -> JsonValue {
-    result_to_jsonrpc(state.manager.get_session(&user, &user.id))
+#[get("/workspace")]
+pub fn get_current_workspace(state: State<'_, Context>, user: LoggedUser) -> JsonValue {
+    result_to_jsonrpc(state.manager.get_workspace(&user, &user.id))
 }
 
-#[get("/session", rank = 2)]
-pub fn get_current_session_unlogged() -> status::Unauthorized<()> {
+#[get("/workspace", rank = 2)]
+pub fn get_current_workspace_unlogged() -> status::Unauthorized<()> {
     status::Unauthorized::<()>(None)
 }
 
 ///
-/// Create a new session for `LoggedUser`. A single session can exist at a time.
+/// Create a new workspace for `LoggedUser`. A single workspace can exist at a time.
 ///
 /// There is a short time window where multiple concurrent calls can succeed.
-/// As this call is idempotent this won't lead to multiple session creation.
+/// As this call is idempotent this won't lead to multiple workspace creation.
 ///
-#[put("/session", data = "<conf>")]
-pub fn create_current_session(
+#[put("/workspace", data = "<conf>")]
+pub fn create_current_workspace(
     state: State<'_, Context>,
     user: LoggedUser,
-    conf: Json<SessionConfiguration>,
+    conf: Json<WorkspaceConfiguration>,
 ) -> JsonValue {
-    result_to_jsonrpc(state.manager.create_session(&user, &user.id, conf.0))
+    result_to_jsonrpc(state.manager.create_workspace(&user, &user.id, conf.0))
 }
 
-#[put("/session", data = "<_conf>", rank = 2)]
-pub fn create_current_session_unlogged(
-    _conf: Json<SessionConfiguration>,
+#[put("/workspace", data = "<_conf>", rank = 2)]
+pub fn create_current_workspace_unlogged(
+    _conf: Json<WorkspaceConfiguration>,
 ) -> status::Unauthorized<()> {
     status::Unauthorized::<()>(None)
 }
 
-#[patch("/session", data = "<conf>")]
-pub fn update_current_session(
+#[patch("/workspace", data = "<conf>")]
+pub fn update_current_workspace(
     state: State<'_, Context>,
     user: LoggedUser,
-    conf: Json<SessionUpdateConfiguration>,
+    conf: Json<WorkspaceUpdateConfiguration>,
 ) -> JsonValue {
-    result_to_jsonrpc(state.manager.update_session(&user.id, &user, conf.0))
+    result_to_jsonrpc(state.manager.update_workspace(&user.id, &user, conf.0))
 }
 
-#[patch("/session", data = "<_conf>", rank = 2)]
-pub fn update_current_session_unlogged(
-    _conf: Json<SessionUpdateConfiguration>,
+#[patch("/workspace", data = "<_conf>", rank = 2)]
+pub fn update_current_workspace_unlogged(
+    _conf: Json<WorkspaceUpdateConfiguration>,
 ) -> status::Unauthorized<()> {
     status::Unauthorized::<()>(None)
 }
 
-#[delete("/session")]
-pub fn delete_current_session(state: State<'_, Context>, user: LoggedUser) -> JsonValue {
-    result_to_jsonrpc(state.manager.delete_session(&user, &user.id))
+#[delete("/workspace")]
+pub fn delete_current_workspace(state: State<'_, Context>, user: LoggedUser) -> JsonValue {
+    result_to_jsonrpc(state.manager.delete_workspace(&user, &user.id))
 }
 
-#[delete("/session", rank = 2)]
-pub fn delete_current_session_unlogged() -> status::Unauthorized<()> {
+#[delete("/workspace", rank = 2)]
+pub fn delete_current_workspace_unlogged() -> status::Unauthorized<()> {
     status::Unauthorized::<()>(None)
 }
 
-// Sessions
+// Workspaces
 
-#[get("/sessions/<id>")]
-pub fn get_session(state: State<'_, Context>, user: LoggedUser, id: String) -> JsonValue {
-    result_to_jsonrpc(state.manager.get_session(&user, &id))
+#[get("/workspaces/<id>")]
+pub fn get_workspace(state: State<'_, Context>, user: LoggedUser, id: String) -> JsonValue {
+    result_to_jsonrpc(state.manager.get_workspace(&user, &id))
 }
 
-#[get("/sessions")]
-pub fn list_sessions(state: State<'_, Context>, user: LoggedUser) -> JsonValue {
-    result_to_jsonrpc(state.manager.list_sessions(&user))
+#[get("/workspaces")]
+pub fn list_workspaces(state: State<'_, Context>, user: LoggedUser) -> JsonValue {
+    result_to_jsonrpc(state.manager.list_workspaces(&user))
 }
 
-#[put("/sessions/<id>", data = "<conf>")]
-pub fn create_session(
+#[put("/workspaces/<id>", data = "<conf>")]
+pub fn create_workspace(
     state: State<'_, Context>,
     user: LoggedUser,
     id: String,
-    conf: Json<SessionConfiguration>,
+    conf: Json<WorkspaceConfiguration>,
 ) -> JsonValue {
-    result_to_jsonrpc(state.manager.create_session(&user, &id, conf.0))
+    result_to_jsonrpc(state.manager.create_workspace(&user, &id, conf.0))
 }
 
-#[patch("/sessions/<id>", data = "<conf>")]
-pub fn update_session(
+#[patch("/workspaces/<id>", data = "<conf>")]
+pub fn update_workspace(
     state: State<'_, Context>,
     user: LoggedUser,
     id: String,
-    conf: Json<SessionUpdateConfiguration>,
+    conf: Json<WorkspaceUpdateConfiguration>,
 ) -> JsonValue {
-    result_to_jsonrpc(state.manager.update_session(&id, &user, conf.0))
+    result_to_jsonrpc(state.manager.update_workspace(&id, &user, conf.0))
 }
 
-#[delete("/sessions/<id>")]
-pub fn delete_session(state: State<'_, Context>, user: LoggedUser, id: String) -> JsonValue {
-    result_to_jsonrpc(state.manager.delete_session(&user, &id))
+#[delete("/workspaces/<id>")]
+pub fn delete_workspace(state: State<'_, Context>, user: LoggedUser, id: String) -> JsonValue {
+    result_to_jsonrpc(state.manager.delete_workspace(&user, &id))
 }
 
-// Templates
-
-#[get("/templates")]
-pub fn list_templates(state: State<'_, Context>) -> JsonValue {
+/*
+#[get("/templates/<id>/<version>")]
+pub fn get_template_version(state: State<'_, Context>, id: String, version: String) -> JsonValue {
     result_to_jsonrpc(state.manager.list_templates())
 }
 
+#[put("/templates/<id>/<version>", data = "<conf>")]
+pub fn create_template_version(
+    state: State<'_, Context>,
+    user: LoggedUser,
+    id: String,
+    conf: Json<TemplateVersionConfiguration>,
+) -> JsonValue {
+    result_to_jsonrpc(state.manager.create_workspace(&user, &id, conf.0))
+}
+
+*/
+/*
+#[get("/repositories")]
+pub fn list_favorites(state: State<'_, Context>) -> JsonValue {
+    result_to_jsonrpc(state.manager.list_templates())
+}
+*/
 // Pools
 
 #[get("/pools/<id>")]
