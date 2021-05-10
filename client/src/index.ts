@@ -135,12 +135,6 @@ export class Client {
         }, this.timeout);
     }
 
-    // Templates
-
-    async listTemplates(init: RequestInit = this.defaultInit): Promise<Record<string, Template>> {
-        return rpc(this.path(Client.templatesResource), init, this.timeout);
-    }
-
     // Pools
 
     async getPool(id: string, init: RequestInit = this.defaultInit): Promise<Pool | null> {
