@@ -89,7 +89,7 @@ export interface Node {
 
 export interface WorkspaceConfiguration {
     repositoryId: string,
-    repositoryReference: string,
+    repositoryReference?: string,
     /* The number of minutes this workspace will be able to last */
     duration?: number,
     poolAffinity?: string,

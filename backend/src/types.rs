@@ -55,7 +55,7 @@ pub struct Node {
 #[serde(rename_all = "camelCase")]
 pub struct WorkspaceConfiguration {
     pub repository_id: String,
-    pub repository_reference: String,
+    pub repository_reference: Option<String>,
     #[serde(default)]
     pub duration: Option<Duration>,
     pub pool_affinity: Option<String>,
@@ -181,8 +181,8 @@ pub struct Runtime {
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub enum ContainerConfiguration {
-    IMAGE { value: string },
-    DOCKERFILE { value: string },
+    IMAGE { value: String },
+    DOCKERFILE { value: String },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
