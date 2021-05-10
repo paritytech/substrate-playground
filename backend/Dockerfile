@@ -37,7 +37,8 @@ ARG GITHUB_SHA
 
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 
-ENV SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt\
+ENV PATH=/\
+    SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt\
     SSL_CERT_DIR=/etc/ssl/certs\
     GITHUB_SHA=$GITHUB_SHA\
     RUST_BACKTRACE=full\
