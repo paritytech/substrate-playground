@@ -1,12 +1,12 @@
 import { fetchWithTimeout, rpc } from './rpc';
-import { Playground, Pool, Session, SessionConfiguration, SessionUpdateConfiguration, Template, User, UserConfiguration, UserUpdateConfiguration, } from './types';
+import { Playground, Pool, Workspace, WorkspaceConfiguration, WorkspaceUpdateConfiguration, Template, User, UserConfiguration, UserUpdateConfiguration, } from './types';
 
 export class Client {
 
     static userResource = 'user';
     static usersResource = 'users';
-    static sessionResource = 'session';
-    static sessionsResource = 'sessions';
+    static workspaceResource = 'workspace';
+    static workspacesResource = 'workspaces';
     static templatesResource = 'templates';
     static poolsResource = 'pools';
 
@@ -73,63 +73,63 @@ export class Client {
         }, this.timeout);
     }
 
-    // Current Session
+    // Current Workspace
 
-    async getCurrentSession(init: RequestInit = this.defaultInit): Promise<Session | null> {
-        return rpc(this.path(Client.sessionResource), init, this.timeout);
+    async getCurrentWorkspace(init: RequestInit = this.defaultInit): Promise<Workspace | null> {
+        return rpc(this.path(Client.workspaceResource), init, this.timeout);
     }
 
-    async createCurrentSession(conf: SessionConfiguration, init: RequestInit = this.defaultInit): Promise<void> {
-        return rpc(this.path(Client.sessionResource), {
+    async createCurrentWorkspace(conf: WorkspaceConfiguration, init: RequestInit = this.defaultInit): Promise<void> {
+        return rpc(this.path(Client.workspaceResource), {
             method: 'PUT',
             body: JSON.stringify(conf),
             ...init
         }, this.timeout);
     }
 
-    async updateCurrentSession(conf: SessionUpdateConfiguration, init: RequestInit = this.defaultInit): Promise<void> {
-        return rpc(this.path(Client.sessionResource), {
+    async updateCurrentWorkspace(conf: WorkspaceUpdateConfiguration, init: RequestInit = this.defaultInit): Promise<void> {
+        return rpc(this.path(Client.workspaceResource), {
             method: 'PATCH',
             body: JSON.stringify(conf),
             ...init
         }, this.timeout);
     }
 
-    async deleteCurrentSession(init: RequestInit = this.defaultInit): Promise<void> {
-        return rpc(this.path(Client.sessionResource), {
+    async deleteCurrentWorkspace(init: RequestInit = this.defaultInit): Promise<void> {
+        return rpc(this.path(Client.workspaceResource), {
             method: 'DELETE',
             ...init
         }, this.timeout);
     }
 
-    // Sessions
+    // Workspaces
 
-    async getSession(id: string, init: RequestInit = this.defaultInit): Promise<Session | null> {
-        return rpc(this.path(Client.sessionsResource, id), init, this.timeout);
+    async getWorkspace(id: string, init: RequestInit = this.defaultInit): Promise<Workspace | null> {
+        return rpc(this.path(Client.workspacesResource, id), init, this.timeout);
     }
 
-    async listSessions(init: RequestInit = this.defaultInit): Promise<Record<string, Session>> {
-        return rpc(this.path(Client.sessionsResource), init, this.timeout);
+    async listWorkspaces(init: RequestInit = this.defaultInit): Promise<Record<string, Workspace>> {
+        return rpc(this.path(Client.workspacesResource), init, this.timeout);
     }
 
-    async createSession(id: string, conf: SessionConfiguration, init: RequestInit = this.defaultInit): Promise<void> {
-        return rpc(this.path(Client.sessionsResource, id), {
+    async createWorkspace(id: string, conf: WorkspaceConfiguration, init: RequestInit = this.defaultInit): Promise<void> {
+        return rpc(this.path(Client.workspacesResource, id), {
             method: 'PUT',
             body: JSON.stringify(conf),
             ...init
         }, this.timeout);
     }
 
-    async updateSession(id: string, conf: SessionUpdateConfiguration, init: RequestInit = this.defaultInit): Promise<void> {
-        return rpc(this.path(Client.sessionsResource, id), {
+    async updateWorkspace(id: string, conf: WorkspaceUpdateConfiguration, init: RequestInit = this.defaultInit): Promise<void> {
+        return rpc(this.path(Client.workspacesResource, id), {
             method: 'PATCH',
             body: JSON.stringify(conf),
             ...init
         }, this.timeout);
     }
 
-    async deleteSession(id: string, init: RequestInit = this.defaultInit): Promise<void> {
-        return rpc(this.path(Client.sessionsResource, id), {
+    async deleteWorkspace(id: string, init: RequestInit = this.defaultInit): Promise<void> {
+        return rpc(this.path(Client.workspacesResource, id), {
             method: 'DELETE',
             ...init
         }, this.timeout);
@@ -167,6 +167,6 @@ export class Client {
 
 export * from "./login";
 export * from "./rpc";
-export * from "./session";
+export * from "./workspace";
 export * from "./types";
 export * from "./utils";

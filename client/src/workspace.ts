@@ -20,8 +20,8 @@ export enum Type {
     LIST, EXEC
 }
 
-// A client allowing to send command to a local session
-export class SessionClient {
+// A client allowing to send command to a local workspace
+export class WorkspaceClient {
 
     private readonly el: Window;
     private readonly defaultParams: Params;

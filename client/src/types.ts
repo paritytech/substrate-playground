@@ -12,19 +12,26 @@ export interface Environment {
 
 export interface Configuration {
     githubClientId: string,
-    session: SessionDefaults,
+    workspace: WorkspaceDefaults,
 }
 
-export interface SessionDefaults {
-    /* The default number of minutes sessions can last */
+export interface WorkspaceDefaults {
+    /* The default number of minutes workspace can last */
     duration: number,
     maxDuration: number,
     poolAffinity: string,
-    maxSessionsPerPod: string,
+    maxWorkspacesPerPod: string,
 }
 
-export interface LoggedUser {
-    id: string,
+export interface IdentifiedResource {
+    id: string
+}
+
+export interface OwnedResource {
+    userId: string
+}
+
+export interface LoggedUser extends IdentifiedResource {
     admin: boolean,
     organizations: string[],
     poolAffinity: string,
@@ -53,16 +60,28 @@ export interface UserUpdateConfiguration {
     canCustomizePoolAffinity: boolean,
 }
 
-export interface Session {
-    userId: string,
-    url: string,
-    template: Template,
-    pod: Pod,
-    /* The number of minutes this session can last */
-    duration: number,
+export interface Workspace extends IdentifiedResource, OwnedResource {
+    repository_version: RepositoryVersion,
+    state: WorkspaceState,
     maxDuration: number,
-    node: string,
 }
+
+export type WorkspaceState = 'Deploying' | 'Running' | 'Paused' | 'Failed' | 'Unknown';
+
+/*
+export enum WorkspaceState {
+    Deploying,
+    Running {
+        start_time: SystemTime,
+        node: Node,
+    },
+    Paused,
+    Failed {
+        message: String,
+        reason: String,
+    },
+    Unknown,
+}*/
 
 export interface Pool {
     name: string,
@@ -74,15 +93,16 @@ export interface Node {
     hostname: string,
 }
 
-export interface SessionConfiguration {
-    template: string,
-    /* The number of minutes this session will be able to last */
+export interface WorkspaceConfiguration {
+    repositoryId: string,
+    repositoryReference: string,
+    /* The number of minutes this workspace will be able to last */
     duration?: number,
     poolAffinity?: string,
 }
 
-export interface SessionUpdateConfiguration {
-    /* The number of minutes this session will be able to last */
+export interface WorkspaceUpdateConfiguration {
+    /* The number of minutes this workspace will be able to last */
     duration?: number,
 }
 
@@ -104,40 +124,39 @@ export interface RuntimeConfiguration {
     ports?: Port[],
 }
 
-export interface Template {
-    name: string,
-    image: string,
-    description: string,
+export interface Repository {
+    id?: string,
     tags?: Record<string, string>,
-    runtime?: RuntimeConfiguration,
+    url: string,
+    versions: RepositoryVersion[],
 }
 
-export type Phase = 'Pending' | 'Running' | 'Succeeded' | 'Failed' | 'Unknown';
-export interface Pod {
-    phase: Phase,
-    reason: string,
-    message: string,
-    /* The number of seconds since this session started */
-    startTime?: number,
-    conditions?: PodCondition[],
-    container?: ContainerStatus,
+export interface RepositoryConfiguration extends IdentifiedResource {
+    tags?: Record<string, string>,
+    url: string,
 }
 
-export type ContainerPhase = 'Running' | 'Terminated' | 'Waiting' | 'Unknown';
-
-export interface ContainerStatus {
-    phase: ContainerPhase,
-    reason?: string,
-    message?: string,
+export interface RepositoryVersion {
+    reference: string,
+    state: RepositoryVersionState,
+    runtime: Runtime,
 }
 
-export interface PodCondition {
-    type_: ConditionType,
-    status: Status,
-    reason?: string,
-    message?: string,
+export type RepositoryVersionState = 'BUILDING' | 'BUILT';
+
+/*
+export interface RepositoryVersionState {
+    BUILDING { progress: i32 },
+    BUILT,
+}*/
+
+export interface Runtime {
+    container_configuration: ContainerConfiguration,
+    env?: NameValuePair[],
+    ports?: Port[],
 }
 
-export type ConditionType = 'PodScheduled' | 'ContainersReady' | 'Initialized' | 'Ready' | 'Unknown';
-
-export type Status = 'True' | 'False' | 'Unknown';
+export interface ContainerConfiguration {
+    IMAGE(String),
+    DOCKERFILE(String),
+}
