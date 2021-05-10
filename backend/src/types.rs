@@ -181,8 +181,8 @@ pub struct Runtime {
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub enum ContainerConfiguration {
-    IMAGE(String),
-    DOCKERFILE(String),
+    IMAGE { value: string },
+    DOCKERFILE { value: string },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
