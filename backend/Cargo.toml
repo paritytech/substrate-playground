@@ -15,7 +15,7 @@ rocket = "0.4.7"
 rocket_contrib = { version = "0.4.7", features = ["json"] }
 rocket_cors = "0.5.2"
 rocket_oauth2 = { version = "0.4.1", features = ["hyper_sync_rustls_adapter"] }
-serde = { version = "1.0.125", features = ["derive"] }
+serde = { version = "1.0.126", features = ["derive"] }
 serde_json = "1.0.64"
 serde_yaml = "0.8.17"
 kube = { version = "0.52.0", default-features = true, features = ["jsonpatch"] }
