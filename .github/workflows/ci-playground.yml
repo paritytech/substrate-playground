@@ -30,6 +30,7 @@ jobs:
 
       - name: Audit
         run: yarn audit
+        continue-on-error: true
 
       - name: Build
         run: yarn build
