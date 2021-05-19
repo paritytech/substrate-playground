@@ -27,6 +27,7 @@ jobs:
 
       - name: Lint
         run: yarn lint
+        continue-on-error: true
 
       - name: Audit
         run: yarn audit
@@ -60,6 +61,7 @@ jobs:
 
       - name: Lint
         run: cargo lint
+        continue-on-error: true
 
       - name: Build
         run: cargo build --verbose
