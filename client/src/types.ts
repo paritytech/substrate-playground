@@ -97,12 +97,12 @@ export interface Repository extends IdentifiedResource {
     url: string,
 }
 
-export interface RepositoryConfiguration extends IdentifiedResource {
+export interface RepositoryConfiguration {
     tags?: Record<string, string>,
     url: string,
 }
 
-export interface RepositoryUpdateConfiguration extends IdentifiedResource {
+export interface RepositoryUpdateConfiguration {
     tags?: Record<string, string>,
 }
 
