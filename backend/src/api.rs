@@ -43,26 +43,26 @@ impl<'a, 'r> FromRequest<'a, 'r> for LoggedUser {
         if let Some(token) = cookies.get_private(COOKIE_TOKEN) {
             let token_value = token.value();
             let runtime = Runtime::new().map_err(|_| {
-                Err((
+                (
                     Status::ExpectationFailed,
                     "Failed to execute async fn".to_string(),
-                ))
+                )
             })?;
             let gh_user = runtime.block_on(current_user(token_value)).map_err(|err| {
                 // A token is present, but can't be used to access user details
                 clear(cookies);
                 log::warn!("Error while accessing user details: {}", err);
-                Err((
+                (
                     Status::BadRequest,
                     format!("Can't access user details {}", err),
-                ))
+                )
             })?;
             let id = gh_user.clone().login;
             let users = runtime.block_on(engine.clone().list_users()).map_err(|_| {
-                Err((
+                (
                     Status::FailedDependency,
                     "Missing users ConfigMap".to_string(),
-                ))
+                )
             })?;
             let organizations = runtime
                 .block_on(orgs(token_value, &gh_user))
