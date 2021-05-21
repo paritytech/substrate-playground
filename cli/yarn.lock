@@ -479,10 +479,10 @@ lodash@^4.17.20:
   resolved "https://registry.yarnpkg.com/lodash/-/lodash-4.17.21.tgz#679591c564c3bffaae8454cf0b3df370c3d6911c"
   integrity sha512-v2kDEe57lecTulaDIuNTPy3Ry4gLGJ6Z1O3vE1krgXZNrsQ+LFTGHVxVjcXPs17LhbZVGedAJv8XZ1tvj5FvSg==
 
-lookpath@1.2.0:
-  version "1.2.0"
-  resolved "https://registry.yarnpkg.com/lookpath/-/lookpath-1.2.0.tgz#5fccf91497acec085e66d98cb12446c21fe665ae"
-  integrity sha512-cUl+R2bGJcSJiHLVKzGHRTYTBhudbHIgd7s63gfGHteaz0BBKEEz2yw2rgbxZAFze92KlbkiWzL1ylYOmqIPVA==
+lookpath@1.2.1:
+  version "1.2.1"
+  resolved "https://registry.yarnpkg.com/lookpath/-/lookpath-1.2.1.tgz#609c16d694603465c6c4b53bb5d5e3380e8eb1ef"
+  integrity sha512-dMlL1UqJmBNoXLxRM2lZICttyf9U2+5leFewVRWujybSoL9HAWfDw53NwIffnc5uPHmBiP5EosR/R8lkB4jftQ==
 
 loose-envify@^1.1.0, loose-envify@^1.4.0:
   version "1.4.0"
