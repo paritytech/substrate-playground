@@ -42,9 +42,6 @@ jobs:
   backend:
     runs-on: ubuntu-latest
     if: "! contains(github.event.head_commit.message, '[CI Skip]')"
-    defaults:
-      run:
-        working-directory: ./backend
     steps:
 
       - uses: actions/checkout@v2
