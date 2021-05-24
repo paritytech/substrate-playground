@@ -58,8 +58,9 @@ jobs:
 
       - uses: actions-rs/cargo@v1
         with:
-          working-directory: backend
           command: test
+          # Workaround https://github.com/actions-rs/cargo/issues/86
+          args: --manifest-path backend/Cargo.toml
 
   docker:
     runs-on: ubuntu-latest
