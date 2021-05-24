@@ -58,6 +58,7 @@ jobs:
 
       - uses: actions-rs/cargo@v1
         with:
+          working-directory: backend
           command: test
 
   docker:
