@@ -1593,9 +1593,9 @@ dependencies = [
 
 [[package]]
 name = "rocket_contrib"
-version = "0.4.7"
+version = "0.4.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d7954a707f9ca18aa74ca8c1f5d1f900f52a4dceb68e96e3112143f759cfd20e"
+checksum = "eef4fc485b5156d05c624af1a1c1198823548e5ed760e8a1dbcefc2e7479ffa1"
 dependencies = [
  "log 0.4.14",
  "notify",
