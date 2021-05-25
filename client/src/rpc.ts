@@ -4,6 +4,7 @@ export enum RpcErrorCode {
     METHOD_NOT_FOUND = -32601,
     INVALID_PARAMS = -32602,
     INTERNAL_ERROR = -32603,
+    RESPONSE_ERROR = -32100,
     SERVER_ERROR = -32000,
     TIMEOUT_ERROR = 1000,
 }
@@ -33,7 +34,8 @@ async function call<T>(input: RequestInfo, init: RequestInit, timeout: number): 
             try {
                 const { result, error } = await response.json();
                 if (error) {
-                    return Promise.reject(error);
+                    // Backend already returns formated errors
+                    return Promise.reject({code: RpcErrorCode.RESPONSE_ERROR, ...error});
                 } else {
                     return Promise.resolve(result);
                 }
