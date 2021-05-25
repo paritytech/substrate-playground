@@ -49,7 +49,11 @@ export interface WorkspaceStateFailed {
     reason: string,
 }
 
-export type WorkspaceState = 'WorkspaceStateDeploying' | WorkspaceStateRunning | 'WorkspaceStatePaused' | WorkspaceStateFailed | 'WorkspaceStateUnknown';
+export type WorkspaceState =
+    | {tag: "Deploying" }
+    | {tag: "Running", startTime: number }
+    | {tag: "Paused", }
+    | {tag: "Failed", message: string, reason: string };
 
 export interface WorkspaceConfiguration {
     repositoryDetails: RepositoryDetails,
@@ -112,14 +116,19 @@ export interface RepositoryVersion {
     state: RepositoryVersionState,
 }
 
-export type PrebuildSource = 'DockerFile' | 'Image';
+export type PrebuildSource =
+    | {tag: "DockerFile", location: string }
+    | {tag: "Image", value: string };
 
 
 export interface RepositoryVersionConfiguration {
     reference: string,
 }
 
-export type RepositoryVersionState = 'Cloning' | 'Building' | 'Ready';
+export type RepositoryVersionState =
+    | {tag: "Cloning", progress: number }
+    | {tag: "Building", progress: number, runtime: RepositoryRuntimeConfiguration }
+    | {tag: "Ready", runtime: RepositoryRuntimeConfiguration };
 
 export interface RepositoryRuntimeConfiguration {
     env?: NameValuePair[],
