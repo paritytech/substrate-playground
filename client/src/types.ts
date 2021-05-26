@@ -40,18 +40,9 @@ export interface RepositoryDetails extends IdentifiedResource {
     reference: string,
 }
 
-export interface WorkspaceStateRunning {
-    startTime: number,
-    node: Node,
-}
-export interface WorkspaceStateFailed {
-    message: string,
-    reason: string,
-}
-
 export type WorkspaceState =
     | {tag: "Deploying" }
-    | {tag: "Running", startTime: number }
+    | {tag: "Running", startTime: number, node: Node, runtime: RepositoryRuntimeConfiguration }
     | {tag: "Paused", }
     | {tag: "Failed", message: string, reason: string };
 
