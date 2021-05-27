@@ -9,7 +9,7 @@
     "src"
   ],
   "dependencies": {
-    "@substrate/playground-client": "1.6.2",
+    "@substrate/playground-client": "1.6.3",
     "@theia/core": "1.13.0",
     "gunzip-maybe": "1.4.2",
     "vscode-uri": "3.0.2"
