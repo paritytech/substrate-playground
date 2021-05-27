@@ -58,7 +58,7 @@ export interface WorkspaceUpdateConfiguration {
     duration?: number,
 }
 
-export interface User {
+export interface User extends IdentifiedResource {
     admin: boolean,
     poolAffinity: string,
     canCustomizeDuration: boolean,
@@ -139,8 +139,7 @@ export interface Port {
     target?: number
 }
 
-export interface Pool {
-    name: string,
+export interface Pool extends IdentifiedResource {
     instanceType?: string,
     nodes: Node[],
 }
