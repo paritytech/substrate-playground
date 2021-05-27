@@ -46,7 +46,7 @@ export class Client {
         return rpc(this.path(Client.usersResource, id), init, this.timeout);
     }
 
-    async listUsers(init: RequestInit = this.defaultInit): Promise<Record<string, User>> {
+    async listUsers(init: RequestInit = this.defaultInit): Promise<User[]> {
         return rpc(this.path(Client.usersResource), init, this.timeout);
     }
 
@@ -108,7 +108,7 @@ export class Client {
         return rpc(this.path(Client.workspacesResource, id), init, this.timeout);
     }
 
-    async listWorkspaces(init: RequestInit = this.defaultInit): Promise<Record<string, Workspace>> {
+    async listWorkspaces(init: RequestInit = this.defaultInit): Promise<Workspace[]> {
         return rpc(this.path(Client.workspacesResource), init, this.timeout);
     }
 
@@ -141,7 +141,7 @@ export class Client {
         return rpc(this.path(Client.repositoriesResource, id), init, this.timeout);
     }
 
-    async listRepositories(init: RequestInit = this.defaultInit): Promise<Record<string, Repository>> {
+    async listRepositories(init: RequestInit = this.defaultInit): Promise<Repository[]> {
         return rpc(this.path(Client.repositoriesResource), init, this.timeout);
     }
 
@@ -197,7 +197,7 @@ export class Client {
         return rpc(this.path(Client.poolsResource, id), init, this.timeout);
     }
 
-    async listPools(init: RequestInit = this.defaultInit): Promise<Record<string, Pool>> {
+    async listPools(init: RequestInit = this.defaultInit): Promise<Pool[]> {
         return rpc(this.path(Client.poolsResource), init, this.timeout);
     }
 

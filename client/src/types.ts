@@ -30,7 +30,7 @@ export interface WorkspaceDefaults {
     maxWorkspacesPerPod: string,
 }
 
-export interface Workspace extends OwnedResource {
+export interface Workspace extends IdentifiedResource, OwnedResource {
     repositoryDetails: RepositoryDetails,
     state: WorkspaceState,
     maxDuration: number,
