@@ -1,4 +1,4 @@
-import { EnvironmentType, Template } from '@substrate/playground-client';
+import { EnvironmentType, Repository } from '@substrate/playground-client';
 import React, {useState, useEffect} from 'react';
 import { spawn, ChildProcessWithoutNullStreams } from 'child_process';
 import {render, Box, Text} from 'ink';
@@ -18,13 +18,13 @@ function dockerRun(image: string, web: boolean, port: number): ChildProcessWitho
 	}
 }
 
-function TemplateSelector({ templates, onSelect }: {templates: Record<string, Template>, onSelect: (item: Item<Template>) => void}): JSX.Element {
-	const items = Object.entries(templates).filter(([_, t]) => t.tags?.public).map(([id, t]) => {return {key: id, label: t.name, value: t}});
-	const [description, setDescription] = useState(templates[0].description);
-	const handleHighlight = (item: Item<Template>) => setDescription(item.value.description);
+function RepositorySelector({ repositories, onSelect }: {repositories: Repository[], onSelect: (item: Item<Repository>) => void}): JSX.Element {
+	const items = Object.entries(repositories).filter(([_, t]) => t.tags?.public).map(([id, t]) => {return {key: id, label: t.name, value: t}});
+	const [description, setDescription] = useState(repositories[0].description);
+	const handleHighlight = (item: Item<Repository>) => setDescription(item.value.description);
 	return (
 		<Box flexDirection="column" margin={2}>
-			<Text>Select a template:</Text>
+			<Text>Select a repository:</Text>
 			<Box borderStyle="double" borderColor="green">
 				<Box flexGrow={1}>
 					<SelectInput items={items} onSelect={onSelect} onHighlight={handleHighlight} />
@@ -47,27 +47,27 @@ function Cartouche({borderColor, children}: {borderColor: string, children: NonN
 	);
 }
 
-function StatusContent({state, web, templateId, port}: {state: State, web: boolean, templateId: string, port: number}): JSX.Element {
+function StatusContent({state, web, repositoryId, port}: {state: State, web: boolean, repositoryId: string, port: number}): JSX.Element {
 	switch (state) {
 		case State.ERROR_NO_TEMPLATE:
-			return <Text>No templates</Text>;
+			return <Text>No repositories</Text>;
 		case State.ERROR_UNKNOWN_TEMPLATE:
-			return <Text>Unknown template <Text bold color="green">{templateId}</Text></Text>;
+			return <Text>Unknown repository <Text bold color="green">{repositoryId}</Text></Text>;
         case State.ERROR_UNKNOWN_IMAGE:
             return <Text>Unknown image</Text>;
 		case State.ERROR_PORT_ALREADY_USED:
 			return <Text>Port {port} already used!</Text>;
 		case State.INIT:
 		case State.DOWNLOADING:
-			return <Text>Downloading image for <Text bold color="green">{templateId}</Text> <Spinner /></Text>;
+			return <Text>Downloading image for <Text bold color="green">{repositoryId}</Text> <Spinner /></Text>;
 		case State.DOWNLOADED:
 		case State.STARTING:
-			return <Text>Starting <Text bold color="green">{templateId}</Text></Text>;
+			return <Text>Starting <Text bold color="green">{repositoryId}</Text></Text>;
 		case State.STARTED:
 			if (web) {
 				return (
 					<>
-						<Text><Text bold color="green">{templateId}</Text> started</Text>
+						<Text><Text bold color="green">{repositoryId}</Text> started</Text>
 						<Link url={`http://localhost:${port}`}>Browse <Text bold>{`http://localhost:${port}`}</Text></Link>
 						<Text>Hit <Text color="red" bold>Ctrl+c</Text> to exit</Text>
 					</>
@@ -90,10 +90,10 @@ function statusBorderColor(state: State): string {
 	}
 }
 
-function Status({state, templateId, web, port}: {state: State, templateId: string, web: boolean, port: number}): JSX.Element {
+function Status({state, repositoryId, web, port}: {state: State, repositoryId: string, web: boolean, port: number}): JSX.Element {
 	return (
 		<Cartouche borderColor={statusBorderColor(state)}>
-			<StatusContent state={state} web={web} templateId={templateId} port={port} />
+			<StatusContent state={state} web={web} repositoryId={repositoryId} port={port} />
 		</Cartouche>
 	);
 }
@@ -110,22 +110,22 @@ enum State {
     ERROR_PORT_ALREADY_USED
 }
 
-function App({web, port, env, template, templates, debug}: {web: boolean, port: number, env: EnvironmentType, template: string, templates: Record<string, Template>, debug: boolean}): JSX.Element {
-	const defaultemplate = templates[template];
+function App({web, port, env, repository, repositories, debug}: {web: boolean, port: number, env: EnvironmentType, repository: string, repositories: Repository[], debug: boolean}): JSX.Element {
+	const defaulRepository = repositories[repository];
 	const [state, setState] = useState(() => {
-        if (template && !defaultemplate) {
+        if (repository && !defaulRepository) {
             return State.ERROR_UNKNOWN_TEMPLATE;
         } else {
-            return !templates.length ? State.ERROR_NO_TEMPLATE : null;
+            return !repositories.length ? State.ERROR_NO_TEMPLATE : null;
         };
     });
-	const [selectedTemplate, setTemplate] = useState(defaultemplate);
+	const [selectedRepository, setRepository] = useState(defaulRepository);
 
 	useEffect(() => {
-		function deploy(template: Template) {
+		function deploy(repository: Repository): void {
 			setState(State.INIT);
 
-			const image = web ? template.image : template.image.replace("-theia", "");
+			const image = web ? repository.image : repository.image.replace("-theia", "");
 			if (debug) {
 				console.log(`Using image ${image}`);
 			}
@@ -160,10 +160,10 @@ function App({web, port, env, template, templates, debug}: {web: boolean, port: 
 			}
 		}
 
-		if (selectedTemplate) {
-			deploy(selectedTemplate);
+		if (selectedRepository) {
+			deploy(selectedRepository);
 		}
-	}, [selectedTemplate]);
+	}, [selectedRepository]);
 
 	return (
 		<Box flexDirection="column">
@@ -172,12 +172,12 @@ function App({web, port, env, template, templates, debug}: {web: boolean, port: 
 				<Gradient name="rainbow">
 					<BigText text="Playground"/>
 				</Gradient>
-				<Text>Locally deploy a playground <Text bold>template</Text> from CLI (<Text bold color="green">{env}</Text>)</Text>
+				<Text>Locally deploy a playground <Text bold>repository</Text> from CLI (<Text bold color="green">{env}</Text>)</Text>
 			</Box>
 
 			{state != null
-			? <Status state={state} web={web} templateId={template || (selectedTemplate && selectedTemplate.name)} port={port} />
-			: <TemplateSelector templates={templates} onSelect={item => setTemplate(item.value)} />}
+			? <Status state={state} web={web} repositoryId={repository || (selectedRepository && selectedRepository.name)} port={port} />
+			: <RepositorySelector repositories={repositories} onSelect={item => setRepository(item.value)} />}
 		</Box>
 	);
 };

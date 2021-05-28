@@ -1,4 +1,4 @@
-import { LoggedUser } from "@substrate/playground-client";
+import { IdentifiedResource, LoggedUser, Workspace } from "@substrate/playground-client";
 
 function timeout<T>(promise: Promise<T>, ms: number): Promise<T> {
     return new Promise(function(resolve, reject) {
@@ -46,4 +46,24 @@ export function hasAdminReadRights(user: LoggedUser): boolean {
 
 export function hasAdminEditRights(user: LoggedUser): boolean {
     return user.admin;
+}
+
+export function workspaceDomain(workspace: Workspace): string {
+    return `${workspace.id}.`;
+}
+
+export function workspaceUrl(workspace: Workspace): string | null {
+    switch (workspace.state.tag) {
+        // TODO retrieve RepoVersion, extract ports
+        case 'Running': {
+            const ports = workspace.state.runtime.ports;
+            const port = ports?.find(port => port.name == 'web')?.port || 80;
+            return `//${workspaceDomain(workspace)}:${port}`;
+        }
+        default: return null;
+    }
+}
+
+export function find<T extends IdentifiedResource>(resources: T[], id: string): T | undefined {
+    return resources.find(resource => resource.id == id);
 }

@@ -9,7 +9,7 @@ import { useMachine } from '@xstate/react';
 import { CenteredContainer, ErrorMessage, LoadingPanel, Nav, NavMenuLogged, NavMenuUnlogged, NavSecondMenuAdmin, Wrapper } from './components';
 import { useInterval } from "./hooks";
 import { newMachine, Context, Event, Events, PanelId, States, Typestate, SchemaType } from './lifecycle';
-import { AdminPanel } from './panels/admin';
+import { AdminPanel } from './panels/admin/index';
 import { LoginPanel } from './panels/login';
 import { StatsPanel } from './panels/stats';
 import { TermsPanel } from './panels/terms';
@@ -49,13 +49,13 @@ function ExtraTheiaNav({ client, conf, restartAction }: { client: Client, conf: 
 
         // Periodically extend duration of running workspaces
         if (workspace) {
-            const { pod, duration } = workspace;
-            if (pod.phase == 'Running') {
-                const remaining = duration - (pod.startTime || 0) / 60; // In minutes
-                const maxDuration = conf.workspace.maxDuration;
+            const { state, maxDuration } = workspace;
+            if (state.tag == 'Running') {
+                const remaining = maxDuration - (state.startTime || 0) / 60; // In minutes
+                const maxConfDuration = conf.workspace.maxDuration;
                 // Increase workspace duration
-                if (remaining < 10 && duration < maxDuration) {
-                    const newDuration = Math.min(maxDuration, duration + 10);
+                if (remaining < 10 && maxDuration < maxConfDuration) {
+                    const newDuration = Math.min(maxConfDuration, maxDuration + 10);
                     await client.updateCurrentWorkspace({duration: newDuration});
                 }
             }
@@ -63,9 +63,9 @@ function ExtraTheiaNav({ client, conf, restartAction }: { client: Client, conf: 
     }, 5000);
 
     if (workspace) {
-        const { pod, duration } = workspace;
-        if (pod.phase == 'Running') {
-            const remaining = duration * 60 - (pod.startTime || 0);
+        const { state, maxDuration } = workspace;
+        if (state.tag == 'Running') {
+            const remaining = maxDuration * 60 - (state.startTime || 0);
             if (remaining < 300) { // 5 minutes
                 return (
                     <Typography variant="h6">
@@ -73,7 +73,7 @@ function ExtraTheiaNav({ client, conf, restartAction }: { client: Client, conf: 
                     </Typography>
                 );
             }
-        } else if (pod.phase == 'Failed') {
+        } else if (state.tag == 'Failed') {
             return (
                 <Typography variant="h6">
                     Your workspace is over. <Button onClick={restartAction}>Restart it</Button>

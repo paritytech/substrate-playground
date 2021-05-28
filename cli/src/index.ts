@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 
-import { Client, EnvironmentType, Template, playgroundBaseURL } from '@substrate/playground-client';
-import { spawn } from 'child_process';
+import { Client, EnvironmentType, playgroundBaseURL, Repository } from '@substrate/playground-client';
 import 'cross-fetch/polyfill';
 import 'abort-controller/polyfill';
 import { lookpath } from 'lookpath';
@@ -11,7 +10,7 @@ import { ui } from './ui';
 interface Arguments {
     web: boolean;
     env: string;
-    template?: string;
+    repository?: string;
     debug: boolean;
     port: number;
 }
@@ -27,12 +26,12 @@ const argv: Arguments = yargs(process.argv.slice(2))
 		'env': {
 			alias: 'e',
 			describe: 'provide the environment to interact with',
-			choices: ['production', 'staging', 'local'],
+			choices: ['production', 'staging'],
 			default: 'production',
 		},
-		'template': {
-			alias: 't',
-			describe: 'provide template id',
+		'repository': {
+			alias: 'r',
+			describe: 'provide repository id',
 			type: 'string'
 		},
 		'debug': {
@@ -49,29 +48,9 @@ const argv: Arguments = yargs(process.argv.slice(2))
 	})
 	.argv
 
-async function fetchTemplates(base: string): Promise<Template[]> {
+async function fetchRepositories(base: string): Promise<Repository[]> {
     const client = new Client(base);
-    return Object.values((await client.get()).templates);
-}
-
-async function listTemplates(web: boolean): Promise<Template[]> {
-    return await new Promise<Template[]>(resolve => {
-        const templates: Template[] = [];
-        const filter = web ? 'paritytech/substrate-playground-template-*-theia' : 'paritytech/substrate-playground-template-*';
-        const regexp = web ? /paritytech\/substrate-playground-template-(.*?)-theia/ : /paritytech\/substrate-playground-template-(.*)/;
-        const p = spawn('docker', ['images', filter, '--format' , '{{.Repository}}:{{.Tag}}']);
-        p.stdout.on('data', data => {
-            data.toString().split("\n").forEach(image => {
-                const [template] = image.split(":");
-                const [_, name] = regexp.exec(template);
-                // Only add the first version of a template
-                if (!templates.find(t => t.name == name)) {
-                    templates.push({name: name, image: image, description: template, tags: {public: "true"}});
-                }
-            });
-        });
-        p.stdout.on('close', () => resolve(templates));
-    });
+    return Object.values((await client.listRepositories()));
 }
 
 (async function() {
@@ -81,8 +60,7 @@ async function listTemplates(web: boolean): Promise<Template[]> {
 	}
 
     const env = EnvironmentType[argv.env];
-    const templates = argv.env == 'local' ? await listTemplates(argv.web) : await fetchTemplates(playgroundBaseURL(env));
-	ui(Object.assign({templates: templates}, argv));
+	ui(Object.assign({repositories: await fetchRepositories(playgroundBaseURL(env))}, argv));
   }().catch(e => {
 	  console.error("Failed to start template" ,e)
 }));

@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import Paper from '@material-ui/core/Paper';
 import { Client } from '@substrate/playground-client';
 import { CenteredContainer, ErrorMessage, Loading } from '../components';
-import { fetchWithTimeout } from '../utils';
+import { fetchWithTimeout, workspaceUrl } from '../utils';
 
 interface Error {
     reason: string,
@@ -23,37 +23,35 @@ export function TheiaPanel({ client, autoDeploy, onMissingWorkspace, onWorkspace
     const [loading, setLoading] = useState<Loading>();
 
     useEffect(() => {
-        function createWorkspace(template: string) {
-            client.createCurrentWorkspace({template: template}).then(fetchData);
+        function createWorkspace(id: string): void {
+            client.createCurrentWorkspace({repositoryDetails: {id: id, reference: ""}}).then(fetchData);
         }
 
         async function fetchData() {
             const workspace = await client.getCurrentWorkspace();
             if (workspace) {
-                const { pod } = workspace;
-                const phase = pod.phase;
-                if (phase == 'Running') {
+                const { state } = workspace;
+                if (state.tag == 'Running') {
                     // Check URL is fine
-                    const url = `//${workspace.url}`;
-                    if ((await fetchWithTimeout(url)).ok) {
-                        setUrl(url);
-                        return;
+                    const url = workspaceUrl(workspace);
+                    if (url) {
+                        if ((await fetchWithTimeout(url)).ok) {
+                            setUrl(url);
+                            return;
+                        }
+                    } else {
+
                     }
-                } else if (phase == 'Pending') {
-                    const { conditions, container } = pod;
-                    const reason = (conditions && conditions[0].reason) || container?.reason;
-                    if (reason === "Unschedulable" || reason === "CrashLoopBackOff" || reason === "ErrImagePull" || reason === "ImagePullBackOff" || reason === "InvalidImageName") {
-                        setError({reason: container?.message || (conditions && conditions[0].message) || 'Pod crashed',
-                                  action: onWorkspaceFailing});
-                        return;
-                    }
-                    // The template is being deployed, nothing to do
+                } else if (state.tag == 'Failed') {
+                    const { reason } = state;
+                    setError({reason: reason || 'Pod crashed', action: onWorkspaceFailing});
                 }
+                // The repository is being deployed, nothing to do
             }
 
             const retry = loading?.retry ?? 0;
             if (retry < maxRetries) {
-                setLoading({phase: workspace?.pod.phase || 'Unknown', retry: retry + 1});
+                setLoading({phase: workspace?.state.tag || 'Unknown', retry: retry + 1});
                 setTimeout(fetchData, 1000);
             } else if (retry == maxRetries) {
                 setError({reason: "Couldn't access the theia workspace in time",
@@ -62,12 +60,12 @@ export function TheiaPanel({ client, autoDeploy, onMissingWorkspace, onWorkspace
         }
 
         // Entry point.
-        // If autoDeploy, first attempt to locate the associated template and deploy it.
+        // If autoDeploy, first attempt to locate the associated repository and deploy it.
         // In all cases, delegates to `fetchData`
         if (autoDeploy) {
-            client.listTemplates().then(templates => {
-                if (!templates[autoDeploy]) {
-                    setError({reason: `Unknown template ${autoDeploy}`,
+            client.getRepository(autoDeploy).then(repository => {
+                if (!repository) {
+                    setError({reason: `Unknown repository ${autoDeploy}`,
                               action: onMissingWorkspace});
                     return;
                 }

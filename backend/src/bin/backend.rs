@@ -79,18 +79,26 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 playground::api::delete_user,
                 // Current Workspace
                 playground::api::get_current_workspace,
-                playground::api::get_current_workspace_unlogged,
                 playground::api::create_current_workspace,
-                playground::api::create_current_workspace_unlogged,
                 playground::api::update_current_workspace,
-                playground::api::update_current_workspace_unlogged,
                 playground::api::delete_current_workspace,
-                playground::api::delete_current_workspace_unlogged,
                 // Workspaces
+                playground::api::get_workspace,
                 playground::api::list_workspaces,
                 playground::api::create_workspace,
                 playground::api::update_workspace,
                 playground::api::delete_workspace,
+                // Repositories
+                playground::api::get_repository,
+                playground::api::list_repositories,
+                playground::api::create_repository,
+                playground::api::update_repository,
+                playground::api::delete_repository,
+                // Repository versions
+                playground::api::get_repository_version,
+                playground::api::list_repository_versions,
+                playground::api::create_repository_version,
+                playground::api::delete_repository_version,
                 // Pools
                 playground::api::get_pool,
                 playground::api::list_pools,

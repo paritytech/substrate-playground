@@ -6,10 +6,11 @@ use crate::{
         ingress_path, list_by_selector,
     },
     types::{
-        self, Configuration, ContainerConfiguration, Environment, LoggedUser, Pool, Repository,
-        RepositoryVersion, RepositoryVersionState, Runtime, User, UserConfiguration,
-        UserUpdateConfiguration, Workspace, WorkspaceConfiguration, WorkspaceDefaults,
-        WorkspaceState, WorkspaceUpdateConfiguration,
+        self, Configuration, Environment, LoggedUser, Pool, Port, Repository,
+        RepositoryConfiguration, RepositoryDetails, RepositoryRuntimeConfiguration,
+        RepositoryUpdateConfiguration, RepositoryVersion, RepositoryVersionConfiguration, User,
+        UserConfiguration, UserUpdateConfiguration, Workspace, WorkspaceConfiguration,
+        WorkspaceDefaults, WorkspaceState, WorkspaceUpdateConfiguration,
     },
 };
 use json_patch::{AddOperation, PatchOperation};
@@ -30,8 +31,15 @@ use kube::{
     Client, Resource,
 };
 use log::error;
+use serde::Serialize;
 use serde_json::json;
-use std::{collections::BTreeMap, convert::TryFrom, env, num::ParseIntError, time::Duration};
+use std::{
+    collections::BTreeMap,
+    convert::TryFrom,
+    env,
+    num::ParseIntError,
+    time::{Duration, SystemTime},
+};
 
 const NODE_POOL_LABEL: &str = "cloud.google.com/gke-nodepool";
 const INSTANCE_TYPE_LABEL: &str = "node.kubernetes.io/instance-type";
@@ -42,9 +50,9 @@ const COMPONENT_LABEL: &str = "app.kubernetes.io/component";
 const COMPONENT_VALUE: &str = "workspaca";
 const OWNER_LABEL: &str = "app.kubernetes.io/owner";
 const INGRESS_NAME: &str = "ingress";
-const TEMPLATE_ANNOTATION: &str = "playground.substrate.io/template";
 const WORKSPACE_DURATION_ANNOTATION: &str = "playground.substrate.io/workspace_duration";
 const USERS_CONFIG_MAP: &str = "playground-users";
+const REPOSITORIES_CONFIG_MAP: &str = "playground-repositories";
 const THEIA_WEB_PORT: i32 = 3000;
 
 pub fn pod_name(user: &str) -> String {
@@ -57,13 +65,17 @@ pub fn service_name(workspace_id: &str) -> String {
 
 // Model
 
-fn pod_env_variables(runtime: &Runtime, host: &str, workspace_id: &str) -> Vec<EnvVar> {
+fn pod_env_variables(
+    conf: &RepositoryRuntimeConfiguration,
+    host: &str,
+    workspace_id: &str,
+) -> Vec<EnvVar> {
     let mut envs = vec![
         env_var("SUBSTRATE_PLAYGROUND", ""),
         env_var("SUBSTRATE_PLAYGROUND_WORKSPACE", workspace_id),
         env_var("SUBSTRATE_PLAYGROUND_HOSTNAME", host),
     ];
-    if let Some(mut template_envs) = runtime.env.clone().map(|envs| {
+    if let Some(mut template_envs) = conf.env.clone().map(|envs| {
         envs.iter()
             .map(|env| env_var(&env.name, &env.value))
             .collect::<Vec<EnvVar>>()
@@ -71,17 +83,6 @@ fn pod_env_variables(runtime: &Runtime, host: &str, workspace_id: &str) -> Vec<E
         envs.append(&mut template_envs);
     };
     envs
-}
-
-fn runtime() -> Runtime {
-    // TODO
-    Runtime {
-        container_configuration: ContainerConfiguration::IMAGE {
-            value: "".to_string(),
-        },
-        env: None,
-        ports: None,
-    }
 }
 
 // TODO detect when ingress is restarted, then re-sync theia workspaces
@@ -179,7 +180,7 @@ async fn get_or_create_volume(
 fn create_pod(
     env: &Environment,
     workspace_id: &str,
-    runtime: &Runtime,
+    runtime: &RepositoryRuntimeConfiguration,
     duration: &Duration,
     pool_id: &str,
     workspace: &PersistentVolumeClaim,
@@ -246,7 +247,7 @@ fn create_pod(
     })
 }
 
-fn create_service(workspace_id: &str, runtime: &Runtime) -> Service {
+fn create_service(workspace_id: &str, runtime: &RepositoryRuntimeConfiguration) -> Service {
     let mut labels = BTreeMap::new();
     labels.insert(APP_LABEL.to_string(), APP_VALUE.to_string());
     labels.insert(COMPONENT_LABEL.to_string(), COMPONENT_VALUE.to_string());
@@ -292,16 +293,13 @@ fn create_service(workspace_id: &str, runtime: &Runtime) -> Service {
     }
 }
 
-fn ingress_paths(service_name: String, runtime: &Runtime) -> Vec<HTTPIngressPath> {
+fn ingress_paths(service_name: String, ports: &Vec<Port>) -> Vec<HTTPIngressPath> {
     let mut paths = vec![ingress_path("/", &service_name, THEIA_WEB_PORT)];
-    if let Some(mut template_paths) = runtime.ports.clone().map(|ports| {
-        ports
-            .iter()
-            .map(|port| ingress_path(&port.clone().path, &service_name.clone(), port.port))
-            .collect()
-    }) {
-        paths.append(&mut template_paths);
-    };
+    let mut template_paths = ports
+        .iter()
+        .map(|port| ingress_path(&port.clone().path, &service_name.clone(), port.port))
+        .collect();
+    paths.append(&mut template_paths);
     paths
 }
 
@@ -311,6 +309,13 @@ fn subdomain(host: &str, workspace_id: &str) -> String {
 
 async fn list_users(client: Client, namespace: &str) -> Result<BTreeMap<String, String>> {
     get_config_map(client, namespace, USERS_CONFIG_MAP).await
+}
+
+fn serialize<T: ?Sized>(value: &T) -> Result<String>
+where
+    T: Serialize,
+{
+    serde_yaml::to_string(&value).map_err(|err| Error::Failure(err.into()))
 }
 
 #[derive(Clone)]
@@ -406,7 +411,7 @@ impl Engine {
         let instance_type = labels.get(INSTANCE_TYPE_LABEL).unwrap_or(&local);
 
         Ok(Pool {
-            name: id,
+            id,
             instance_type: Some(instance_type.clone()),
             nodes: nodes
                 .iter()
@@ -492,14 +497,7 @@ impl Engine {
     }*/
 
     fn yaml_to_user(self, s: &str) -> Result<User> {
-        let user_configuration: UserConfiguration =
-            serde_yaml::from_str(s).map_err(|err| Error::Failure(err.into()))?;
-        Ok(User {
-            admin: user_configuration.admin,
-            pool_affinity: user_configuration.pool_affinity,
-            can_customize_duration: user_configuration.can_customize_duration,
-            can_customize_pool_affinity: user_configuration.can_customize_pool_affinity,
-        })
+        serde_yaml::from_str(s).map_err(|err| Error::Failure(err.into()))
     }
 
     pub async fn get_user(&self, id: &str) -> Result<Option<User>> {
@@ -514,44 +512,56 @@ impl Engine {
         }
     }
 
-    pub async fn list_users(&self) -> Result<BTreeMap<String, User>> {
+    pub async fn list_users(&self) -> Result<Vec<User>> {
         let client = client().await?;
 
         Ok(list_users(client, &self.env.namespace)
             .await?
             .into_iter()
-            .map(|(k, v)| Ok((k, self.clone().yaml_to_user(&v)?)))
-            .collect::<Result<BTreeMap<String, User>>>()?)
+            .flat_map(|(k, v)| self.clone().yaml_to_user(&v))
+            .collect())
     }
 
-    pub async fn create_user(&self, id: String, conf: UserConfiguration) -> Result<()> {
+    pub async fn create_user(&self, id: &str, conf: UserConfiguration) -> Result<()> {
         let client = client().await?;
+
+        let user = User {
+            id: id.to_string(),
+            admin: conf.admin,
+            can_customize_duration: conf.can_customize_duration,
+            can_customize_pool_affinity: conf.can_customize_pool_affinity,
+            pool_affinity: conf.pool_affinity,
+        };
 
         add_config_map_value(
             client,
             &self.env.namespace,
             USERS_CONFIG_MAP,
-            id.as_str(),
-            serde_yaml::to_string(&conf)
-                .map_err(|err| Error::Failure(err.into()))?
-                .as_str(),
+            id,
+            serialize(&user)?.as_str(),
         )
         .await?;
 
         Ok(())
     }
 
-    pub async fn update_user(&self, id: String, conf: UserUpdateConfiguration) -> Result<()> {
+    pub async fn update_user(&self, id: &str, conf: UserUpdateConfiguration) -> Result<()> {
         let client = client().await?;
+
+        let mut user = Self::get_user(self, id)
+            .await?
+            .ok_or(Error::MissingData("no matching user"))?;
+        user.admin = conf.admin;
+        user.can_customize_duration = conf.can_customize_duration;
+        user.can_customize_pool_affinity = conf.can_customize_pool_affinity;
+        user.pool_affinity = conf.pool_affinity;
 
         add_config_map_value(
             client,
             &self.env.namespace,
             USERS_CONFIG_MAP,
-            id.as_str(),
-            serde_yaml::to_string(&conf)
-                .map_err(|err| Error::Failure(err.into()))?
-                .as_str(),
+            id,
+            serialize(&user)?.as_str(),
         )
         .await?;
 
@@ -566,10 +576,6 @@ impl Engine {
     // Workspaces
 
     fn pod_to_state(pod: &Pod) -> Result<types::WorkspaceState> {
-        let status = pod.status.as_ref().ok_or(Error::MissingData("status"))?;
-        let conditions = status.clone().conditions;
-        let container_statuses = status.clone().container_statuses;
-        let container_status = container_statuses.as_ref().and_then(|v| v.first());
         /*Ok(types::WorkspaceState {
             phase: Phase::from_str(
                 &status
@@ -612,12 +618,12 @@ impl Engine {
         )?;
 
         Ok(Workspace {
+            id: username.clone(),
             user_id: username.clone(),
             max_duration,
-            repository_version: RepositoryVersion {
+            repository_details: RepositoryDetails {
+                id: "".to_string(),
                 reference: "".to_string(),
-                state: RepositoryVersionState::BUILT,
-                runtime: runtime(),
             },
             state: Self::pod_to_state(pod)?, /*template,
                                              url: subdomain(&env.host, &username),
@@ -637,14 +643,33 @@ impl Engine {
         let pod_api: Api<Pod> = Api::namespaced(client, &self.env.namespace);
         let pod = pod_api.get(&pod_name(id)).await.ok();
 
-        match pod.map(|pod| Self::pod_to_workspace(&pod)) {
+        /*match pod.map(|pod| Self::pod_to_workspace(&pod)) {
             Some(workspace) => workspace.map(Some),
             None => Ok(None),
-        }
+        }*/
+        Ok(Some(Workspace {
+            id: "id".to_string(),
+            user_id: "user_id".to_string(),
+            max_duration: Duration::from_millis(123),
+            repository_details: RepositoryDetails {
+                id: "id".to_string(),
+                reference: "reference".to_string(),
+            },
+            state: WorkspaceState::Running {
+                start_time: SystemTime::now(),
+                node: types::Node {
+                    hostname: "hostname".to_string(),
+                },
+                runtime: RepositoryRuntimeConfiguration {
+                    env: None,
+                    ports: None,
+                },
+            },
+        }))
     }
 
     /// Lists all currently running workspaces
-    pub async fn list_workspaces(&self) -> Result<BTreeMap<String, Workspace>> {
+    pub async fn list_workspaces(&self) -> Result<Vec<Workspace>> {
         let client = client().await?;
         let pod_api: Api<Pod> = Api::namespaced(client, &self.env.namespace);
         let pods = list_by_selector(
@@ -656,11 +681,10 @@ impl Engine {
         Ok(pods
             .iter()
             .flat_map(|pod| Self::pod_to_workspace(pod).ok())
-            .map(|workspace| (workspace.clone().user_id, workspace))
-            .collect::<BTreeMap<String, Workspace>>())
+            .collect())
     }
 
-    pub async fn patch_ingress(&self, runtimes: &BTreeMap<String, &Runtime>) -> Result<()> {
+    pub async fn patch_ingress(&self, runtimes: &BTreeMap<String, Vec<Port>>) -> Result<()> {
         let client = client().await?;
         let ingress_api: Api<Ingress> = Api::namespaced(client, &self.env.namespace);
         let mut ingress: Ingress = ingress_api
@@ -677,12 +701,12 @@ impl Engine {
             .clone()
             .rules
             .ok_or(Error::MissingData("ingress#spec#rules"))?;
-        for (workspace_id, runtime) in runtimes {
+        for (workspace_id, ports) in runtimes {
             let subdomain = subdomain(&self.env.host, &workspace_id);
             rules.push(IngressRule {
                 host: Some(subdomain.clone()),
                 http: Some(HTTPIngressRuleValue {
-                    paths: ingress_paths(service_name(&workspace_id), runtime),
+                    paths: ingress_paths(service_name(&workspace_id), ports),
                 }),
             });
         }
@@ -703,10 +727,13 @@ impl Engine {
         user_id: &str,
         conf: WorkspaceConfiguration,
     ) -> Result<()> {
-        let repository = self
-            .get_repository(&conf.repository_id)
+        let repository_version = self
+            .get_repository_version(
+                &conf.repository_details.id,
+                &conf.repository_details.reference,
+            )
             .await?
-            .ok_or(Error::MissingData("repository"))?;
+            .ok_or(Error::MissingData("repository#versions"))?;
         // Make sure some node on the right pools still have rooms
         // Find pool affinity, lookup corresponding pool and capacity based on nodes, figure out if there is room left
         // TODO: replace with custom scheduler
@@ -742,24 +769,19 @@ impl Engine {
 
         let volume_api: Api<PersistentVolumeClaim> = Api::namespaced(client.clone(), namespace);
         // TODO use conf.version to access right workspace
-        let volume = get_or_create_volume(&volume_api, user_id, &conf.repository_id).await?;
-
-        let reference = conf
-            .repository_reference
-            .unwrap_or_else(|| "latest".to_string()); // TODO
-        let version = repository
-            .versions
-            .into_iter()
-            .find(|version| version.reference == reference)
-            .ok_or(Error::MissingData("repository#version"))?;
-        if version.state != RepositoryVersionState::BUILT {
-            return Err(Error::MissingData("repository#version#built"));
-        }
-        let runtime = &version.runtime;
+        let volume =
+            get_or_create_volume(&volume_api, user_id, &conf.repository_details.id).await?;
+        let runtime = match &repository_version.state {
+            types::RepositoryVersionState::Ready { runtime } => runtime,
+            _ => return Err(Error::Unauthorized()),
+        };
 
         // Patch ingress to make this workspace externally avalaible
         let mut workspaces = BTreeMap::new();
-        workspaces.insert(user_id.to_string(), runtime);
+        workspaces.insert(
+            user_id.to_string(),
+            runtime.ports.clone().unwrap_or_default(),
+        );
         self.patch_ingress(&workspaces).await?;
 
         let duration = conf
@@ -872,11 +894,119 @@ impl Engine {
         Ok(())
     }
 
-    // Repository
+    // Repositories
 
     pub async fn get_repository(&self, id: &str) -> Result<Option<Repository>> {
+        let client = client().await?;
+
+        let repositories =
+            get_config_map(client, &self.env.namespace, REPOSITORIES_CONFIG_MAP).await?;
+        let repository = repositories.get(id);
+
+        match repository.map(|repository| {
+            serde_yaml::from_str::<Repository>(&repository)
+                .map_err(|err| Error::Failure(err.into()))
+        }) {
+            Some(repository) => repository.map(Some),
+            None => Ok(None),
+        }
+    }
+
+    pub async fn list_repositories(&self) -> Result<Vec<Repository>> {
+        let client = client().await?;
+
+        Ok(
+            get_config_map(client, &self.env.namespace, REPOSITORIES_CONFIG_MAP)
+                .await?
+                .into_iter()
+                .map(|(k, v)| {
+                    Ok(serde_yaml::from_str::<Repository>(&v)
+                        .map_err(|err| Error::Failure(err.into()))?)
+                })
+                .collect::<Result<Vec<Repository>>>()?,
+        )
+    }
+
+    pub async fn create_repository(&self, id: &str, conf: RepositoryConfiguration) -> Result<()> {
+        let client = client().await?;
+
+        let repository = Repository {
+            id: id.to_string(),
+            tags: conf.tags,
+            url: conf.url,
+        };
+
+        add_config_map_value(
+            client,
+            &self.env.namespace,
+            REPOSITORIES_CONFIG_MAP,
+            id,
+            serialize(&repository)?.as_str(),
+        )
+        .await?;
+
+        Ok(())
+    }
+
+    pub async fn update_repository(
+        &self,
+        id: &str,
+        conf: RepositoryUpdateConfiguration,
+    ) -> Result<()> {
+        let client = client().await?;
+
+        let mut repository = Self::get_repository(self, id)
+            .await?
+            .ok_or(Error::MissingData("no matching repository"))?;
+        repository.tags = conf.tags;
+
+        add_config_map_value(
+            client,
+            &self.env.namespace,
+            REPOSITORIES_CONFIG_MAP,
+            id,
+            serialize(&repository)?.as_str(),
+        )
+        .await?;
+
+        Ok(())
+    }
+
+    pub async fn delete_repository(&self, id: &str) -> Result<()> {
+        let client = client().await?;
+        delete_config_map_value(client, &self.env.namespace, REPOSITORIES_CONFIG_MAP, id).await
+    }
+
+    // Repository versions
+
+    pub async fn get_repository_version(
+        &self,
+        repository_id: &str,
+        id: &str,
+    ) -> Result<Option<RepositoryVersion>> {
         // TODO
         Ok(None)
+    }
+
+    pub async fn list_repository_versions(
+        &self,
+        repository_id: &str,
+    ) -> Result<Vec<RepositoryVersion>> {
+        // TODO
+        Ok(vec![])
+    }
+
+    pub async fn create_repository_version(
+        &self,
+        repository_id: &str,
+        id: &str,
+        conf: RepositoryVersionConfiguration,
+    ) -> Result<()> {
+        Ok(())
+    }
+
+    pub async fn delete_repository_version(&self, repository_id: &str, id: &str) -> Result<()> {
+        Ok(())
     }
 
     // Pools
@@ -893,7 +1023,7 @@ impl Engine {
         }
     }
 
-    pub async fn list_pools(&self) -> Result<BTreeMap<String, Pool>> {
+    pub async fn list_pools(&self) -> Result<Vec<Pool>> {
         let client = client().await?;
         let node_api: Api<Node> = Api::all(client);
 
@@ -919,7 +1049,7 @@ impl Engine {
         Ok(nodes_by_pool
             .into_iter()
             .flat_map(|(s, v)| match self.clone().nodes_to_pool(s.clone(), v) {
-                Ok(pool) => Some((s, pool)),
+                Ok(pool) => Some(pool),
                 Err(_) => None,
             })
             .collect())

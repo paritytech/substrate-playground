@@ -1,15 +1,11 @@
 //! HTTP endpoints exposed in /api context
-use crate::{
-    error::Result,
-    github::{current_user, orgs, GitHubUser},
-    types::{
-        Environment, LoggedUser, UserConfiguration, UserUpdateConfiguration,
+use crate::{Context, error::{Error, Result}, github::{current_user, orgs, GitHubUser}, types::{
+        Environment, LoggedUser, RepositoryConfiguration, RepositoryUpdateConfiguration,
+        RepositoryVersionConfiguration, UserConfiguration, UserUpdateConfiguration,
         WorkspaceConfiguration, WorkspaceUpdateConfiguration,
-    },
-    Context,
-};
+    }};
 use request::FormItems;
-use rocket::response::{content, status, Redirect};
+use rocket::response::{content, Redirect};
 use rocket::{
     catch, delete, get,
     http::{Cookie, Cookies, SameSite, Status},
@@ -70,9 +66,9 @@ impl<'a, 'r> FromRequest<'a, 'r> for LoggedUser {
                 .iter()
                 .map(|org| org.clone().login)
                 .collect();
-            let user = users.get(&id);
+            let user = users.iter().find(|user| user.id == id);
             // If at least one non-admin user is defined, then users are only allowed if whitelisted
-            let filtered = users.values().any(|user| !user.admin);
+            let filtered = users.iter().any(|user| !user.admin);
             if !filtered || user.is_some() {
                 Outcome::Success(LoggedUser {
                     id: id.clone(),
@@ -93,10 +89,18 @@ impl<'a, 'r> FromRequest<'a, 'r> for LoggedUser {
     }
 }
 
+fn create_jsonrpc_error(_type: &str, message: String) -> JsonValue {
+    json!({ "error": { "type": _type, "message": message } })
+}
+
 fn result_to_jsonrpc<T: Serialize>(res: Result<T>) -> JsonValue {
     match res {
         Ok(val) => json!({ "result": val }),
-        Err(err) => json!({ "error": err.to_string() }),
+        Err(err) => match err {
+            Error::Failure(from) => create_jsonrpc_error("Failure", from.to_string()),
+            Error::Unauthorized() => create_jsonrpc_error("Unauthorized", err.to_string()),
+            Error::MissingData(str) => create_jsonrpc_error("MissingData", str.to_string()),
+        },
     }
 }
 
@@ -154,11 +158,6 @@ pub fn get_current_workspace(state: State<'_, Context>, user: LoggedUser) -> Jso
     result_to_jsonrpc(state.manager.get_workspace(&user, &user.id))
 }
 
-#[get("/workspace", rank = 2)]
-pub fn get_current_workspace_unlogged() -> status::Unauthorized<()> {
-    status::Unauthorized::<()>(None)
-}
-
 ///
 /// Create a new workspace for `LoggedUser`. A single workspace can exist at a time.
 ///
@@ -174,13 +173,6 @@ pub fn create_current_workspace(
     result_to_jsonrpc(state.manager.create_workspace(&user, &user.id, conf.0))
 }
 
-#[put("/workspace", data = "<_conf>", rank = 2)]
-pub fn create_current_workspace_unlogged(
-    _conf: Json<WorkspaceConfiguration>,
-) -> status::Unauthorized<()> {
-    status::Unauthorized::<()>(None)
-}
-
 #[patch("/workspace", data = "<conf>")]
 pub fn update_current_workspace(
     state: State<'_, Context>,
@@ -190,21 +182,9 @@ pub fn update_current_workspace(
     result_to_jsonrpc(state.manager.update_workspace(&user.id, &user, conf.0))
 }
 
-#[patch("/workspace", data = "<_conf>", rank = 2)]
-pub fn update_current_workspace_unlogged(
-    _conf: Json<WorkspaceUpdateConfiguration>,
-) -> status::Unauthorized<()> {
-    status::Unauthorized::<()>(None)
-}
-
 #[delete("/workspace")]
 pub fn delete_current_workspace(state: State<'_, Context>, user: LoggedUser) -> JsonValue {
     result_to_jsonrpc(state.manager.delete_workspace(&user, &user.id))
-}
-
-#[delete("/workspace", rank = 2)]
-pub fn delete_current_workspace_unlogged() -> status::Unauthorized<()> {
-    status::Unauthorized::<()>(None)
 }
 
 // Workspaces
@@ -244,29 +224,101 @@ pub fn delete_workspace(state: State<'_, Context>, user: LoggedUser, id: String)
     result_to_jsonrpc(state.manager.delete_workspace(&user, &id))
 }
 
-/*
-#[get("/templates/<id>/<version>")]
-pub fn get_template_version(state: State<'_, Context>, id: String, version: String) -> JsonValue {
-    result_to_jsonrpc(state.manager.list_templates())
+// Repositories
+
+#[get("/repositories/<id>")]
+pub fn get_repository(state: State<'_, Context>, id: String) -> JsonValue {
+    result_to_jsonrpc(state.manager.get_repository(&id))
 }
 
-#[put("/templates/<id>/<version>", data = "<conf>")]
-pub fn create_template_version(
+#[get("/repositories")]
+pub fn list_repositories(state: State<'_, Context>) -> JsonValue {
+    result_to_jsonrpc(state.manager.list_repositories())
+}
+
+#[put("/repositories/<id>", data = "<conf>")]
+pub fn create_repository(
     state: State<'_, Context>,
     user: LoggedUser,
     id: String,
-    conf: Json<TemplateVersionConfiguration>,
+    conf: Json<RepositoryConfiguration>,
 ) -> JsonValue {
-    result_to_jsonrpc(state.manager.create_workspace(&user, &id, conf.0))
+    result_to_jsonrpc(state.manager.create_repository(&user, &id, conf.0))
 }
 
-*/
-/*
-#[get("/repositories")]
-pub fn list_favorites(state: State<'_, Context>) -> JsonValue {
-    result_to_jsonrpc(state.manager.list_templates())
+#[patch("/repositories/<id>", data = "<conf>")]
+pub fn update_repository(
+    state: State<'_, Context>,
+    user: LoggedUser,
+    id: String,
+    conf: Json<RepositoryUpdateConfiguration>,
+) -> JsonValue {
+    result_to_jsonrpc(state.manager.update_repository(&id, &user, conf.0))
 }
-*/
+
+#[delete("/repositories/<id>")]
+pub fn delete_repository(state: State<'_, Context>, user: LoggedUser, id: String) -> JsonValue {
+    result_to_jsonrpc(state.manager.delete_repository(&user, &id))
+}
+
+// Repository versions
+
+#[get("/repositories/<repository_id>/versions/<id>")]
+pub fn get_repository_version(
+    state: State<'_, Context>,
+    user: LoggedUser,
+    repository_id: String,
+    id: String,
+) -> JsonValue {
+    result_to_jsonrpc(
+        state
+            .manager
+            .get_repository_version(&user, &repository_id, &id),
+    )
+}
+
+#[get("/repositories/<repository_id>/versions")]
+pub fn list_repository_versions(
+    state: State<'_, Context>,
+    user: LoggedUser,
+    repository_id: String,
+) -> JsonValue {
+    result_to_jsonrpc(
+        state
+            .manager
+            .list_repository_versions(&user, &repository_id),
+    )
+}
+
+#[put("/repositories/<repository_id>/versions/<id>", data = "<conf>")]
+pub fn create_repository_version(
+    state: State<'_, Context>,
+    user: LoggedUser,
+    repository_id: String,
+    id: String,
+    conf: Json<RepositoryVersionConfiguration>,
+) -> JsonValue {
+    result_to_jsonrpc(
+        state
+            .manager
+            .create_repository_version(&user, &repository_id, &id, conf.0),
+    )
+}
+
+#[delete("/repositories/<repository_id>/versions/<id>")]
+pub fn delete_repository_version(
+    state: State<'_, Context>,
+    user: LoggedUser,
+    repository_id: String,
+    id: String,
+) -> JsonValue {
+    result_to_jsonrpc(
+        state
+            .manager
+            .delete_repository_version(&user, &repository_id, &id),
+    )
+}
+
 // Pools
 
 #[get("/pools/<id>")]

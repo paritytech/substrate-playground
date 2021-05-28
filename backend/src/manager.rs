@@ -3,15 +3,15 @@ use crate::{
     kubernetes::Engine,
     metrics::Metrics,
     types::{
-        Configuration, Environment, LoggedUser, Pool, User, UserConfiguration,
-        UserUpdateConfiguration, Workspace, WorkspaceConfiguration, WorkspaceState,
-        WorkspaceUpdateConfiguration,
+        LoggedUser, Playground, Pool, Repository, RepositoryConfiguration,
+        RepositoryUpdateConfiguration, RepositoryVersion, RepositoryVersionConfiguration, User,
+        UserConfiguration, UserUpdateConfiguration, Workspace, WorkspaceConfiguration,
+        WorkspaceState, WorkspaceUpdateConfiguration,
     },
 };
 use log::{error, info, warn};
-use serde::Serialize;
 use std::{
-    collections::{BTreeMap, HashSet},
+    collections::HashSet,
     sync::{Arc, Mutex},
     thread::{self, JoinHandle},
     time::Duration,
@@ -25,13 +25,6 @@ pub struct Manager {
     workspaces: Arc<Mutex<HashSet<String>>>,
 }
 
-#[derive(Serialize, Clone, Debug)]
-pub struct Playground {
-    pub env: Environment,
-    pub configuration: Configuration,
-    pub user: Option<LoggedUser>,
-}
-
 impl Manager {
     const SLEEP_TIME: Duration = Duration::from_secs(60);
 
@@ -43,9 +36,10 @@ impl Manager {
             Ok(workspaces) => {
                 let running = workspaces
                     .iter()
-                    .flat_map(|i| match &i.1.state {
+                    .flat_map(|i| match &i.state {
                         WorkspaceState::Running { .. } => {
-                            Some((i.0.clone(), &i.1.repository_version.runtime))
+                            // TODO remove once migrated to per workspace nginx
+                            Some((i.id.clone(), vec![]))
                         }
                         _ => None,
                     })
@@ -115,7 +109,7 @@ impl Manager {
                 // Go through all Running pods and figure out if they have to be undeployed
                 match runtime.block_on(self.engine.list_workspaces()) {
                     Ok(workspaces) => {
-                        for workspace in workspaces.values() {
+                        for workspace in workspaces {
                             match workspace.state {
                                 WorkspaceState::Running { start_time, .. } => {
                                     if let Some(duration) = &start_time.elapsed().ok() {
@@ -189,7 +183,7 @@ impl Manager {
         new_runtime()?.block_on(self.engine.get_user(&id))
     }
 
-    pub fn list_users(&self, user: &LoggedUser) -> Result<BTreeMap<String, User>> {
+    pub fn list_users(&self, user: &LoggedUser) -> Result<Vec<User>> {
         if !user.has_admin_read_rights() {
             return Err(Error::Unauthorized());
         }
@@ -202,7 +196,7 @@ impl Manager {
             return Err(Error::Unauthorized());
         }
 
-        new_runtime()?.block_on(self.engine.create_user(id, conf))
+        new_runtime()?.block_on(self.engine.create_user(&id, conf))
     }
 
     pub fn update_user(
@@ -215,7 +209,7 @@ impl Manager {
             return Err(Error::Unauthorized());
         }
 
-        new_runtime()?.block_on(self.engine.update_user(id, conf))
+        new_runtime()?.block_on(self.engine.update_user(&id, conf))
     }
 
     pub fn delete_user(self, user: &LoggedUser, id: String) -> Result<()> {
@@ -236,7 +230,7 @@ impl Manager {
         new_runtime()?.block_on(self.engine.get_workspace(&workspace_id(id)))
     }
 
-    pub fn list_workspaces(&self, user: &LoggedUser) -> Result<BTreeMap<String, Workspace>> {
+    pub fn list_workspaces(&self, user: &LoggedUser) -> Result<Vec<Workspace>> {
         if !user.has_admin_read_rights() {
             return Err(Error::Unauthorized());
         }
@@ -333,6 +327,99 @@ impl Manager {
         result
     }
 
+    //Repositories
+
+    pub fn get_repository(&self, id: &str) -> Result<Option<Repository>> {
+        new_runtime()?.block_on(self.engine.get_repository(id))
+    }
+
+    pub fn list_repositories(&self) -> Result<Vec<Repository>> {
+        new_runtime()?.block_on(self.engine.list_repositories())
+    }
+
+    pub fn create_repository(
+        &self,
+        user: &LoggedUser,
+        id: &str,
+        conf: RepositoryConfiguration,
+    ) -> Result<()> {
+        if !user.has_admin_edit_rights() {
+            return Err(Error::Unauthorized());
+        }
+
+        new_runtime()?.block_on(self.engine.create_repository(&id, conf))
+    }
+
+    pub fn update_repository(
+        &self,
+        id: &str,
+        user: &LoggedUser,
+        conf: RepositoryUpdateConfiguration,
+    ) -> Result<()> {
+        if !user.has_admin_edit_rights() {
+            return Err(Error::Unauthorized());
+        }
+
+        new_runtime()?.block_on(self.engine.update_repository(&id, conf))
+    }
+
+    pub fn delete_repository(&self, user: &LoggedUser, id: &str) -> Result<()> {
+        if !user.has_admin_edit_rights() {
+            return Err(Error::Unauthorized());
+        }
+
+        new_runtime()?.block_on(self.engine.delete_repository(&id))
+    }
+
+    //Repository versions
+
+    pub fn get_repository_version(
+        &self,
+        _user: &LoggedUser,
+        repository_id: &str,
+        id: &str,
+    ) -> Result<Option<RepositoryVersion>> {
+        new_runtime()?.block_on(self.engine.get_repository_version(repository_id, id))
+    }
+
+    pub fn list_repository_versions(
+        &self,
+        _user: &LoggedUser,
+        repository_id: &str,
+    ) -> Result<Vec<RepositoryVersion>> {
+        new_runtime()?.block_on(self.engine.list_repository_versions(&repository_id))
+    }
+
+    pub fn create_repository_version(
+        &self,
+        user: &LoggedUser,
+        repository_id: &str,
+        id: &str,
+        conf: RepositoryVersionConfiguration,
+    ) -> Result<()> {
+        if !user.has_admin_edit_rights() {
+            return Err(Error::Unauthorized());
+        }
+
+        new_runtime()?.block_on(
+            self.engine
+                .create_repository_version(&repository_id, &id, conf),
+        )
+    }
+
+    pub fn delete_repository_version(
+        &self,
+        user: &LoggedUser,
+        repository_id: &str,
+        id: &str,
+    ) -> Result<()> {
+        if !user.has_admin_edit_rights() {
+            return Err(Error::Unauthorized());
+        }
+
+        new_runtime()?.block_on(self.engine.delete_repository_version(&repository_id, &id))
+    }
+
     // Pools
 
     pub fn get_pool(&self, user: &LoggedUser, pool_id: &str) -> Result<Option<Pool>> {
@@ -343,7 +430,7 @@ impl Manager {
         new_runtime()?.block_on(self.engine.get_pool(&pool_id))
     }
 
-    pub fn list_pools(&self, user: &LoggedUser) -> Result<BTreeMap<String, Pool>> {
+    pub fn list_pools(&self, user: &LoggedUser) -> Result<Vec<Pool>> {
         if !user.has_admin_read_rights() {
             return Err(Error::Unauthorized());
         }

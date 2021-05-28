@@ -60,8 +60,8 @@ pub async fn get_config_map(
     config_map_api
         .get(name)
         .await
-        .map_err(|err| Error::Failure(err.into()))
-        .and_then(|o| o.data.ok_or(Error::MissingData("config map")))
+        .map_err(|err| Error::Failure(err.into())) // No config map
+        .map(|o| o.data.unwrap_or_default()) // No data, return empty string
 }
 
 //
