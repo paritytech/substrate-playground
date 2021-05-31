@@ -6827,10 +6827,10 @@ react-refresh@^0.9.0:
   resolved "https://registry.yarnpkg.com/react-refresh/-/react-refresh-0.9.0.tgz#71863337adc3e5c2f8a6bfddd12ae3bfe32aafbf"
   integrity sha512-Gvzk7OZpiqKSkxsQvO/mbTN1poglhmAV7gR/DdIrRrSMXraRQQlfikRJOr3Nb9GTMPC5kof948Zy6jJZIFtDvQ==
 
-react-spring@9.2.0:
-  version "9.2.0"
-  resolved "https://registry.yarnpkg.com/react-spring/-/react-spring-9.2.0.tgz#a736c242e10dcf2b630bc78301f8762f19880a6b"
-  integrity sha512-YFz3cMGF9fwtRpkHQCu8avOJw8IVDWtLcBCEy9aTcgV4QuYsXDdKT6Y0l4zNupJAT/WmMmwaGJIkwuMfG16vsA==
+react-spring@9.2.1:
+  version "9.2.1"
+  resolved "https://registry.yarnpkg.com/react-spring/-/react-spring-9.2.1.tgz#999ff52142fbf85180b79b3b7b9266e0d3539f8d"
+  integrity sha512-HLkEbuRvRtvAwkeqqwZXIEaKPPc17ViI5DYPtYTpgu2H9jmndm/kp1BfxRwpu5+m4ecGzUUX7RRNWEfwWY6oWA==
   dependencies:
     "@react-spring/core" "~9.2.0"
     "@react-spring/konva" "~9.2.0"
