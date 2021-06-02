@@ -11,7 +11,7 @@ RUN apt-get update && \
 
 # Install rust as required by substrate env
 # Pick up the version from https://rust-lang.github.io/rustup-components-history/index.html (rls is required)
-ARG RUST_VERSION=nightly-2020-10-05
+ARG RUST_VERSION=nightly-2021-05-30
 ARG USER=playground
 ARG HOME=/home/$USER
 ARG WORKSPACE=$HOME/workspace
@@ -38,8 +38,6 @@ ENV HOME=$HOME \
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain none \
     && . $CARGO_HOME/env \
     && rustup install $RUST_VERSION \
-    && rustup update \
-    && rustup default $RUST_VERSION \
     && rustup component add rls rust-analysis rust-src clippy rustfmt llvm-tools-preview \
     && rustup target add wasm32-unknown-unknown --toolchain $RUST_VERSION
 
