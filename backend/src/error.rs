@@ -8,6 +8,8 @@ pub type Result<T> = result::Result<T, Error>;
 
 #[derive(Error, Debug)]
 pub enum Error {
+    #[error("InvalidState")]
+    InvalidState(&'static str),
     #[error("Unauthorized")]
     Unauthorized(/*Permission*/),
     #[error("Missing data {0}")]

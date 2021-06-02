@@ -1,9 +1,14 @@
 //! HTTP endpoints exposed in /api context
-use crate::{Context, error::{Error, Result}, github::{current_user, orgs, GitHubUser}, types::{
+use crate::{
+    error::{Error, Result},
+    github::{current_user, orgs, GitHubUser},
+    types::{
         Environment, LoggedUser, RepositoryConfiguration, RepositoryUpdateConfiguration,
         RepositoryVersionConfiguration, UserConfiguration, UserUpdateConfiguration,
         WorkspaceConfiguration, WorkspaceUpdateConfiguration,
-    }};
+    },
+    Context,
+};
 use request::FormItems;
 use rocket::response::{content, Redirect};
 use rocket::{
@@ -100,6 +105,7 @@ fn result_to_jsonrpc<T: Serialize>(res: Result<T>) -> JsonValue {
             Error::Failure(from) => create_jsonrpc_error("Failure", from.to_string()),
             Error::Unauthorized() => create_jsonrpc_error("Unauthorized", err.to_string()),
             Error::MissingData(str) => create_jsonrpc_error("MissingData", str.to_string()),
+            Error::InvalidState(str) => create_jsonrpc_error("InvalidState", str.to_string()),
         },
     }
 }
