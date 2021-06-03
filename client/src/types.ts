@@ -23,6 +23,7 @@ export interface Configuration {
 }
 
 export interface WorkspaceDefaults {
+    baseImage: string,
     /* The default number of minutes workspace can last */
     duration: number,
     maxDuration: number,
@@ -122,6 +123,7 @@ export type RepositoryVersionState =
     | {tag: "Ready", runtime: RepositoryRuntimeConfiguration };
 
 export interface RepositoryRuntimeConfiguration {
+    baseImage?: string,
     env?: NameValuePair[],
     ports?: Port[],
 }

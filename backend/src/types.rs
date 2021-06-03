@@ -28,6 +28,7 @@ pub struct Configuration {
 #[derive(Serialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct WorkspaceDefaults {
+    pub base_image: String,
     #[serde(with = "duration")]
     pub duration: Duration,
     #[serde(with = "duration")]
@@ -207,6 +208,7 @@ pub enum RepositoryVersionState {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct RepositoryRuntimeConfiguration {
+    pub base_image: Option<String>,
     pub env: Option<Vec<NameValuePair>>,
     pub ports: Option<Vec<Port>>,
 }

@@ -34,6 +34,21 @@ spec:
             value: "debug"
           - name: ROCKET_ADDRESS
             value: "0.0.0.0"
+          - name: GITHUB_CLIENT_ID
+            valueFrom:
+              configMapKeyRef:
+                name: playground-config
+                key: github.clientId
+          - name: GITHUB_CLIENT_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: playground-secrets
+                key: github.clientSecret
+          - name: WORKSPACE_BASE_IMAGE
+            valueFrom:
+              configMapKeyRef:
+                name: playground-config
+                key: workspace.baseImage
           - name: WORKSPACE_DEFAULT_DURATION
             valueFrom:
               configMapKeyRef:
@@ -54,16 +69,6 @@ spec:
               configMapKeyRef:
                 name: playground-config
                 key: workspace.defaultMaxPerNode
-          - name: GITHUB_CLIENT_ID
-            valueFrom:
-              configMapKeyRef:
-                name: playground-config
-                key: github.clientId
-          - name: GITHUB_CLIENT_SECRET
-            valueFrom:
-              secretKeyRef:
-                name: playground-secrets
-                key: github.clientSecret
           - name: ROCKET_SECRET_KEY
             valueFrom:
               secretKeyRef:
