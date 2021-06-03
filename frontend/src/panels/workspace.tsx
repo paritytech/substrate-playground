@@ -287,7 +287,7 @@ function WorkspaceRuntime({ runtime }: { runtime: RepositoryRuntimeConfiguration
     );
 }
 
-function WorkspaceState({ workspace }: { workspace: Workspace}): JSX.Element {
+function WorkspaceStateDetails({ workspace }: { workspace: Workspace}): JSX.Element {
     const { maxDuration, state } = workspace;
     switch (state.tag) {
         case "Running":
@@ -318,7 +318,7 @@ export function WorkspaceDetails({ workspace }: {workspace: Workspace}): JSX.Ele
                 <Typography>
                     {id}
                 </Typography>
-                <WorkspaceState workspace={workspace} />
+                <WorkspaceStateDetails workspace={workspace} />
             </CardContent>
         </Card>
     );
