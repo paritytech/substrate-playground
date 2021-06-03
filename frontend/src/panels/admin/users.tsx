@@ -20,7 +20,7 @@ import { Client, Configuration, LoggedUser, Pool, User, UserConfiguration, UserU
 import { ErrorSnackbar } from '../../components';
 import { useInterval } from '../../hooks';
 import { useStyles, EnhancedTableToolbar, Resources } from '.';
-import { find } from "src/utils";
+import { find } from "../../utils";
 
 function UserCreationDialog({ client, conf, users, show, onCreate, onHide }: { client: Client, conf: Configuration, users: User[], show: boolean, onCreate: (id: string, conf: UserConfiguration) => void, onHide: () => void }): JSX.Element {
     const [id, setID] = React.useState('');
