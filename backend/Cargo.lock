@@ -653,9 +653,9 @@ dependencies = [
 
 [[package]]
 name = "hyper"
-version = "0.14.8"
+version = "0.14.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d3f71a7eea53a3f8257a7b4795373ff886397178cd634430ea94e12d7fe4fe34"
+checksum = "07d6baa1b441335f3ce5098ac421fb6547c46dda735ca1bc6d0153c838f9dd83"
 dependencies = [
  "bytes",
  "futures-channel",
@@ -666,7 +666,7 @@ dependencies = [
  "httparse",
  "httpdate",
  "itoa",
- "pin-project",
+ "pin-project-lite",
  "socket2",
  "tokio",
  "tower-service",
@@ -692,7 +692,7 @@ version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bbb958482e8c7be4bc3cf272a766a2b0bf1a6755e7a6ae777f017a31d11b13b1"
 dependencies = [
- "hyper 0.14.8",
+ "hyper 0.14.9",
  "pin-project-lite",
  "tokio",
  "tokio-io-timeout",
@@ -705,7 +705,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d6183ddfa99b85da61a140bea0efc93fdf56ceaa041b37d553518030827f9905"
 dependencies = [
  "bytes",
- "hyper 0.14.8",
+ "hyper 0.14.9",
  "native-tls",
  "tokio",
  "tokio-native-tls",
@@ -856,7 +856,7 @@ dependencies = [
  "futures",
  "http",
  "http-body",
- "hyper 0.14.8",
+ "hyper 0.14.9",
  "hyper-timeout",
  "hyper-tls",
  "jsonpath_lib",
@@ -1288,7 +1288,7 @@ name = "playground"
 version = "0.1.0"
 dependencies = [
  "env_logger",
- "hyper 0.14.8",
+ "hyper 0.14.9",
  "hyper-tls",
  "json-patch",
  "k8s-openapi",
