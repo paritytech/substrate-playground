@@ -14,8 +14,9 @@ use k8s_openapi::api::{
         NodeSelectorRequirement, NodeSelectorTerm, Pod, PodSpec, PreferredSchedulingTerm, Service,
         ServicePort, ServiceSpec,
     },
-    extensions::v1beta1::{
+    networking::v1::{
         HTTPIngressPath, HTTPIngressRuleValue, Ingress, IngressBackend, IngressRule,
+        IngressServiceBackend, ServiceBackendPort,
     },
 };
 use k8s_openapi::apimachinery::pkg::{apis::meta::v1::ObjectMeta, util::intstr::IntOrString};
@@ -232,9 +233,16 @@ fn create_service(session_id: &str, template: &Template) -> Service {
 fn create_ingress_path(path: &str, service_name: &str, service_port: i32) -> HTTPIngressPath {
     HTTPIngressPath {
         path: Some(path.to_string()),
+        path_type: "Exact".to_string(),
         backend: IngressBackend {
-            service_name: service_name.to_string(),
-            service_port: IntOrString::Int(service_port),
+            service: Some(IngressServiceBackend {
+                name: service_name.to_string(),
+                port: Some(ServiceBackendPort {
+                    number: Some(service_port),
+                    ..Default::default()
+                }),
+            }),
+            ..Default::default()
         },
     }
 }
@@ -380,7 +388,7 @@ pub struct Engine {
 impl Engine {
     pub async fn new() -> Result<Self> {
         let config = config().await?;
-        let namespace = config.clone().default_ns.to_string();
+        let namespace = config.clone().default_namespace.to_string();
         let client = Client::try_from(config).map_err(|err| Error::Failure(err.into()))?;
         let ingress_api: Api<Ingress> = Api::namespaced(client.clone(), &namespace);
         let secured = if let Ok(ingress) = ingress_api.get(INGRESS_NAME).await {

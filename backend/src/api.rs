@@ -177,7 +177,11 @@ pub fn create_current_session(
     user: LoggedUser,
     conf: Json<SessionConfiguration>,
 ) -> JsonValue {
-    result_to_jsonrpc(state.manager.create_session(&user, &session_id(&user.id), conf.0))
+    result_to_jsonrpc(
+        state
+            .manager
+            .create_session(&user, &session_id(&user.id), conf.0),
+    )
 }
 
 #[put("/session", data = "<_conf>", rank = 2)]
@@ -193,7 +197,11 @@ pub fn update_current_session(
     user: LoggedUser,
     conf: Json<SessionUpdateConfiguration>,
 ) -> JsonValue {
-    result_to_jsonrpc(state.manager.update_session(&session_id(&user.id), &user, conf.0))
+    result_to_jsonrpc(
+        state
+            .manager
+            .update_session(&session_id(&user.id), &user, conf.0),
+    )
 }
 
 #[patch("/session", data = "<_conf>", rank = 2)]
