@@ -30,7 +30,7 @@ use std::{
     convert::TryFrom,
     env,
     num::ParseIntError,
-    time::{Duration, SystemTime},
+    time::Duration,
 };
 
 const NODE_POOL_LABEL: &str = "cloud.google.com/gke-nodepool";
@@ -127,13 +127,13 @@ fn volume(workspace_id: &str, repository_id: &str) -> PersistentVolumeClaim {
     PersistentVolumeClaim {
         metadata: ObjectMeta {
             name: Some(volume_name(workspace_id, repository_id)),
-            labels: Some(labels),
+            labels,
             ..Default::default()
         },
         spec: Some(PersistentVolumeClaimSpec {
-            access_modes: Some(vec!["ReadWriteOnce".to_string()]),
+            access_modes: vec!["ReadWriteOnce".to_string()],
             resources: Some(ResourceRequirements {
-                requests: Some(requests),
+                requests,
                 ..Default::default()
             }),
             data_source: Some(TypedLocalObjectReference {
@@ -181,26 +181,26 @@ fn create_pod(
     Ok(Pod {
         metadata: ObjectMeta {
             name: Some(pod_name(workspace_id)),
-            labels: Some(labels),
-            annotations: Some(create_pod_annotations(duration)?),
+            labels,
+            annotations: create_pod_annotations(duration)?,
             ..Default::default()
         },
         spec: Some(PodSpec {
             affinity: Some(Affinity {
                 node_affinity: Some(NodeAffinity {
-                    preferred_during_scheduling_ignored_during_execution: Some(vec![
+                    preferred_during_scheduling_ignored_during_execution: vec![
                         PreferredSchedulingTerm {
                             weight: 100,
                             preference: NodeSelectorTerm {
-                                match_expressions: Some(vec![NodeSelectorRequirement {
+                                match_expressions: vec![NodeSelectorRequirement {
                                     key: NODE_POOL_LABEL.to_string(),
                                     operator: "In".to_string(),
-                                    values: Some(vec![pool_id.to_string()]),
-                                }]),
+                                    values: vec![pool_id.to_string()],
+                                }],
                                 ..Default::default()
                             },
                         },
-                    ]),
+                    ],
                     ..Default::default()
                 }),
                 ..Default::default()
@@ -213,16 +213,16 @@ fn create_pod(
                         .base_image
                         .unwrap_or(conf.workspace.base_image.clone()),
                 ),
-                env: Some(pod_env_variables(runtime, &env.host, workspace_id)),
-                volume_mounts: Some(vec![VolumeMount {
+                env: pod_env_variables(runtime, &env.host, workspace_id),
+                volume_mounts: vec![VolumeMount {
                     name: volume_name.clone(),
                     mount_path: "/workspace".to_string(),
                     ..Default::default()
-                }]),
+                }],
                 ..Default::default()
             }],
             termination_grace_period_seconds: Some(1),
-            volumes: Some(vec![Volume {
+            volumes: vec![Volume {
                 name: volume_name,
                 persistent_volume_claim: Some(PersistentVolumeClaimVolumeSource {
                     claim_name: volume
@@ -233,7 +233,7 @@ fn create_pod(
                     ..Default::default()
                 }),
                 ..Default::default()
-            }]),
+            }],
             ..Default::default()
         }),
         ..Default::default()
@@ -245,8 +245,8 @@ fn create_service(workspace_id: &str, runtime: &RepositoryRuntimeConfiguration) 
     labels.insert(APP_LABEL.to_string(), APP_VALUE.to_string());
     labels.insert(COMPONENT_LABEL.to_string(), COMPONENT_VALUE.to_string());
     labels.insert(OWNER_LABEL.to_string(), workspace_id.to_string());
-    let mut selectors = BTreeMap::new();
-    selectors.insert(OWNER_LABEL.to_string(), workspace_id.to_string());
+    let mut selector = BTreeMap::new();
+    selector.insert(OWNER_LABEL.to_string(), workspace_id.to_string());
 
     // The theia port itself is mandatory
     let mut ports = vec![ServicePort {
@@ -273,13 +273,13 @@ fn create_service(workspace_id: &str, runtime: &RepositoryRuntimeConfiguration) 
     Service {
         metadata: ObjectMeta {
             name: Some(service_name(workspace_id)),
-            labels: Some(labels),
+            labels,
             ..Default::default()
         },
         spec: Some(ServiceSpec {
             type_: Some("NodePort".to_string()),
-            selector: Some(selectors),
-            ports: Some(ports),
+            selector,
+            ports,
             ..Default::default()
         }),
         ..Default::default()
@@ -330,15 +330,15 @@ fn var(name: &'static str) -> Result<String> {
 impl Engine {
     pub async fn new() -> Result<Self> {
         let config = config().await?;
-        let namespace = config.clone().default_ns.to_string();
+        let namespace = config.clone().default_namespace.to_string();
         let client = Client::try_from(config).map_err(|err| Error::Failure(err.into()))?;
         let ingress_api: Api<Ingress> = Api::namespaced(client.clone(), &namespace);
         let secured = if let Ok(ingress) = ingress_api.get(INGRESS_NAME).await {
-            ingress
+            !ingress
                 .spec
                 .ok_or(Error::MissingData("spec"))?
                 .tls
-                .is_some()
+                .is_empty()
         } else {
             false
         };
@@ -348,7 +348,6 @@ impl Engine {
                 .spec
                 .ok_or(Error::MissingData("spec"))?
                 .rules
-                .ok_or(Error::MissingData("spec#rules"))?
                 .first()
                 .ok_or(Error::MissingData("spec#rules[0]"))?
                 .host
@@ -399,8 +398,7 @@ impl Engine {
         let labels = node
             .metadata
             .labels
-            .clone()
-            .ok_or(Error::MissingData("metadata#labels"))?;
+            .clone();
         let local = "local".to_string();
         let unknown = "unknown".to_string();
         let instance_type = labels.get(INSTANCE_TYPE_LABEL).unwrap_or(&local);
@@ -415,7 +413,6 @@ impl Engine {
                         .metadata
                         .labels
                         .clone()
-                        .unwrap_or_default()
                         .get(HOSTNAME_LABEL)
                         .unwrap_or(&unknown)
                         .clone(),
@@ -597,15 +594,13 @@ impl Engine {
         let labels = pod
             .metadata
             .labels
-            .clone()
-            .ok_or(Error::MissingData("pod#metadata#labels"))?;
+            .clone();
         let unknown = "UNKNOWN OWNER".to_string();
         let username = labels.get(OWNER_LABEL).unwrap_or(&unknown);
         let annotations = &pod
             .metadata
             .annotations
-            .clone()
-            .ok_or(Error::MissingData("pod#metadata#annotations"))?;
+            .clone();
         let max_duration = str_minutes_to_duration(
             annotations
                 .get(WORKSPACE_DURATION_ANNOTATION)
@@ -696,8 +691,7 @@ impl Engine {
             .clone();
         let mut rules: Vec<IngressRule> = spec
             .clone()
-            .rules
-            .ok_or(Error::MissingData("ingress#spec#rules"))?;
+            .rules;
         for (workspace_id, ports) in runtimes {
             let subdomain = subdomain(&self.env.host, &workspace_id);
             rules.push(IngressRule {
@@ -707,7 +701,7 @@ impl Engine {
                 }),
             });
         }
-        spec.rules.replace(rules);
+        spec.rules = rules;
         ingress.spec.replace(spec);
 
         ingress_api
@@ -884,11 +878,10 @@ impl Engine {
         let rules: Vec<IngressRule> = spec
             .clone()
             .rules
-            .unwrap()
             .into_iter()
             .filter(|rule| rule.clone().host.unwrap_or_else(|| "unknown".to_string()) != subdomain)
             .collect();
-        spec.rules.replace(rules);
+        spec.rules = rules;
         ingress.spec.replace(spec);
 
         ingress_api
@@ -1022,12 +1015,12 @@ impl Engine {
                     containers: vec![Container {
                         name: "cloner".to_string(),
                         image: Some("paritytech/substrate-playground-backend-api:latest".to_string()),
-                        command: Some(vec!["builder".to_string()]),
-                        env: Some(vec![EnvVar {
+                        command: vec!["builder".to_string()],
+                        env: vec![EnvVar {
                             name: "".to_string(),
                             value: Some("".to_string()),
                             ..Default::default()
-                        }]),
+                        }],
                         ..Default::default()
                     }],
                     ..Default::default()
@@ -1095,7 +1088,7 @@ spec:
         let default = "default".to_string();
         let nodes_by_pool: BTreeMap<String, Vec<Node>> =
             nodes.iter().fold(BTreeMap::new(), |mut acc, node| {
-                if let Some(labels) = node.metadata.labels.clone() {
+                if let labels = node.metadata.labels.clone() {
                     let key = labels.get(NODE_POOL_LABEL).unwrap_or(&default);
                     let nodes = acc.entry(key.clone()).or_insert_with(Vec::new);
                     nodes.push(node.clone());
