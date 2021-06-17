@@ -174,7 +174,7 @@ pub struct RepositoryUpdateConfiguration {
 #[serde(rename_all = "camelCase")]
 pub struct RepositoryVersion {
     pub reference: String,
- //   pub image_source: Option<PrebuildSource>,
+    //   pub image_source: Option<PrebuildSource>,
     pub state: RepositoryVersionState,
 }
 

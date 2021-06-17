@@ -3,9 +3,8 @@ use crate::error::{Error, Result};
 use json_patch::{AddOperation, PatchOperation, RemoveOperation};
 use k8s_openapi::api::{
     core::v1::{ConfigMap, EnvVar},
-    extensions::v1beta1::{HTTPIngressPath, IngressBackend},
+    networking::v1::{HTTPIngressPath, IngressBackend, IngressServiceBackend, ServiceBackendPort},
 };
-use k8s_openapi::apimachinery::pkg::util::intstr::IntOrString;
 use kube::{
     api::{Api, ListParams, Patch, PatchParams},
     config::KubeConfigOptions,
@@ -28,9 +27,16 @@ pub fn env_var(name: &str, value: &str) -> EnvVar {
 pub fn ingress_path(path: &str, service_name: &str, service_port: i32) -> HTTPIngressPath {
     HTTPIngressPath {
         path: Some(path.to_string()),
+        path_type: "Exact".to_string(),
         backend: IngressBackend {
-            service_name: service_name.to_string(),
-            service_port: IntOrString::Int(service_port),
+            service: Some(IngressServiceBackend {
+                name: service_name.to_string(),
+                port: Some(ServiceBackendPort {
+                    number: Some(service_port),
+                    ..Default::default()
+                }),
+            }),
+            ..Default::default()
         },
     }
 }

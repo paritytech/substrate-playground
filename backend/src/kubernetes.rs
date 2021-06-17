@@ -1,10 +1,29 @@
 //! Helper methods ton interact with k8s
-use crate::{error::{Error, Result}, kubernetes_utils::{
+use crate::{
+    error::{Error, Result},
+    kubernetes_utils::{
         add_config_map_value, client, config, delete_config_map_value, env_var, get_config_map,
         ingress_path, list_by_selector,
-    }, types::{self, Configuration, Environment, LoggedUser, NameValuePair, Pool, Port, Repository, RepositoryConfiguration, RepositoryDetails, RepositoryRuntimeConfiguration, RepositoryUpdateConfiguration, RepositoryVersion, RepositoryVersionConfiguration, RepositoryVersionState, User, UserConfiguration, UserUpdateConfiguration, Workspace, WorkspaceConfiguration, WorkspaceDefaults, WorkspaceState, WorkspaceUpdateConfiguration}};
+    },
+    types::{
+        self, Configuration, Environment, LoggedUser, NameValuePair, Pool, Port, Repository,
+        RepositoryConfiguration, RepositoryDetails, RepositoryRuntimeConfiguration,
+        RepositoryUpdateConfiguration, RepositoryVersion, RepositoryVersionConfiguration,
+        RepositoryVersionState, User, UserConfiguration, UserUpdateConfiguration, Workspace,
+        WorkspaceConfiguration, WorkspaceDefaults, WorkspaceState, WorkspaceUpdateConfiguration,
+    },
+};
 use json_patch::{AddOperation, PatchOperation};
-use k8s_openapi::api::{batch::v1::{Job, JobSpec}, core::v1::{Affinity, Container, EnvVar, Node, NodeAffinity, NodeSelectorRequirement, NodeSelectorTerm, PersistentVolumeClaim, PersistentVolumeClaimSpec, PersistentVolumeClaimVolumeSource, Pod, PodSpec, PodTemplateSpec, PreferredSchedulingTerm, ResourceRequirements, Service, ServicePort, ServiceSpec, TypedLocalObjectReference, Volume, VolumeMount}, extensions::v1beta1::{HTTPIngressPath, HTTPIngressRuleValue, Ingress, IngressRule}};
+use k8s_openapi::api::{
+    batch::v1::{Job, JobSpec},
+    core::v1::{
+        Affinity, Container, EnvVar, Node, NodeAffinity, NodeSelectorRequirement, NodeSelectorTerm,
+        PersistentVolumeClaim, PersistentVolumeClaimSpec, PersistentVolumeClaimVolumeSource, Pod,
+        PodSpec, PodTemplateSpec, PreferredSchedulingTerm, ResourceRequirements, Service,
+        ServicePort, ServiceSpec, TypedLocalObjectReference, Volume, VolumeMount,
+    },
+    networking::v1::{HTTPIngressPath, HTTPIngressRuleValue, Ingress, IngressRule},
+};
 use k8s_openapi::apimachinery::pkg::{
     api::resource::Quantity, apis::meta::v1::ObjectMeta, util::intstr::IntOrString,
 };
@@ -15,13 +34,7 @@ use kube::{
 
 use serde::Serialize;
 use serde_json::json;
-use std::{
-    collections::BTreeMap,
-    convert::TryFrom,
-    env,
-    num::ParseIntError,
-    time::Duration,
-};
+use std::{collections::BTreeMap, convert::TryFrom, env, num::ParseIntError, time::Duration};
 
 const NODE_POOL_LABEL: &str = "cloud.google.com/gke-nodepool";
 const INSTANCE_TYPE_LABEL: &str = "node.kubernetes.io/instance-type";
@@ -131,14 +144,13 @@ fn volume(workspace_id: &str, repository_id: &str) -> PersistentVolumeClaim {
             data_source: Some(TypedLocalObjectReference {
                 api_group: Some("snapshot.storage.k8s.io".to_string()),
                 kind: "PersistentVolumeClaim".to_string(),
-                name: volume_template_name(repository_id)
+                name: volume_template_name(repository_id),
             }),
             ..Default::default()
         }),
         ..Default::default()
     }
 }
-
 
 fn volume_template(repository_id: &str) -> PersistentVolumeClaim {
     let mut labels = BTreeMap::new();
@@ -170,10 +182,9 @@ async fn create_volume_template(
     api: &Api<PersistentVolumeClaim>,
     repository_id: &str,
 ) -> Result<PersistentVolumeClaim> {
-    api
-            .create(&PostParams::default(), &volume_template(repository_id))
-            .await
-            .map_err(|err| Error::Failure(err.into()))
+    api.create(&PostParams::default(), &volume_template(repository_id))
+        .await
+        .map_err(|err| Error::Failure(err.into()))
 }
 
 async fn get_or_create_volume(
@@ -425,9 +436,7 @@ impl Engine {
             .first()
             .ok_or(Error::MissingData("empty vec of nodes"))?;
         let metadata = node.metadata.clone();
-        let labels = metadata
-            .labels
-            .unwrap_or_default();
+        let labels = metadata.labels.unwrap_or_default();
         let local = "local".to_string();
         let unknown = "unknown".to_string();
         let instance_type = labels.get(INSTANCE_TYPE_LABEL).unwrap_or(&local);
@@ -622,14 +631,10 @@ impl Engine {
     // Creates a Workspace from a Pod annotations
     fn pod_to_workspace(pod: &Pod) -> Result<Workspace> {
         let metadata = pod.metadata.clone();
-        let labels = metadata
-            .labels
-            .unwrap_or_default();
+        let labels = metadata.labels.unwrap_or_default();
         let unknown = "UNKNOWN OWNER".to_string();
         let username = labels.get(OWNER_LABEL).unwrap_or(&unknown);
-        let annotations = &metadata
-            .annotations
-            .unwrap_or_default();
+        let annotations = &metadata.annotations.unwrap_or_default();
         let max_duration = str_minutes_to_duration(
             annotations
                 .get(WORKSPACE_DURATION_ANNOTATION)
@@ -717,9 +722,7 @@ impl Engine {
             .clone()
             .spec
             .ok_or(Error::MissingData("ingress#spec"))?;
-        let mut rules: Vec<IngressRule> = spec
-            .rules
-            .unwrap_or_default();
+        let mut rules: Vec<IngressRule> = spec.rules.unwrap_or_default();
         for (workspace_id, ports) in runtimes {
             let subdomain = subdomain(&self.env.host, &workspace_id);
             rules.push(IngressRule {
@@ -1018,9 +1021,9 @@ impl Engine {
                 runtime: RepositoryRuntimeConfiguration {
                     base_image: None,
                     env: None,
-                    ports: None
-                }
-            }
+                    ports: None,
+                },
+            },
         }))
     }
 
@@ -1036,18 +1039,18 @@ impl Engine {
                     base_image: Some("base".to_string()),
                     env: Some(vec![NameValuePair {
                         name: "name".to_string(),
-                        value: "value".to_string()
+                        value: "value".to_string(),
                     }]),
                     ports: Some(vec![Port {
                         name: "name".to_string(),
                         path: "path".to_string(),
                         port: 55,
                         protocol: Some("TCP".to_string()),
-                        target: Some(55)
-                    }])
+                        target: Some(55),
+                    }]),
                 },
-                progress: 50
-            }
+                progress: 50,
+            },
         }])
     }
 
@@ -1057,68 +1060,73 @@ impl Engine {
         id: &str,
         conf: RepositoryVersionConfiguration,
     ) -> Result<()> {
-    let client = client().await?;
+        let client = client().await?;
 
-    let namespace = &self.env.namespace;
-    // Create volume
-    let volume_api: Api<PersistentVolumeClaim> = Api::namespaced(client.clone(), namespace);
-    let volume =
-        create_volume_template(&volume_api, &repository_id).await?;
+        let namespace = &self.env.namespace;
+        // Create volume
+        let volume_api: Api<PersistentVolumeClaim> = Api::namespaced(client.clone(), namespace);
+        let volume = create_volume_template(&volume_api, &repository_id).await?;
 
-    let job_api: Api<Job> = Api::namespaced(client.clone(), &self.env.namespace);
-    let job = Job {
-        metadata: ObjectMeta {
-            name: Some(format!("builder-{}-{}", repository_id.to_string(), id.to_string())),
-            ..Default::default()
-        },
-        spec: Some(JobSpec {
-            ttl_seconds_after_finished: Some(0),
-            backoff_limit: Some(1),
-            template: PodTemplateSpec {
-                spec: Some(PodSpec {
-                    volumes: Some(vec![Volume {
-                        name: volume_template_name(repository_id),
-                        persistent_volume_claim: Some(PersistentVolumeClaimVolumeSource {
-                            claim_name: volume
-                                .meta()
-                                .clone()
-                                .name
-                                .ok_or(Error::MissingData("meta#name"))?,
-                            ..Default::default()
-                        }),
-                        ..Default::default()
-                    }]),
-                    restart_policy: Some("OnFailure".to_string()),
-                    containers: vec![Container {
-                        name: "builder".to_string(),
-                        image: Some("paritytech/substrate-playground-backend-api:latest".to_string()),
-                        command: Some(vec!["builder".to_string()]),
-                        env: Some(vec![EnvVar {
-                            // ID, URL, REFERENCE
-                            // Changes persisted on disk
-                            name: "REFERENCE".to_string(),
-                            value: Some(conf.reference),
-                            ..Default::default()
-                        }]),
-                        volume_mounts: Some(vec![VolumeMount {
-                            name: volume_template_name(repository_id),
-                            mount_path: "/".to_string(),
-                            ..Default::default()
-                        }]),
-                        ..Default::default()
-                    }],
-                    ..Default::default()
-                }),
+        let job_api: Api<Job> = Api::namespaced(client.clone(), &self.env.namespace);
+        let job = Job {
+            metadata: ObjectMeta {
+                name: Some(format!(
+                    "builder-{}-{}",
+                    repository_id.to_string(),
+                    id.to_string()
+                )),
                 ..Default::default()
             },
+            spec: Some(JobSpec {
+                ttl_seconds_after_finished: Some(0),
+                backoff_limit: Some(1),
+                template: PodTemplateSpec {
+                    spec: Some(PodSpec {
+                        volumes: Some(vec![Volume {
+                            name: volume_template_name(repository_id),
+                            persistent_volume_claim: Some(PersistentVolumeClaimVolumeSource {
+                                claim_name: volume
+                                    .meta()
+                                    .clone()
+                                    .name
+                                    .ok_or(Error::MissingData("meta#name"))?,
+                                ..Default::default()
+                            }),
+                            ..Default::default()
+                        }]),
+                        restart_policy: Some("OnFailure".to_string()),
+                        containers: vec![Container {
+                            name: "builder".to_string(),
+                            image: Some(
+                                "paritytech/substrate-playground-backend-api:latest".to_string(),
+                            ),
+                            command: Some(vec!["builder".to_string()]),
+                            env: Some(vec![EnvVar {
+                                // ID, URL, REFERENCE
+                                // Changes persisted on disk
+                                name: "REFERENCE".to_string(),
+                                value: Some(conf.reference),
+                                ..Default::default()
+                            }]),
+                            volume_mounts: Some(vec![VolumeMount {
+                                name: volume_template_name(repository_id),
+                                mount_path: "/".to_string(),
+                                ..Default::default()
+                            }]),
+                            ..Default::default()
+                        }],
+                        ..Default::default()
+                    }),
+                    ..Default::default()
+                },
+                ..Default::default()
+            }),
             ..Default::default()
-        }),
-        ..Default::default()
-    };
-    job_api
-        .create(&PostParams::default(), &job)
-        .await
-        .map_err(|err| Error::Failure(err.into()))?;
+        };
+        job_api
+            .create(&PostParams::default(), &job)
+            .await
+            .map_err(|err| Error::Failure(err.into()))?;
 
         Ok(())
     }

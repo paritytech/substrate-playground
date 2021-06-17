@@ -11,22 +11,18 @@
 // update volume metadata
 
 use crate::error::{Error, Result};
-use serde_json::{Value, json};
+use serde_json::{json, Value};
 use std::fs;
 
-pub struct Configuration {
-
-}
+pub struct Configuration {}
 
 pub fn clone() -> Result<()> {
     Ok(())
 }
 
 pub fn read_and_parse_configuration() -> Result<Configuration> {
-    read_and_parse_devcontainer()
-        .map_err(|_| Error::InvalidState("No configuration file found"))
+    read_and_parse_devcontainer().map_err(|_| Error::InvalidState("No configuration file found"))
 }
-
 
 fn read_and_parse_devcontainer() -> Result<Configuration> {
     fs::read_to_string("devcontainer.json")
@@ -37,9 +33,7 @@ fn read_and_parse_devcontainer() -> Result<Configuration> {
 // https://github.com/microsoft/vscode-docs/blob/main/docs/remote/devcontainerjson-reference.md
 fn parse_devcontainer(data: &str) -> Result<Configuration> {
     let v: Value = serde_json::from_str(data).map_err(|err| Error::Failure(err.into()))?;
-    Ok(Configuration {
-
-    })
+    Ok(Configuration {})
 }
 
 #[test]
@@ -55,8 +49,11 @@ fn parse() {
 
     assert_eq!(43, data["age"]);
 
-  //  let v: Value = serde_json::from_str(data);
+    //  let v: Value = serde_json::from_str(data);
 
     // Access parts of the data by indexing with square brackets.
-    println!("Please call {} at the number {}", data["name"], data["phones"][0]);
+    println!(
+        "Please call {} at the number {}",
+        data["name"], data["phones"][0]
+    );
 }

@@ -182,7 +182,11 @@ pub fn create_current_workspace(
     user: LoggedUser,
     conf: Json<WorkspaceConfiguration>,
 ) -> JsonValue {
-    result_to_jsonrpc(state.manager.create_workspace(&user, &session_id(&user.id), conf.0))
+    result_to_jsonrpc(
+        state
+            .manager
+            .create_workspace(&user, &session_id(&user.id), conf.0),
+    )
 }
 
 #[patch("/workspace", data = "<conf>")]
@@ -191,7 +195,11 @@ pub fn update_current_workspace(
     user: LoggedUser,
     conf: Json<WorkspaceUpdateConfiguration>,
 ) -> JsonValue {
-    result_to_jsonrpc(state.manager.update_workspace(&session_id(&user.id), &user, conf.0))
+    result_to_jsonrpc(
+        state
+            .manager
+            .update_workspace(&session_id(&user.id), &user, conf.0),
+    )
 }
 
 #[delete("/workspace")]

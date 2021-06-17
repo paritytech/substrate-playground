@@ -12,7 +12,6 @@ fn touch(path: &Path) -> std::io::Result<()> {
     }
 }
 
-
 fn main() -> Result<(), Box<dyn Error>> {
     // Initialize log configuration. Reads `RUST_LOG` if any, otherwise fallsback to `default`
     if env::var("RUST_LOG").is_err() {
@@ -27,10 +26,9 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     read_and_parse_configuration()?;
 
-// Update state
+    // Update state
 
     // trigger build
-
 
     // Prints basic details
     log::info!("Running");
