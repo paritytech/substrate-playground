@@ -833,6 +833,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "k8s-openapi"
+version = "0.12.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fbff78f6da26dde0d74188966d23fc763431d730d0f766ecf7699209f8fc243c"
+dependencies = [
+ "base64 0.13.0",
+ "bytes",
+ "chrono",
+ "serde",
+ "serde-value",
+ "serde_json",
+]
+
+[[package]]
 name = "kernel32-sys"
 version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -844,9 +858,9 @@ dependencies = [
 
 [[package]]
 name = "kube"
-version = "0.56.0"
+version = "0.57.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ab252370b019dc6e3109e76b88f898c0131e3e0834a257e90f7d406af0391c76"
+checksum = "8152fba26129a09bf30179092753b399760a305a218b8bc558f9a2087b5c1d70"
 dependencies = [
  "base64 0.13.0",
  "bytes",
@@ -860,7 +874,7 @@ dependencies = [
  "hyper-timeout",
  "hyper-tls",
  "jsonpath_lib",
- "k8s-openapi",
+ "k8s-openapi 0.12.0",
  "kube-core",
  "openssl",
  "pem",
@@ -879,15 +893,14 @@ dependencies = [
 
 [[package]]
 name = "kube-core"
-version = "0.56.0"
+version = "0.57.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5e16429f67308cec5fc942ead44c144eb50dfbdcc29fa9b7fcc9e676571c530c"
+checksum = "36b767df01404bb99fb75ac2ceded28ce34c30fdcffbb4346e2c44d30756bfba"
 dependencies = [
  "form_urlencoded",
  "http",
  "json-patch",
- "k8s-openapi",
- "once_cell",
+ "k8s-openapi 0.12.0",
  "serde",
  "serde_json",
  "thiserror",
@@ -1291,7 +1304,7 @@ dependencies = [
  "hyper 0.14.9",
  "hyper-tls",
  "json-patch",
- "k8s-openapi",
+ "k8s-openapi 0.11.0",
  "kube",
  "log 0.4.14",
  "prometheus",
