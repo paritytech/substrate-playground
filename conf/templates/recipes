@@ -1,4 +1,4 @@
-image: paritytech/substrate-playground-template-recipes-theia:sha-2a46896
+image: paritytech/substrate-playground-template-recipes-theia:sha-cf9a49d
 repository: substrate-developer-hub/recipes
 ref: 53f7ce1b17c7c66ebe04d5a57502d2b6e59fe48a
 name: Recipes
