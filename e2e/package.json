@@ -22,6 +22,6 @@
     "ava": "3.15.0",
     "playwright": "1.12.2",
     "ts-node": "10.0.0",
-    "typescript": "4.3.3"
+    "typescript": "4.3.4"
   }
 }
