@@ -17,6 +17,9 @@ on:
       - '.github/workflows/cd-templates.yml'
       - 'conf/templates/*'
 
+concurrency:
+  group: cd
+
 jobs:
   list-modified-templates:
     runs-on: ubuntu-latest

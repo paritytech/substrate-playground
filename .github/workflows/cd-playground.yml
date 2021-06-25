@@ -18,6 +18,9 @@ on:
 env:
   DOCKER_BUILDKIT: 1
 
+concurrency:
+  group: cd
+
 jobs:
   build-and-push:
     runs-on: ubuntu-latest

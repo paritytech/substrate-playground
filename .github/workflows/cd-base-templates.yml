@@ -8,6 +8,9 @@ on:
       - ".github/workflows/cd-base-templates.yml"
       - "templates/**"
 
+concurrency:
+  group: cd
+
 env:
   DOCKER_BUILDKIT: 1
 
