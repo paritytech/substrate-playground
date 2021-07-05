@@ -161,7 +161,12 @@ pub fn delete_user(state: State<'_, Context>, user: LoggedUser, id: String) -> J
 
 #[get("/workspace")]
 pub fn get_current_workspace(state: State<'_, Context>, user: LoggedUser) -> JsonValue {
-    result_to_jsonrpc(state.manager.get_workspace(&user, &user.id))
+    result_to_jsonrpc(state.manager.get_workspace(&user, &session_id(&user.id)))
+}
+
+fn session_id(id: &str) -> String {
+    // Create a unique ID for this session. Use lowercase to make sure the result can be used as part of a DNS
+    id.to_string().to_lowercase()
 }
 
 ///
@@ -176,7 +181,7 @@ pub fn create_current_workspace(
     user: LoggedUser,
     conf: Json<WorkspaceConfiguration>,
 ) -> JsonValue {
-    result_to_jsonrpc(state.manager.create_workspace(&user, &user.id, conf.0))
+    result_to_jsonrpc(state.manager.create_workspace(&user, &session_id(&user.id), conf.0))
 }
 
 #[patch("/workspace", data = "<conf>")]
@@ -185,7 +190,7 @@ pub fn update_current_workspace(
     user: LoggedUser,
     conf: Json<WorkspaceUpdateConfiguration>,
 ) -> JsonValue {
-    result_to_jsonrpc(state.manager.update_workspace(&user.id, &user, conf.0))
+    result_to_jsonrpc(state.manager.update_workspace(&session_id(&user.id), &user, conf.0))
 }
 
 #[delete("/workspace")]

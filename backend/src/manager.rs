@@ -223,7 +223,7 @@ impl Manager {
     // Workspaces
 
     pub fn get_workspace(&self, user: &LoggedUser, id: &str) -> Result<Option<Workspace>> {
-        if user.id != id && !user.has_admin_read_rights() {
+        if workspace_id(&user.id) != id && !user.has_admin_read_rights() {
             return Err(Error::Unauthorized());
         }
 
@@ -244,7 +244,7 @@ impl Manager {
         id: &str,
         conf: WorkspaceConfiguration,
     ) -> Result<()> {
-        if user.id != id && !user.has_admin_edit_rights() {
+        if workspace_id(&user.id) != id && !user.has_admin_edit_rights() {
             return Err(Error::Unauthorized());
         }
 
