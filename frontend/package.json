@@ -15,7 +15,7 @@
   "dependencies": {
     "@material-ui/core": "4.12.1",
     "@material-ui/icons": "4.11.2",
-    "@material-ui/lab": "4.0.0-alpha.59",
+    "@material-ui/lab": "4.0.0-alpha.60",
     "@substrate/playground-client": "1.6.5",
     "@xstate/react": "1.5.1",
     "broadcast-channel": "3.7.0",
