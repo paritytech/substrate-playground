@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import ReactDOM from "react-dom";
 import { State } from "xstate";
+import Analytics from "analytics";
+import simpleAnalyticsPlugin from "analytics-plugin-simple-analytics";
 import { Client, Configuration, LoggedUser, Workspace } from '@substrate/playground-client';
 import { createMuiTheme, ThemeProvider } from '@material-ui/core/styles';
 import Button from "@material-ui/core/Button";
@@ -121,7 +123,7 @@ function App({ params }: { params: Params }): JSX.Element {
           type: 'dark',
         },
     });
-
+console.log("error", error)
     const isTheia = state.matches(States.LOGGED) && panel == PanelId.Theia;
     return (
         <ThemeProvider theme={theme}>
@@ -174,6 +176,13 @@ function main(): void {
     if (members.length > 1) {
       document.domain = members.slice(members.length-2).join(".");
     }
+
+    const analytics = Analytics({
+        app: "substrate-playground",
+        plugins: [
+          simpleAnalyticsPlugin(),
+        ]
+    });
 
     ReactDOM.render(
         <App params={extractParams()} />,

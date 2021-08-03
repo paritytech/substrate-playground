@@ -2,6 +2,49 @@
 # yarn lockfile v1
 
 
+"@analytics/cookie-utils@^0.2.6":
+  version "0.2.6"
+  resolved "https://registry.yarnpkg.com/@analytics/cookie-utils/-/cookie-utils-0.2.6.tgz#06903796e90c602281dcdc70f532e340fe18090c"
+  integrity sha512-Qf5XNnYsMqxDzCtPebM0Zt5TuKw1cGJiisfM4Gllt3JcNJbKxdzaW669Y547YFjwZI6SnJD+5fGZ6oF7qCjUOg==
+  dependencies:
+    "@analytics/global-storage-utils" "^0.1.2"
+
+"@analytics/core@^0.10.11":
+  version "0.10.11"
+  resolved "https://registry.yarnpkg.com/@analytics/core/-/core-0.10.11.tgz#83d17082d7cbc1a8fdd5c2f58f7c51e97c31e282"
+  integrity sha512-L4YXkkQ8AycU5gt9ipTXtD8dSbBcTNpsj287Sb/NsAcq2IF7B1xa+E66G30b+NxKyNZaMFmOHBIAGpBnFlWK5Q==
+  dependencies:
+    "@analytics/global-storage-utils" "^0.1.2"
+    "@analytics/type-utils" "^0.2.0"
+    analytics-utils "^1.0.0"
+
+"@analytics/global-storage-utils@^0.1.2":
+  version "0.1.2"
+  resolved "https://registry.yarnpkg.com/@analytics/global-storage-utils/-/global-storage-utils-0.1.2.tgz#f20c4ce485a6e01fef2601ac96aab7887153d7e2"
+  integrity sha512-y4AXZAB+ZKmg1eEu8jLT/tuLG9Owl7uVU0uvI18mlRUd1fGS+DQ8x84ZKmkS5wSdrBIUjGX5Lqkg5o7EjQ5lDA==
+
+"@analytics/localstorage-utils@^0.1.5":
+  version "0.1.5"
+  resolved "https://registry.yarnpkg.com/@analytics/localstorage-utils/-/localstorage-utils-0.1.5.tgz#65d07bc2d2124a2f2667b2f35d855071dd6c16d8"
+  integrity sha512-hEZYoZuO9GbLNCAdWAgsd7afteKOAAa7X8LKEW4CgkGGyEgonmL1MyYK0XJNvrINdCfdIwBDCWsK8vFk1vL4lg==
+  dependencies:
+    "@analytics/global-storage-utils" "^0.1.2"
+
+"@analytics/storage-utils@^0.2.10":
+  version "0.2.10"
+  resolved "https://registry.yarnpkg.com/@analytics/storage-utils/-/storage-utils-0.2.10.tgz#23a0b893d981dbc2e95397cf314b89206b7448f1"
+  integrity sha512-ee24fuvZA/+I2+e4dESaq/D+gpuwe3sgT5GRAHa+Jz9px2dwV9cboYx16OUjjkbB+ZdWy9/OZCu2c82SKNdEdA==
+  dependencies:
+    "@analytics/cookie-utils" "^0.2.6"
+    "@analytics/global-storage-utils" "^0.1.2"
+    "@analytics/localstorage-utils" "^0.1.5"
+    "@analytics/type-utils" "^0.2.0"
+
+"@analytics/type-utils@^0.2.0":
+  version "0.2.0"
+  resolved "https://registry.yarnpkg.com/@analytics/type-utils/-/type-utils-0.2.0.tgz#7faea10d78d2da9838e31370241169d285347cd3"
+  integrity sha512-QnOYTLigYkV+nhCLd0OxhBboi8wFjG1TW8iOwqUUq6qUrTnM0Xilib+RvjHPLyOq2v56rgrg1xPeQg7X6rsOnA==
+
 "@ava/typescript@1.1.1":
   version "1.1.1"
   resolved "https://registry.yarnpkg.com/@ava/typescript/-/typescript-1.1.1.tgz#3dcaba3aced8026fdb584d927d809752854dc6e6"
@@ -2055,6 +2098,27 @@ alphanum-sort@^1.0.0:
   resolved "https://registry.yarnpkg.com/alphanum-sort/-/alphanum-sort-1.0.2.tgz#97a1119649b211ad33691d9f9f486a8ec9fbe0a3"
   integrity sha1-l6ERlkmyEa0zaR2fn0hqjsn74KM=
 
+analytics-plugin-simple-analytics@0.1.3:
+  version "0.1.3"
+  resolved "https://registry.yarnpkg.com/analytics-plugin-simple-analytics/-/analytics-plugin-simple-analytics-0.1.3.tgz#70aee5a4c29a233e3e425e620fc2ecce2245cb62"
+  integrity sha512-l5gHMUX4D2pSRdFGtWYO8oFVvbqdRSp+mikV+pneBY4Len9DR7t/EuLm62H01njSQdhWRSyTfX5cX9i34QtW7A==
+
+analytics-utils@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/analytics-utils/-/analytics-utils-1.0.0.tgz#42db0b005f6a828f2c5121cd07956cc05103bc71"
+  integrity sha512-0CQ/yAxP3JgOpN9ep/71W0iMimEIB2U2Jp9onm54gozsOeckR4Orb9dGgSHbYGNuoR0CLwMceJcmhAMNkBFCpA==
+  dependencies:
+    "@analytics/type-utils" "^0.2.0"
+    dlv "^1.1.3"
+
+analytics@0.7.11:
+  version "0.7.11"
+  resolved "https://registry.yarnpkg.com/analytics/-/analytics-0.7.11.tgz#9f53d3571ea4eecf2e64d57cc7c27cf5dab35ad7"
+  integrity sha512-fxGvn508i3reQGz6Mca0wG4w8JYaEMIBww4e3xhGwGyDcfrLw9q9RPKQoJnojOT3GJUqbC/qKtrTs4B+iY2TEA==
+  dependencies:
+    "@analytics/core" "^0.10.11"
+    "@analytics/storage-utils" "^0.2.10"
+
 ansi-align@^3.0.0:
   version "3.0.0"
   resolved "https://registry.yarnpkg.com/ansi-align/-/ansi-align-3.0.0.tgz#b536b371cf687caaef236c18d3e21fe3797467cb"
@@ -3467,6 +3531,11 @@ dir-glob@^3.0.1:
   integrity sha512-WkrWp9GR4KXfKGYzOLmTuGVi1UWFfws377n9cc55/tb6DuqyF6pcQ5AbiHEshaDpY9v6oaSr2XCDidGmMwdzIA==
   dependencies:
     path-type "^4.0.0"
+
+dlv@^1.1.3:
+  version "1.1.3"
+  resolved "https://registry.yarnpkg.com/dlv/-/dlv-1.1.3.tgz#5c198a8a11453596e751494d49874bc7732f2e79"
+  integrity sha512-+HlytyjlPKnIG8XuRG8WvmBP8xs8P71y+SKKS6ZXWoEgLuePxtDoUEiH7WkdePWrQ5JBpE6aoVqfZfJUQkjXwA==
 
 doctrine@^2.1.0:
   version "2.1.0"
