@@ -123,7 +123,7 @@ function App({ params }: { params: Params }): JSX.Element {
           type: 'dark',
         },
     });
-console.log("error", error)
+
     const isTheia = state.matches(States.LOGGED) && panel == PanelId.Theia;
     return (
         <ThemeProvider theme={theme}>
