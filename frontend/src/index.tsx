@@ -4,7 +4,7 @@ import { State } from "xstate";
 import Analytics from "analytics";
 import simpleAnalyticsPlugin from "analytics-plugin-simple-analytics";
 import { Client, Configuration, LoggedUser, Workspace } from '@substrate/playground-client';
-import { createMuiTheme, ThemeProvider } from '@material-ui/core/styles';
+import { createTheme, ThemeProvider } from '@material-ui/core/styles';
 import Button from "@material-ui/core/Button";
 import Typography from "@material-ui/core/Typography";
 import { useMachine } from '@xstate/react';
@@ -118,7 +118,7 @@ function App({ params }: { params: Params }): JSX.Element {
     const [state, send] = useMachine(newMachine(client, deploy? PanelId.Theia: PanelId.Workspace), { devTools: true });
     const { panel, error } = state.context;
 
-    const theme = createMuiTheme({
+    const theme = createTheme({
         palette: {
           type: 'dark',
         },
