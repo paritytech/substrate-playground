@@ -40,18 +40,16 @@ async function call<T>(input: RequestInfo, init: RequestInit, timeout: number): 
                     return Promise.resolve(result);
                 }
             } catch (e) {
-                // Failed to parse as JSON
-                return Promise.reject({code: RpcErrorCode.PARSE_ERROR, message: response.statusText});
+                return Promise.reject({code: RpcErrorCode.PARSE_ERROR, message: e.message || 'Failed to parse as JSON'});
             }
         } else {
             if (response.status == 401) {
-                return Promise.reject({code: RpcErrorCode.INVALID_REQUEST, message: "User unauthorized"});
+                return Promise.reject({code: RpcErrorCode.INVALID_REQUEST, message: 'User unauthorized'});
             }
             return Promise.reject({code: RpcErrorCode.SERVER_ERROR, message: response.statusText});
         }
     } catch (e) {
-        console.error(e);
-        return Promise.reject({code: RpcErrorCode.TIMEOUT_ERROR, message: `Failed to fetch`});
+        return Promise.reject({code: RpcErrorCode.TIMEOUT_ERROR, message: e.message || 'Failed to fetch'});
     }
 }
 
