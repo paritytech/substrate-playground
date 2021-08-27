@@ -10,7 +10,7 @@
   ],
   "dependencies": {
     "@substrate/playground-client": "1.6.7",
-    "@theia/core": "1.16.0",
+    "@theia/core": "1.17.0",
     "gunzip-maybe": "1.4.2",
     "vscode-uri": "3.0.2"
   },
