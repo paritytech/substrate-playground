@@ -1888,6 +1888,23 @@
     semver "^5.4.1"
     write-json-file "^2.2.0"
 
+"@theia/application-package@1.17.0":
+  version "1.17.0"
+  resolved "https://registry.yarnpkg.com/@theia/application-package/-/application-package-1.17.0.tgz#ed5835adc3e7eb1977d1bc3a51acb99f6fa838a4"
+  integrity sha512-yl8tVWkz9Rw9hUhcdjGqUhhopq76lvjg3kfZs62I+NS/u2BP9dEGZ5i6u0DZXcHEuZrAFmhPO/L3I6gqRuYq6Q==
+  dependencies:
+    "@types/fs-extra" "^4.0.2"
+    "@types/request" "^2.0.3"
+    "@types/semver" "^5.4.0"
+    "@types/write-json-file" "^2.2.1"
+    changes-stream "^2.2.0"
+    deepmerge "^4.2.2"
+    fs-extra "^4.0.2"
+    is-electron "^2.1.0"
+    request "^2.82.0"
+    semver "^5.4.1"
+    write-json-file "^2.2.0"
+
 "@theia/bulk-edit@1.16.0":
   version "1.16.0"
   resolved "https://registry.yarnpkg.com/@theia/bulk-edit/-/bulk-edit-1.16.0.tgz#e527e2953b76a5fd43b2cc9bb2fa07e16776edc6"
@@ -2025,6 +2042,74 @@
     ws "^7.1.2"
     yargs "^15.3.1"
 
+"@theia/core@1.17.0":
+  version "1.17.0"
+  resolved "https://registry.yarnpkg.com/@theia/core/-/core-1.17.0.tgz#8cccee3578dfd0a76f501933b2c7746332d8a9f5"
+  integrity sha512-fYPWJ1DgKh9LWDattOKeSKf0gcdHQmlBQa+qrJhRVFMv/mUH+D2hcEWZenznjrHP82k/waXajjZBlESlELupog==
+  dependencies:
+    "@babel/runtime" "^7.10.0"
+    "@phosphor/algorithm" "1"
+    "@phosphor/commands" "1"
+    "@phosphor/coreutils" "1"
+    "@phosphor/domutils" "1"
+    "@phosphor/dragdrop" "1"
+    "@phosphor/messaging" "1"
+    "@phosphor/properties" "1"
+    "@phosphor/signaling" "1"
+    "@phosphor/virtualdom" "1"
+    "@phosphor/widgets" "1"
+    "@primer/octicons-react" "^9.0.0"
+    "@theia/application-package" "1.17.0"
+    "@types/body-parser" "^1.16.4"
+    "@types/cookie" "^0.3.3"
+    "@types/dompurify" "^2.2.2"
+    "@types/express" "^4.16.0"
+    "@types/fs-extra" "^4.0.2"
+    "@types/lodash.debounce" "4.0.3"
+    "@types/lodash.throttle" "^4.1.3"
+    "@types/react" "^16.8.0"
+    "@types/react-dom" "^16.8.0"
+    "@types/react-virtualized" "^9.18.3"
+    "@types/route-parser" "^0.1.1"
+    "@types/safer-buffer" "^2.1.0"
+    "@types/ws" "^5.1.2"
+    "@types/yargs" "^15"
+    "@vscode/codicons" "^0.0.21"
+    ajv "^6.5.3"
+    body-parser "^1.17.2"
+    cookie "^0.4.0"
+    dompurify "^2.2.9"
+    drivelist "^9.0.2"
+    es6-promise "^4.2.4"
+    express "^4.16.3"
+    file-icons-js "~1.0.3"
+    font-awesome "^4.7.0"
+    fs-extra "^4.0.2"
+    fuzzy "^0.1.3"
+    iconv-lite "^0.6.0"
+    inversify "^5.0.1"
+    jschardet "^2.1.1"
+    keytar "7.2.0"
+    lodash.debounce "^4.0.8"
+    lodash.throttle "^4.1.1"
+    nsfw "^2.1.2"
+    p-debounce "^2.1.0"
+    perfect-scrollbar "^1.3.0"
+    react "^16.8.0"
+    react-dom "^16.8.0"
+    react-virtualized "^9.20.0"
+    reconnecting-websocket "^4.2.0"
+    reflect-metadata "^0.1.10"
+    route-parser "^0.0.5"
+    safer-buffer "^2.1.2"
+    uuid "^8.3.2"
+    vscode-languageserver-protocol "~3.15.3"
+    vscode-languageserver-types "^3.15.1"
+    vscode-uri "^2.1.1"
+    vscode-ws-jsonrpc "^0.2.0"
+    ws "^7.1.2"
+    yargs "^15.3.1"
+
 "@theia/debug@1.16.0":
   version "1.16.0"
   resolved "https://registry.yarnpkg.com/@theia/debug/-/debug-1.16.0.tgz#ca12bb14f395db8c29d7da2b62453af3325bb354"
@@ -2068,6 +2153,16 @@
   dependencies:
     "@theia/core" "1.16.0"
     "@theia/variable-resolver" "1.16.0"
+    "@types/base64-arraybuffer" "0.1.0"
+    base64-arraybuffer "^0.1.5"
+
+"@theia/editor@1.17.0":
+  version "1.17.0"
+  resolved "https://registry.yarnpkg.com/@theia/editor/-/editor-1.17.0.tgz#b296e68ea419a013a1a159c7beb75c97fbe9f5f4"
+  integrity sha512-pRhCkWQpuliXD5AygZycS6L2KdW3012axy1GsuP/rEfZsZCM2WsEeo8B0QDCJLzR4cZG8YeNBE6M0/DE6/xTlg==
+  dependencies:
+    "@theia/core" "1.17.0"
+    "@theia/variable-resolver" "1.17.0"
     "@types/base64-arraybuffer" "0.1.0"
     base64-arraybuffer "^0.1.5"
 
@@ -2418,13 +2513,13 @@
     "@theia/core" "1.16.0"
     "@theia/navigator" "1.16.0"
 
-"@theia/typehierarchy@1.16.0":
-  version "1.16.0"
-  resolved "https://registry.yarnpkg.com/@theia/typehierarchy/-/typehierarchy-1.16.0.tgz#43db7047d2a4d1f0cf02bfbf3664d3853a657d8a"
-  integrity sha512-p4f4QjWQIJOXidRjLESHHTrryira1ItVUdW53d5QkqZLKoO4YaDPJ4CQpdJnhWsvNfaMMtAT8Pv3RmHPPAENBA==
+"@theia/typehierarchy@1.17.0":
+  version "1.17.0"
+  resolved "https://registry.yarnpkg.com/@theia/typehierarchy/-/typehierarchy-1.17.0.tgz#baeac01c471871182436cf3a324a94fe714af47e"
+  integrity sha512-nIlXiNoJSDQwdjZYVRMvh/Ov3UPBIm8P+zS7/9ai8hY8EnOXnOVrcyaDoMXqNu4+uNIm76/DFSRZx9qtNgrjjw==
   dependencies:
-    "@theia/core" "1.16.0"
-    "@theia/editor" "1.16.0"
+    "@theia/core" "1.17.0"
+    "@theia/editor" "1.17.0"
     "@types/uuid" "^7.0.3"
     uuid "^8.0.0"
 
@@ -2442,6 +2537,13 @@
   integrity sha512-cWji+upAxnRcTAz0xhF1Ivqk++wVcD36yU1u9HJlPENKR9JTFoiZn2qXINzGp5OFlHNaA0ojMfX2jXwzSsUBrA==
   dependencies:
     "@theia/core" "1.16.0"
+
+"@theia/variable-resolver@1.17.0":
+  version "1.17.0"
+  resolved "https://registry.yarnpkg.com/@theia/variable-resolver/-/variable-resolver-1.17.0.tgz#10fd681609d374f148ba64bf8e12de94e07c5c29"
+  integrity sha512-LJb/hzDRjp/6mvI+LmCpuuRVKqV/9cT+1QXvF96AMfxvpktvPP40HkjcsvwX5qHACw+c+ASKryQXlv63WAJtrA==
+  dependencies:
+    "@theia/core" "1.17.0"
 
 "@theia/workspace@1.16.0":
   version "1.16.0"
@@ -2876,6 +2978,11 @@
   integrity sha512-z8PNtlhrj7eJNLmrAivM7rjBESG6JwC5xP3RVk12i/8HVP7Xnx/sEmERnRImyEuUaJfO942X0qMOYsoupaJbZQ==
   dependencies:
     "@types/yargs-parser" "*"
+
+"@vscode/codicons@^0.0.21":
+  version "0.0.21"
+  resolved "https://registry.yarnpkg.com/@vscode/codicons/-/codicons-0.0.21.tgz#20ef724b141fdddba3ad86e85f34aaad29e4d3a0"
+  integrity sha512-oUfqbWTaEc2NIVLUxOK2Vi8AB/ixFfp52CkmR+pYZcWAr82IVIDDn50pdEDRXfJNIc4giHDSc5F5ZTsVMZK9Sg==
 
 "@webassemblyjs/ast@1.11.1":
   version "1.11.1"
@@ -4543,6 +4650,11 @@ deepmerge@2.0.1:
   version "2.0.1"
   resolved "https://registry.yarnpkg.com/deepmerge/-/deepmerge-2.0.1.tgz#25c1c24f110fb914f80001b925264dd77f3f4312"
   integrity sha512-VIPwiMJqJ13ZQfaCsIFnp5Me9tnjURiaIFxfz7EH0Ci0dTSQpZtSLrqOicXqEd/z2r+z+Klk9GzmnRsgpgbOsQ==
+
+deepmerge@^4.2.2:
+  version "4.2.2"
+  resolved "https://registry.yarnpkg.com/deepmerge/-/deepmerge-4.2.2.tgz#44d2ea3679b8f4d4ffba33f03d865fc1e7bf4955"
+  integrity sha512-FJ3UgI4gIl+PHZm53knsuSFpE+nESMr7M4v9QcgB7S63Kj/6WqMiFQJpBBYz1Pt+66bZpP3Q7Lye0Oo9MPKEdg==
 
 defaults@^1.0.3:
   version "1.0.3"
