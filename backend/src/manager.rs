@@ -227,11 +227,11 @@ impl Manager {
     // Sessions
 
     pub fn get_session(&self, user: &LoggedUser, id: &str) -> Result<Option<Session>> {
-        if user.id != id && !user.has_admin_read_rights() {
+        if session_id(&user.id) != id && !user.has_admin_read_rights() {
             return Err(Error::Unauthorized());
         }
 
-        new_runtime()?.block_on(self.engine.get_session(&session_id(id)))
+        new_runtime()?.block_on(self.engine.get_session(&id))
     }
 
     pub fn list_sessions(&self, user: &LoggedUser) -> Result<BTreeMap<String, Session>> {
@@ -248,7 +248,7 @@ impl Manager {
         id: &str,
         conf: SessionConfiguration,
     ) -> Result<()> {
-        if user.id != id && !user.has_admin_edit_rights() {
+        if session_id(&user.id) != id && !user.has_admin_edit_rights() {
             return Err(Error::Unauthorized());
         }
 
@@ -266,14 +266,14 @@ impl Manager {
         }
 
         let session_id = session_id(id);
-        if self.get_session(user, &session_id)?.is_some() {
+        if self.get_session(user, &id)?.is_some() {
             return Err(Error::Unauthorized());
         }
 
         let template = conf.clone().template;
-        let result = new_runtime()?.block_on(self.engine.create_session(user, &session_id, conf));
+        let result = new_runtime()?.block_on(self.engine.create_session(user, &id, conf));
 
-        info!("Created session {} with template {}", session_id, template);
+        info!("Created session {} with template {}", id, template);
 
         match &result {
             Ok(_session) => {

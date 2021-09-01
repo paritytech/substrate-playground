@@ -152,12 +152,17 @@ pub fn delete_user(state: State<'_, Context>, user: LoggedUser, id: String) -> J
 
 #[get("/session")]
 pub fn get_current_session(state: State<'_, Context>, user: LoggedUser) -> JsonValue {
-    result_to_jsonrpc(state.manager.get_session(&user, &user.id))
+    result_to_jsonrpc(state.manager.get_session(&user, &session_id(&user.id)))
 }
 
 #[get("/session", rank = 2)]
 pub fn get_current_session_unlogged() -> status::Unauthorized<()> {
     status::Unauthorized::<()>(None)
+}
+
+fn session_id(id: &str) -> String {
+    // Create a unique ID for this session. Use lowercase to make sure the result can be used as part of a DNS
+    id.to_string().to_lowercase()
 }
 
 ///
@@ -172,7 +177,7 @@ pub fn create_current_session(
     user: LoggedUser,
     conf: Json<SessionConfiguration>,
 ) -> JsonValue {
-    result_to_jsonrpc(state.manager.create_session(&user, &user.id, conf.0))
+    result_to_jsonrpc(state.manager.create_session(&user, &session_id(&user.id), conf.0))
 }
 
 #[put("/session", data = "<_conf>", rank = 2)]
@@ -188,7 +193,7 @@ pub fn update_current_session(
     user: LoggedUser,
     conf: Json<SessionUpdateConfiguration>,
 ) -> JsonValue {
-    result_to_jsonrpc(state.manager.update_session(&user.id, &user, conf.0))
+    result_to_jsonrpc(state.manager.update_session(&session_id(&user.id), &user, conf.0))
 }
 
 #[patch("/session", data = "<_conf>", rank = 2)]
@@ -200,7 +205,7 @@ pub fn update_current_session_unlogged(
 
 #[delete("/session")]
 pub fn delete_current_session(state: State<'_, Context>, user: LoggedUser) -> JsonValue {
-    result_to_jsonrpc(state.manager.delete_session(&user, &user.id))
+    result_to_jsonrpc(state.manager.delete_session(&user, &session_id(&user.id)))
 }
 
 #[delete("/session", rank = 2)]
