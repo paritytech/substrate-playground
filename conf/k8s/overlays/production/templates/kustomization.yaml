@@ -8,4 +8,5 @@ configMapGenerator:
 - name: playground-templates
   files:
     - ../../../../templates/node-template
-    - ../../../../templates/recipes
+    - ../../../../templates/front-end-template
+    - ../../../../templates/parachain-template

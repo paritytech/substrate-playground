@@ -103,6 +103,8 @@ build-template:
 	@cd templates; git clone https://github.com/${REPOSITORY}.git ${REPOSITORY_CLONE} \
     && cd ${REPOSITORY_CLONE} \
     && git checkout ${REF} \
+    && git submodule init \
+    && git submodule update \
     $(eval REV = $(shell git rev-parse --short HEAD))
 
 	$(eval TAG=paritytech/substrate-playground-template-${TEMPLATE}:sha-${REV})

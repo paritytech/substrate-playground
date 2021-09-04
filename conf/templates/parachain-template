@@ -1,0 +1,13 @@
+repository: substrate-developer-hub/substrate-parachain-template
+image: paritytech/substrate-playground-template-parachain-template-theia:sha-dde57020
+ref: 6589adf6885f382f38a8cfed081fc948397be325
+name: Cumulus Parachain template
+description: '## The cumulus parachain template'
+tags:
+  public: true
+runtime:
+  ports:
+    - name: wss
+      protocol: TCP
+      path: /wss
+      port: 9944

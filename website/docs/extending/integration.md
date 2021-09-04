@@ -13,7 +13,7 @@ Use a URL that once accessed trigger an instance deployment and redirects to the
 * files=%2Fsome%2FfileA,%2Fsome%2FfileB opens some files
 
 
-e.g. `https://playground-staging.substrate.dev/?deploy=recipes&files=%2Fhome%2Fsubstrate%2Fworkspace%2Fpallets%2Fadding-machine%2Fsrc%2Flib.rs`
+e.g. `https://playground-staging.substrate.dev/?deploy=node-templates&files=%2Fhome%2Fsubstrate%2Fworkspace%2Fpallets%2Fadding-machine%2Fsrc%2Flib.rs`
 
 ## API
 

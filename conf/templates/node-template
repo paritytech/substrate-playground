@@ -1,16 +1,12 @@
 repository: substrate-developer-hub/substrate-node-template
-image: paritytech/substrate-playground-template-node-template-theia:sha-c83b4bb
-ref: d567c877076fbe55fca43b5129b3b26d18c14f2a
+image: paritytech/substrate-playground-template-node-template-theia:sha-dde57020
+ref: e5366c11cca3c416f6c4b4747a6f083fc370fac8
 name: Node template
 description: '## The Node template you know and love'
 tags:
   public: true
 runtime:
   ports:
-    - name: ssh
-      protocol: TCP
-      path: /ssh
-      port: 22
     - name: wss
       protocol: TCP
       path: /wss
