@@ -1,4 +1,4 @@
-image: paritytech/substrate-playground-template-front-end-template-theia:sha-dde57020
+image: paritytech/substrate-playground-template-front-end-template-theia:sha-84a121f3
 repository: substrate-developer-hub/substrate-node-template
 ref: 8b604b6c5b566a9d63024bfcc493b92a219c9c3d
 name: Front End template
@@ -10,7 +10,7 @@ runtime:
     - name: frontend
       protocol: TCP
       path: /frontend
-      port: 1234
+      port: 8000
     - name: wss
       protocol: TCP
       path: /wss
