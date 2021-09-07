@@ -65,8 +65,7 @@
         "vscode-builtin-shellscript": "https://open-vsx.org/api/vscode/shellscript/1.54.1/file/vscode.shellscript-1.54.1.vsix",
         "vscode-builtin-theme-monokai": "https://open-vsx.org/api/vscode/theme-monokai/1.54.1/file/vscode.theme-monokai-1.54.1.vsix",
         "vscode-builtin-typescript": "https://open-vsx.org/api/vscode/typescript/1.54.1/file/vscode.typescript-1.54.1.vsix",
-        "vscode-builtin-typescript-language-features": "https://open-vsx.org/api/vscode/typescript-language-features/1.54.1/file/vscode.typescript-language-features-1.54.1.vsix",
-        "rust-analyzer": "https://open-vsx.org/api/matklad/rust-analyzer/0.2.489/file/matklad.rust-analyzer-0.2.489.vsix"
+        "vscode-builtin-typescript-language-features": "https://open-vsx.org/api/vscode/typescript-language-features/1.54.1/file/vscode.typescript-language-features-1.54.1.vsix"
     },
     "scripts": {
         "prepare": "theia build --mode development",
