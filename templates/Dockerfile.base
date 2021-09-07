@@ -5,9 +5,10 @@ FROM ubuntu:20.10
 # Install required dependencies
 RUN apt-get update && \
     apt-get upgrade -y && \
-    apt-get install -y make gcc g++ curl dumb-init python vim git cmake pkg-config libssl-dev git gcc build-essential git clang libclang-dev pkg-config xsel htop nodejs jq && \
+    apt-get install -y make gcc g++ curl dumb-init python vim git cmake pkg-config libssl-dev git gcc build-essential git clang libclang-dev pkg-config xsel htop nodejs jq npm && \
     apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+    rm -rf /var/lib/apt/lists/* && \
+    npm install --global yarn
 
 # Install rust as required by substrate env
 # Pick up the version from https://rust-lang.github.io/rustup-components-history/index.html (rls is required)
