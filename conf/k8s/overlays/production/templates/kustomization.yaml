@@ -10,3 +10,4 @@ configMapGenerator:
     - ../../../../templates/node-template
     - ../../../../templates/front-end-template
     - ../../../../templates/parachain-template
+    - ../../../../templates/recipes
