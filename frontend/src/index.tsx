@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom";
 import { Client, Configuration, LoggedUser, Session, Template } from '@substrate/playground-client';
 import { createMuiTheme, ThemeProvider } from '@material-ui/core/styles';
@@ -105,6 +105,15 @@ function App({ params }: { params: Params }): JSX.Element {
         },
     });
     const isTheia = state.matches(States.LOGGED) && panel == PanelId.Theia;
+
+    useEffect(() => {
+        // Remove transient parameters when logged, to prevent recursive behaviors
+        if (state.matches(States.LOGGED)) {
+            removeTransientsURLParams();
+        }
+    }, []);
+
+
     return (
         <ThemeProvider theme={theme}>
             <div style={{ display: "flex", width: "100vw", height: "100vh", alignItems: "center", justifyContent: "center" }}>
@@ -138,14 +147,19 @@ export interface Params {
 function extractParams(): Params {
     const params = new URLSearchParams(window.location.search);
     const deploy = params.get('deploy');
+    return {deploy: deploy,
+            version: process.env.GITHUB_SHA,
+            base: process.env.BASE || "/api"};
+}
+
+function removeTransientsURLParams() {
+    const params = new URLSearchParams(window.location.search);
+    const deploy = params.get('deploy');
     if (deploy) {
         params.delete('deploy');
         const paramsStr = params.toString();
         window.history.replaceState({}, '', `${location.pathname}${paramsStr != "" ? params : ""}`);
     }
-    return {deploy: deploy,
-            version: process.env.GITHUB_SHA,
-            base: process.env.BASE || "/api"};
 }
 
 function main(): void {
