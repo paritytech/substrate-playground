@@ -1,18 +1,8 @@
 //! Helper methods ton interact with k8s
-use crate::{
-    error::{Error, Result},
-    kubernetes_utils::{
+use crate::{error::{Error, Result}, kubernetes_utils::{
         add_config_map_value, client, config, delete_config_map_value, env_var, get_config_map,
         ingress_path, list_by_selector,
-    },
-    types::{
-        self, Configuration, Environment, LoggedUser, Pool, Port, Repository,
-        RepositoryConfiguration, RepositoryDetails, RepositoryRuntimeConfiguration,
-        RepositoryUpdateConfiguration, RepositoryVersion, RepositoryVersionConfiguration, User,
-        UserConfiguration, UserUpdateConfiguration, Workspace, WorkspaceConfiguration,
-        WorkspaceDefaults, WorkspaceState, WorkspaceUpdateConfiguration,
-    },
-};
+    }, types::{self, Configuration, Environment, LoggedUser, NameValuePair, Pool, Port, Repository, RepositoryConfiguration, RepositoryDetails, RepositoryRuntimeConfiguration, RepositoryUpdateConfiguration, RepositoryVersion, RepositoryVersionConfiguration, RepositoryVersionState, User, UserConfiguration, UserUpdateConfiguration, Workspace, WorkspaceConfiguration, WorkspaceDefaults, WorkspaceState, WorkspaceUpdateConfiguration}};
 use json_patch::{AddOperation, PatchOperation};
 use k8s_openapi::api::{batch::v1::{Job, JobSpec}, core::v1::{Affinity, Container, EnvVar, Node, NodeAffinity, NodeSelectorRequirement, NodeSelectorTerm, PersistentVolumeClaim, PersistentVolumeClaimSpec, PersistentVolumeClaimVolumeSource, Pod, PodSpec, PodTemplateSpec, PreferredSchedulingTerm, ResourceRequirements, Service, ServicePort, ServiceSpec, TypedLocalObjectReference, Volume, VolumeMount}, extensions::v1beta1::{HTTPIngressPath, HTTPIngressRuleValue, Ingress, IngressRule}};
 use k8s_openapi::apimachinery::pkg::{
@@ -115,6 +105,8 @@ fn volume_template_name(repository_id: &str) -> String {
     format!("workspace-template-{}", repository_id)
 }
 
+// A volume claim created from a snapshot
+// https://kubernetes.io/docs/concepts/storage/persistent-volumes/#volume-snapshot-and-restore-volume-from-snapshot-support
 fn volume(workspace_id: &str, repository_id: &str) -> PersistentVolumeClaim {
     let mut labels = BTreeMap::new();
     labels.insert(APP_LABEL.to_string(), APP_VALUE.to_string());
@@ -146,6 +138,43 @@ fn volume(workspace_id: &str, repository_id: &str) -> PersistentVolumeClaim {
         }),
         ..Default::default()
     }
+}
+
+
+fn volume_template(repository_id: &str) -> PersistentVolumeClaim {
+    let mut labels = BTreeMap::new();
+    labels.insert(APP_LABEL.to_string(), APP_VALUE.to_string());
+    labels.insert(COMPONENT_LABEL.to_string(), COMPONENT_VALUE.to_string());
+
+    let mut requests = BTreeMap::new();
+    requests.insert("storage".to_string(), Quantity("5Gi".to_string()));
+
+    PersistentVolumeClaim {
+        metadata: ObjectMeta {
+            name: Some(volume_template_name(repository_id)),
+            labels,
+            ..Default::default()
+        },
+        spec: Some(PersistentVolumeClaimSpec {
+            access_modes: vec!["ReadWriteOnce".to_string()],
+            resources: Some(ResourceRequirements {
+                requests,
+                ..Default::default()
+            }),
+            ..Default::default()
+        }),
+        ..Default::default()
+    }
+}
+
+async fn create_volume_template(
+    api: &Api<PersistentVolumeClaim>,
+    repository_id: &str,
+) -> Result<PersistentVolumeClaim> {
+    api
+            .create(&PostParams::default(), &volume_template(repository_id))
+            .await
+            .map_err(|err| Error::Failure(err.into()))
 }
 
 async fn get_or_create_volume(
@@ -762,7 +791,7 @@ impl Engine {
         };
 
         let volume_api: Api<PersistentVolumeClaim> = Api::namespaced(client.clone(), namespace);
-        // TODO use conf.version to access right workspace
+        // TODO use conf.version to access right volume
         let volume =
             get_or_create_volume(&volume_api, user_id, &conf.repository_details.id).await?;
 
@@ -917,7 +946,7 @@ impl Engine {
             get_config_map(client, &self.env.namespace, REPOSITORIES_CONFIG_MAP)
                 .await?
                 .into_iter()
-                .map(|(k, v)| {
+                .map(|(_k, v)| {
                     Ok(serde_yaml::from_str::<Repository>(&v)
                         .map_err(|err| Error::Failure(err.into()))?)
                 })
@@ -983,15 +1012,43 @@ impl Engine {
         id: &str,
     ) -> Result<Option<RepositoryVersion>> {
         // TODO
-        Ok(None)
+        Ok(Some(RepositoryVersion {
+            reference: "".to_string(),
+            state: RepositoryVersionState::Ready {
+                runtime: RepositoryRuntimeConfiguration {
+                    base_image: None,
+                    env: None,
+                    ports: None
+                }
+            }
+        }))
     }
 
     pub async fn list_repository_versions(
         &self,
         repository_id: &str,
     ) -> Result<Vec<RepositoryVersion>> {
-        // TODO
-        Ok(vec![])
+        // TODO list volume template
+        Ok(vec![RepositoryVersion {
+            reference: "yo".to_string(),
+            state: RepositoryVersionState::Building {
+                runtime: RepositoryRuntimeConfiguration {
+                    base_image: Some("base".to_string()),
+                    env: Some(vec![NameValuePair {
+                        name: "name".to_string(),
+                        value: "value".to_string()
+                    }]),
+                    ports: Some(vec![Port {
+                        name: "name".to_string(),
+                        path: "path".to_string(),
+                        port: 55,
+                        protocol: Some("TCP".to_string()),
+                        target: Some(55)
+                    }])
+                },
+                progress: 50
+            }
+        }])
     }
 
     pub async fn create_repository_version(
@@ -1001,10 +1058,17 @@ impl Engine {
         conf: RepositoryVersionConfiguration,
     ) -> Result<()> {
     let client = client().await?;
+
+    let namespace = &self.env.namespace;
+    // Create volume
+    let volume_api: Api<PersistentVolumeClaim> = Api::namespaced(client.clone(), namespace);
+    let volume =
+        create_volume_template(&volume_api, &repository_id).await?;
+
     let job_api: Api<Job> = Api::namespaced(client.clone(), &self.env.namespace);
     let job = Job {
         metadata: ObjectMeta {
-            name: Some("aa".to_string()),
+            name: Some(format!("builder-{}-{}", repository_id.to_string(), id.to_string())),
             ..Default::default()
         },
         spec: Some(JobSpec {
@@ -1012,13 +1076,33 @@ impl Engine {
             backoff_limit: Some(1),
             template: PodTemplateSpec {
                 spec: Some(PodSpec {
+                    volumes: vec![Volume {
+                        name: volume_template_name(repository_id),
+                        persistent_volume_claim: Some(PersistentVolumeClaimVolumeSource {
+                            claim_name: volume
+                                .meta()
+                                .clone()
+                                .name
+                                .ok_or(Error::MissingData("meta#name"))?,
+                            ..Default::default()
+                        }),
+                        ..Default::default()
+                    }],
+                    restart_policy: Some("OnFailure".to_string()),
                     containers: vec![Container {
-                        name: "cloner".to_string(),
+                        name: "builder".to_string(),
                         image: Some("paritytech/substrate-playground-backend-api:latest".to_string()),
                         command: vec!["builder".to_string()],
                         env: vec![EnvVar {
-                            name: "".to_string(),
-                            value: Some("".to_string()),
+                            // ID, URL, REFERENCE
+                            // Changes persisted on disk
+                            name: "REFERENCE".to_string(),
+                            value: Some(conf.reference),
+                            ..Default::default()
+                        }],
+                        volume_mounts: vec![VolumeMount {
+                            name: volume_template_name(repository_id),
+                            mount_path: "/".to_string(),
                             ..Default::default()
                         }],
                         ..Default::default()
@@ -1035,24 +1119,6 @@ impl Engine {
         .create(&PostParams::default(), &job)
         .await
         .map_err(|err| Error::Failure(err.into()))?;
-
-/*
-apiVersion: batch/v1
-kind: Job
-metadata:
-  name: pi
-spec:
-  ttlSecondsAfterFinished: 100
-  template:
-    spec:
-      containers:
-      - name: pi
-        image: perl
-        command: ["perl",  "-Mbignum=bpi", "-wle", "print bpi(2000)"]
-      restartPolicy: Never
-  backoffLimit: 4
-
-*/
 
         Ok(())
     }
@@ -1088,13 +1154,10 @@ spec:
         let default = "default".to_string();
         let nodes_by_pool: BTreeMap<String, Vec<Node>> =
             nodes.iter().fold(BTreeMap::new(), |mut acc, node| {
-                if let labels = node.metadata.labels.clone() {
-                    let key = labels.get(NODE_POOL_LABEL).unwrap_or(&default);
-                    let nodes = acc.entry(key.clone()).or_insert_with(Vec::new);
-                    nodes.push(node.clone());
-                } else {
-                    error!("No labels");
-                }
+                let labels = node.metadata.labels.clone();
+                let key = labels.get(NODE_POOL_LABEL).unwrap_or(&default);
+                let nodes = acc.entry(key.clone()).or_insert_with(Vec::new);
+                nodes.push(node.clone());
                 acc
             });
 

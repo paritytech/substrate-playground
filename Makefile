@@ -165,7 +165,6 @@ k8s-create-cluster: requires-env
         --num-nodes 1
 
 k8s-setup-env: requires-k8s
-	# See https://cloud.google.com/compute/docs/machine-types
 	@read -p "GH client ID?" CLIENT_ID; \
 	read -p "GH client secret?" CLIENT_SECRET; \
 	kubectl create ns ${NAMESPACE} --dry-run=client -o yaml | kubectl apply -f - && \
@@ -173,7 +172,12 @@ k8s-setup-env: requires-k8s
 	kubectl create secret generic playground-secrets --namespace=${NAMESPACE} --from-literal=github.clientSecret="$${CLIENT_SECRET}" --from-literal=rocket.secretKey=`openssl rand -base64 32` --dry-run=client -o yaml | kubectl apply -f - && \
 	kubectl create configmap playground-templates --namespace=${NAMESPACE} --from-file=conf/k8s/overlays/${ENV}/templates/ --dry-run=client -o yaml | kubectl apply -f - && \
 	kubectl create configmap playground-users --namespace=${NAMESPACE} --from-file=conf/k8s/overlays/${ENV}/users/ --dry-run=client -o yaml | kubectl apply -f - && \
-	kubectl create configmap playground-repositories --namespace=${NAMESPACE} --dry-run=client -o yaml | kubectl apply -f -
+	kubectl create configmap playground-repositories --namespace=${NAMESPACE} --from-file=conf/k8s/overlays/${ENV}/repositories/ --dry-run=client -o yaml | kubectl apply -f -
+
+k8s-setup-conf: requires-k8s
+	@kubectl create configmap playground-templates --namespace=${NAMESPACE} --from-file=conf/k8s/overlays/${ENV}/templates/ --dry-run=client -o yaml | kubectl apply -f - && \
+	kubectl create configmap playground-users --namespace=${NAMESPACE} --from-file=conf/k8s/overlays/${ENV}/users/ --dry-run=client -o yaml | kubectl apply -f - && \
+	kubectl create configmap playground-repositories --namespace=${NAMESPACE} --from-file=conf/k8s/overlays/${ENV}/repositories/ --dry-run=client -o yaml | kubectl apply -f -
 
 k8s-cluster-status: requires-k8s
 	@kubectl get configmap playground-config &> /dev/null && [ $$? -eq 0 ] || (echo "Missing config 'playground-config'"; exit 1)

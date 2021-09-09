@@ -98,6 +98,7 @@ fn create_jsonrpc_error(_type: &str, message: String) -> JsonValue {
     json!({ "error": { "type": _type, "message": message } })
 }
 
+// Translates a Result into a properly formatted JSON-RPC object
 fn result_to_jsonrpc<T: Serialize>(res: Result<T>) -> JsonValue {
     match res {
         Ok(val) => json!({ "result": val }),

@@ -8,6 +8,7 @@ pub mod kubernetes_utils;
 pub mod manager;
 pub mod metrics;
 pub mod prometheus;
+pub mod repository;
 pub mod types;
 
 use crate::manager::Manager;
