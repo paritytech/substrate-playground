@@ -2,7 +2,18 @@ repository: substrate-developer-hub/substrate-node-template
 image: paritytech/substrate-playground-template-node-template-theia:sha-dde57020
 ref: e5366c11cca3c416f6c4b4747a6f083fc370fac8
 name: Node template
-description: '## The Node template you know and love'
+description: '
+A “skeleton blockchain” with essential capabilities, including P2P networking, consensus, finality, account, transaction and sudo governance modules.
+
+Runtime modules:
+
+* pallet_balances
+
+* pallet_transaction_payment
+
+* pallet_sudo
+
+* pallet_template'
 tags:
   public: true
 runtime:
