@@ -131,7 +131,7 @@ function App({ params }: { params: Params }): JSX.Element {
         if (state.matches(States.LOGGED)) {
             removeTransientsURLParams();
         }
-    }, []);
+    }, [state]);
 
 
     return (
