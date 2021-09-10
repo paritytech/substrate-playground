@@ -9,7 +9,6 @@
     "watch": "parcel watch public/index.html",
     "build": "parcel build public/index.html && mkdir -p dist/assets/ && cp -R public/assets/* dist/assets/ && cp public/robots.txt dist/",
     "start": "yarn build && cd dist/ && npx http-server",
-    "test": "ava",
     "clean": "rm -rf node_modules/ dist/ .parcel-cache/ yarn.lock"
   },
   "dependencies": {
@@ -29,7 +28,6 @@
     "xstate": "4.23.4"
   },
   "devDependencies": {
-    "@ava/typescript": "2.0.0",
     "@parcel/transformer-image": "2.0.0-rc.0",
     "@parcel/transformer-inline-string": "2.0.0-rc.0",
     "@types/marked": "3.0.0",
@@ -40,11 +38,11 @@
     "@types/uuid": "8.3.1",
     "@typescript-eslint/eslint-plugin": "4.31.0",
     "@typescript-eslint/parser": "4.31.0",
-    "ava": "3.15.0",
     "eslint": "7.32.0",
     "eslint-plugin-react": "7.25.1",
     "parcel": "2.0.0-rc.0",
     "postcss": "8.3.6",
+    "ts-node": "^10.2.1",
     "typescript": "4.4.2"
   },
   "browserslist": [
