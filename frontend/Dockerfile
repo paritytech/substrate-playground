@@ -4,7 +4,7 @@
 #         Frontend       #
 ##########################
 
-FROM node:14.13.1 AS builder
+FROM node:14 AS builder
 
 WORKDIR /opt
 
