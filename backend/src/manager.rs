@@ -81,7 +81,7 @@ impl Manager {
                                 match workspace.state {
                                     WorkspaceState::Running { start_time, .. } => {
                                         workspaces2.remove(&workspace.user_id);
-                                        if let Some(duration) = start_time.elapsed().ok() {
+                                        if let Ok(duration) = start_time.elapsed() {
                                             self.clone()
                                                 .metrics
                                                 .observe_deploy_duration(duration.as_secs_f64());
