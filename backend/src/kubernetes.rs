@@ -88,7 +88,7 @@ fn pod_env_variables(template: &Template, host: &str, session_id: &str) -> Vec<E
         create_env_var("SUBSTRATE_PLAYGROUND_HOSTNAME", host),
     ];
     if let Some(mut template_envs) = template.runtime.as_ref().and_then(|r| {
-        let user_host = format!("{}.{}", &host, &session_id);
+        let user_host = format!("{}.{}", &session_id, &host);
         r.env.clone().map(|envs| {
             envs.iter()
                 .map(|env| create_env_var(&env.name, &patch_value(env.value.clone(), &user_host)))
