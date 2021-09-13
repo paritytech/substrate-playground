@@ -77,6 +77,10 @@ fn create_env_var(name: &str, value: &str) -> EnvVar {
     }
 }
 
+fn patch_value(value: String, host: &str) -> String {
+    value.replace("%HOST%", host)
+}
+
 fn pod_env_variables(template: &Template, host: &str, session_id: &str) -> Vec<EnvVar> {
     let mut envs = vec![
         create_env_var("SUBSTRATE_PLAYGROUND", ""),
@@ -84,9 +88,10 @@ fn pod_env_variables(template: &Template, host: &str, session_id: &str) -> Vec<E
         create_env_var("SUBSTRATE_PLAYGROUND_HOSTNAME", host),
     ];
     if let Some(mut template_envs) = template.runtime.as_ref().and_then(|r| {
+        let user_host = format!("{}.{}", &host, &session_id);
         r.env.clone().map(|envs| {
             envs.iter()
-                .map(|env| create_env_var(&env.name, &env.value))
+                .map(|env| create_env_var(&env.name, &patch_value(env.value.clone(), &user_host)))
                 .collect::<Vec<EnvVar>>()
         })
     }) {

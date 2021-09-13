@@ -27,6 +27,8 @@ runtime:
       protocol: TCP
       path: /wss
       port: 9944
-env:
-  - PUBLIC_URL=frontend
-  - REACT_APP_PROVIDER_SOCKET=wss://%HOST%/wss
+  env:
+    - name: PUBLIC_URL
+      value: frontend
+    - name: REACT_APP_PROVIDER_SOCKET
+      value: wss://%HOST%/wss
