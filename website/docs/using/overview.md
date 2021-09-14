@@ -47,12 +47,6 @@ Node Template in general.
   <img width="600" src="/substrate-playground/img/using/01-explorer.png" alt="project explorer" />
 </p>
 
-Substrate Playground includes the
-[VSCode Substrate extension](https://marketplace.visualstudio.com/items?itemName=paritytech.vscode-substrate).
-Review
-[its documentation](https://github.com/paritytech/vscode-substrate/blob/master/docs/features.md) to
-explore the rich set of capabilities it has to offer!
-
 ## Start Playing
 
 Before you start playing, take note of the special Playground section in the top application menu.
