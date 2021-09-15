@@ -1,5 +1,5 @@
 repository: substrate-developer-hub/substrate-parachain-template
-image: paritytech/substrate-playground-template-parachain-template-theia:sha-dde57020
+image: paritytech/substrate-playground-template-parachain-template-theia:sha-9ae77769
 ref: 6589adf6885f382f38a8cfed081fc948397be325
 name: Cumulus Parachain template
 description: '## The cumulus parachain template'
