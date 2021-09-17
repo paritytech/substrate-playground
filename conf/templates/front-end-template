@@ -1,6 +1,6 @@
-image: paritytech/substrate-playground-template-front-end-template-theia:sha-9ae77769
+image: paritytech/substrate-playground-template-front-end-template-theia:sha-a0a5e152
 repository: substrate-developer-hub/substrate-node-template
-ref: 8b604b6c5b566a9d63024bfcc493b92a219c9c3d
+ref: 36d9019534c2a63685191529bc016bae55a9b348
 name: Front End template
 description: '
 A modular UI built with ReactJS to act as a front-end to the Substrate Node Template. It contains all necessary components to interact with the Node Template’s runtime.
