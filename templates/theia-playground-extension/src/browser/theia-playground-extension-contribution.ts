@@ -5,7 +5,7 @@ import { MessageService } from '@theia/core/lib/common/message-service';
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
 import { FileNavigatorContribution } from '@theia/navigator/lib/browser/navigator-contribution';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
-import { TerminalWidgetOptions, TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
+import { TerminalWidgetOptions } from '@theia/terminal/lib/browser/base/terminal-widget';
 import { FileService } from "@theia/filesystem/lib/browser/file-service";
 import { FileStat } from '@theia/filesystem/lib/common/files';
 import { FileDownloadService } from '@theia/filesystem/lib/browser/download/file-download-service';
@@ -13,11 +13,11 @@ import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service
 import URI from '@theia/core/lib/common/uri';
 import { URI as VSCodeURI } from 'vscode-uri';
 
-async function openTerminal(terminalService: TerminalService, options: TerminalWidgetOptions = {}): Promise<TerminalWidget> {
-   const terminalWidget = await terminalService.newTerminal(options);
-   await terminalWidget.start();
-   await terminalService.open(terminalWidget);
-   return terminalWidget;
+async function executeCommandInTerminal(terminalService: TerminalService, command: string, options: TerminalWidgetOptions = {}): Promise<void> {
+   const terminal = await terminalService.newTerminal(options);
+   await terminal.start();
+   await terminalService.open(terminal);
+   terminal.sendText(command+'\r\n');
 }
 
 function postMessage(id: string, data: Record<string, unknown>): void {
@@ -109,6 +109,17 @@ async function executeAction(type: string, args: Array<string>) : Promise<void> 
     }
 }
 
+function parseCommands(command: any): Array<string> {
+    if (typeof command === "string") {
+        return [command];
+    } else if (Array.isArray(command)) {
+        return command;
+    } else if (command) {
+        console.error(`Unknown command type: ${command}`);
+    }
+    return [];
+}
+
 @injectable()
 export class TheiaSubstrateExtensionCommandContribution implements CommandContribution {
 
@@ -147,21 +158,20 @@ export class TheiaSubstrateExtensionCommandContribution implements CommandContri
         this.stateService.reachedState('ready').then(
             async () => {
                 this.fileNavigatorContribution.openView({reveal: true});
-                if (this.terminalService.all.length == 0) {
-                    await openTerminal(this.terminalService);
-                }
+
+                // Delete all existing terminals
+                this.terminalService.all.forEach(terminal => terminal.close());
+
                 const uri = await locateDevcontainer(this.workspaceService, this.fileService);
                 if (uri) {
                     const file = await this.fileService.readFile(uri);
                     const { postStartCommand, postAttachCommand } = JSON.parse(file.value.toString());
-                    if (typeof postStartCommand === "string") {
-                        const terminal = this.terminalService.all[0];
-                        terminal.sendText(postStartCommand+'\r');
-                    }
-                    if (typeof postAttachCommand === "string") {
-                        const terminal = this.terminalService.all[0];
-                        terminal.sendText(postAttachCommand+'\r');
-                    }
+                    // Go through all defined commands, cretae a new terminal if necessary, then send command
+                    const postStartCommands = parseCommands(postStartCommand);
+                    const postAttachCommands = parseCommands(postAttachCommand);
+                    postStartCommands.concat(postAttachCommands).forEach( async (command, index) => {
+                        await executeCommandInTerminal(this.terminalService, command, {id: `command-${index}`});
+                    });
                 }
             }
         );
