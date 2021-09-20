@@ -39,7 +39,7 @@
     "@typescript-eslint/eslint-plugin": "4.31.1",
     "@typescript-eslint/parser": "4.31.1",
     "eslint": "7.32.0",
-    "eslint-plugin-react": "7.25.1",
+    "eslint-plugin-react": "7.25.3",
     "parcel": "2.0.0-rc.0",
     "postcss": "8.3.6",
     "ts-node": "^10.2.1",
