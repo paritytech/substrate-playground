@@ -43,8 +43,8 @@
         "@parity/theia-playground-extension": "0.5.1"
     },
     "devDependencies": {
-        "@theia/cli": "1.12.1",
-        "@theia/debug": "1.12.1"
+        "@theia/cli": "1.17.2",
+        "@theia/debug": "1.17.2"
     },
     "theiaPluginsDir": "plugins",
     "theiaPlugins": {
