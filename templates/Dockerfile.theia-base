@@ -5,6 +5,10 @@ FROM node:14
 
 WORKDIR /home/theia
 
+RUN apt-get update && \
+    apt-get -y install libsecret-1-dev && \
+    rm -rf /var/lib/apt/lists/*
+
 ADD *.json ./
 ADD theia-playground theia-playground
 ADD theia-playground-extension theia-playground-extension

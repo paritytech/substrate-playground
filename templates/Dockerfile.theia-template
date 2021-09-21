@@ -29,8 +29,7 @@ COPY --chown=$USER:$USER conf/.vscode/* $HOME/.theia/
 COPY --from=theia-base --chown=$USER:$USER /home/theia $THEIA_HOME
 COPY --from=theia-base --chown=$USER:$USER /usr/local/bin/node $THEIA_HOME
 
-ENV VSCODE_API_VERSION=1.53.0 \
-    USE_LOCAL_GIT=true \
+ENV USE_LOCAL_GIT=true \
     HOST=0.0.0.0 \
     # Use the instance hostname for webviews.
     # By default theia uses a unique domain per webview but this is not a security consideration here.
