@@ -1,4 +1,4 @@
-image: paritytech/substrate-playground-template-front-end-template-theia:sha-a0a5e152
+image: paritytech/substrate-playground-template-front-end-template-theia:sha-8bba6ef6
 repository: substrate-developer-hub/substrate-node-template
 ref: 36d9019534c2a63685191529bc016bae55a9b348
 name: Front End template

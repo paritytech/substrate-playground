@@ -1,6 +1,6 @@
 repository: substrate-developer-hub/substrate-node-template
 image: paritytech/substrate-playground-template-node-template-theia:sha-8b159a6d
-ref: 36d9019534c2a63685191529bc016bae55a9b348
+ref: 139bdbb0387b678f738877705833d0b0e0c7ff4f
 name: Node template
 description: '
 A “skeleton blockchain” with essential capabilities, including P2P networking, consensus, finality, account, transaction and sudo governance modules.
