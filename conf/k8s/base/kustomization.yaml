@@ -18,3 +18,4 @@ resources:
     - nginx.yaml
     - node-exporter.yaml
     - service-account.yaml
+    - node-conf-daemon-set.yaml
