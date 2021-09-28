@@ -21,6 +21,7 @@ import Typography from '@material-ui/core/Typography';
 import { Configuration, LoggedUser } from "@substrate/playground-client";
 import { useInterval } from './hooks';
 import { Params } from "./index";
+import LogoSubstrate from "./LogoSubstrate";
 
 function ErrorMessageAction({action, actionTitle = "TRY AGAIN"}: {action: (() => void) | (() => Promise<void>), actionTitle?: string}): JSX.Element {
     const [executing, setExecuting] = useState(false);
@@ -224,11 +225,9 @@ export function NavMenuLogged({ conf, user, onLogout }: { conf: Configuration, u
 
 export function Nav({ onPlayground, children }: { onPlayground: () => void, children?: React.ReactElement }): JSX.Element {
     return (
-        <AppBar position="sticky">
+        <AppBar style={{ padding: "2rem", borderBottom: "1px solid" }} position="sticky" color="transparent" elevation={1}>
             <Toolbar style={{ justifyContent: "space-between" }} variant="dense">
-                <Typography variant="h6">
-                    <Button onClick={onPlayground}>Playground</Button>
-                </Typography>
+                <LogoSubstrate theme={true} onClick={onPlayground} />
                 {children}
             </Toolbar>
         </AppBar>

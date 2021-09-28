@@ -19,6 +19,9 @@ import { TheiaPanel } from './panels/theia';
 import { WorkspacePanel } from './panels/workspace';
 import { terms } from "./terms";
 import { hasAdminReadRights } from "./utils";
+import { SubstrateLight, SubstrateDark } from './themes';
+import LogoSubstrate from "./LogoSubstrate";
+import { CssBaseline } from "@material-ui/core";
 
 function MainPanel({ client, params, conf, user, id, onRetry, onConnect, onAfterDeployed }: { client: Client, params: Params, conf: Configuration, user?: LoggedUser, id: PanelId, onRetry: () => void, onConnect: () => void, onAfterDeployed: () => void }): JSX.Element {
     switch(id) {
@@ -112,17 +115,25 @@ function CustomNav({ client, send, state }: { client: Client, send: (event: Even
     );
 }
 
+const theme = createTheme(SubstrateLight);
+
 function App({ params }: { params: Params }): JSX.Element {
     const client = new Client(params.base, 30000, {credentials: "include"});
     const { deploy } = params;
     const [state, send] = useMachine(newMachine(client, deploy? PanelId.Theia: PanelId.Workspace), { devTools: true });
     const { panel, error } = state.context;
 
-    const theme = createTheme({
+    /*const theme = createTheme({
         palette: {
-          type: 'dark',
+          type: 'light',
+          primary: {
+            main: 'rgba(38,224,162, 1)',
+          },
+          secondary: {
+            main: 'rgb(0, 255, 0)',
+          },
         },
-    });
+    });*/
 
     const isTheia = state.matches(States.LOGGED) && panel == PanelId.Theia;
 
@@ -136,6 +147,7 @@ function App({ params }: { params: Params }): JSX.Element {
 
     return (
         <ThemeProvider theme={theme}>
+            <CssBaseline />
             <div style={{ display: "flex", width: "100vw", height: "100vh", alignItems: "center", justifyContent: "center" }}>
                 <Wrapper thin={isTheia}
                          nav={<CustomNav client={client} send={send} state={state} />}
