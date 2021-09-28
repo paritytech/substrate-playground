@@ -17,6 +17,8 @@ import { StatsPanel } from './panels/stats';
 import { TermsPanel } from './panels/terms';
 import { TheiaPanel } from './panels/theia';
 import { terms } from "./terms";
+import { SubstrateLight } from './themes';
+import { CssBaseline } from "@material-ui/core";
 
 function MainPanel({ client, conf, user, id, templates, restartAction, onConnect, onDeployed }: { client: Client, conf: Configuration, user: LoggedUser, id: PanelId, templates: Record<string, Template>, restartAction: () => void, onConnect: () => void, onDeployed: () => void }): JSX.Element {
     switch(id) {
@@ -91,19 +93,14 @@ function WrappedTheiaPanel({ params, conf, client, user, templates, selectPanel,
     );
 }
 
+const theme = createTheme(SubstrateLight);
+
 function App({ params }: { params: Params }): JSX.Element {
     const client = new Client(params.base, 30000, {credentials: "include"});
     const { deploy } = params;
     const [state, send] = useMachine(newMachine(client, deploy? PanelId.Theia: PanelId.Session), { devTools: true });
     const { panel, templates, user, conf, error } = state.context;
 
-    const restartAction = () => send(Events.RESTART);
-    const selectPanel = (id: PanelId) => send(Events.SELECT, {panel: id});
-    const theme = createMuiTheme({
-        palette: {
-          type: 'dark',
-        },
-    });
     const isTheia = state.matches(States.LOGGED) && panel == PanelId.Theia;
 
     useEffect(() => {
@@ -116,6 +113,7 @@ function App({ params }: { params: Params }): JSX.Element {
 
     return (
         <ThemeProvider theme={theme}>
+            <CssBaseline />
             <div style={{ display: "flex", width: "100vw", height: "100vh", alignItems: "center", justifyContent: "center" }}>
                 {isTheia
                  ? <WrappedTheiaPanel client={client} conf={conf} params={params} user={user} templates={templates} selectPanel={selectPanel} restartAction={restartAction} send={send} />

@@ -22,6 +22,7 @@ import { Configuration, LoggedUser } from "@substrate/playground-client";
 import { useInterval } from './hooks';
 import { Params } from "./index";
 import { hasAdminReadRights } from './utils';
+import LogoSubstrate from "./LogoSubstrate";
 
 function ErrorMessageAction({action, actionTitle = "TRY AGAIN"}: {action: (() => void) | (() => Promise<void>), actionTitle?: string}): JSX.Element {
     const [executing, setExecuting] = useState(false);
@@ -135,11 +136,9 @@ function Nav({ conf, onPlayground, onStatsClick, onAdminClick, onLogout, user, c
     const handleMenuAdmin = (event: React.MouseEvent<HTMLElement>) => setAnchorElAdmin(event.currentTarget);
     const handleCloseAdmin = () => setAnchorElAdmin(null);
     return (
-        <AppBar position="sticky">
+        <AppBar style={{ padding: "2rem", borderBottom: "1px solid" }} position="sticky" color="transparent" elevation={1}>
             <Toolbar style={{ justifyContent: "space-between" }} variant="dense">
-                <Typography variant="h6">
-                    <Button onClick={onPlayground}>Playground</Button>
-                </Typography>
+                <LogoSubstrate theme={true} onClick={onPlayground} />
                 {children}
                 <div style={{display: "flex", alignItems: "center"}}>
                     {(user && hasAdminReadRights(user)) &&
