@@ -111,9 +111,33 @@ build-template:
 	&& docker build --force-rm --build-arg BASE_TEMPLATE_VERSION=${BASE_TEMPLATE_VERSION} --build-arg TEMPLATE_IMAGE=${TAG} -t ${TAG_THEIA} -f Dockerfile.theia-template .
 	@rm -rf templates/${REPOSITORY_CLONE}
 
+build-openvscode-template:
+	@if test "$(TEMPLATE)" = "" ; then \
+		echo "Environment variable TEMPLATE not set"; \
+		exit 1; \
+	fi
+	$(eval BASE_TEMPLATE_VERSION=$(shell grep BASE_TEMPLATE_VERSION conf/templates/.env | cut -d '=' -f2))
+	$(eval REPOSITORY=$(shell cat conf/templates/${TEMPLATE} | yq -r .repository))
+	$(eval REF=$(shell cat conf/templates/${TEMPLATE} | yq -r .ref))
+	$(eval REPOSITORY_CLONE=.clone)
+	@cd templates; git clone https://github.com/${REPOSITORY}.git ${REPOSITORY_CLONE} \
+    && cd ${REPOSITORY_CLONE} \
+    && git checkout ${REF} \
+    $(eval REV = $(shell git rev-parse --short HEAD))
+
+	$(eval TAG=paritytech/substrate-playground-template-${TEMPLATE}:sha-${REV})
+	$(eval TAG_OPENVSCODE=paritytech/substrate-playground-template-${TEMPLATE}-openvscode:sha-${REV})
+	@cd templates; docker build --force-rm --build-arg BASE_TEMPLATE_VERSION=${BASE_TEMPLATE_VERSION} -t ${TAG} -f Dockerfile.template ${REPOSITORY_CLONE} \
+	&& docker build --force-rm --build-arg TEMPLATE_IMAGE=${TAG} -t ${TAG_OPENVSCODE} -f Dockerfile.openvscode-template .
+	@rm -rf templates/${REPOSITORY_CLONE}
+
 push-template: build-template
 	docker push ${TAG}
 	docker push ${TAG_THEIA}
+
+push-openvscode-template: build-openvscode-template
+	docker push ${TAG}
+	docker push ${TAG_OPENVSCODE}
 
 build-backend-docker-images: ## Build backend docker images
 	$(eval PLAYGROUND_DOCKER_IMAGE_VERSION=$(shell git rev-parse --short HEAD))
