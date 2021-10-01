@@ -1839,16 +1839,16 @@
   dependencies:
     uuid "8.3.2"
 
-"@theia/application-manager@1.17.2":
-  version "1.17.2"
-  resolved "https://registry.yarnpkg.com/@theia/application-manager/-/application-manager-1.17.2.tgz#bcf5b23754705848a81d8a97f9e40ee141a6efc7"
-  integrity sha512-Ev/Rq3Da8pg22YzMPOJ/97rMmovHuvCDT9CLCNba5f9jgkBwX4WgS32q21qfucZ/OX3Y0V0EFSFilVyV7luzKA==
+"@theia/application-manager@1.18.0":
+  version "1.18.0"
+  resolved "https://registry.yarnpkg.com/@theia/application-manager/-/application-manager-1.18.0.tgz#b21fe4abe177cba19ad734c5cbb7dbb0d46d1b6a"
+  integrity sha512-lgpF5+R/vb1v2P+DKOCR3QEPRKhr02vmDRbBAuVGuyhD+AC1IVkXkIwuhY3hZl0TqXr9H//p4xnhxAVM/E+ixQ==
   dependencies:
     "@babel/core" "^7.10.0"
     "@babel/plugin-transform-classes" "^7.10.0"
     "@babel/plugin-transform-runtime" "^7.10.0"
     "@babel/preset-env" "^7.10.0"
-    "@theia/application-package" "1.17.2"
+    "@theia/application-package" "1.18.0"
     "@theia/compression-webpack-plugin" "^3.0.0"
     "@types/fs-extra" "^4.0.2"
     babel-loader "^8.2.2"
@@ -1888,6 +1888,23 @@
     semver "^5.4.1"
     write-json-file "^2.2.0"
 
+"@theia/application-package@1.18.0":
+  version "1.18.0"
+  resolved "https://registry.yarnpkg.com/@theia/application-package/-/application-package-1.18.0.tgz#20bb0dd21c52bf58a79c99c73517558e1704bc2c"
+  integrity sha512-v8jzr3ItlzyeserrEGfy3MJRB1rH2ewKWfLSu26PGRsR38zip1ZGLsPmk10/v8NVYwPu5enD8tppWlikRWwFzA==
+  dependencies:
+    "@types/fs-extra" "^4.0.2"
+    "@types/request" "^2.0.3"
+    "@types/semver" "^5.4.0"
+    "@types/write-json-file" "^2.2.1"
+    changes-stream "^2.2.0"
+    deepmerge "^4.2.2"
+    fs-extra "^4.0.2"
+    is-electron "^2.1.0"
+    request "^2.82.0"
+    semver "^5.4.1"
+    write-json-file "^2.2.0"
+
 "@theia/bulk-edit@1.17.2":
   version "1.17.2"
   resolved "https://registry.yarnpkg.com/@theia/bulk-edit/-/bulk-edit-1.17.2.tgz#ebd4c7963f3798648624aa36c33ee667a002a89d"
@@ -1909,14 +1926,14 @@
     "@theia/monaco" "1.17.2"
     ts-md5 "^1.2.2"
 
-"@theia/cli@1.17.2":
-  version "1.17.2"
-  resolved "https://registry.yarnpkg.com/@theia/cli/-/cli-1.17.2.tgz#5558de75d59a1db3be60a54b871cb7e6fc2a9c8e"
-  integrity sha512-5Mwm8WO7smDle3R25i+OEEAT7EP/0Vgv0C6eH5GGS66eBcJEArKF7IxwhDf+qVJt3L/Qj7rePMoD9dVahiESbQ==
+"@theia/cli@1.18.0":
+  version "1.18.0"
+  resolved "https://registry.yarnpkg.com/@theia/cli/-/cli-1.18.0.tgz#64459591ffce8af348c012ef9e32b3c00305ca50"
+  integrity sha512-Lvqfg/1FA/4H9iXNwCb8DXiXz5e48YoTzVcY8zIXp/QFIGBkRVoC9GXU+ypFH5sySLDJeumUqQMxIUH0ZaCPiw==
   dependencies:
-    "@theia/application-manager" "1.17.2"
-    "@theia/application-package" "1.17.2"
-    "@theia/ovsx-client" "1.17.2"
+    "@theia/application-manager" "1.18.0"
+    "@theia/application-package" "1.18.0"
+    "@theia/ovsx-client" "1.18.0"
     "@types/chai" "^4.2.7"
     "@types/mkdirp" "^0.5.2"
     "@types/mocha" "^5.2.7"
@@ -2218,10 +2235,10 @@
     "@types/p-queue" "^2.3.1"
     p-queue "^2.4.2"
 
-"@theia/ovsx-client@1.17.2":
-  version "1.17.2"
-  resolved "https://registry.yarnpkg.com/@theia/ovsx-client/-/ovsx-client-1.17.2.tgz#fbf0c404d69f7e06ac4b33c26f642e6ccb68fda1"
-  integrity sha512-Is5tYaFfSoti6KOE6TR1eQH9n0Lpgsi2K7MMa1Oe/ETKDzUTf2aq+8bR/BPtqjId8ldNJETQconvQNKhKPL0ew==
+"@theia/ovsx-client@1.18.0":
+  version "1.18.0"
+  resolved "https://registry.yarnpkg.com/@theia/ovsx-client/-/ovsx-client-1.18.0.tgz#0af7ad356c28bdd97919d4afa44db4b65a93e6f8"
+  integrity sha512-X0oWqo5dVT+T3SbCE6p9KoAjHy//Tz55BuUoEv1iNCQ2mkDt4Ly1HKt926axUN1NfvLWi0M2B9jw8AaP9vv2lA==
   dependencies:
     "@types/bent" "^7.0.1"
     bent "^7.1.0"
