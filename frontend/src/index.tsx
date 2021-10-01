@@ -93,7 +93,7 @@ function WrappedTheiaPanel({ params, conf, client, user, templates, selectPanel,
     );
 }
 
-const theme = createTheme(SubstrateLight);
+const theme = createMuiTheme(SubstrateLight);
 
 function App({ params }: { params: Params }): JSX.Element {
     const client = new Client(params.base, 30000, {credentials: "include"});
