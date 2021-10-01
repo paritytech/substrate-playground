@@ -13,14 +13,23 @@ spec:
   - http:
       paths:
       - path: /
+        pathType: Prefix
         backend:
-          serviceName: backend-ui-service
-          servicePort: ui-port
+          service:
+            name: backend-ui-service
+            port:
+              name: ui-port
       - path: /api/
+        pathType: Prefix
         backend:
-          serviceName: backend-api-service
-          servicePort: api-port
+          service:
+            name: backend-api-service
+            port:
+              name: api-port
       - path: /grafana/
+        pathType: Prefix
         backend:
-          serviceName: grafana-service
-          servicePort: grafana-port
+          service:
+            name: grafana-service
+            port:
+              name: grafana-port
