@@ -20,7 +20,7 @@
         "@theia/keymaps": "1.17.2",
         "@theia/markers": "1.17.2",
         "@theia/messages": "1.17.2",
-        "@theia/metrics": "1.17.2",
+        "@theia/metrics": "1.18.0",
         "@theia/mini-browser": "1.17.2",
         "@theia/monaco": "1.17.2",
         "@theia/navigator": "1.17.2",
