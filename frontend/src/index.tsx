@@ -101,6 +101,13 @@ function App({ params }: { params: Params }): JSX.Element {
     const [state, send] = useMachine(newMachine(client, deploy? PanelId.Theia: PanelId.Session), { devTools: true });
     const { panel, templates, user, conf, error } = state.context;
 
+    const restartAction = () => send(Events.RESTART);
+    const selectPanel = (id: PanelId) => send(Events.SELECT, {panel: id});
+    const theme = createMuiTheme({
+        palette: {
+          type: 'dark',
+        },
+    });
     const isTheia = state.matches(States.LOGGED) && panel == PanelId.Theia;
 
     useEffect(() => {
