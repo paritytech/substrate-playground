@@ -103,11 +103,6 @@ function App({ params }: { params: Params }): JSX.Element {
 
     const restartAction = () => send(Events.RESTART);
     const selectPanel = (id: PanelId) => send(Events.SELECT, {panel: id});
-    const theme = createMuiTheme({
-        palette: {
-          type: 'dark',
-        },
-    });
     const isTheia = state.matches(States.LOGGED) && panel == PanelId.Theia;
 
     useEffect(() => {
