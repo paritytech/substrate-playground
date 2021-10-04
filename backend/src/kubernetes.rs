@@ -178,6 +178,15 @@ fn volume_template(repository_id: &str) -> PersistentVolumeClaim {
     }
 }
 
+fn running_workspaces(workspaces: Vec<Workspace>) -> Vec<Workspace> {
+    workspaces
+        .into_iter()
+        .filter(|workspace| match &workspace.state {
+            WorkspaceState::Running { .. } => true,
+            _ => false,
+        })
+        .collect()
+}
 async fn create_volume_template(
     api: &Api<PersistentVolumeClaim>,
     repository_id: &str,
@@ -773,7 +782,7 @@ impl Engine {
         let max_workspaces_allowed =
             pool.nodes.len() * self.configuration.workspace.max_workspaces_per_pod;
         let workspaces = self.list_workspaces().await?;
-        if workspaces.len() >= max_workspaces_allowed {
+        if running_workspaces(workspaces).len() >= max_workspaces_allowed {
             // TODO Should trigger pool dynamic scalability. Right now this will only consider the pool lower bound.
             // "Reached maximum number of concurrent workspaces allowed: {}"
             return Err(Error::Unauthorized());
