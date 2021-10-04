@@ -184,8 +184,7 @@ k8s-create-cluster: requires-env
         --release-channel regular \
         --zone us-central1-a \
         --node-locations us-central1-a \
-        --machine-type n2d-standard-8 \
-        --preemptible \
+        --machine-type n2d-standard-32 \
         --num-nodes 1
 
 k8s-setup-env: requires-k8s
