@@ -48,6 +48,13 @@ const USERS_CONFIG_MAP: &str = "playground-users";
 const TEMPLATES_CONFIG_MAP: &str = "playground-templates";
 const THEIA_WEB_PORT: i32 = 3000;
 
+fn running_sessions(sessions: Vec<&Session>) -> Vec<&Session> {
+    sessions
+        .into_iter()
+        .filter(|session| session.pod.phase == Phase::Running)
+        .collect()
+}
+
 async fn list_by_selector<K: Clone + DeserializeOwned + Debug>(
     api: &Api<K>,
     selector: String,
@@ -755,7 +762,8 @@ impl Engine {
         let max_sessions_allowed =
             pool.nodes.len() * self.configuration.session.max_sessions_per_pod;
         let sessions = self.list_sessions().await?;
-        if sessions.len() >= max_sessions_allowed {
+
+        if running_sessions(sessions.values().collect()).len() >= max_sessions_allowed {
             // TODO Should trigger pool dynamic scalability. Right now this will only consider the pool lower bound.
             // "Reached maximum number of concurrent sessions allowed: {}"
             return Err(Error::Unauthorized());

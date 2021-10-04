@@ -116,7 +116,7 @@ impl Manager {
                 // Go through all Running pods and figure out if they have to be undeployed
                 match runtime.block_on(self.engine.list_sessions()) {
                     Ok(sessions) => {
-                        for session in running_sessions(sessions.values().collect()) {
+                        for session in sessions.values() {
                             if let Some(duration) =
                                 &session.pod.start_time.and_then(|p| p.elapsed().ok())
                             {
