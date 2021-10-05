@@ -248,7 +248,8 @@ impl Manager {
         id: &str,
         conf: SessionConfiguration,
     ) -> Result<()> {
-        if session_id(&user.id) != id && !user.has_admin_edit_rights() {
+        // Ids can only customized by users with proper rights
+        if session_id(id) != id && !user.has_admin_edit_rights() {
             return Err(Error::Unauthorized());
         }
 
@@ -265,8 +266,8 @@ impl Manager {
             }
         }
 
-        let session_id = session_id(id);
-        if self.get_session(user, &id)?.is_some() {
+        // A single session can be created at a time, unless user has proper rights
+        if self.get_session(user, &id)?.is_some() && !user.has_admin_edit_rights() {
             return Err(Error::Unauthorized());
         }
 
@@ -278,7 +279,7 @@ impl Manager {
         match &result {
             Ok(_session) => {
                 if let Ok(mut sessions) = self.sessions.lock() {
-                    sessions.insert(session_id);
+                    sessions.insert(id.to_string());
                 } else {
                     error!("Failed to acquire sessions lock");
                 }
