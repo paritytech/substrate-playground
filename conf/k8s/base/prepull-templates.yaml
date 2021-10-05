@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: prepull-templates
+spec:
+  selector:
+    matchLabels:
+      name: prepull-templates
+  template:
+    metadata:
+      labels:
+        name: prepull-templates
+    spec:
+      initContainers:
+        - name: front-end-template
+          image: docker
+          command: ["docker", "pull", "paritytech/substrate-playground-template-front-end-template-theia:sha-6bd2268a"]
+          volumeMounts:
+          - name: docker
+            mountPath: /var/run
+        - name: node-template
+          image: docker
+          command: ["docker", "pull", "paritytech/substrate-playground-template-node-template-theia:sha-cbc9f0ca"]
+          volumeMounts:
+          - name: docker
+            mountPath: /var/run
+      volumes:
+        - name: docker
+          hostPath:
+            path: /var/run
+      containers:
+        - name: pause
+          image: gcr.io/google_containers/pause

@@ -216,6 +216,9 @@ k8s-update-templates-config: requires-k8s ## Creates or replaces the `templates`
 k8s-update-users-config: requires-k8s ## Creates or replaces the `users` config map from `conf/k8s/overlays/ENV/users`
 	kubectl create configmap playground-users --namespace=${NAMESPACE} --from-file=conf/k8s/overlays/${ENV}/users/ --dry-run=client -o yaml | kubectl apply -f -
 
+k8s-prepull-templates: requires-k8s ## Deploy playground on kubernetes
+	kubectl apply --record -f conf/k8s/base/prepull-templates.yaml
+
 ##@ DNS certificates
 
 generate-challenge: requires-env
