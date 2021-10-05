@@ -244,6 +244,7 @@ impl Manager {
         id: &str,
         conf: WorkspaceConfiguration,
     ) -> Result<()> {
+        // Id can only be customized by users with proper rights
         if workspace_id(&user.id) != id && !user.has_admin_edit_rights() {
             return Err(Error::Unauthorized());
         }
@@ -262,7 +263,8 @@ impl Manager {
         }
 
         let workspace_id = workspace_id(id);
-        if self.get_workspace(user, &workspace_id)?.is_some() {
+        // Ensure a workspace with the same id is not alread running
+        if new_runtime()?.block_on(self.engine.get_workspace(&workspace_id))?.is_some() {
             return Err(Error::Unauthorized());
         }
 
