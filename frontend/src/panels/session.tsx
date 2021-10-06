@@ -135,9 +135,10 @@ function TemplateSelector({client, conf, user, templates, onDeployed, onRetry}: 
         try {
             setDeploying(true);
             await onDeployed(conf);
-            setDeploying(false);
         } catch (e) {
             setErrorMessage(`Failed to create a new session: ${e}`);
+        } finally {
+            setDeploying(false);
         }
     }
 
@@ -293,7 +294,7 @@ export function SessionDetails({ session }: {session: Session}): JSX.Element {
     );
 }
 
-function ExistingSession({session, onStop, onConnect}: {session: Session, onStop: () => void, onConnect: (session: Session) => void}): JSX.Element {
+function ExistingSession({session, onStop, onConnect}: {session: Session, onStop: () => Promise<void>, onConnect: (session: Session) => void}): JSX.Element {
     const [stopping, setStopping] = useState(false);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -305,13 +306,14 @@ function ExistingSession({session, onStop, onConnect}: {session: Session, onStop
         }
     }
 
-    function onStopClick(): void {
+    async function onStopClick(): Promise<void> {
         try {
             setStopping(true);
-            onStop();
+            await onStop();
         } catch {
-            setStopping(false);
             setErrorMessage("Failed to stop the session");
+        } finally {
+            setStopping(false);
         }
     }
 
@@ -339,7 +341,7 @@ function ExistingSession({session, onStop, onConnect}: {session: Session, onStop
     );
 }
 
-export function SessionPanel({ client, conf, user, templates, onDeployed, onConnect, onRetry, onStop }: {client: Client, conf: Configuration, user: LoggedUser, templates: Record<string, Template>, onStop: () => void, onConnect: (session: Session) => void, onDeployed: (conf: SessionConfiguration) => Promise<void>, onRetry: () => void}): JSX.Element {
+export function SessionPanel({ client, conf, user, templates, onDeployed, onConnect, onRetry, onStop }: {client: Client, conf: Configuration, user: LoggedUser, templates: Record<string, Template>, onStop: () => Promise<void>, onConnect: (session: Session) => void, onDeployed: (conf: SessionConfiguration) => Promise<void>, onRetry: () => void}): JSX.Element {
     const [session, setSession] = useState<Session | null | undefined>(undefined);
 
     useInterval(async () => setSession(await client.getCurrentSession()), 5000);

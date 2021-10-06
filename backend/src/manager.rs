@@ -302,7 +302,7 @@ impl Manager {
     ) -> Result<()> {
         if conf.duration.is_some() {
             // Duration can only customized by users with proper rights
-            if id != user.id && !user.can_customize_duration() {
+            if session_id(&user.id) != id && !user.can_customize_duration() {
                 return Err(Error::Unauthorized());
             }
         }
@@ -311,7 +311,7 @@ impl Manager {
     }
 
     pub fn delete_session(&self, user: &LoggedUser, id: &str) -> Result<()> {
-        if user.id != id && !user.has_admin_edit_rights() {
+        if session_id(&user.id) != id && !user.has_admin_edit_rights() {
             return Err(Error::Unauthorized());
         }
 
