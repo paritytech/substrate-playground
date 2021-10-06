@@ -324,7 +324,7 @@ export function WorkspaceDetails({ workspace }: {workspace: Workspace}): JSX.Ele
     );
 }
 
-function ExistingWorkspace({workspace, onStop, onConnect}: {workspace: Workspace, onStop: () => void, onConnect: (workspace: Workspace) => void}): JSX.Element {
+function ExistingWorkspace({workspace, onStop, onConnect}: {workspace: Workspace, onStop: () => Promise<void>, onConnect: (workspace: Workspace) => void}): JSX.Element {
     const [stopping, setStopping] = useState(false);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -336,13 +336,14 @@ function ExistingWorkspace({workspace, onStop, onConnect}: {workspace: Workspace
         }
     }
 
-    function onStopClick(): void {
+    async function onStopClick(): Promise<void> {
         try {
             setStopping(true);
-            onStop();
+            await onStop();
         } catch {
-            setStopping(false);
             setErrorMessage("Failed to stop the workspace");
+        } finally {
+            setStopping(false);
         }
     }
 
@@ -370,7 +371,7 @@ function ExistingWorkspace({workspace, onStop, onConnect}: {workspace: Workspace
     );
 }
 
-export function WorkspacePanel({ client, conf, user, onDeployed, onConnect, onRetry, onStop }: {client: Client, conf: Configuration, user?: LoggedUser, onStop: () => void, onConnect: (workspace: Workspace) => void, onDeployed: (conf: WorkspaceConfiguration) => Promise<void>, onRetry: () => void}): JSX.Element {
+export function WorkspacePanel({ client, conf, user, onDeployed, onConnect, onRetry, onStop }: {client: Client, conf: Configuration, user?: LoggedUser, onStop: () => Promise<void>, onConnect: (workspace: Workspace) => void, onDeployed: (conf: WorkspaceConfiguration) => Promise<void>, onRetry: () => void}): JSX.Element {
     const [workspace, setWorkspace] = useState<Workspace | null | undefined>(undefined);
 
     useInterval(async () => setWorkspace(await client.getCurrentWorkspace()), 5000);
