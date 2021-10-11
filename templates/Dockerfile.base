@@ -5,7 +5,7 @@ FROM ubuntu:20.10
 # Install required dependencies
 RUN apt-get update && \
     apt-get upgrade -y && \
-    apt-get install -y make gcc g++ curl wget dumb-init python vim git cmake pkg-config libssl-dev git gcc build-essential git clang libclang-dev pkg-config xsel htop nodejs jq && \
+    apt-get install -y make gcc g++ curl wget dumb-init python vim git cmake pkg-config libssl-dev git gcc build-essential git clang libclang-dev pkg-config xsel htop nodejs jq unzip && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
