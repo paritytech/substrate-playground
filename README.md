@@ -17,7 +17,7 @@ Playground templates can be [created and maintained](https://paritytech.github.i
 
 ### Web
 
-Access playground at [playground.substrate.dev](https://playground.substrate.dev).
+Access playground at [docs.substrate.io/playground/](https://docs.substrate.io/playground/).
 
 ### CLI
 
