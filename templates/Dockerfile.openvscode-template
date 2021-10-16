@@ -13,23 +13,24 @@ WORKDIR /home/
 
 USER root
 
+ENV OPENVSCODE_VERSION=1.61.0
+
 # Downloading the latest VSC Server release
-RUN wget https://github.com/gitpod-io/openvscode-server/releases/download/openvscode-server-v1.60.2/openvscode-server-v1.60.2-linux-x64.tar.gz
+# https://open-vsx.org/extension/matklad/rust-analyzer
+RUN wget https://github.com/gitpod-io/openvscode-server/releases/download/openvscode-server-v$OPENVSCODE_VERSION/openvscode-server-v$OPENVSCODE_VERSION-linux-x64.tar.gz \
+    && tar -xzf openvscode-server-v$OPENVSCODE_VERSION-linux-x64.tar.gz \
+    && mv openvscode-server-v$OPENVSCODE_VERSION-linux-x64 openvscode-server \
+    && rm -rf openvscode-server-v$OPENVSCODE_VERSION-linux-x64.tar.gz \
+    && wget https://open-vsx.org/api/matklad/rust-analyzer/0.2.743/file/matklad.rust-analyzer-0.2.743.vsix \
+    && unzip matklad.rust-analyzer-0.2.743.vsix -d matklad.rust-analyzer \
+    && rm -rf matklad.rust-analyzer-* \
+    && mkdir openvscode-server/extensions/matklad.rust-analyzer \
+    && mv matklad.rust-analyzer/extension/* openvscode-server/extensions/matklad.rust-analyzer
 
-# Extracting the release archive
-RUN tar -xzf openvscode-server-v1.60.2-linux-x64.tar.gz
-
-# Creating the user and usergroup
-RUN adduser vscode-server && \
-    usermod -a -G vscode-server vscode-server
+COPY getting-started openvscode-server/extensions/getting-started
 
 RUN chmod g+rw /home && \
-    mkdir -p /home/vscode && \
-    chown -R playground:playground /home/vscode && \
-    chown -R playground:playground /home/openvscode-server-v1.60.2-linux-x64;
-
-ENV USE_LOCAL_GIT=true \
-    HOST=0.0.0.0
+    chown -R playground:playground /home/openvscode-server;
 
 # Folder matches the entry point from templates/
 USER playground
@@ -39,10 +40,10 @@ WORKDIR /home/playground/workspace/
 ENV EDITOR=code
 ENV VISUAL=code
 ENV GIT_EDITOR="code --wait"
-ENV OPENVSCODE_SERVER_ROOT=/home/openvscode-server-v1.60.2-linux-x64
+ENV OPENVSCODE_SERVER_ROOT=/home/openvscode-server
 
 EXPOSE 3000
 
 # https://github.com/Yelp/dumb-init
 ENTRYPOINT [ "dumb-init", "--" ]
-CMD [ "/home/openvscode-server-v1.60.2-linux-x64/server.sh" ]
+CMD [ "/home/openvscode-server/server.sh" ]
