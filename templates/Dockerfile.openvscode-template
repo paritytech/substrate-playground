@@ -27,7 +27,13 @@ RUN wget https://github.com/gitpod-io/openvscode-server/releases/download/openvs
     && mkdir openvscode-server/extensions/matklad.rust-analyzer \
     && mv matklad.rust-analyzer/extension/* openvscode-server/extensions/matklad.rust-analyzer
 
-COPY getting-started openvscode-server/extensions/getting-started
+RUN wget https://open-vsx.org/api/vsls-contrib/codetour/0.0.58/file/vsls-contrib.codetour-0.0.58.vsix \
+    && unzip vsls-contrib.codetour-0.0.58.vsix -d vsls-contrib.codetour \
+    && rm -rf vsls-contrib.codetour-* \
+    && mkdir openvscode-server/extensions/vsls-contrib.codetour \
+    && mv vsls-contrib.codetour/extension/* openvscode-server/extensions/vsls-contrib.codetour
+
+COPY playground-extension openvscode-server/extensions/playground-extension
 
 RUN chmod g+rw /home && \
     chown -R playground:playground /home/openvscode-server;
