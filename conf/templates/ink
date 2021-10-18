@@ -1,0 +1,13 @@
+repository: jeluard/ink
+image: paritytech/substrate-playground-template-ink-openvscode:sha-95cd3453
+ref: f4e0f5da42f3749f5ab249aa93b56365329ed4ea
+name: Ink
+description: '## The Node template you know and love'
+tags:
+  public: false
+runtime:
+  ports:
+    - name: wss
+      protocol: TCP
+      path: /wss
+      port: 9944
