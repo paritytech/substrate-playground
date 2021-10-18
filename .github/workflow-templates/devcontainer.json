@@ -14,7 +14,7 @@
     "forwardPorts": [
       9944
     ],
-    "preCreateCommand": "cargo build --release && cargo check",
+    "onCreateCommand": "cargo build --release && cargo check",
     "postStartCommand": "./target/release/node-template --dev --ws-external",
     "menuActions": [
       {"id": "polkadotjs",
@@ -23,4 +23,3 @@
        "args": ["https://polkadot.js.org/apps/?rpc=wss%3A%2F%2F/$HOST/wss"]}
     ]
   }
-  
