@@ -1,11 +1,13 @@
 # The recommended base image for templates.
 
-FROM ubuntu:20.10
+FROM ubuntu:21.10
+
+ENV DEBIAN_FRONTEND=noninteractive
 
 # Install required dependencies
 RUN apt-get update && \
     apt-get upgrade -y && \
-    apt-get install -y make gcc g++ curl wget dumb-init python vim git cmake pkg-config libssl-dev git gcc build-essential git clang libclang-dev pkg-config xsel htop nodejs jq unzip
+    apt-get install -y make gcc g++ curl wget dumb-init python vim git cmake pkg-config libssl-dev git gcc build-essential git clang libclang-dev pkg-config xsel htop nodejs jq unzip binaryen
 
 # Install rust as required by substrate env
 # Pick up the version from https://rust-lang.github.io/rustup-components-history/index.html (rls is required)
@@ -38,9 +40,3 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --de
     && rustup install $RUST_VERSION \
     && rustup component add rls rust-analysis rust-src clippy rustfmt llvm-tools-preview \
     && rustup target add wasm32-unknown-unknown --toolchain $RUST_VERSION
-
-# Install some subtrate tools
-RUN cargo install --force --git https://github.com/alexcrichton/wasm-gc \
-#    && cargo install --force --git https://github.com/paritytech/substrate --tag v2.0.0 subkey \
-    && cargo install substrate-deps \
-    && cargo install diener
