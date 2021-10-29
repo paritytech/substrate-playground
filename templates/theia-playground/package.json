@@ -33,7 +33,7 @@
         "@theia/preview": "1.18.0",
         "@theia/preferences": "1.18.0",
         "@theia/process": "1.18.0",
-        "@theia/search-in-workspace": "1.18.0",
+        "@theia/search-in-workspace": "1.19.0",
         "@theia/task": "1.18.0",
         "@theia/terminal": "1.18.0",
         "@theia/typehierarchy": "1.18.0",
