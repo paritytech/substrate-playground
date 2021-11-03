@@ -20,7 +20,7 @@
     "analytics": "0.7.18",
     "analytics-plugin-simple-analytics": "0.1.3",
     "broadcast-channel": "4.4.0",
-    "marked": "3.0.8",
+    "marked": "4.0.0",
     "react": "17.0.2",
     "react-dom": "17.0.2",
     "react-spring": "9.3.0",
