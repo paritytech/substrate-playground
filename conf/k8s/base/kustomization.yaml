@@ -19,3 +19,4 @@ resources:
     - node-exporter.yaml
     - service-account.yaml
     - node-conf-daemon-set.yaml
+    - prepull-templates.yaml

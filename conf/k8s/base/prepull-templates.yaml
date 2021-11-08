@@ -24,6 +24,24 @@ spec:
           volumeMounts:
           - name: docker
             mountPath: /var/run
+        - name: ink
+          image: docker
+          command: ["docker", "pull", "paritytech/substrate-playground-template-ink-openvscode:sha-206e2ebb"]
+          volumeMounts:
+          - name: docker
+            mountPath: /var/run
+        - name: parachain-template
+          image: docker
+          command: ["docker", "pull", "paritytech/substrate-playground-template-parachain-template-theia:sha-9ae77769"]
+          volumeMounts:
+          - name: docker
+            mountPath: /var/run
+        - name: recipes
+          image: docker
+          command: ["docker", "pull", "paritytech/substrate-playground-template-recipes-theia:sha-9a27604"]
+          volumeMounts:
+          - name: docker
+            mountPath: /var/run
       volumes:
         - name: docker
           hostPath:
