@@ -13,43 +13,34 @@ WORKDIR /home/
 
 USER root
 
-ENV OPENVSCODE_VERSION=1.61.0
+ENV OPENVSCODE_VERSION=1.62.0
 
 # Downloading the latest VSC Server release
-# https://open-vsx.org/extension/matklad/rust-analyzer
 RUN wget https://github.com/gitpod-io/openvscode-server/releases/download/openvscode-server-v$OPENVSCODE_VERSION/openvscode-server-v$OPENVSCODE_VERSION-linux-x64.tar.gz \
     && tar -xzf openvscode-server-v$OPENVSCODE_VERSION-linux-x64.tar.gz \
     && mv openvscode-server-v$OPENVSCODE_VERSION-linux-x64 openvscode-server \
-    && rm -rf openvscode-server-v$OPENVSCODE_VERSION-linux-x64.tar.gz \
-    && wget https://open-vsx.org/api/matklad/rust-analyzer/0.2.743/file/matklad.rust-analyzer-0.2.743.vsix \
-    && unzip matklad.rust-analyzer-0.2.743.vsix -d matklad.rust-analyzer \
-    && rm -rf matklad.rust-analyzer-* \
-    && mkdir openvscode-server/extensions/matklad.rust-analyzer \
-    && mv matklad.rust-analyzer/extension/* openvscode-server/extensions/matklad.rust-analyzer
-
-RUN wget https://open-vsx.org/api/vsls-contrib/codetour/0.0.58/file/vsls-contrib.codetour-0.0.58.vsix \
-    && unzip vsls-contrib.codetour-0.0.58.vsix -d vsls-contrib.codetour \
-    && rm -rf vsls-contrib.codetour-* \
-    && mkdir openvscode-server/extensions/vsls-contrib.codetour \
-    && mv vsls-contrib.codetour/extension/* openvscode-server/extensions/vsls-contrib.codetour
+    && rm -rf openvscode-server-v$OPENVSCODE_VERSION-linux-x64.tar.gz
 
 COPY playground-extension openvscode-server/extensions/playground-extension
 
 RUN chmod g+rw /home && \
+    chown -R playground:playground /home/openvscode-server && \
     chown -R playground:playground /home/openvscode-server;
 
-# Folder matches the entry point from templates/
 USER playground
+
+## Install default extensions
+
+RUN /home/openvscode-server/server.sh --install-extension matklad.rust-analyzer --install-extension vsls-contrib.codetour
 
 WORKDIR /home/playground/workspace/
 
 ENV EDITOR=code
 ENV VISUAL=code
 ENV GIT_EDITOR="code --wait"
-ENV OPENVSCODE_SERVER_ROOT=/home/openvscode-server
 
 EXPOSE 3000
 
 # https://github.com/Yelp/dumb-init
 ENTRYPOINT [ "dumb-init", "--" ]
-CMD [ "/home/openvscode-server/server.sh" ]
+CMD [ "/home/openvscode-server/server.sh", "--port", "3000", "--folder", "/home/playground/workspace", "--disable-telemetry", "true", "--connectionToken", "1234"]

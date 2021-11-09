@@ -3,15 +3,6 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 
-export function openWorkspaceLocation(): boolean {
-	if (vscode.workspace.workspaceFolders) {
-		return false;
-	}
-	const workspaceUri = vscode.Uri.file('/home/playground/workspace');
-	vscode.commands.executeCommand('vscode.openFolder', workspaceUri, { forceReuseWindow: true });
-	return true;
-}
-
 function parseCommands(command: any): Array<string> {
     if (typeof command === "string") {
         return [command];
@@ -26,8 +17,6 @@ function parseCommands(command: any): Array<string> {
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
-    await openWorkspaceLocation();
-
  if (vscode.workspace.workspaceFolders) {
     const data = await vscode.workspace.fs.readFile(vscode.Uri.file(path.resolve(vscode.workspace.workspaceFolders[0].uri.path, '.devcontainer/devcontainer.json')));
     // TODO filter comments from JSON
