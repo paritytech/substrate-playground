@@ -1,5 +1,5 @@
 repository: jeluard/ink
-image: paritytech/substrate-playground-template-ink-theia:sha-bb33739
+image: paritytech/substrate-playground-template-ink-theia:sha-3bd5693
 ref: 1a8e107569e3ee988f7c4e3ac71e5e7a09d8b0c8
 name: Ink
 description: '## The Node template you know and love'
