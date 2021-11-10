@@ -15,28 +15,7 @@ Playground templates can be [created and maintained](https://paritytech.github.i
 
 ## Trying it out
 
-### Web
-
 Access playground at [docs.substrate.io/playground/](https://docs.substrate.io/playground/).
-
-### CLI
-
-Playground templates can be started on a local machine (`docker` must be available).
-
-```shell
-npm install -g @substrate/playground-cli
-substrate-playground
-# or
-npx @substrate/playground-cli
-```
-
-Then browse a locally accessible web IDE at http://localhost.
-
-<p align="center">
-  <img width="600" src="https://cdn.rawgit.com/paritytech/substrate-playground/develop/cli/assets/web.svg" alt="CLI demo">
-</p>
-
-Find more details [here](cli/README.md)
 
 ## Support
 
