@@ -45,7 +45,7 @@ GKE_CLUSTER=substrate-${PLAYGROUND_ID}
 
 # Derive CONTEXT from ENV
 ifeq ($(ENV), dev)
-  CONTEXT=docker-desktop
+  CONTEXT=minikube
 else
   CONTEXT=gke_${GKE_PROJECT}_${GKE_ZONE}_${GKE_CLUSTER}
 endif
@@ -220,7 +220,7 @@ k8s-gke-static-ip: requires-k8s
 
 k8s-dev: requires-k8s
     # Adds required nodepool annotation, default on GKE
-	@kubectl label nodes docker-desktop cloud.google.com/gke-nodepool=default-workspace --overwrite
+	@kubectl label nodes ${CONTEXT} cloud.google.com/gke-nodepool=default-workspace --overwrite
 	@kubectl create ns ${NAMESPACE} --dry-run=client -o yaml | kubectl apply -f -
 	@cd conf/k8s; skaffold dev --cleanup=false
 
