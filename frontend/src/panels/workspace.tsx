@@ -126,6 +126,83 @@ function workspaceConfiguration(repository: Repository, reference: string): Work
     return {repositoryDetails: {id: repository.id, reference: reference}};
 }
 
+function TemplateSelector({client, conf, user, templates, onDeployed, onRetry}: {client: Client, conf: Configuration, user: LoggedUser, templates: Record<string, Template>, onDeployed: (conf: SessionConfiguration) => Promise<void>, onRetry: () => void}): JSX.Element {
+    const publicTemplates = Object.entries(templates).filter(([, v]) => v.tags?.public == "true");
+    const templatesAvailable = publicTemplates.length > 0;
+    const [selection, select] = useState(templatesAvailable ? publicTemplates[0] : null);
+    const [deploying, setDeploying] = useState(false);
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
+    const [openCustom, setOpenCustom] = React.useState(false);
+    const classes = useStyles();
+
+    async function onCreateClick(conf: SessionConfiguration): Promise<void> {
+        try {
+            setDeploying(true);
+            await onDeployed(conf);
+        } catch (e) {
+            setErrorMessage(`Failed to create a new session: ${e}`);
+        } finally {
+            setDeploying(false);
+        }
+    }
+
+    function createEnabled(): boolean {
+        if (!templatesAvailable) {
+            return false;
+        } else {
+            return !deploying;
+        }
+    }
+
+    if (selection) {
+        return (
+            <>
+                <Typography variant="h5" style={{padding: 20}}>Select a template</Typography>
+                <Divider orientation="horizontal" />
+                <Container style={{display: "flex", flex: 1, padding: 0, alignItems: "center", overflowY: "auto"}}>
+                    <div style={{display: "flex", flex: 1, flexDirection: "row", minHeight: 0, height: "100%"}}>
+                            <List style={{paddingTop: 0, paddingBottom: 0, overflowY: "auto"}}>
+                                {publicTemplates.map(([id, template], index: number) => (
+                                <ListItem button key={index} selected={selection[1].name === template.name} onClick={() => select([id, template])}>
+                                    <ListItemText primary={template.name} />
+                                </ListItem>
+                                ))}
+                            </List>
+                            <Divider flexItem={true} orientation={"vertical"} light={true} />
+                            <div style={{flex: 1, marginLeft: 20, paddingRight: 20, overflow: "auto", textAlign: "left"}}>
+                                <Typography>
+                                    <span dangerouslySetInnerHTML={{__html:marked(selection[1].description)}}></span>
+                                </Typography>
+                                <Divider orientation={"horizontal"} light={true} />
+                                <Typography className={classes.root} variant="overline">
+                                    #{selection[1].image}
+                                </Typography>
+                            </div>
+                        </div>
+                </Container>
+                <Divider orientation="horizontal" />
+                <Container style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", paddingTop: 10, paddingBottom: 10 }}>
+                    {canCustomize(user)
+                    ? <SplitButton template={selection[0]} onCreate={() => onCreateClick({template: selection[0]})} onCreateCustom={() => setOpenCustom(true)} disabled={!createEnabled()} />
+                    : <Button onClick={() => onCreateClick({template: selection[0]})} color="primary" variant="contained" disableElevation disabled={!createEnabled()}>
+                          Create
+                      </Button>}
+                </Container>
+                {errorMessage &&
+                <ErrorSnackbar open={true} message={errorMessage} onClose={() => setErrorMessage(null)} />}
+                {openCustom &&
+                <SessionCreationDialog client={client} user={user} template={selection[0]} conf={conf} templates={templates} show={openCustom} onCreate={onCreateClick} onHide={() => setOpenCustom(false)} />}
+            </>
+        );
+    } else {
+        return (
+            <CenteredContainer>
+                <ErrorMessage reason="Can't find any public template. The templates configuration might be incorrect." action={onRetry} />
+            </CenteredContainer>
+        );
+    }
+}
+
 function RepositorySelector({client, conf, user, onDeployed, onRetry}: {client: Client, conf: Configuration, user?: LoggedUser, onDeployed: (conf: WorkspaceConfiguration) => Promise<void>, onRetry: () => void}): JSX.Element {
     const [repositories, setRepositories] = useState<Repository[] | undefined>();
     const publicTemplates = Object.entries(repositories || {}).filter(([, v]) => v.tags?.public == "true");
@@ -371,7 +448,7 @@ function ExistingWorkspace({workspace, onStop, onConnect}: {workspace: Workspace
     );
 }
 
-export function WorkspacePanel({ client, conf, user, onDeployed, onConnect, onRetry, onStop }: {client: Client, conf: Configuration, user?: LoggedUser, onStop: () => Promise<void>, onConnect: (workspace: Workspace) => void, onDeployed: (conf: WorkspaceConfiguration) => Promise<void>, onRetry: () => void}): JSX.Element {
+export function WorkspacePanel({ client, conf, user, templates, onDeployed, onConnect, onRetry, onStop }: {client: Client, conf: Configuration, user?: LoggedUser, onStop: () => Promise<void>, onConnect: (workspace: Workspace) => void, onDeployed: (conf: WorkspaceConfiguration) => Promise<void>, onRetry: () => void}): JSX.Element {
     const [workspace, setWorkspace] = useState<Workspace | null | undefined>(undefined);
 
     useInterval(async () => setWorkspace(await client.getCurrentWorkspace()), 5000);
@@ -383,7 +460,7 @@ export function WorkspacePanel({ client, conf, user, onDeployed, onConnect, onRe
                  ? <LoadingPanel />
                  : workspace
                  ?<ExistingWorkspace workspace={workspace} onConnect={onConnect} onStop={onStop} />
-                 : <RepositorySelector client={client} conf={conf} user={user} onRetry={onRetry} onDeployed={onDeployed} />}
+                 : <TemplateSelector client={client} conf={conf} user={user} templates={templates} onRetry={onRetry} onDeployed={onDeployed} />}
             </Paper>
         </Container>
     );

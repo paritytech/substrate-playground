@@ -8,6 +8,7 @@ use std::{
 pub struct Playground {
     pub env: Environment,
     pub configuration: Configuration,
+    pub templates: BTreeMap<String, Template>,
     pub user: Option<LoggedUser>,
 }
 
@@ -203,6 +204,15 @@ pub enum RepositoryVersionState {
     Ready {
         runtime: RepositoryRuntimeConfiguration,
     },
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct Template {
+    pub name: String,
+    pub image: String,
+    pub description: String,
+    pub tags: Option<BTreeMap<String, String>>,
+    pub runtime: Option<RepositoryRuntimeConfiguration>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

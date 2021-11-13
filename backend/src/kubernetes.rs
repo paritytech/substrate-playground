@@ -1,18 +1,8 @@
 //! Helper methods ton interact with k8s
-use crate::{
-    error::{Error, Result},
-    kubernetes_utils::{
+use crate::{error::{self, Error, Result}, kubernetes_utils::{
         add_config_map_value, client, config, delete_config_map_value, env_var, get_config_map,
         ingress_path, list_by_selector,
-    },
-    types::{
-        self, Configuration, Environment, LoggedUser, NameValuePair, Pool, Port, Repository,
-        RepositoryConfiguration, RepositoryDetails, RepositoryRuntimeConfiguration,
-        RepositoryUpdateConfiguration, RepositoryVersion, RepositoryVersionConfiguration,
-        RepositoryVersionState, User, UserConfiguration, UserUpdateConfiguration, Workspace,
-        WorkspaceConfiguration, WorkspaceDefaults, WorkspaceState, WorkspaceUpdateConfiguration,
-    },
-};
+    }, types::{self, Configuration, Environment, LoggedUser, NameValuePair, Pool, Port, Repository, RepositoryConfiguration, RepositoryDetails, RepositoryRuntimeConfiguration, RepositoryUpdateConfiguration, RepositoryVersion, RepositoryVersionConfiguration, RepositoryVersionState, Template, User, UserConfiguration, UserUpdateConfiguration, Workspace, WorkspaceConfiguration, WorkspaceDefaults, WorkspaceState, WorkspaceUpdateConfiguration}};
 use json_patch::{AddOperation, PatchOperation};
 use k8s_openapi::api::{
     batch::v1::{Job, JobSpec},
@@ -34,6 +24,7 @@ use kube::{
 
 use serde::Serialize;
 use serde_json::json;
+use log::error;
 use std::{collections::BTreeMap, convert::TryFrom, env, num::ParseIntError, time::Duration};
 
 const NODE_POOL_LABEL: &str = "cloud.google.com/gke-nodepool";
@@ -48,6 +39,7 @@ const INGRESS_NAME: &str = "ingress";
 const WORKSPACE_DURATION_ANNOTATION: &str = "playground.substrate.io/workspace_duration";
 const USERS_CONFIG_MAP: &str = "playground-users";
 const REPOSITORIES_CONFIG_MAP: &str = "playground-repositories";
+const TEMPLATES_CONFIG_MAP: &str = "playground-templates";
 const THEIA_WEB_PORT: i32 = 3000;
 
 pub fn pod_name(user: &str) -> String {
@@ -348,6 +340,10 @@ fn subdomain(host: &str, workspace_id: &str) -> String {
     format!("{}.{}", workspace_id, host)
 }
 
+async fn get_templates(client: Client, namespace: &str) -> Result<BTreeMap<String, String>> {
+    get_config_map(client, namespace, TEMPLATES_CONFIG_MAP).await
+}
+
 async fn list_users(client: Client, namespace: &str) -> Result<BTreeMap<String, String>> {
     get_config_map(client, namespace, USERS_CONFIG_MAP).await
 }
@@ -538,6 +534,23 @@ impl Engine {
 
     fn yaml_to_user(self, s: &str) -> Result<User> {
         serde_yaml::from_str(s).map_err(|err| Error::Failure(err.into()))
+    }
+
+    pub async fn list_templates(self) -> Result<BTreeMap<String, Template>> {
+        let client = client().await?;
+
+        Ok(get_templates(client, &self.env.namespace)
+            .await?
+            .into_iter()
+            .filter_map(|(k, v)| {
+                if let Ok(template) = serde_yaml::from_str(&v) {
+                    Some((k, template))
+                } else {
+                    error!("Error while parsing template {}", k);
+                    None
+                }
+            })
+            .collect::<BTreeMap<String, Template>>())
     }
 
     pub async fn get_user(&self, id: &str) -> Result<Option<User>> {

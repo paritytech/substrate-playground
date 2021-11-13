@@ -23,7 +23,7 @@ import { SubstrateLight, SubstrateDark } from './themes';
 import LogoSubstrate from "./LogoSubstrate";
 import { CssBaseline } from "@material-ui/core";
 
-function MainPanel({ client, params, conf, user, id, onRetry, onConnect, onAfterDeployed }: { client: Client, params: Params, conf: Configuration, user?: LoggedUser, id: PanelId, onRetry: () => void, onConnect: () => void, onAfterDeployed: () => void }): JSX.Element {
+function MainPanel({ client, params, conf, user, id, templates, onRetry, onConnect, onAfterDeployed }: { client: Client, params: Params, conf: Configuration, user?: LoggedUser, id: PanelId, onRetry: () => void, onConnect: () => void, onAfterDeployed: () => void }): JSX.Element {
     switch(id) {
         case PanelId.Workspace:
           return <WorkspacePanel client={client} conf={conf} user={user} onRetry={onRetry}
@@ -121,7 +121,7 @@ function App({ params }: { params: Params }): JSX.Element {
     const client = new Client(params.base, 30000, {credentials: "include"});
     const { deploy } = params;
     const [state, send] = useMachine(newMachine(client, deploy? PanelId.Theia: PanelId.Workspace), { devTools: true });
-    const { panel, error } = state.context;
+    const { panel, templates, error } = state.context;
 
     /*const theme = createTheme({
         palette: {
@@ -153,7 +153,7 @@ function App({ params }: { params: Params }): JSX.Element {
                          nav={<CustomNav client={client} send={send} state={state} />}
                          params={params}>
                    {state.matches(States.LOGGED)
-                   ? <MainPanel client={client} params={params} conf={state.context.conf} user={state.context.user} id={panel}
+                   ? <MainPanel client={client} params={params} templates={templates} conf={state.context.conf} user={state.context.user} id={panel}
                                 onRetry={() => restart(send)}
                                 onAfterDeployed={() => selectPanel(send, PanelId.Theia)}
                                 onConnect={() => selectPanel(send, PanelId.Theia)} />

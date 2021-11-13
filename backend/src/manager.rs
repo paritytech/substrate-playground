@@ -158,7 +158,9 @@ fn workspace_id(id: &str) -> String {
 
 impl Manager {
     pub fn get(self, user: LoggedUser) -> Result<Playground> {
+        let templates = new_runtime()?.block_on(self.clone().engine.list_templates())?;
         Ok(Playground {
+            templates,
             user: Some(user),
             env: self.engine.env,
             configuration: self.engine.configuration,
@@ -166,7 +168,9 @@ impl Manager {
     }
 
     pub fn get_unlogged(&self) -> Result<Playground> {
+        let templates = new_runtime()?.block_on(self.clone().engine.list_templates())?;
         Ok(Playground {
+            templates,
             user: None,
             env: self.clone().engine.env,
             configuration: self.clone().engine.configuration,

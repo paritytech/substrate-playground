@@ -1,11 +1,12 @@
 import { assign, createMachine, StateMachine, StateSchema } from 'xstate';
-import { Client, Configuration, LoggedUser } from '@substrate/playground-client';
+import { Client, Configuration, LoggedUser, Template } from '@substrate/playground-client';
 import { approve, approved } from './terms';
 
 export enum PanelId {Workspace, Admin, Stats, Theia}
 
 export interface Context {
   panel: PanelId,
+  templates: Record<string, Template>,
   error?: string,
 }
 
@@ -76,6 +77,7 @@ export function newMachine(client: Client, id: PanelId): StateMachine<Context, S
     initial: approved()? States.SETUP: States.TERMS_UNAPPROVED,
     context: {
         panel: id,
+        templates: {},
     },
     states: {
         [States.TERMS_UNAPPROVED]: {
@@ -89,11 +91,11 @@ export function newMachine(client: Client, id: PanelId): StateMachine<Context, S
             invoke: {
                 src: () => async (callback) => {
                     try {
-                        const { configuration, user } = (await client.get());
+                        const { configuration, templates, user } = (await client.get());
                         if (user) {
-                            callback({type: Events.LOGIN, user: user, conf: configuration});
+                            callback({type: Events.LOGIN, user: user, templates: templates, conf: configuration});
                         } else {
-                            callback({type: Events.UNLOGIN, conf: configuration});
+                            callback({type: Events.UNLOGIN, templates: templates, conf: configuration});
                         }
                     } catch (e) {
                         const error = e.message || JSON.stringify(e);
@@ -106,12 +108,14 @@ export function newMachine(client: Client, id: PanelId): StateMachine<Context, S
                                     return {
                                       user: event.user,
                                       conf: event.conf,
+                                      templates: event.templates,
                                       error: undefined,
                                     }
                                   })},
                  [Events.UNLOGIN]: {target: States.UNLOGGED,
                                     actions: assign((_, event) => {
                                       return {
+                                        templates: event.templates,
                                         conf: event.conf,
                                         error: event.error,
                                       }
