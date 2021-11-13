@@ -31,7 +31,9 @@ USER playground
 
 ## Install default extensions
 
-RUN /home/openvscode-server/server.sh --install-extension matklad.rust-analyzer --install-extension vsls-contrib.codetour
+RUN /home/openvscode-server/server.sh --install-extension matklad.rust-analyzer \
+    --install-extension vsls-contrib.codetour \
+    --install-extension redhat.vscode-yaml
 
 WORKDIR /home/playground/workspace/
 
