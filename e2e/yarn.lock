@@ -2,10 +2,10 @@
 # yarn lockfile v1
 
 
-"@ava/typescript@3.0.0":
-  version "3.0.0"
-  resolved "https://registry.yarnpkg.com/@ava/typescript/-/typescript-3.0.0.tgz#271b240cce65d8025439357cbb4b03a57bbff1b4"
-  integrity sha512-28RMFbB/sNBq9/g5SvPg4kCeVqSLqoV+CKm0I6WdhdqZNV4GuIyjVHCgXjAIyLEDL1MdUB3qPmvWI/UMdjPi5Q==
+"@ava/typescript@3.0.1":
+  version "3.0.1"
+  resolved "https://registry.yarnpkg.com/@ava/typescript/-/typescript-3.0.1.tgz#b89efbe000b800fa477c9613795b3ca6a53f7112"
+  integrity sha512-/JXIUuKsvkaneaiA9ckk3ksFTqvu0mDNlChASrTe2BnDsvMbhQdPWyqQjJ9WRJWVhhs5TWn1/0Pp1G6Rv8Syrw==
   dependencies:
     escape-string-regexp "^5.0.0"
     execa "^5.1.1"
