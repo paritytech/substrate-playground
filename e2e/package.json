@@ -16,7 +16,7 @@
     "yargs": "17.2.1"
   },
   "devDependencies": {
-    "@ava/typescript": "3.0.0",
+    "@ava/typescript": "3.0.1",
     "@types/node": "16.11.7",
     "@types/yargs": "17.0.5",
     "ava": "3.15.0",
