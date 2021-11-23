@@ -16,7 +16,7 @@
     "@material-ui/icons": "4.11.2",
     "@material-ui/lab": "4.0.0-alpha.60",
     "@substrate/playground-client": "1.7.0",
-    "@xstate/react": "1.6.2",
+    "@xstate/react": "1.6.3",
     "analytics": "0.7.18",
     "analytics-plugin-simple-analytics": "0.1.3",
     "broadcast-channel": "4.5.0",
