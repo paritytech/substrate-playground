@@ -1888,6 +1888,23 @@
     semver "^5.4.1"
     write-json-file "^2.2.0"
 
+"@theia/application-package@1.20.0":
+  version "1.20.0"
+  resolved "https://registry.yarnpkg.com/@theia/application-package/-/application-package-1.20.0.tgz#04d49e2ce361197715215ab070a376becc615387"
+  integrity sha512-ZimvUUxkQfcVp5DNoR8nt1BRSCRcd7XQw5iA7hNjZNl6mfCznrhQ4lDW54TEfrh92Fa8gd9PWZSpgJzvdlRbLw==
+  dependencies:
+    "@types/fs-extra" "^4.0.2"
+    "@types/request" "^2.0.3"
+    "@types/semver" "^5.4.0"
+    "@types/write-json-file" "^2.2.1"
+    changes-stream "^2.2.0"
+    deepmerge "^4.2.2"
+    fs-extra "^4.0.2"
+    is-electron "^2.1.0"
+    request "^2.82.0"
+    semver "^5.4.1"
+    write-json-file "^2.2.0"
+
 "@theia/bulk-edit@1.19.0":
   version "1.19.0"
   resolved "https://registry.yarnpkg.com/@theia/bulk-edit/-/bulk-edit-1.19.0.tgz#f822e8db865d745eca027ada0e98739250bf88de"
@@ -1991,6 +2008,75 @@
     "@types/ws" "^5.1.2"
     "@types/yargs" "^15"
     "@vscode/codicons" "^0.0.21"
+    ajv "^6.5.3"
+    body-parser "^1.17.2"
+    cookie "^0.4.0"
+    dompurify "^2.2.9"
+    drivelist "^9.0.2"
+    es6-promise "^4.2.4"
+    express "^4.16.3"
+    file-icons-js "~1.0.3"
+    font-awesome "^4.7.0"
+    fs-extra "^4.0.2"
+    fuzzy "^0.1.3"
+    iconv-lite "^0.6.0"
+    inversify "^5.1.1"
+    jschardet "^2.1.1"
+    keytar "7.2.0"
+    lodash.debounce "^4.0.8"
+    lodash.throttle "^4.1.1"
+    nsfw "^2.1.2"
+    p-debounce "^2.1.0"
+    perfect-scrollbar "^1.3.0"
+    react "^16.8.0"
+    react-dom "^16.8.0"
+    react-tooltip "^4.2.21"
+    react-virtualized "^9.20.0"
+    reconnecting-websocket "^4.2.0"
+    reflect-metadata "^0.1.10"
+    route-parser "^0.0.5"
+    safer-buffer "^2.1.2"
+    uuid "^8.3.2"
+    vscode-languageserver-protocol "~3.15.3"
+    vscode-languageserver-types "^3.15.1"
+    vscode-uri "^2.1.1"
+    vscode-ws-jsonrpc "^0.2.0"
+    ws "^7.1.2"
+    yargs "^15.3.1"
+
+"@theia/core@1.20.0":
+  version "1.20.0"
+  resolved "https://registry.yarnpkg.com/@theia/core/-/core-1.20.0.tgz#daf005811ea0a3e00b1430d49117088230da61a0"
+  integrity sha512-0A11Lw29ijDRxph3Pcht87wkcbbIUa8pIZvmyLfu9oQLT5Zwbj02qWT7NJTLQyZxNsSHS7kml9IeOI+wmP9oMw==
+  dependencies:
+    "@babel/runtime" "^7.10.0"
+    "@phosphor/algorithm" "1"
+    "@phosphor/commands" "1"
+    "@phosphor/coreutils" "1"
+    "@phosphor/domutils" "1"
+    "@phosphor/dragdrop" "1"
+    "@phosphor/messaging" "1"
+    "@phosphor/properties" "1"
+    "@phosphor/signaling" "1"
+    "@phosphor/virtualdom" "1"
+    "@phosphor/widgets" "1"
+    "@primer/octicons-react" "^9.0.0"
+    "@theia/application-package" "1.20.0"
+    "@types/body-parser" "^1.16.4"
+    "@types/cookie" "^0.3.3"
+    "@types/dompurify" "^2.2.2"
+    "@types/express" "^4.16.0"
+    "@types/fs-extra" "^4.0.2"
+    "@types/lodash.debounce" "4.0.3"
+    "@types/lodash.throttle" "^4.1.3"
+    "@types/react" "^16.8.0"
+    "@types/react-dom" "^16.8.0"
+    "@types/react-virtualized" "^9.18.3"
+    "@types/route-parser" "^0.1.1"
+    "@types/safer-buffer" "^2.1.0"
+    "@types/ws" "^5.1.2"
+    "@types/yargs" "^15"
+    "@vscode/codicons" "*"
     ajv "^6.5.3"
     body-parser "^1.17.2"
     cookie "^0.4.0"
@@ -2589,23 +2675,13 @@
     "@types/qs" "*"
     "@types/range-parser" "*"
 
-"@types/express@*":
+"@types/express@*", "@types/express@^4.16.0":
   version "4.17.13"
   resolved "https://registry.yarnpkg.com/@types/express/-/express-4.17.13.tgz#a76e2995728999bab51a33fabce1d705a3709034"
   integrity sha512-6bSZTPaTIACxn48l50SR+axgrqm6qXFIxrdAKaG6PaJk3+zuUr35hBlgT7vOmJcum+OEaIBLtHV/qloEAFITeA==
   dependencies:
     "@types/body-parser" "*"
     "@types/express-serve-static-core" "^4.17.18"
-    "@types/qs" "*"
-    "@types/serve-static" "*"
-
-"@types/express@^4.16.0":
-  version "4.17.7"
-  resolved "https://registry.yarnpkg.com/@types/express/-/express-4.17.7.tgz#42045be6475636d9801369cd4418ef65cdb0dd59"
-  integrity sha512-dCOT5lcmV/uC2J9k0rPafATeeyz+99xTt54ReX11/LObZgfzJqZNcW27zGhYyX+9iSEGXGt5qLPwRSvBZcLvtQ==
-  dependencies:
-    "@types/body-parser" "*"
-    "@types/express-serve-static-core" "*"
     "@types/qs" "*"
     "@types/serve-static" "*"
 
@@ -2923,6 +2999,11 @@
   dependencies:
     "@types/yargs-parser" "*"
 
+"@vscode/codicons@*":
+  version "0.0.26"
+  resolved "https://registry.yarnpkg.com/@vscode/codicons/-/codicons-0.0.26.tgz#affdbc4499d3bd0db1156e4c9d323f885d299e03"
+  integrity sha512-GrYFJPbZ+hRM3NUVdAIpDepWkYCizVb13a6pJDAhckElDvaf4UCmNpuBS4MSydXNK63Ccts0XpvJ6JOW+/aU1g==
+
 "@vscode/codicons@^0.0.21":
   version "0.0.21"
   resolved "https://registry.yarnpkg.com/@vscode/codicons/-/codicons-0.0.21.tgz#20ef724b141fdddba3ad86e85f34aaad29e4d3a0"
@@ -3156,17 +3237,7 @@ ajv-keywords@^3.1.0, ajv-keywords@^3.4.1, ajv-keywords@^3.5.2:
   resolved "https://registry.yarnpkg.com/ajv-keywords/-/ajv-keywords-3.5.2.tgz#31f29da5ab6e00d1c2d329acf7b5929614d5014d"
   integrity sha512-5p6WTN0DdTGVQk6VjcEju19IgaHudalcfabD7yhDGeA6bcQnmL+CpveLJq/3hvfwd1aof6L386Ougkx6RfyMIQ==
 
-ajv@^6.1.0, ajv@^6.12.2, ajv@^6.12.3, ajv@^6.5.3:
-  version "6.12.4"
-  resolved "https://registry.yarnpkg.com/ajv/-/ajv-6.12.4.tgz#0614facc4522127fa713445c6bfd3ebd376e2234"
-  integrity sha512-eienB2c9qVQs2KWexhkrdMLVDoIQCz5KSeLxwg9Lzk4DOfBtIK9PQwwufcsn1jjGuf9WZmqPMbGxOzfcuphJCQ==
-  dependencies:
-    fast-deep-equal "^3.1.1"
-    fast-json-stable-stringify "^2.0.0"
-    json-schema-traverse "^0.4.1"
-    uri-js "^4.2.2"
-
-ajv@^6.12.5:
+ajv@^6.1.0, ajv@^6.12.2, ajv@^6.12.3, ajv@^6.12.5, ajv@^6.5.3:
   version "6.12.6"
   resolved "https://registry.yarnpkg.com/ajv/-/ajv-6.12.6.tgz#baf5a62e802b07d977034586f8c3baf5adf26df4"
   integrity sha512-j3fVLgvTo527anyYyJOGTYJbG+vnnQYvE0m5mmkc1TK+nxAppkCLMIL0aZ4dblVCNoGShhm+kzE4ZUykBoMg4g==
