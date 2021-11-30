@@ -42,7 +42,7 @@
     "yargs": "17.2.1"
   },
   "devDependencies": {
-    "@types/node": "16.11.10",
+    "@types/node": "16.11.11",
     "@types/react": "17.0.37",
     "@types/yargs": "17.0.7",
     "typescript": "4.5.2"
