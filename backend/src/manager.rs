@@ -1,5 +1,5 @@
 use crate::{
-    error::{Error, Result},
+    error::{Error, Permission, Result, Parameter},
     kubernetes::Engine,
     metrics::Metrics,
     types::{
@@ -181,7 +181,7 @@ impl Manager {
 
     pub fn get_user(&self, user: &LoggedUser, id: &str) -> Result<Option<User>> {
         if user.id != id && !user.has_admin_read_rights() {
-            return Err(Error::Unauthorized());
+            return Err(Error::Unauthorized(Permission::AdminRead));
         }
 
         new_runtime()?.block_on(self.engine.get_user(&id))
@@ -189,7 +189,7 @@ impl Manager {
 
     pub fn list_users(&self, user: &LoggedUser) -> Result<Vec<User>> {
         if !user.has_admin_read_rights() {
-            return Err(Error::Unauthorized());
+            return Err(Error::Unauthorized(Permission::AdminRead));
         }
 
         new_runtime()?.block_on(self.engine.list_users())
@@ -197,7 +197,7 @@ impl Manager {
 
     pub fn create_user(self, user: &LoggedUser, id: String, conf: UserConfiguration) -> Result<()> {
         if !user.has_admin_edit_rights() {
-            return Err(Error::Unauthorized());
+            return Err(Error::Unauthorized(Permission::AdminEdit));
         }
 
         new_runtime()?.block_on(self.engine.create_user(&id, conf))
@@ -210,7 +210,7 @@ impl Manager {
         conf: UserUpdateConfiguration,
     ) -> Result<()> {
         if user.id != id && !user.has_admin_edit_rights() {
-            return Err(Error::Unauthorized());
+            return Err(Error::Unauthorized(Permission::AdminEdit));
         }
 
         new_runtime()?.block_on(self.engine.update_user(&id, conf))
@@ -218,7 +218,7 @@ impl Manager {
 
     pub fn delete_user(self, user: &LoggedUser, id: String) -> Result<()> {
         if user.id != id && !user.has_admin_edit_rights() {
-            return Err(Error::Unauthorized());
+            return Err(Error::Unauthorized(Permission::AdminEdit));
         }
 
         new_runtime()?.block_on(self.engine.delete_user(id))
@@ -228,7 +228,7 @@ impl Manager {
 
     pub fn get_workspace(&self, user: &LoggedUser, id: &str) -> Result<Option<Workspace>> {
         if workspace_id(&user.id) != id && !user.has_admin_read_rights() {
-            return Err(Error::Unauthorized());
+            return Err(Error::Unauthorized(Permission::AdminRead));
         }
 
         new_runtime()?.block_on(self.engine.get_workspace(&workspace_id(id)))
@@ -236,7 +236,7 @@ impl Manager {
 
     pub fn list_workspaces(&self, user: &LoggedUser) -> Result<Vec<Workspace>> {
         if !user.has_admin_read_rights() {
-            return Err(Error::Unauthorized());
+            return Err(Error::Unauthorized(Permission::AdminRead));
         }
 
         new_runtime()?.block_on(self.engine.list_workspaces())
@@ -250,26 +250,26 @@ impl Manager {
     ) -> Result<()> {
         // Id can only be customized by users with proper rights
         if workspace_id(&user.id) != id && !user.has_admin_edit_rights() {
-            return Err(Error::Unauthorized());
+            return Err(Error::Unauthorized(Permission::AdminEdit));
         }
 
         if conf.duration.is_some() {
             // Duration can only customized by users with proper rights
             if !user.can_customize_duration() {
-                return Err(Error::Unauthorized());
+                return Err(Error::Unauthorized(Permission::Customize{ what: Parameter::WorkflowDuration }));
             }
         }
         if conf.pool_affinity.is_some() {
             // Duration can only customized by users with proper rights
             if !user.can_customize_pool_affinity() {
-                return Err(Error::Unauthorized());
+                return Err(Error::Unauthorized(Permission::Customize{ what: Parameter::WorkflowPoolAffinity }));
             }
         }
 
         let workspace_id = workspace_id(id);
         // Ensure a workspace with the same id is not alread running
         if new_runtime()?.block_on(self.engine.get_workspace(&workspace_id))?.is_some() {
-            return Err(Error::Unauthorized());
+            return Err(Error::WorkspaceIdAlreayUsed);
         }
 
         let result =
@@ -302,7 +302,7 @@ impl Manager {
         if conf.duration.is_some() {
             // Duration can only customized by users with proper rights
             if workspace_id(&user.id) != id && !user.can_customize_duration() {
-                return Err(Error::Unauthorized());
+                return Err(Error::Unauthorized(Permission::Customize{ what: Parameter::WorkflowDuration }));
             }
         }
 
@@ -311,7 +311,7 @@ impl Manager {
 
     pub fn delete_workspace(&self, user: &LoggedUser, id: &str) -> Result<()> {
         if workspace_id(&user.id) != id && !user.has_admin_edit_rights() {
-            return Err(Error::Unauthorized());
+            return Err(Error::Unauthorized(Permission::AdminEdit));
         }
 
         let workspace_id = workspace_id(id);
@@ -350,7 +350,7 @@ impl Manager {
         conf: RepositoryConfiguration,
     ) -> Result<()> {
         if !user.has_admin_edit_rights() {
-            return Err(Error::Unauthorized());
+            return Err(Error::Unauthorized(Permission::AdminEdit));
         }
 
         new_runtime()?.block_on(self.engine.create_repository(&id, conf))
@@ -363,7 +363,7 @@ impl Manager {
         conf: RepositoryUpdateConfiguration,
     ) -> Result<()> {
         if !user.has_admin_edit_rights() {
-            return Err(Error::Unauthorized());
+            return Err(Error::Unauthorized(Permission::AdminEdit));
         }
 
         new_runtime()?.block_on(self.engine.update_repository(&id, conf))
@@ -371,7 +371,7 @@ impl Manager {
 
     pub fn delete_repository(&self, user: &LoggedUser, id: &str) -> Result<()> {
         if !user.has_admin_edit_rights() {
-            return Err(Error::Unauthorized());
+            return Err(Error::Unauthorized(Permission::AdminEdit));
         }
 
         new_runtime()?.block_on(self.engine.delete_repository(&id))
@@ -404,7 +404,7 @@ impl Manager {
         conf: RepositoryVersionConfiguration,
     ) -> Result<()> {
         if !user.has_admin_edit_rights() {
-            return Err(Error::Unauthorized());
+            return Err(Error::Unauthorized(Permission::AdminEdit));
         }
 
         new_runtime()?.block_on(
@@ -420,7 +420,7 @@ impl Manager {
         id: &str,
     ) -> Result<()> {
         if !user.has_admin_edit_rights() {
-            return Err(Error::Unauthorized());
+            return Err(Error::Unauthorized(Permission::AdminEdit));
         }
 
         new_runtime()?.block_on(self.engine.delete_repository_version(&repository_id, &id))
@@ -430,7 +430,7 @@ impl Manager {
 
     pub fn get_pool(&self, user: &LoggedUser, pool_id: &str) -> Result<Option<Pool>> {
         if !user.has_admin_read_rights() {
-            return Err(Error::Unauthorized());
+            return Err(Error::Unauthorized(Permission::AdminRead));
         }
 
         new_runtime()?.block_on(self.engine.get_pool(&pool_id))
@@ -438,7 +438,7 @@ impl Manager {
 
     pub fn list_pools(&self, user: &LoggedUser) -> Result<Vec<Pool>> {
         if !user.has_admin_read_rights() {
-            return Err(Error::Unauthorized());
+            return Err(Error::Unauthorized(Permission::AdminRead));
         }
 
         new_runtime()?.block_on(self.clone().engine.list_pools())

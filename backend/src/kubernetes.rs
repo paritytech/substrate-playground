@@ -368,7 +368,7 @@ pub struct Engine {
 }
 
 fn var(name: &'static str) -> Result<String> {
-    env::var(name).map_err(|_| Error::MissingData(name))
+    env::var(name).map_err(|_| Error::MissingEnvironmentVariable(name))
 }
 
 impl Engine {
@@ -603,7 +603,7 @@ impl Engine {
 
         let mut user = Self::get_user(self, id)
             .await?
-            .ok_or(Error::MissingData("no matching user"))?;
+            .ok_or(Error::UnknownResource)?;
         user.admin = conf.admin;
         user.can_customize_duration = conf.can_customize_duration;
         user.can_customize_pool_affinity = conf.can_customize_pool_affinity;
@@ -660,7 +660,7 @@ impl Engine {
         let max_duration = str_minutes_to_duration(
             annotations
                 .get(WORKSPACE_DURATION_ANNOTATION)
-                .ok_or(Error::MissingData("pod#workspace_duration"))?,
+                .ok_or(Error::MissingAnnotation(WORKSPACE_DURATION_ANNOTATION))?,
         )?;
 
         Ok(Workspace {
@@ -777,7 +777,7 @@ impl Engine {
                 &conf.repository_details.reference,
             )
             .await?
-            .ok_or(Error::MissingData("repository#versions"))?;
+            .ok_or(Error::UnknownRepositoryVersion)?;
         // Make sure some node on the right pools still have rooms
         // Find pool affinity, lookup corresponding pool and capacity based on nodes, figure out if there is room left
         // TODO: replace with custom scheduler
@@ -789,16 +789,17 @@ impl Engine {
                 .unwrap_or(self.clone().configuration.workspace.pool_affinity)
         });
         let pool = self
-            .get_pool(&pool_id)
+            .get_pool(&pool_id.clone())
             .await?
-            .ok_or(Error::MissingData("no matching pool"))?;
+            .ok_or(Error::UnknownPool(pool_id.clone()))?;
         let max_workspaces_allowed =
             pool.nodes.len() * self.configuration.workspace.max_workspaces_per_pod;
         let workspaces = self.list_workspaces().await?;
-        if running_or_pending_workspaces(workspaces).len() >= max_workspaces_allowed {
+        let concurrent_workspaces = running_or_pending_workspaces(workspaces).len();
+        if concurrent_workspaces >= max_workspaces_allowed {
             // TODO Should trigger pool dynamic scalability. Right now this will only consider the pool lower bound.
             // "Reached maximum number of concurrent workspaces allowed: {}"
-            return Err(Error::Unauthorized());
+            return Err(Error::ConcurrentWorkspacesLimitBreached(concurrent_workspaces));
         }
         let client = client().await?;
 
@@ -811,7 +812,7 @@ impl Engine {
 
         let runtime = match &repository_version.state {
             types::RepositoryVersionState::Ready { runtime } => runtime,
-            _ => return Err(Error::Unauthorized()),
+            _ => return Err(Error::RepositoryVersionNotReady),
         };
 
         let volume_api: Api<PersistentVolumeClaim> = Api::namespaced(client.clone(), namespace);
@@ -869,14 +870,14 @@ impl Engine {
             .clone()
             .get_workspace(&workspace_id)
             .await?
-            .ok_or(Error::MissingData("no matching workspace"))?;
+            .ok_or(Error::UnknownResource)?;
 
         let duration = conf
             .duration
             .unwrap_or(self.configuration.workspace.duration);
         let max_duration = self.configuration.workspace.max_duration;
         if duration >= max_duration {
-            return Err(Error::Unauthorized());
+            return Err(Error::DurationLimitBreached(max_duration.as_millis()));
         }
         if duration != workspace.max_duration {
             let client = client().await?;
@@ -1009,7 +1010,7 @@ impl Engine {
 
         let mut repository = Self::get_repository(self, id)
             .await?
-            .ok_or(Error::MissingData("no matching repository"))?;
+            .ok_or(Error::UnknownResource)?;
         repository.tags = conf.tags;
 
         add_config_map_value(
