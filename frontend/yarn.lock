@@ -1710,10 +1710,10 @@ braces@^3.0.1:
   dependencies:
     fill-range "^7.0.1"
 
-broadcast-channel@4.5.0:
-  version "4.5.0"
-  resolved "https://registry.yarnpkg.com/broadcast-channel/-/broadcast-channel-4.5.0.tgz#d4717c493e219908fcb7f2f9078fe0baf95b77c1"
-  integrity sha512-jp+VPlQ1HyR0CM3uIYUrdpXupBvhTMFRkjR6mEmt5W4HaGDPFEzrO2Jqvi2PZ6zCC4zwLeco7CC5EUJPrVH8Tw==
+broadcast-channel@4.6.0:
+  version "4.6.0"
+  resolved "https://registry.yarnpkg.com/broadcast-channel/-/broadcast-channel-4.6.0.tgz#b305320b9ab5bac9ce81c9a5e52cf689f0fae354"
+  integrity sha512-qQ6pygQz1DhsQ8mEdaHs1qLi048anxs7P1tRdbmmke6DB6vdJPhOM+Ay38sBk+MZKhJM+mhga8aGmRxLSHQpVQ==
   dependencies:
     "@babel/runtime" "^7.16.0"
     detect-node "^2.1.0"
