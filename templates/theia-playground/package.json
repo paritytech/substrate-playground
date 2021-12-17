@@ -13,7 +13,7 @@
         "@theia/callhierarchy": "1.20.0",
         "@theia/console": "1.20.0",
         "@theia/core": "1.20.0",
-        "@theia/debug": "1.20.0",
+        "@theia/debug": "1.21.0",
         "@theia/editor": "1.20.0",
         "@theia/editor-preview": "1.20.0",
         "@theia/file-search": "1.20.0",
@@ -44,7 +44,7 @@
     },
     "devDependencies": {
         "@theia/cli": "1.20.0",
-        "@theia/debug": "1.20.0"
+        "@theia/debug": "1.21.0"
     },
     "theiaPluginsDir": "plugins",
     "theiaPlugins": {
