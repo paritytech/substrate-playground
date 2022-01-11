@@ -10,6 +10,7 @@ pub mod metrics;
 pub mod prometheus;
 pub mod repository;
 pub mod types;
+pub mod utils;
 
 use crate::manager::Manager;
 

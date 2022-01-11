@@ -1,5 +1,2 @@
-.cache/
 .vscode/
-node_modules/
-dist/
 Dockerfile
