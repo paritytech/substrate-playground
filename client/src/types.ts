@@ -158,3 +158,60 @@ export interface Pool extends IdentifiedResource {
 export interface Node {
     hostname: string,
 }
+
+
+/////
+
+
+export interface Session {
+    userId: string,
+    url: string,
+    template: Template,
+    pod: Pod,
+    /* The number of minutes this session can last */
+    duration: number,
+    maxDuration: number,
+    node: string,
+}
+
+export interface SessionConfiguration {
+    template: string,
+    /* The number of minutes this session will be able to last */
+    duration?: number,
+    poolAffinity?: string,
+}
+
+export interface SessionUpdateConfiguration {
+    /* The number of minutes this session will be able to last */
+    duration?: number,
+}
+
+export interface ContainerStatus {
+    phase: ContainerPhase,
+    reason?: string,
+    message?: string,
+}
+
+export type Phase = 'Pending' | 'Running' | 'Succeeded' | 'Failed' | 'Unknown';
+export interface Pod {
+    phase: Phase,
+    reason: string,
+    message: string,
+    /* The number of seconds since this session started */
+    startTime?: number,
+    conditions?: PodCondition[],
+    container?: ContainerStatus,
+}
+
+export interface PodCondition {
+    type_: ConditionType,
+    status: Status,
+    reason?: string,
+    message?: string,
+}
+
+export type ConditionType = 'PodScheduled' | 'ContainersReady' | 'Initialized' | 'Ready' | 'Unknown';
+
+export type Status = 'True' | 'False' | 'Unknown';
+
+export type ContainerPhase = 'Running' | 'Terminated' | 'Waiting' | 'Unknown';
