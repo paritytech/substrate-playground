@@ -23,11 +23,12 @@ import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
 import Typography from '@material-ui/core/Typography';
 import { makeStyles, createStyles, Theme } from '@material-ui/core/styles';
-import { Client, Configuration, NameValuePair, LoggedUser, Port, Workspace, WorkspaceConfiguration, Repository, WorkspaceState, RepositoryRuntimeConfiguration, RepositoryConfiguration } from '@substrate/playground-client';
+import { Client, Configuration, NameValuePair, LoggedUser, Port, Workspace, WorkspaceConfiguration, Repository, WorkspaceState, RepositoryRuntimeConfiguration, RepositoryConfiguration, Template } from '@substrate/playground-client';
 import { WorkspaceCreationDialog, canCustomize } from "./admin/workspaces";
 import { CenteredContainer, ErrorMessage, ErrorSnackbar, LoadingPanel } from "../components";
 import { useInterval } from "../hooks";
 import { formatDuration } from "../utils";
+import { marked } from "marked";
 
 const useStyles = makeStyles((theme: Theme) =>
     createStyles({
@@ -49,7 +50,7 @@ export default function SplitButton({ repository, disabled, onCreate, onCreateCu
   const handleClick = () => {
       const selection = options[selectedIndex];
       if (selection.id == 'create') {
-        const conf = {repositoryDetails: {id: repository.id, reference: ""}};
+        const conf = {repositoryDetails: {id: repository.id, reference: ""}}; // TODO
         onCreate(conf);
       } else {
         onCreateCustom();
@@ -140,7 +141,7 @@ function TemplateSelector({client, conf, user, templates, onDeployed, onRetry}: 
             setDeploying(true);
             await onDeployed(conf);
         } catch (e) {
-            setErrorMessage(`Failed to create a new session: ${e}`);
+            setErrorMessage(`Failed to create a new session: ${e.message}`);
         } finally {
             setDeploying(false);
         }
@@ -183,8 +184,8 @@ function TemplateSelector({client, conf, user, templates, onDeployed, onRetry}: 
                 <Divider orientation="horizontal" />
                 <Container style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", paddingTop: 10, paddingBottom: 10 }}>
                     {canCustomize(user)
-                    ? <SplitButton template={selection[0]} onCreate={() => onCreateClick({template: selection[0]})} onCreateCustom={() => setOpenCustom(true)} disabled={!createEnabled()} />
-                    : <Button onClick={() => onCreateClick({template: selection[0]})} color="primary" variant="contained" disableElevation disabled={!createEnabled()}>
+                    ? <SplitButton repository={selection[1]} template={selection[0]} onCreate={() => onCreateClick({repositoryDetails: {id: selection[0], reference: ""}})} onCreateCustom={() => setOpenCustom(true)} disabled={!createEnabled()} />
+                    : <Button onClick={() => onCreateClick({repositoryDetails: {id: selection[0], reference: ""}})} color="primary" variant="contained" disableElevation disabled={!createEnabled()}>
                           Create
                       </Button>}
                 </Container>
@@ -448,7 +449,7 @@ function ExistingWorkspace({workspace, onStop, onConnect}: {workspace: Workspace
     );
 }
 
-export function WorkspacePanel({ client, conf, user, templates, onDeployed, onConnect, onRetry, onStop }: {client: Client, conf: Configuration, user?: LoggedUser, onStop: () => Promise<void>, onConnect: (workspace: Workspace) => void, onDeployed: (conf: WorkspaceConfiguration) => Promise<void>, onRetry: () => void}): JSX.Element {
+export function WorkspacePanel({ client, conf, user, templates, onDeployed, onConnect, onRetry, onStop }: {client: Client, conf: Configuration, user?: LoggedUser, templates: Record<string, Template>, onStop: () => Promise<void>, onConnect: (workspace: Workspace) => void, onDeployed: (conf: WorkspaceConfiguration) => Promise<void>, onRetry: () => void}): JSX.Element {
     const [workspace, setWorkspace] = useState<Workspace | null | undefined>(undefined);
 
     useInterval(async () => setWorkspace(await client.getCurrentWorkspace()), 5000);

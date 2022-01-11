@@ -23,10 +23,10 @@ import { SubstrateLight, SubstrateDark } from './themes';
 import LogoSubstrate from "./LogoSubstrate";
 import { CssBaseline } from "@material-ui/core";
 
-function MainPanel({ client, params, conf, user, id, templates, onRetry, onConnect, onAfterDeployed }: { client: Client, params: Params, conf: Configuration, user?: LoggedUser, id: PanelId, onRetry: () => void, onConnect: () => void, onAfterDeployed: () => void }): JSX.Element {
+function MainPanel({ client, params, conf, user, id, templates, onRetry, onConnect, onAfterDeployed }: { client: Client, params: Params, conf: Configuration, user?: LoggedUser, templates: Record<string, Template>, id: PanelId, onRetry: () => void, onConnect: () => void, onAfterDeployed: () => void }): JSX.Element {
     switch(id) {
         case PanelId.Workspace:
-          return <WorkspacePanel client={client} conf={conf} user={user} onRetry={onRetry}
+          return <WorkspacePanel client={client} conf={conf} templates={templates} user={user} onRetry={onRetry}
                     onStop={async () => {
                         await client.deleteCurrentWorkspace();
                     }}

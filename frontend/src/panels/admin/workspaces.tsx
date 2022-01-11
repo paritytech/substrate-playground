@@ -194,10 +194,10 @@ export function Workspaces({ client, conf, user }: { client: Client, conf: Confi
             setSelected(name);
         }
     };
-    const [templates, setTemplates] = useState<Repository[] | undefined>();
+    const [templates, setTemplates] = useState<Template[] | undefined>();
 
     useInterval(async () => {
-        setTemplates(await client.listRepositories());
+        setTemplates(await client.listTemplates());
     }, 5000);
 
     function workspaceMock(conf: WorkspaceConfiguration): Workspace {
@@ -320,7 +320,7 @@ export function Workspaces({ client, conf, user }: { client: Client, conf: Confi
                                                     : "N/A"}
                                                 </TableCell>
                                                 <TableCell>N/A</TableCell>
-                                                <TableCell>{workspace.state}</TableCell>
+                                                <TableCell>{workspace.state.type}</TableCell>
                                             </TableRow>
                                         )})}
                                     </TableBody>
@@ -329,7 +329,7 @@ export function Workspaces({ client, conf, user }: { client: Client, conf: Confi
                                             <TablePagination
                                                 rowsPerPageOptions={[5, 10, 25, { label: 'All', value: -1 }]}
                                                 colSpan={3}
-                                                count={Object.entries(resources).length}
+                                                count={allResources.length}
                                                 rowsPerPage={rowsPerPage}
                                                 page={page}
                                                 SelectProps={{
