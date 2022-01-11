@@ -1,7 +1,10 @@
+///! The prometeus metrics exposed by the various backends.
+
 use prometheus::{
     exponential_buckets, histogram_opts, opts, Error, Histogram, IntCounter, Registry,
 };
 
+/// The struct of metrics internally manipulated. Manipulate them via associated functions.
 #[derive(Debug, Clone)]
 pub struct Metrics {
     deploy_counter: IntCounter,
@@ -46,7 +49,7 @@ impl Metrics {
     }
 }
 
-// Helper functions
+/// Helper functions
 impl Metrics {
     pub fn inc_deploy_counter(&self) {
         self.deploy_counter.inc();

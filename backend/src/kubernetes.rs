@@ -1,8 +1,19 @@
 //! Helper methods ton interact with k8s
-use crate::{error::{self, Error, Result}, kubernetes_utils::{
+use crate::{
+    error::{Error, Result},
+    kubernetes_utils::{
         add_config_map_value, client, config, delete_config_map_value, env_var, get_config_map,
         ingress_path, list_by_selector,
-    }, types::{self, Configuration, Environment, LoggedUser, NameValuePair, Pool, Port, Repository, RepositoryConfiguration, RepositoryDetails, RepositoryRuntimeConfiguration, RepositoryUpdateConfiguration, RepositoryVersion, RepositoryVersionConfiguration, RepositoryVersionState, Template, User, UserConfiguration, UserUpdateConfiguration, Workspace, WorkspaceConfiguration, WorkspaceDefaults, WorkspaceState, WorkspaceUpdateConfiguration}};
+    },
+    types::{
+        self, Configuration, Environment, LoggedUser, NameValuePair, Pool, Port, Repository,
+        RepositoryConfiguration, RepositoryDetails, RepositoryRuntimeConfiguration,
+        RepositoryUpdateConfiguration, RepositoryVersion, RepositoryVersionConfiguration,
+        RepositoryVersionState, Template, User, UserConfiguration, UserUpdateConfiguration,
+        Workspace, WorkspaceConfiguration, WorkspaceDefaults, WorkspaceState,
+        WorkspaceUpdateConfiguration,
+    },
+};
 use json_patch::{AddOperation, PatchOperation};
 use k8s_openapi::api::{
     batch::v1::{Job, JobSpec},
@@ -22,9 +33,9 @@ use kube::{
     Client, Resource,
 };
 
+use log::error;
 use serde::Serialize;
 use serde_json::json;
-use log::error;
 use std::{collections::BTreeMap, convert::TryFrom, env, num::ParseIntError, time::Duration};
 
 const NODE_POOL_LABEL: &str = "cloud.google.com/gke-nodepool";
@@ -33,7 +44,7 @@ const HOSTNAME_LABEL: &str = "kubernetes.io/hostname";
 const APP_LABEL: &str = "app.kubernetes.io/part-of";
 const APP_VALUE: &str = "playground";
 const COMPONENT_LABEL: &str = "app.kubernetes.io/component";
-const COMPONENT_VALUE: &str = "workspaca";
+const COMPONENT_VALUE: &str = "workspace";
 const OWNER_LABEL: &str = "app.kubernetes.io/owner";
 const INGRESS_NAME: &str = "ingress";
 const WORKSPACE_DURATION_ANNOTATION: &str = "playground.substrate.io/workspace_duration";
@@ -203,7 +214,7 @@ async fn get_or_create_volume(
     }
 }
 
-fn create_pod(
+fn create_workspace_pod(
     conf: &Configuration,
     env: &Environment,
     workspace_id: &str,
@@ -799,7 +810,9 @@ impl Engine {
         if concurrent_workspaces >= max_workspaces_allowed {
             // TODO Should trigger pool dynamic scalability. Right now this will only consider the pool lower bound.
             // "Reached maximum number of concurrent workspaces allowed: {}"
-            return Err(Error::ConcurrentWorkspacesLimitBreached(concurrent_workspaces));
+            return Err(Error::ConcurrentWorkspacesLimitBreached(
+                concurrent_workspaces,
+            ));
         }
         let client = client().await?;
 
@@ -837,7 +850,7 @@ impl Engine {
         pod_api
             .create(
                 &PostParams::default(),
-                &create_pod(
+                &create_workspace_pod(
                     &self.configuration,
                     &self.env,
                     user_id,
@@ -1121,16 +1134,11 @@ impl Engine {
                         containers: vec![Container {
                             name: "builder".to_string(),
                             image: Some(
+                                // TODO programmatically fetch from current image
                                 "paritytech/substrate-playground-backend-api:latest".to_string(),
                             ),
                             command: Some(vec!["builder".to_string()]),
-                            env: Some(vec![EnvVar {
-                                // ID, URL, REFERENCE
-                                // Changes persisted on disk
-                                name: "REFERENCE".to_string(),
-                                value: Some(conf.reference),
-                                ..Default::default()
-                            }]),
+                            args: Some(vec![conf.reference]),
                             volume_mounts: Some(vec![VolumeMount {
                                 name: volume_template_name(repository_id),
                                 mount_path: "/".to_string(),
