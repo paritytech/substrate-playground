@@ -107,14 +107,31 @@ fn result_to_jsonrpc<T: Serialize>(res: Result<T>) -> JsonValue {
             Error::Unauthorized(_) => create_jsonrpc_error("Unauthorized", err.to_string()),
             Error::MissingData(_) => create_jsonrpc_error("MissingData", err.to_string()),
             Error::UnknownResource => create_jsonrpc_error("UnknownResource", err.to_string()),
-            Error::WorkspaceIdAlreayUsed => create_jsonrpc_error("WorkspaceIdAlreayUsed", err.to_string()),
-            Error::ConcurrentWorkspacesLimitBreached(_) => create_jsonrpc_error("ConcurrentWorkspacesLimitBreached", err.to_string()),
-            Error::DurationLimitBreached(_) => create_jsonrpc_error("DurationLimitBreached", err.to_string()),
-            Error::RepositoryVersionNotReady => create_jsonrpc_error("RepositoryVersionNotReady", err.to_string()),
-            Error::UnknownRepositoryVersion => create_jsonrpc_error("UnknownRepositoryVersion", err.to_string()),
+            Error::WorkspaceIdAlreayUsed => {
+                create_jsonrpc_error("WorkspaceIdAlreayUsed", err.to_string())
+            }
+            Error::ConcurrentWorkspacesLimitBreached(_) => {
+                create_jsonrpc_error("ConcurrentWorkspacesLimitBreached", err.to_string())
+            }
+            Error::DurationLimitBreached(_) => {
+                create_jsonrpc_error("DurationLimitBreached", err.to_string())
+            }
+            Error::RepositoryVersionNotReady => {
+                create_jsonrpc_error("RepositoryVersionNotReady", err.to_string())
+            }
+            Error::UnknownRepositoryVersion => {
+                create_jsonrpc_error("UnknownRepositoryVersion", err.to_string())
+            }
             Error::UnknownPool(_) => create_jsonrpc_error("UnknownPool", err.to_string()),
-            Error::MissingAnnotation(_) => create_jsonrpc_error("MissingAnnotation", err.to_string()),
-            Error::MissingEnvironmentVariable(_) => create_jsonrpc_error("MissingEnvironmentVariable", err.to_string()),
+            Error::MissingAnnotation(_) => {
+                create_jsonrpc_error("MissingAnnotation", err.to_string())
+            }
+            Error::MissingEnvironmentVariable(_) => {
+                create_jsonrpc_error("MissingEnvironmentVariable", err.to_string())
+            }
+            Error::IncorrectDevContainerValue(_) => {
+                create_jsonrpc_error("IncorrectDevContainerValue", err.to_string())
+            }
         },
     }
 }

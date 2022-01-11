@@ -1,5 +1,5 @@
 use crate::{
-    error::{Error, Permission, Result, Parameter},
+    error::{Error, Parameter, Permission, Result},
     kubernetes::Engine,
     metrics::Metrics,
     types::{
@@ -256,19 +256,26 @@ impl Manager {
         if conf.duration.is_some() {
             // Duration can only customized by users with proper rights
             if !user.can_customize_duration() {
-                return Err(Error::Unauthorized(Permission::Customize{ what: Parameter::WorkflowDuration }));
+                return Err(Error::Unauthorized(Permission::Customize {
+                    what: Parameter::WorkflowDuration,
+                }));
             }
         }
         if conf.pool_affinity.is_some() {
             // Duration can only customized by users with proper rights
             if !user.can_customize_pool_affinity() {
-                return Err(Error::Unauthorized(Permission::Customize{ what: Parameter::WorkflowPoolAffinity }));
+                return Err(Error::Unauthorized(Permission::Customize {
+                    what: Parameter::WorkflowPoolAffinity,
+                }));
             }
         }
 
         let workspace_id = workspace_id(id);
         // Ensure a workspace with the same id is not alread running
-        if new_runtime()?.block_on(self.engine.get_workspace(&workspace_id))?.is_some() {
+        if new_runtime()?
+            .block_on(self.engine.get_workspace(&workspace_id))?
+            .is_some()
+        {
             return Err(Error::WorkspaceIdAlreayUsed);
         }
 
@@ -302,7 +309,9 @@ impl Manager {
         if conf.duration.is_some() {
             // Duration can only customized by users with proper rights
             if workspace_id(&user.id) != id && !user.can_customize_duration() {
-                return Err(Error::Unauthorized(Permission::Customize{ what: Parameter::WorkflowDuration }));
+                return Err(Error::Unauthorized(Permission::Customize {
+                    what: Parameter::WorkflowDuration,
+                }));
             }
         }
 

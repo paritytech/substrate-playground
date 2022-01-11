@@ -16,7 +16,7 @@ pub enum Parameter {
 pub enum Permission {
     AdminRead,
     AdminEdit,
-    Customize { what: Parameter}
+    Customize { what: Parameter },
 }
 
 // During startup
@@ -49,6 +49,8 @@ pub enum Error {
     MissingAnnotation(&'static str),
     #[error("Missing env var {0}")]
     MissingEnvironmentVariable(&'static str),
+    #[error("IncorrectDevContainer {0}")]
+    IncorrectDevContainerValue(&'static str),
     #[error("Failure: {0}")]
     Failure(#[from] Box<dyn std::error::Error>),
 }
