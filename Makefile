@@ -25,6 +25,10 @@ ifeq (, $(shell which kustomize))
     $(error "kustomize not installed, see https://github.com/kubernetes-sigs/kustomize")
 endif
 
+ifeq (, $(shell which helm))
+    $(error "helm not installed, see https://helm.sh/docs/intro/install/")
+endif
+
 # ENV defaults to dev
 ENV?=dev
 
@@ -45,7 +49,7 @@ GKE_CLUSTER=substrate-${PLAYGROUND_ID}
 
 # Derive CONTEXT from ENV
 ifeq ($(ENV), dev)
-  CONTEXT=minikube
+  CONTEXT=k3d-pg-cluster
 else
   CONTEXT=gke_${GKE_PROJECT}_${GKE_ZONE}_${GKE_CLUSTER}
 endif
@@ -58,7 +62,7 @@ COLOR_RESET:= $(shell tput sgr0)
 # Include .env for extra customisable ENV variable
 include .env
 
-# TODO check all required env are defined? BASE_TEMPLATE_VERSION, NAMESPACE, GKE_PROJECT, GKE_ZONE, DOCKER_ORG
+# TODO check all required env are defined? GKE_PROJECT, GKE_ZONE, DOCKER_ORG
 
 help:
 	@echo "Build and publish playground components"
@@ -166,41 +170,21 @@ requires-k8s: requires-env
 		exit 1; \
 	  fi; \
 	fi
-	@if [ "${CURRENT_NAMESPACE}" != "${NAMESPACE}" ] ;then \
-	  read -p "Current namespace (${COLOR_GREEN}${CURRENT_NAMESPACE}${COLOR_RESET}) doesn't match environment. Update to ${COLOR_RED}${NAMESPACE}${COLOR_RESET}? [yN]" proceed; \
-	  if [ "$${proceed}" == "Y" ] ;then \
-	  	kubectl config set-context --current --namespace=${NAMESPACE}; \
-	  else \
-		exit 1; \
-	  fi; \
-	fi
 ifeq ($(SKIP_ACK), )
 	@read -p $$'Ok to proceed? [yN]' answer; if [ "$${answer}" != "Y" ] ;then exit 1; fi
 endif
 
-k8s-create-cluster: requires-env
-	# See https://cloud.google.com/compute/docs/machine-types
-	gcloud container clusters create ${GKE_CLUSTER} \
-        --release-channel regular \
-        --zone us-central1-a \
-        --node-locations us-central1-a \
-        --machine-type n2d-standard-32 \
-        --num-nodes 1
-
 k8s-setup-env: requires-k8s
 	@read -p "GH client ID?" CLIENT_ID; \
 	read -p "GH client secret?" CLIENT_SECRET; \
-	kubectl create ns ${NAMESPACE} --dry-run=client -o yaml | kubectl apply -f - && \
-	kubectl create configmap playground-config --namespace=${NAMESPACE} --from-literal=github.clientId="$${CLIENT_ID}" --from-literal=workspace.baseImage="paritytech/base-ci:latest" --from-literal=workspace.defaultDuration="45" --from-literal=workspace.maxDuration="1440" --from-literal=workspace.defaultMaxPerNode="6" --from-literal=workspace.defaultPoolAffinity="default-workspace" --dry-run=client -o yaml | kubectl apply -f - && \
-	kubectl create secret generic playground-secrets --namespace=${NAMESPACE} --from-literal=github.clientSecret="$${CLIENT_SECRET}" --from-literal=rocket.secretKey=`openssl rand -base64 32` --dry-run=client -o yaml | kubectl apply -f - && \
-	kubectl create configmap playground-templates --namespace=${NAMESPACE} --from-file=conf/k8s/overlays/${ENV}/templates/ --dry-run=client -o yaml | kubectl apply -f - && \
-	kubectl create configmap playground-users --namespace=${NAMESPACE} --from-file=conf/k8s/overlays/${ENV}/users/ --dry-run=client -o yaml | kubectl apply -f - && \
-	kubectl create configmap playground-repositories --namespace=${NAMESPACE} --from-file=conf/k8s/overlays/${ENV}/repositories/ --dry-run=client -o yaml | kubectl apply -f -
+	kubectl create configmap playground-config --from-literal=github.clientId="$${CLIENT_ID}" --from-literal=workspace.baseImage="paritytech/base-ci:latest" --from-literal=workspace.defaultDuration="45" --from-literal=workspace.maxDuration="1440" --from-literal=workspace.defaultMaxPerNode="6" --from-literal=workspace.defaultPoolAffinity="default-workspace" --dry-run=client -o yaml | kubectl apply -f - && \
+	kubectl create secret generic playground-secrets --from-literal=github.clientSecret="$${CLIENT_SECRET}" --from-literal=rocket.secretKey=`openssl rand -base64 32` --dry-run=client -o yaml | kubectl apply -f -
 
-k8s-setup-conf: requires-k8s
-	@kubectl create configmap playground-templates --namespace=${NAMESPACE} --from-file=conf/k8s/overlays/${ENV}/templates/ --dry-run=client -o yaml | kubectl apply -f - && \
-	kubectl create configmap playground-users --namespace=${NAMESPACE} --from-file=conf/k8s/overlays/${ENV}/users/ --dry-run=client -o yaml | kubectl apply -f - && \
-	kubectl create configmap playground-repositories --namespace=${NAMESPACE} --from-file=conf/k8s/overlays/${ENV}/repositories/ --dry-run=client -o yaml | kubectl apply -f -
+k8s-update-templates-config: requires-k8s ## Creates or replaces the `templates` config map from `conf/k8s/overlays/ENV/templates`
+	kustomize build --enable-helm --load-restrictor LoadRestrictionsNone conf/k8s/overlays/${ENV}/templates/ | kubectl apply -f -
+
+k8s-update-users-config: requires-k8s ## Creates or replaces the `users` config map from `conf/k8s/overlays/ENV/users`
+	kubectl create configmap playground-users --from-file=conf/k8s/overlays/${ENV}/users/ --dry-run=client -o yaml | kubectl apply -f -
 
 k8s-cluster-status: requires-k8s
 	@kubectl get configmap playground-config &> /dev/null && [ $$? -eq 0 ] || (echo "Missing config 'playground-config'"; exit 1)
@@ -215,32 +199,23 @@ k8s-cluster-status: requires-k8s
 	  exit 1; \
 	fi
 
-k8s-gke-static-ip: requires-k8s
-	gcloud compute addresses describe ${NAMESPACE} --region=${GKE_REGION} --format="value(address)"
-
-k8s-dev: requires-k8s
-    # Adds required nodepool annotation, default on GKE
-	@kubectl label nodes ${CONTEXT} cloud.google.com/gke-nodepool=default-workspace --overwrite
-	@kubectl create ns ${NAMESPACE} --dry-run=client -o yaml | kubectl apply -f -
-	@cd conf/k8s; skaffold dev --cleanup=false
-
-k8s-dev-delete: requires-k8s
-	@cd conf/k8s; skaffold delete
-
 k8s-deploy-playground: requires-k8s ## Deploy playground on kubernetes
-	kustomize build conf/k8s/overlays/${ENV}/ | kubectl apply --record -f -
+	kustomize build --enable-helm conf/k8s/overlays/${ENV}/ | kubectl apply --record -f -
 
 k8s-undeploy-playground: requires-k8s ## Undeploy playground from kubernetes
-	kustomize build conf/k8s/overlays/${ENV}/ | kubectl delete -f -
+	@read -p $$'All configuration (including GitHub secrets) will be lost. Ok to proceed? [yN]' answer; if [ "$${answer}" != "Y" ] ;then exit 1; fi
+	kustomize build --enable-helm conf/k8s/overlays/${ENV}/ | kubectl delete -f -
 
 k8s-undeploy-theia: requires-k8s ## Undeploy all theia pods and services from kubernetes
-	kubectl delete pods,services -l app.kubernetes.io/component=theia --namespace=${NAMESPACE}
+	kubectl delete pods,services -l app.kubernetes.io/component=theia
 
-k8s-update-templates-config: requires-k8s ## Creates or replaces the `templates` config map from `conf/k8s/overlays/ENV/templates`
-	kustomize build --load-restrictor LoadRestrictionsNone conf/k8s/overlays/${ENV}/templates/ | kubectl apply -f -
+###@ Dev
 
-k8s-update-users-config: requires-k8s ## Creates or replaces the `users` config map from `conf/k8s/overlays/ENV/users`
-	kubectl create configmap playground-users --namespace=${NAMESPACE} --from-file=conf/k8s/overlays/${ENV}/users/ --dry-run=client -o yaml | kubectl apply -f -
+k8s-dev:
+	@cd conf/k8s; skaffold dev --cleanup=false
+
+k8s-dev-delete:
+	@cd conf/k8s; skaffold delete
 
 ##@ DNS certificates
 
@@ -251,4 +226,19 @@ get-challenge: requires-env
 	dig +short TXT _acme-challenge.${PLAYGROUND_ID}.substrate.dev @8.8.8.8
 
 k8s-update-certificate: requires-k8s
-	sudo kubectl create secret tls playground-tls --save-config --key /etc/letsencrypt/live/${PLAYGROUND_ID}.substrate.dev/privkey.pem --cert /etc/letsencrypt/live/${PLAYGROUND_ID}.substrate.dev/fullchain.pem --namespace=playground --dry-run=true -o yaml | sudo kubectl apply -f -
+	sudo kubectl create secret tls playground-tls --save-config --key /etc/letsencrypt/live/${PLAYGROUND_ID}.substrate.dev-0002/privkey.pem --cert /etc/letsencrypt/live/${PLAYGROUND_ID}.substrate.dev-0002/fullchain.pem --namespace=playground --dry-run=true -o yaml | sudo kubectl apply -f -
+
+
+##@ Google Kubernetes Engine
+
+gke-static-ip: requires-k8s
+	gcloud compute addresses describe --region=${GKE_REGION} --format="value(address)"
+
+gke-create-cluster: requires-env
+	# See https://cloud.google.com/compute/docs/machine-types
+	gcloud container clusters create ${GKE_CLUSTER} \
+        --release-channel regular \
+        --zone us-central1-a \
+        --node-locations us-central1-a \
+        --machine-type n2d-standard-32 \
+        --num-nodes 1
