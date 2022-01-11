@@ -16,7 +16,7 @@ ENV GITHUB_SHA=$GITHUB_SHA
 ENV CI=true \
     PARCEL_WORKERS=1
 
-RUN yarn install --frozen-lockfile
+RUN yarn config set registry "http://registry.npmjs.org" && yarn install --network-timeout 1000000
 
 COPY src /opt/src
 COPY public /opt/public
