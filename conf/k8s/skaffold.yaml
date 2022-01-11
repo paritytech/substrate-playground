@@ -17,6 +17,9 @@ build:
   local:
     useBuildkit: true
 deploy:
+  # See https://skaffold.dev/docs/pipeline-stages/deployers/kustomize/
   kustomize:
+    buildArgs:
+    - --enable-helm
     paths:
     - overlays/dev

@@ -2,20 +2,19 @@ commonLabels:
     app.kubernetes.io/part-of: playground
     app.kubernetes.io/managed-by: kustomize
 
-namespace: playground
-
 bases:
     - prometheus
     - grafana
+    - nginx
 
 resources:
+    - namespaces.yaml
     - backend-api-deployment.yaml
     - backend-api-service.yaml
     - backend-ui-deployment.yaml
     - backend-ui-service.yaml
     - cluster-role-binding.yaml
     - ingress.yaml
-    - nginx.yaml
     - node-exporter.yaml
     - service-account.yaml
     - node-conf-daemon-set.yaml

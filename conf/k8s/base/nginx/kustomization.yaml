@@ -1,0 +1,15 @@
+# See https://github.com/kubernetes/ingress-nginx/blob/master/docs/deploy/index.md#gce-gke
+# Copied from https://raw.githubusercontent.com/kubernetes/ingress-nginx/nginx-0.30.0/deploy/static/mandatory.yaml
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: ingress-nginx
+helmCharts:
+- name: ingress-nginx
+  valuesInline:
+    controller:
+      metrics:
+        enabled: true
+  releaseName: v4-0-13
+  version: 4.0.13
+  repo: https://kubernetes.github.io/ingress-nginx
