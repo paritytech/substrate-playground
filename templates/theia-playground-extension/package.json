@@ -12,7 +12,7 @@
     "@substrate/playground-client": "1.7.2",
     "@theia/core": "1.21.0",
     "gunzip-maybe": "1.4.2",
-    "vscode-uri": "3.0.2"
+    "vscode-uri": "3.0.3"
   },
   "devDependencies": {
     "typescript": "4.5.4"
