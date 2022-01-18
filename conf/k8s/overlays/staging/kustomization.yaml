@@ -30,7 +30,7 @@ patchesStrategicMerge:
   apiVersion: v1
   kind: Service
   metadata:
-    name: ingress-nginx
+    name: v4-0-13-ingress-nginx-controller
     namespace: ingress-nginx
   spec:
     loadBalancerIP: 104.198.51.62
