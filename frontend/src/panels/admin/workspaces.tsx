@@ -1,24 +1,24 @@
 import React, { Dispatch, SetStateAction, useState } from "react";
-import Button from '@material-ui/core/Button';
-import ButtonGroup from '@material-ui/core/ButtonGroup';
-import Checkbox from '@material-ui/core/Checkbox';
-import Container from '@material-ui/core/Container';
-import Dialog from '@material-ui/core/Dialog';
-import DialogContent from '@material-ui/core/DialogContent';
-import DialogTitle from '@material-ui/core/DialogTitle';
-import Link from '@material-ui/core/Link';
-import MenuItem from '@material-ui/core/MenuItem';
-import Paper from '@material-ui/core/Paper';
-import Table from '@material-ui/core/Table';
-import TableBody from '@material-ui/core/TableBody';
-import TableCell from '@material-ui/core/TableCell';
-import TableContainer from '@material-ui/core/TableContainer';
-import TableHead from '@material-ui/core/TableHead';
-import TableRow from '@material-ui/core/TableRow';
-import TableFooter from '@material-ui/core/TableFooter';
-import TablePagination from '@material-ui/core/TablePagination';
-import TextField from '@material-ui/core/TextField';
-import { Autocomplete } from '@material-ui/lab';
+import Button from '@mui/material/Button';
+import ButtonGroup from '@mui/material/ButtonGroup';
+import Checkbox from '@mui/material/Checkbox';
+import Container from '@mui/material/Container';
+import Dialog from '@mui/material/Dialog';
+import DialogContent from '@mui/material/DialogContent';
+import DialogTitle from '@mui/material/DialogTitle';
+import Link from '@mui/material/Link';
+import MenuItem from '@mui/material/MenuItem';
+import Paper from '@mui/material/Paper';
+import Table from '@mui/material/Table';
+import TableBody from '@mui/material/TableBody';
+import TableCell from '@mui/material/TableCell';
+import TableContainer from '@mui/material/TableContainer';
+import TableHead from '@mui/material/TableHead';
+import TableRow from '@mui/material/TableRow';
+import TableFooter from '@mui/material/TableFooter';
+import TablePagination from '@mui/material/TablePagination';
+import TextField from '@mui/material/TextField';
+import { Autocomplete } from '@mui/material';
 import { Client, Configuration, LoggedUser, Pool, Repository, User, Workspace, WorkspaceConfiguration, WorkspaceUpdateConfiguration } from '@substrate/playground-client';
 import { useStyles, EnhancedTableToolbar, NoResourcesContainer, TablePaginationActions, Resources } from '.';
 import { ErrorSnackbar } from '../../components';
@@ -271,89 +271,87 @@ export function Workspaces({ client, conf, user }: { client: Client, conf: Confi
             {(resources: Workspace[], setWorkspaces: Dispatch<SetStateAction<Workspace[] | null>>) => {
                 const allResources = Object.entries(resources);
                 const filteredResources = rowsPerPage > 0 ? allResources.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage) : allResources;
-                return (
+                return <>
+                    {filteredResources.length > 0
+                    ?
                     <>
-                        {filteredResources.length > 0
-                        ?
-                        <>
-                            <EnhancedTableToolbar user={user} label="Workspaces" selected={selected} onCreate={() => setShowCreationDialog(true)} onUpdate={() => setShowUpdateDialog(true)} onDelete={() => onDelete(setWorkspaces)} />
-                            <TableContainer component={Paper}>
-                                <Table className={classes.table} aria-label="simple table">
-                                    <TableHead>
-                                        <TableRow>
-                                            <TableCell></TableCell>
-                                            <TableCell>ID</TableCell>
-                                            <TableCell>Repository</TableCell>
-                                            <TableCell>URL</TableCell>
-                                            <TableCell>Duration</TableCell>
-                                            <TableCell>State</TableCell>
-                                            <TableCell>Node</TableCell>
-                                        </TableRow>
-                                    </TableHead>
-                                    <TableBody>
-                                    {filteredResources.map(([id, workspace]: [id: string, workspace: Workspace], index: number) => {
-                                        const isItemSelected = isSelected(id);
-                                        const labelId = `enhanced-table-checkbox-${index}`;
-                                        const url = workspaceUrl(workspace);
-                                        return (
-                                            <TableRow
-                                                key={id}
-                                                hover
-                                                onClick={(event) => handleClick(event, id)}
-                                                role="checkbox"
-                                                aria-checked={isItemSelected}
-                                                tabIndex={-1}
-                                                selected={isItemSelected}>
-                                                <TableCell padding="checkbox">
-                                                    <Checkbox
-                                                        checked={isItemSelected}
-                                                        inputProps={{ 'aria-labelledby': labelId }}
-                                                    />
-                                                </TableCell>
-                                                <TableCell component="th" scope="row">
-                                                    <Link href={`https://github.com/${id}`} target="_blank" rel="noreferrer" onClick={stopPropagation}>{id}</Link>
-                                                </TableCell>
-                                                <TableCell>{workspace.repositoryDetails.id}</TableCell>
-                                                <TableCell>
-                                                    {url
-                                                    ? <Link href={url} target="_blank" rel="noreferrer" onClick={stopPropagation}>Browse {url}</Link>
-                                                    : "N/A"}
-                                                </TableCell>
-                                                <TableCell>N/A</TableCell>
-                                                <TableCell>{workspace.state.type}</TableCell>
-                                            </TableRow>
-                                        )})}
-                                    </TableBody>
-                                    <TableFooter>
-                                        <TableRow>
-                                            <TablePagination
-                                                rowsPerPageOptions={[5, 10, 25, { label: 'All', value: -1 }]}
-                                                colSpan={3}
-                                                count={allResources.length}
-                                                rowsPerPage={rowsPerPage}
-                                                page={page}
-                                                SelectProps={{
-                                                    inputProps: { 'aria-label': 'rows per page' },
-                                                    native: true,
-                                                }}
-                                                onChangePage={handleChangePage}
-                                                onChangeRowsPerPage={handleChangeRowsPerPage}
-                                                ActionsComponent={TablePaginationActions}
+                        <EnhancedTableToolbar user={user} label="Workspaces" selected={selected} onCreate={() => setShowCreationDialog(true)} onUpdate={() => setShowUpdateDialog(true)} onDelete={() => onDelete(setWorkspaces)} />
+                        <TableContainer component={Paper}>
+                            <Table className={classes.table} aria-label="simple table">
+                                <TableHead>
+                                    <TableRow>
+                                        <TableCell></TableCell>
+                                        <TableCell>ID</TableCell>
+                                        <TableCell>Repository</TableCell>
+                                        <TableCell>URL</TableCell>
+                                        <TableCell>Duration</TableCell>
+                                        <TableCell>State</TableCell>
+                                        <TableCell>Node</TableCell>
+                                    </TableRow>
+                                </TableHead>
+                                <TableBody>
+                                {filteredResources.map(([id, workspace]: [id: string, workspace: Workspace], index: number) => {
+                                    const isItemSelected = isSelected(id);
+                                    const labelId = `enhanced-table-checkbox-${index}`;
+                                    const url = workspaceUrl(workspace);
+                                    return (
+                                        <TableRow
+                                            key={id}
+                                            hover
+                                            onClick={(event) => handleClick(event, id)}
+                                            role="checkbox"
+                                            aria-checked={isItemSelected}
+                                            tabIndex={-1}
+                                            selected={isItemSelected}>
+                                            <TableCell padding="checkbox">
+                                                <Checkbox
+                                                    checked={isItemSelected}
+                                                    inputProps={{ 'aria-labelledby': labelId }}
                                                 />
+                                            </TableCell>
+                                            <TableCell component="th" scope="row">
+                                                <Link href={`https://github.com/${id}`} target="_blank" rel="noreferrer" onClick={stopPropagation}>{id}</Link>
+                                            </TableCell>
+                                            <TableCell>{workspace.repositoryDetails.id}</TableCell>
+                                            <TableCell>
+                                                {url
+                                                ? <Link href={url} target="_blank" rel="noreferrer" onClick={stopPropagation}>Browse {url}</Link>
+                                                : "N/A"}
+                                            </TableCell>
+                                            <TableCell>N/A</TableCell>
+                                            <TableCell>{workspace.state.type}</TableCell>
                                         </TableRow>
-                                    </TableFooter>
-                                </Table>
-                            </TableContainer>
-                        </>
-                        : <NoResourcesContainer user={user} label="No workspaces" action={() => setShowCreationDialog(true)} />}
-                        {errorMessage &&
-                        <ErrorSnackbar open={true} message={errorMessage} onClose={() => setErrorMessage(null)} />}
-                        {showCreationDialog &&
-                        <WorkspaceCreationDialog allowUserSelection={true} client={client} conf={conf} workspaces={resources} user={user} templates={templates} show={showCreationDialog} onCreate={(conf, id) => onCreate(conf, id, setWorkspaces)} onHide={() => setShowCreationDialog(false)} />}
-                        {(selected && showUpdateDialog) &&
-                        <WorkspaceUpdateDialog id={selected} duration={find(resources, selected)?.maxDuration} show={showUpdateDialog} onUpdate={(id, conf) => onUpdate(id, conf, setWorkspaces)} onHide={() => setShowUpdateDialog(false)} />}
+                                    )})}
+                                </TableBody>
+                                <TableFooter>
+                                    <TableRow>
+                                        <TablePagination
+                                            rowsPerPageOptions={[5, 10, 25, { label: 'All', value: -1 }]}
+                                            colSpan={3}
+                                            count={allResources.length}
+                                            rowsPerPage={rowsPerPage}
+                                            page={page}
+                                            SelectProps={{
+                                                inputProps: { 'aria-label': 'rows per page' },
+                                                native: true,
+                                            }}
+                                            onPageChange={handleChangePage}
+                                            onRowsPerPageChange={handleChangeRowsPerPage}
+                                            ActionsComponent={TablePaginationActions}
+                                            />
+                                    </TableRow>
+                                </TableFooter>
+                            </Table>
+                        </TableContainer>
                     </>
-                );
+                    : <NoResourcesContainer user={user} label="No workspaces" action={() => setShowCreationDialog(true)} />}
+                    {errorMessage &&
+                    <ErrorSnackbar open={true} message={errorMessage} onClose={() => setErrorMessage(null)} />}
+                    {showCreationDialog &&
+                    <WorkspaceCreationDialog allowUserSelection={true} client={client} conf={conf} workspaces={resources} user={user} templates={templates} show={showCreationDialog} onCreate={(conf, id) => onCreate(conf, id, setWorkspaces)} onHide={() => setShowCreationDialog(false)} />}
+                    {(selected && showUpdateDialog) &&
+                    <WorkspaceUpdateDialog id={selected} duration={find(resources, selected)?.maxDuration} show={showUpdateDialog} onUpdate={(id, conf) => onUpdate(id, conf, setWorkspaces)} onHide={() => setShowUpdateDialog(false)} />}
+                </>;
             }}
         </Resources>
     );

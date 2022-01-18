@@ -4,9 +4,9 @@ import { State } from "xstate";
 import Analytics from "analytics";
 import simpleAnalyticsPlugin from "analytics-plugin-simple-analytics";
 import { Client, Configuration, LoggedUser, Workspace } from '@substrate/playground-client';
-import { createTheme, ThemeProvider } from '@material-ui/core/styles';
-import Button from "@material-ui/core/Button";
-import Typography from "@material-ui/core/Typography";
+import { createTheme, ThemeProvider, Theme, StyledEngineProvider, adaptV4Theme } from '@mui/material/styles';
+import Button from "@mui/material/Button";
+import Typography from "@mui/material/Typography";
 import { useMachine } from '@xstate/react';
 import { CenteredContainer, ErrorMessage, LoadingPanel, Nav, NavMenuLogged, NavMenuUnlogged, NavSecondMenuAdmin, Wrapper } from './components';
 import { useInterval } from "./hooks";
@@ -21,7 +21,14 @@ import { terms } from "./terms";
 import { hasAdminReadRights } from "./utils";
 import { SubstrateLight, SubstrateDark } from './themes';
 import LogoSubstrate from "./LogoSubstrate";
-import { CssBaseline } from "@material-ui/core";
+import { CssBaseline } from "@mui/material";
+
+
+declare module '@mui/styles/defaultTheme' {
+  // eslint-disable-next-line @typescript-eslint/no-empty-interface
+  interface DefaultTheme extends Theme {}
+}
+
 
 function MainPanel({ client, params, conf, user, id, templates, onRetry, onConnect, onAfterDeployed }: { client: Client, params: Params, conf: Configuration, user?: LoggedUser, templates: Record<string, Template>, id: PanelId, onRetry: () => void, onConnect: () => void, onAfterDeployed: () => void }): JSX.Element {
     switch(id) {
@@ -115,7 +122,7 @@ function CustomNav({ client, send, state }: { client: Client, send: (event: Even
     );
 }
 
-const theme = createTheme(SubstrateLight);
+const theme = createTheme(adaptV4Theme(SubstrateLight));
 
 function App({ params }: { params: Params }): JSX.Element {
     const client = new Client(params.base, 30000, {credentials: "include"});
@@ -125,7 +132,7 @@ function App({ params }: { params: Params }): JSX.Element {
 
     /*const theme = createTheme({
         palette: {
-          type: 'light',
+          mode: 'light',
           primary: {
             main: 'rgba(38,224,162, 1)',
           },
@@ -146,29 +153,31 @@ function App({ params }: { params: Params }): JSX.Element {
 
 
     return (
-        <ThemeProvider theme={theme}>
-            <CssBaseline />
-            <div style={{ display: "flex", width: "100vw", height: "100vh", alignItems: "center", justifyContent: "center" }}>
-                <Wrapper thin={isTheia}
-                         nav={<CustomNav client={client} send={send} state={state} />}
-                         params={params}>
-                   {state.matches(States.LOGGED)
-                   ? <MainPanel client={client} params={params} templates={templates} conf={state.context.conf} user={state.context.user} id={panel}
-                                onRetry={() => restart(send)}
-                                onAfterDeployed={() => selectPanel(send, PanelId.Theia)}
-                                onConnect={() => selectPanel(send, PanelId.Theia)} />
-                   : state.matches(States.TERMS_UNAPPROVED)
-                     ? <TermsPanel terms={terms} onTermsApproved={() => send(Events.TERMS_APPROVAL)} />
-                     : state.matches(States.UNLOGGED)
-                     ? error
-                     ? <CenteredContainer>
-                         <ErrorMessage reason={error} action={() => restart(send)} />
-                     </CenteredContainer>
-                     : <LoginPanel client={client} />
-                     : <LoadingPanel />}
-                </Wrapper>
-            </div>
-        </ThemeProvider>
+        <StyledEngineProvider injectFirst>
+            <ThemeProvider theme={theme}>
+                <CssBaseline />
+                <div style={{ display: "flex", width: "100vw", height: "100vh", alignItems: "center", justifyContent: "center" }}>
+                    <Wrapper thin={isTheia}
+                             nav={<CustomNav client={client} send={send} state={state} />}
+                             params={params}>
+                       {state.matches(States.LOGGED)
+                       ? <MainPanel client={client} params={params} templates={templates} conf={state.context.conf} user={state.context.user} id={panel}
+                                    onRetry={() => restart(send)}
+                                    onAfterDeployed={() => selectPanel(send, PanelId.Theia)}
+                                    onConnect={() => selectPanel(send, PanelId.Theia)} />
+                       : state.matches(States.TERMS_UNAPPROVED)
+                         ? <TermsPanel terms={terms} onTermsApproved={() => send(Events.TERMS_APPROVAL)} />
+                         : state.matches(States.UNLOGGED)
+                         ? error
+                         ? <CenteredContainer>
+                             <ErrorMessage reason={error} action={() => restart(send)} />
+                         </CenteredContainer>
+                         : <LoginPanel client={client} />
+                         : <LoadingPanel />}
+                    </Wrapper>
+                </div>
+            </ThemeProvider>
+        </StyledEngineProvider>
     );
 }
 

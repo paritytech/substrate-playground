@@ -1,14 +1,14 @@
-import { ThemeOptions } from '@material-ui/core/styles';
+import { DeprecatedThemeOptions } from '@mui/material/styles';
 import colors from './colors';
 import typography from './typography';
 import shadows from './shadows';
-import { grey } from '@material-ui/core/colors';
+import { grey } from '@mui/material/colors';
 
-const light: ThemeOptions = {
+const light: DeprecatedThemeOptions = {
   typography: typography.typography,
   shadows: shadows.shadows,
   palette: {
-    type: 'light',
+    mode: 'light',
     common: {
       black: colors.black,
       white: colors.white,

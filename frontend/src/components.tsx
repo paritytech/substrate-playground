@@ -1,23 +1,23 @@
 import React, { useState } from "react";
 import { useSpring, animated } from 'react-spring'
-import { Alert, AlertTitle } from '@material-ui/lab';
-import AppBar from '@material-ui/core/AppBar';
-import Avatar from '@material-ui/core/Avatar';
-import Button from '@material-ui/core/Button';
-import Box from '@material-ui/core/Box';
-import CircularProgress from '@material-ui/core/CircularProgress';
-import Container from "@material-ui/core/Container";
-import Fade from '@material-ui/core/Fade';
-import CloseIcon from '@material-ui/icons/Close';
-import GitHubIcon from '@material-ui/icons/GitHub';
-import IconButton from '@material-ui/core/IconButton';
-import Link from '@material-ui/core/Link';
-import Menu from '@material-ui/core/Menu';
-import MenuItem from '@material-ui/core/MenuItem';
-import MoreVertIcon from '@material-ui/icons/MoreVert';
-import Snackbar from "@material-ui/core/Snackbar";
-import Toolbar from '@material-ui/core/Toolbar';
-import Typography from '@material-ui/core/Typography';
+import { Alert, AlertTitle } from '@mui/material';
+import AppBar from '@mui/material/AppBar';
+import Avatar from '@mui/material/Avatar';
+import Button from '@mui/material/Button';
+import Box from '@mui/material/Box';
+import CircularProgress from '@mui/material/CircularProgress';
+import Container from "@mui/material/Container";
+import Fade from '@mui/material/Fade';
+import CloseIcon from '@mui/icons-material/Close';
+import GitHubIcon from '@mui/icons-material/GitHub';
+import IconButton from '@mui/material/IconButton';
+import Link from '@mui/material/Link';
+import Menu from '@mui/material/Menu';
+import MenuItem from '@mui/material/MenuItem';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
+import Snackbar from "@mui/material/Snackbar";
+import Toolbar from '@mui/material/Toolbar';
+import Typography from '@mui/material/Typography';
 import { Configuration, LoggedUser } from "@substrate/playground-client";
 import { useInterval } from './hooks';
 import { Params } from "./index";
@@ -241,7 +241,9 @@ export function Wrapper({ params, thin = false, children, nav}: { params: Params
             {nav}
 
             <Fade in appear>
-                {children}
+                <div>
+                  {children}
+                </div>
             </Fade>
 
             {!thin &&

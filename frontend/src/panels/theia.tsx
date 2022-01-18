@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import Paper from '@material-ui/core/Paper';
+import Paper from '@mui/material/Paper';
 import { Client } from '@substrate/playground-client';
 import { CenteredContainer, ErrorMessage, Loading } from '../components';
 import { fetchWithTimeout, workspaceUrl } from '../utils';

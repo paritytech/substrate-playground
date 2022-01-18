@@ -1,6 +1,6 @@
-import { ThemeOptions } from '@material-ui/core/styles';
+import { DeprecatedThemeOptions } from '@mui/material/styles';
 
-const shadows: ThemeOptions = {
+const shadows: DeprecatedThemeOptions = {
   shadows: [
     'none',
     'none',

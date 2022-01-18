@@ -1,27 +1,29 @@
 import clsx from 'clsx';
 import React, { Dispatch, SetStateAction, useState } from "react";
-import { createStyles, lighten, makeStyles, useTheme, Theme } from '@material-ui/core/styles';
-import Button from '@material-ui/core/Button';
-import Container from '@material-ui/core/Container';
-import Dialog from '@material-ui/core/Dialog';
-import DialogContent from '@material-ui/core/DialogContent';
-import DialogTitle from '@material-ui/core/DialogTitle';
-import IconButton from '@material-ui/core/IconButton';
-import AddIcon from '@material-ui/icons/Add';
-import DeleteIcon from '@material-ui/icons/Delete';
-import DialogActions from '@material-ui/core/DialogActions';
-import DialogContentText from '@material-ui/core/DialogContentText';
-import EditIcon from '@material-ui/icons/Edit';
-import Paper from '@material-ui/core/Paper';
-import Tab from '@material-ui/core/Tab';
-import Tabs from '@material-ui/core/Tabs';
-import Tooltip from '@material-ui/core/Tooltip';
-import Toolbar from '@material-ui/core/Toolbar';
-import Typography from '@material-ui/core/Typography';
-import FirstPageIcon from '@material-ui/icons/FirstPage';
-import KeyboardArrowLeft from '@material-ui/icons/KeyboardArrowLeft';
-import KeyboardArrowRight from '@material-ui/icons/KeyboardArrowRight';
-import LastPageIcon from '@material-ui/icons/LastPage';
+import { lighten, useTheme, Theme } from '@mui/material/styles';
+import createStyles from '@mui/styles/createStyles';
+import makeStyles from '@mui/styles/makeStyles';
+import Button from '@mui/material/Button';
+import Container from '@mui/material/Container';
+import Dialog from '@mui/material/Dialog';
+import DialogContent from '@mui/material/DialogContent';
+import DialogTitle from '@mui/material/DialogTitle';
+import IconButton from '@mui/material/IconButton';
+import AddIcon from '@mui/icons-material/Add';
+import DeleteIcon from '@mui/icons-material/Delete';
+import DialogActions from '@mui/material/DialogActions';
+import DialogContentText from '@mui/material/DialogContentText';
+import EditIcon from '@mui/icons-material/Edit';
+import Paper from '@mui/material/Paper';
+import Tab from '@mui/material/Tab';
+import Tabs from '@mui/material/Tabs';
+import Tooltip from '@mui/material/Tooltip';
+import Toolbar from '@mui/material/Toolbar';
+import Typography from '@mui/material/Typography';
+import FirstPageIcon from '@mui/icons-material/FirstPage';
+import KeyboardArrowLeft from '@mui/icons-material/KeyboardArrowLeft';
+import KeyboardArrowRight from '@mui/icons-material/KeyboardArrowRight';
+import LastPageIcon from '@mui/icons-material/LastPage';
 import { Client, Configuration, IdentifiedResource, LoggedUser } from '@substrate/playground-client';
 import { CenteredContainer, LoadingPanel } from '../../components';
 import { useInterval } from '../../hooks';
@@ -51,7 +53,7 @@ export function NoResourcesContainer({ user, label, action }: { user?: LoggedUse
         {label}
         {(action && user && hasAdminEditRights(user)) &&
           <Tooltip title="Create">
-            <IconButton aria-label="create" onClick={action}>
+            <IconButton aria-label="create" onClick={action} size="large">
               <AddIcon />
             </IconButton>
           </Tooltip>}
@@ -117,24 +119,28 @@ export function TablePaginationActions(props: TablePaginationActionsProps) {
         onClick={handleFirstPageButtonClick}
         disabled={page === 0}
         aria-label="first page"
-      >
+        size="large">
         {theme.direction === 'rtl' ? <LastPageIcon /> : <FirstPageIcon />}
       </IconButton>
-      <IconButton onClick={handleBackButtonClick} disabled={page === 0} aria-label="previous page">
+      <IconButton
+        onClick={handleBackButtonClick}
+        disabled={page === 0}
+        aria-label="previous page"
+        size="large">
         {theme.direction === 'rtl' ? <KeyboardArrowRight /> : <KeyboardArrowLeft />}
       </IconButton>
       <IconButton
         onClick={handleNextButtonClick}
         disabled={page >= Math.ceil(count / rowsPerPage) - 1}
         aria-label="next page"
-      >
+        size="large">
         {theme.direction === 'rtl' ? <KeyboardArrowLeft /> : <KeyboardArrowRight />}
       </IconButton>
       <IconButton
         onClick={handleLastPageButtonClick}
         disabled={page >= Math.ceil(count / rowsPerPage) - 1}
         aria-label="last page"
-      >
+        size="large">
         {theme.direction === 'rtl' ? <FirstPageIcon /> : <LastPageIcon />}
       </IconButton>
     </div>
@@ -148,7 +154,7 @@ const useToolbarStyles = makeStyles((theme: Theme) =>
       paddingRight: theme.spacing(1),
     },
     highlight:
-      theme.palette.type === 'light'
+      theme.palette.mode === 'light'
         ? {
           color: theme.palette.secondary.main,
           backgroundColor: lighten(theme.palette.secondary.light, 0.85),
@@ -192,34 +198,30 @@ function DeleteConfirmationDialog({ open, onClose, onConfirmation }: { open: boo
 function EditToolbar({ selected, onCreate, onUpdate, onDelete }: { selected?: string | null, onCreate?: () => void, onUpdate?: () => void, onDelete?: () => void }): JSX.Element {
   const [open, setOpen] = React.useState(false);
   if (selected) {
-    return (
-      <>
-        {onUpdate &&
-          <Tooltip title="Update">
-            <IconButton aria-label="update" onClick={onUpdate}>
-              <EditIcon />
-            </IconButton>
-          </Tooltip>}
-        {onDelete &&
-          <Tooltip title="Delete">
-            <IconButton aria-label="delete" onClick={() => setOpen(true)}>
-              <DeleteIcon />
-            </IconButton>
-          </Tooltip>}
-        <DeleteConfirmationDialog open={open} onClose={() => setOpen(false)} onConfirmation={onDelete} />
-      </>
-    );
+    return <>
+      {onUpdate &&
+        <Tooltip title="Update">
+          <IconButton aria-label="update" onClick={onUpdate} size="large">
+            <EditIcon />
+          </IconButton>
+        </Tooltip>}
+      {onDelete &&
+        <Tooltip title="Delete">
+          <IconButton aria-label="delete" onClick={() => setOpen(true)} size="large">
+            <DeleteIcon />
+          </IconButton>
+        </Tooltip>}
+      <DeleteConfirmationDialog open={open} onClose={() => setOpen(false)} onConfirmation={onDelete} />
+    </>;
   } else {
-    return (
-      <>
-        {onCreate &&
-          <Tooltip title="Create">
-            <IconButton aria-label="create" onClick={onCreate}>
-              <AddIcon />
-            </IconButton>
-          </Tooltip>}
-      </>
-    );
+    return <>
+      {onCreate &&
+        <Tooltip title="Create">
+          <IconButton aria-label="create" onClick={onCreate} size="large">
+            <AddIcon />
+          </IconButton>
+        </Tooltip>}
+    </>;
   }
 }
 

@@ -1,11 +1,11 @@
 import marked from 'marked';
 import React, { useState } from "react";
-import Button from "@material-ui/core/Button";
-import Dialog from '@material-ui/core/Dialog';
-import DialogContent from '@material-ui/core/DialogContent';
-import DialogContentText from '@material-ui/core/DialogContentText';
-import DialogTitle from '@material-ui/core/DialogTitle';
-import Typography from '@material-ui/core/Typography';
+import Button from "@mui/material/Button";
+import Dialog from '@mui/material/Dialog';
+import DialogContent from '@mui/material/DialogContent';
+import DialogContentText from '@mui/material/DialogContentText';
+import DialogTitle from '@mui/material/DialogTitle';
+import Typography from '@mui/material/Typography';
 import { CenteredContainer } from '../components';
 
 function TermsDialog({ terms, show, onHide, onTermsApproved }: { terms: string, show: boolean, onHide: () => void, onTermsApproved: () => void }): JSX.Element {
