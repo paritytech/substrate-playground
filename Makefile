@@ -200,7 +200,7 @@ k8s-cluster-status: requires-k8s
 	fi
 
 k8s-deploy-playground: requires-k8s ## Deploy playground on kubernetes
-	kustomize build --enable-helm conf/k8s/overlays/${ENV}/ | kubectl apply --record -f -
+	kustomize build --enable-helm conf/k8s/overlays/${ENV}/ | kubectl apply -f -
 
 k8s-undeploy-playground: requires-k8s ## Undeploy playground from kubernetes
 	@read -p $$'All configuration (including GitHub secrets) will be lost. Ok to proceed? [yN]' answer; if [ "$${answer}" != "Y" ] ;then exit 1; fi
