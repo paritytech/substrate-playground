@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::{
     collections::BTreeMap,
+    str::FromStr,
     time::{Duration, SystemTime},
 };
 
@@ -297,4 +298,161 @@ mod duration {
 
 fn default_as_false() -> bool {
     false
+}
+
+// TODO to remove
+
+#[derive(Serialize, Clone, Debug)]
+pub struct Session {
+    pub user_id: String,
+    pub template: Template,
+    pub url: String,
+    pub pod: Pod,
+    #[serde(with = "duration")]
+    pub duration: Duration,
+    pub node: String,
+}
+
+#[derive(Serialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct Pod {
+    pub phase: Phase,
+    pub reason: String,
+    pub message: String,
+    #[serde(with = "system_time2")]
+    pub start_time: Option<SystemTime>,
+    pub conditions: Option<Vec<PodCondition>>,
+    pub container: Option<ContainerStatus>,
+}
+
+#[derive(Deserialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct SessionConfiguration {
+    pub template: String,
+    #[serde(default)]
+    #[serde(with = "option_duration")]
+    pub duration: Option<Duration>,
+    pub pool_affinity: Option<String>,
+}
+
+#[derive(Deserialize, Clone, Debug)]
+pub struct SessionUpdateConfiguration {
+    #[serde(default)]
+    #[serde(with = "option_duration")]
+    pub duration: Option<Duration>,
+}
+
+#[derive(Serialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct SessionDefaults {
+    #[serde(with = "duration")]
+    pub duration: Duration,
+    #[serde(with = "duration")]
+    pub max_duration: Duration,
+    pub pool_affinity: String,
+    pub max_sessions_per_pod: usize,
+}
+
+#[derive(Serialize, Clone, Debug)]
+pub struct ContainerStatus {
+    pub phase: ContainerPhase,
+    pub reason: Option<String>,
+    pub message: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+pub enum Status {
+    True,
+    False,
+    Unknown,
+}
+
+#[derive(Serialize, Clone, Debug)]
+pub struct PodCondition {
+    pub type_: ConditionType,
+    pub status: Status,
+    pub reason: Option<String>,
+    pub message: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+pub enum ConditionType {
+    PodScheduled,
+    ContainersReady,
+    Initialized,
+    Ready,
+    Unknown,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+pub enum ContainerPhase {
+    Running,
+    Terminated,
+    Waiting,
+    Unknown,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+pub enum Phase {
+    Pending,
+    Running,
+    Succeeded,
+    Failed,
+    Unknown,
+}
+
+impl FromStr for Status {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Status, Self::Err> {
+        match s {
+            "True" => Ok(Status::True),
+            "False" => Ok(Status::False),
+            "Unknown" => Ok(Status::Unknown),
+            _ => Err(format!("'{}' is not a valid value for Status", s)),
+        }
+    }
+}
+
+impl FromStr for ConditionType {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<ConditionType, Self::Err> {
+        match s {
+            "PodScheduled" => Ok(ConditionType::PodScheduled),
+            "ContainersReady" => Ok(ConditionType::ContainersReady),
+            "Initialized" => Ok(ConditionType::Initialized),
+            "Ready" => Ok(ConditionType::Ready),
+            _ => Err(format!("'{}' is not a valid value for ConditionType", s)),
+        }
+    }
+}
+
+impl FromStr for Phase {
+    type Err = String;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "Pending" => Ok(Phase::Pending),
+            "Running" => Ok(Phase::Running),
+            "Succeeded" => Ok(Phase::Succeeded),
+            "Failed" => Ok(Phase::Failed),
+            "Unknown" => Ok(Phase::Unknown),
+            _ => Err(format!("'{}' is not a valid value for Phase", s)),
+        }
+    }
+}
+
+mod system_time2 {
+    use serde::{self, Serializer};
+    use std::time::SystemTime;
+
+    pub fn serialize<S>(date: &Option<SystemTime>, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match date.and_then(|v| v.elapsed().ok()) {
+            Some(value) => serializer.serialize_some(&value.as_secs()),
+            None => serializer.serialize_none(),
+        }
+    }
 }

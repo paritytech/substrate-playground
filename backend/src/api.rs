@@ -4,8 +4,9 @@ use crate::{
     github::{current_user, orgs, GitHubUser},
     types::{
         Environment, LoggedUser, RepositoryConfiguration, RepositoryUpdateConfiguration,
-        RepositoryVersionConfiguration, UserConfiguration, UserUpdateConfiguration,
-        WorkspaceConfiguration, WorkspaceUpdateConfiguration,
+        RepositoryVersionConfiguration, SessionConfiguration, SessionUpdateConfiguration,
+        UserConfiguration, UserUpdateConfiguration, WorkspaceConfiguration,
+        WorkspaceUpdateConfiguration,
     },
     Context,
 };
@@ -460,4 +461,86 @@ fn clear(mut cookies: Cookies<'_>) {
 #[catch(400)] // TODO move to catch(default) once it's available
 pub fn bad_request_catcher(_req: &Request<'_>) -> content::Html<String> {
     content::Html("<p>Sorry something unexpected happened!</p>".to_string())
+}
+
+/// Backport, TODO delete
+
+// Current Session
+
+#[get("/session")]
+pub fn get_current_session(state: State<'_, Context>, user: LoggedUser) -> JsonValue {
+    result_to_jsonrpc(state.manager.get_session(&user, &user.id))
+}
+
+///
+/// Create a new session for `LoggedUser`. A single session can exist at a time.
+///
+/// There is a short time window where multiple concurrent calls can succeed.
+/// As this call is idempotent this won't lead to multiple session creation.
+///
+#[put("/session", data = "<conf>")]
+pub fn create_current_session(
+    state: State<'_, Context>,
+    user: LoggedUser,
+    conf: Json<SessionConfiguration>,
+) -> JsonValue {
+    result_to_jsonrpc(state.manager.create_session(&user, &user.id, conf.0))
+}
+
+#[patch("/session", data = "<conf>")]
+pub fn update_current_session(
+    state: State<'_, Context>,
+    user: LoggedUser,
+    conf: Json<SessionUpdateConfiguration>,
+) -> JsonValue {
+    result_to_jsonrpc(state.manager.update_session(&user.id, &user, conf.0))
+}
+
+#[delete("/session")]
+pub fn delete_current_session(state: State<'_, Context>, user: LoggedUser) -> JsonValue {
+    result_to_jsonrpc(state.manager.delete_session(&user, &user.id))
+}
+
+// Sessions
+
+#[get("/sessions/<id>")]
+pub fn get_session(state: State<'_, Context>, user: LoggedUser, id: String) -> JsonValue {
+    result_to_jsonrpc(state.manager.get_session(&user, &id))
+}
+
+#[get("/sessions")]
+pub fn list_sessions(state: State<'_, Context>, user: LoggedUser) -> JsonValue {
+    result_to_jsonrpc(state.manager.list_sessions(&user))
+}
+
+#[put("/sessions/<id>", data = "<conf>")]
+pub fn create_session(
+    state: State<'_, Context>,
+    user: LoggedUser,
+    id: String,
+    conf: Json<SessionConfiguration>,
+) -> JsonValue {
+    result_to_jsonrpc(state.manager.create_session(&user, &id, conf.0))
+}
+
+#[patch("/sessions/<id>", data = "<conf>")]
+pub fn update_session(
+    state: State<'_, Context>,
+    user: LoggedUser,
+    id: String,
+    conf: Json<SessionUpdateConfiguration>,
+) -> JsonValue {
+    result_to_jsonrpc(state.manager.update_session(&id, &user, conf.0))
+}
+
+#[delete("/sessions/<id>")]
+pub fn delete_session(state: State<'_, Context>, user: LoggedUser, id: String) -> JsonValue {
+    result_to_jsonrpc(state.manager.delete_session(&user, &id))
+}
+
+// Templates
+
+#[get("/templates")]
+pub fn list_templates(state: State<'_, Context>) -> JsonValue {
+    result_to_jsonrpc(state.manager.list_templates())
 }

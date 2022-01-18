@@ -1,5 +1,4 @@
 ///! The prometeus metrics exposed by the various backends.
-
 use prometheus::{
     exponential_buckets, histogram_opts, opts, Error, Histogram, IntCounter, Registry,
 };

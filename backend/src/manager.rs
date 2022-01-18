@@ -4,13 +4,15 @@ use crate::{
     metrics::Metrics,
     types::{
         LoggedUser, Playground, Pool, Repository, RepositoryConfiguration,
-        RepositoryUpdateConfiguration, RepositoryVersion, RepositoryVersionConfiguration, User,
-        UserConfiguration, UserUpdateConfiguration, Workspace, WorkspaceConfiguration,
-        WorkspaceState, WorkspaceUpdateConfiguration,
+        RepositoryUpdateConfiguration, RepositoryVersion, RepositoryVersionConfiguration, Session,
+        SessionConfiguration, SessionUpdateConfiguration, Template, User, UserConfiguration,
+        UserUpdateConfiguration, Workspace, WorkspaceConfiguration, WorkspaceState,
+        WorkspaceUpdateConfiguration,
     },
 };
 use log::{error, info, warn};
 use std::{
+    collections::BTreeMap,
     collections::HashSet,
     sync::{Arc, Mutex},
     thread::{self, JoinHandle},
@@ -23,6 +25,12 @@ pub struct Manager {
     pub engine: Engine,
     pub metrics: Metrics,
     workspaces: Arc<Mutex<HashSet<String>>>,
+    sessions: Arc<Mutex<HashSet<String>>>,
+}
+
+fn session_id(id: &str) -> String {
+    // Create a unique ID for this session. Use lowercase to make sure the result can be used as part of a DNS
+    id.to_string().to_lowercase()
 }
 
 impl Manager {
@@ -61,6 +69,7 @@ impl Manager {
             engine,
             metrics,
             workspaces: Arc::new(Mutex::new(HashSet::new())), // Temp map used to track workspaces deployment time
+            sessions: Arc::new(Mutex::new(HashSet::new())), // Temp map used to track session deployment time
         })
     }
 
@@ -451,5 +460,125 @@ impl Manager {
         }
 
         new_runtime()?.block_on(self.clone().engine.list_pools())
+    }
+
+    // TODO to remove
+
+    // Sessions
+
+    pub fn get_session(&self, user: &LoggedUser, id: &str) -> Result<Option<Session>> {
+        if user.id != id && !user.has_admin_read_rights() {
+            return Err(Error::Unauthorized(Permission::AdminRead));
+        }
+
+        new_runtime()?.block_on(self.engine.get_session(&session_id(id)))
+    }
+
+    pub fn list_sessions(&self, user: &LoggedUser) -> Result<BTreeMap<String, Session>> {
+        if !user.has_admin_read_rights() {
+            return Err(Error::Unauthorized(Permission::AdminRead));
+        }
+
+        new_runtime()?.block_on(self.engine.list_sessions())
+    }
+
+    pub fn create_session(
+        &self,
+        user: &LoggedUser,
+        id: &str,
+        conf: SessionConfiguration,
+    ) -> Result<()> {
+        if user.id != id && !user.has_admin_edit_rights() {
+            return Err(Error::Unauthorized(Permission::AdminEdit));
+        }
+
+        if conf.duration.is_some() {
+            // Duration can only customized by users with proper rights
+            if !user.can_customize_duration() {
+                return Err(Error::Unauthorized(Permission::Customize {
+                    what: Parameter::WorkflowDuration,
+                }));
+            }
+        }
+        if conf.pool_affinity.is_some() {
+            // Duration can only customized by users with proper rights
+            if !user.can_customize_pool_affinity() {
+                return Err(Error::Unauthorized(Permission::Customize {
+                    what: Parameter::WorkflowPoolAffinity,
+                }));
+            }
+        }
+
+        let session_id = session_id(id);
+        if self.get_session(user, &session_id)?.is_some() {
+            return Err(Error::Unauthorized(Permission::AdminEdit));
+        }
+
+        let template = conf.clone().template;
+        let result = new_runtime()?.block_on(self.engine.create_session(user, &session_id, conf));
+
+        info!("Created session {} with template {}", session_id, template);
+
+        match &result {
+            Ok(_session) => {
+                if let Ok(mut sessions) = self.sessions.lock() {
+                    sessions.insert(session_id);
+                } else {
+                    error!("Failed to acquire sessions lock");
+                }
+                self.metrics.inc_deploy_counter();
+            }
+            Err(e) => {
+                self.metrics.inc_deploy_failures_counter();
+                error!("Error during deployment {}", e);
+            }
+        }
+        result
+    }
+
+    pub fn update_session(
+        &self,
+        id: &str,
+        user: &LoggedUser,
+        conf: SessionUpdateConfiguration,
+    ) -> Result<()> {
+        if conf.duration.is_some() {
+            // Duration can only customized by users with proper rights
+            if id != user.id && !user.can_customize_duration() {
+                return Err(Error::Unauthorized(Permission::AdminEdit));
+            }
+        }
+
+        new_runtime()?.block_on(self.engine.update_session(&session_id(id), conf))
+    }
+
+    pub fn delete_session(&self, user: &LoggedUser, id: &str) -> Result<()> {
+        if user.id != id && !user.has_admin_edit_rights() {
+            return Err(Error::Unauthorized(Permission::AdminEdit));
+        }
+
+        let session_id = session_id(id);
+        let result = new_runtime()?.block_on(self.engine.delete_session(&session_id));
+        match &result {
+            Ok(_) => {
+                self.metrics.inc_undeploy_counter();
+                if let Ok(mut sessions) = self.sessions.lock() {
+                    sessions.remove(session_id.as_str());
+                } else {
+                    error!("Failed to acquire sessions lock");
+                }
+            }
+            Err(e) => {
+                self.metrics.inc_undeploy_failures_counter();
+                error!("Error during undeployment {}", e);
+            }
+        }
+        result
+    }
+
+    // Templates
+
+    pub fn list_templates(&self) -> Result<BTreeMap<String, Template>> {
+        new_runtime()?.block_on(self.clone().engine.list_templates())
     }
 }

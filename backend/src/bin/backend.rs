@@ -24,6 +24,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // Prints basic details
     log::info!("Running ROCKET in {:?} mode", Environment::active()?);
 
+    for (key, value) in env::vars() {
+        log::info!("var {}={}", key, value)
+    }
+
     match env::var("GITHUB_SHA") {
         Ok(version) => log::info!("Version {}", version),
         Err(_) => log::warn!("Unknown version"),
@@ -82,6 +86,16 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 playground::api::create_current_workspace,
                 playground::api::update_current_workspace,
                 playground::api::delete_current_workspace,
+                // Sessions
+                playground::api::get_current_session,
+                playground::api::create_current_session,
+                playground::api::update_current_session,
+                playground::api::delete_current_session,
+                playground::api::get_session,
+                playground::api::list_sessions,
+                playground::api::create_session,
+                playground::api::update_session,
+                playground::api::delete_session,
                 // Workspaces
                 playground::api::get_workspace,
                 playground::api::list_workspaces,

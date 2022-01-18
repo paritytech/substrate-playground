@@ -6,22 +6,24 @@ use crate::{
         ingress_path, list_by_selector,
     },
     types::{
-        self, Configuration, Environment, LoggedUser, NameValuePair, Pool, Port, Repository,
-        RepositoryConfiguration, RepositoryDetails, RepositoryRuntimeConfiguration,
-        RepositoryUpdateConfiguration, RepositoryVersion, RepositoryVersionConfiguration,
-        RepositoryVersionState, Template, User, UserConfiguration, UserUpdateConfiguration,
-        Workspace, WorkspaceConfiguration, WorkspaceDefaults, WorkspaceState,
-        WorkspaceUpdateConfiguration,
+        self, ConditionType, Configuration, ContainerPhase, Environment, LoggedUser, NameValuePair,
+        Phase, Pool, Port, Repository, RepositoryConfiguration, RepositoryDetails,
+        RepositoryRuntimeConfiguration, RepositoryUpdateConfiguration, RepositoryVersion,
+        RepositoryVersionConfiguration, RepositoryVersionState, Session, SessionConfiguration,
+        SessionUpdateConfiguration, Status, Template, User, UserConfiguration,
+        UserUpdateConfiguration, Workspace, WorkspaceConfiguration, WorkspaceDefaults,
+        WorkspaceState, WorkspaceUpdateConfiguration,
     },
 };
 use json_patch::{AddOperation, PatchOperation};
 use k8s_openapi::api::{
     batch::v1::{Job, JobSpec},
     core::v1::{
-        Affinity, Container, EnvVar, Node, NodeAffinity, NodeSelectorRequirement, NodeSelectorTerm,
-        PersistentVolumeClaim, PersistentVolumeClaimSpec, PersistentVolumeClaimVolumeSource, Pod,
-        PodSpec, PodTemplateSpec, PreferredSchedulingTerm, ResourceRequirements, Service,
-        ServicePort, ServiceSpec, TypedLocalObjectReference, Volume, VolumeMount,
+        Affinity, Container, ContainerStatus, EnvVar, Node, NodeAffinity, NodeSelectorRequirement,
+        NodeSelectorTerm, PersistentVolumeClaim, PersistentVolumeClaimSpec,
+        PersistentVolumeClaimVolumeSource, Pod, PodCondition, PodSpec, PodTemplateSpec,
+        PreferredSchedulingTerm, ResourceRequirements, Service, ServicePort, ServiceSpec,
+        TypedLocalObjectReference, Volume, VolumeMount,
     },
     networking::v1::{HTTPIngressPath, HTTPIngressRuleValue, Ingress, IngressRule},
 };
@@ -36,7 +38,10 @@ use kube::{
 use log::error;
 use serde::Serialize;
 use serde_json::json;
-use std::{collections::BTreeMap, convert::TryFrom, env, num::ParseIntError, time::Duration};
+use std::{
+    collections::BTreeMap, convert::TryFrom, env, num::ParseIntError, str::FromStr,
+    time::Duration,
+};
 
 const NODE_POOL_LABEL: &str = "cloud.google.com/gke-nodepool";
 const INSTANCE_TYPE_LABEL: &str = "node.kubernetes.io/instance-type";
@@ -47,6 +52,7 @@ const COMPONENT_LABEL: &str = "app.kubernetes.io/component";
 const COMPONENT_VALUE: &str = "workspace";
 const OWNER_LABEL: &str = "app.kubernetes.io/owner";
 const INGRESS_NAME: &str = "ingress";
+const TEMPLATE_ANNOTATION: &str = "playground.substrate.io/template";
 const WORKSPACE_DURATION_ANNOTATION: &str = "playground.substrate.io/workspace_duration";
 const USERS_CONFIG_MAP: &str = "playground-users";
 const REPOSITORIES_CONFIG_MAP: &str = "playground-repositories";
@@ -59,6 +65,21 @@ pub fn pod_name(user: &str) -> String {
 
 pub fn service_name(workspace_id: &str) -> String {
     format!("{}-service-{}", COMPONENT_VALUE, workspace_id)
+}
+
+// TODO to remove
+
+fn session_duration_annotation(duration: Duration) -> String {
+    let duration_min = duration.as_secs() / 60;
+    duration_min.to_string()
+}
+
+fn str_to_session_duration_minutes(str: &str) -> Result<Duration> {
+    Ok(Duration::from_secs(
+        str.parse::<u64>()
+            .map_err(|err| Error::Failure(err.into()))?
+            * 60,
+    ))
 }
 
 // Model
@@ -290,6 +311,74 @@ fn create_workspace_pod(
         ..Default::default()
     })
 }
+fn create_pod(
+    env: &Environment,
+    session_id: &str,
+    template: &Template,
+    duration: &Duration,
+    pool_id: &str,
+) -> Result<Pod> {
+    let mut labels = BTreeMap::new();
+    labels.insert(APP_LABEL.to_string(), APP_VALUE.to_string());
+    labels.insert(COMPONENT_LABEL.to_string(), COMPONENT_VALUE.to_string());
+    labels.insert(OWNER_LABEL.to_string(), session_id.to_string());
+
+    Ok(Pod {
+        metadata: ObjectMeta {
+            name: Some(pod_name(session_id)),
+            labels: Some(labels),
+            annotations: Some(create_pod_annotations(duration)?),
+            ..Default::default()
+        },
+        spec: Some(PodSpec {
+            affinity: Some(Affinity {
+                node_affinity: Some(NodeAffinity {
+                    preferred_during_scheduling_ignored_during_execution: Some(vec![
+                        PreferredSchedulingTerm {
+                            weight: 100,
+                            preference: NodeSelectorTerm {
+                                match_expressions: Some(vec![NodeSelectorRequirement {
+                                    key: NODE_POOL_LABEL.to_string(),
+                                    operator: "In".to_string(),
+                                    values: Some(vec![pool_id.to_string()]),
+                                }]),
+                                ..Default::default()
+                            },
+                        },
+                    ]),
+                    ..Default::default()
+                }),
+                ..Default::default()
+            }),
+            containers: vec![Container {
+                name: format!("{}-container", COMPONENT_VALUE),
+                image: Some(template.image.to_string()),
+                env: Some(pod_env_variables(
+                    &template.runtime.as_ref().unwrap(),
+                    &env.host,
+                    session_id,
+                )),
+                volume_mounts: Some(vec![VolumeMount {
+                    name: "repo".to_string(),
+                    mount_path: "/repository".to_string(),
+                    ..Default::default()
+                }]),
+                ..Default::default()
+            }],
+            termination_grace_period_seconds: Some(1),
+            volumes: Some(vec![Volume {
+                name: "repo".to_string(),
+                persistent_volume_claim: Some(PersistentVolumeClaimVolumeSource {
+                    claim_name: "claim".to_string(),
+                    ..Default::default()
+                }),
+                ..Default::default()
+            }]),
+            ..Default::default()
+        }),
+        ..Default::default()
+    })
+}
 
 fn create_service(workspace_id: &str, runtime: &RepositoryRuntimeConfiguration) -> Service {
     let mut labels = BTreeMap::new();
@@ -475,50 +564,49 @@ impl Engine {
                 .collect(),
         })
     }
-    /*
-        fn condition_to_condition(self, condition: &PodCondition) -> types::PodCondition {
-            types::PodCondition {
-                type_: ConditionType::from_str(condition.type_.as_str())
-                    .unwrap_or(ConditionType::Unknown),
-                status: Status::from_str(condition.status.as_str()).unwrap_or(Status::Unknown),
-                reason: condition.clone().reason,
-                message: condition.clone().message,
-            }
-        }
-        fn container_status_to_container_status(
-            self,
-            status: &ContainerStatus,
-        ) -> types::ContainerStatus {
-            let state = status.state.as_ref();
-            types::ContainerStatus {
-                phase: state
-                    .map(|s| {
-                        if s.running.is_some() {
-                            ContainerPhase::Running
-                        } else if s.waiting.is_some() {
-                            ContainerPhase::Waiting
-                        } else {
-                            ContainerPhase::Terminated
-                        }
-                    })
-                    .unwrap_or(ContainerPhase::Unknown),
-                reason: state.and_then(|s| {
-                    s.waiting
-                        .as_ref()
-                        .and_then(|s| s.reason.clone())
-                        .or_else(|| s.terminated.as_ref().and_then(|s| s.reason.clone()))
-                }),
-                message: state.and_then(|s| {
-                    s.waiting
-                        .as_ref()
-                        .and_then(|s| s.message.clone())
-                        .or_else(|| s.terminated.as_ref().and_then(|s| s.message.clone()))
-                }),
-            }
-        }
-    */
 
-    /*fn pod_to_details(self, pod: &Pod) -> Result<types::Pod> {
+    fn condition_to_condition(self, condition: &PodCondition) -> types::PodCondition {
+        types::PodCondition {
+            type_: ConditionType::from_str(condition.type_.as_str())
+                .unwrap_or(ConditionType::Unknown),
+            status: Status::from_str(condition.status.as_str()).unwrap_or(Status::Unknown),
+            reason: condition.clone().reason,
+            message: condition.clone().message,
+        }
+    }
+    fn container_status_to_container_status(
+        self,
+        status: &ContainerStatus,
+    ) -> types::ContainerStatus {
+        let state = status.state.as_ref();
+        types::ContainerStatus {
+            phase: state
+                .map(|s| {
+                    if s.running.is_some() {
+                        ContainerPhase::Running
+                    } else if s.waiting.is_some() {
+                        ContainerPhase::Waiting
+                    } else {
+                        ContainerPhase::Terminated
+                    }
+                })
+                .unwrap_or(ContainerPhase::Unknown),
+            reason: state.and_then(|s| {
+                s.waiting
+                    .as_ref()
+                    .and_then(|s| s.reason.clone())
+                    .or_else(|| s.terminated.as_ref().and_then(|s| s.reason.clone()))
+            }),
+            message: state.and_then(|s| {
+                s.waiting
+                    .as_ref()
+                    .and_then(|s| s.message.clone())
+                    .or_else(|| s.terminated.as_ref().and_then(|s| s.message.clone()))
+            }),
+        }
+    }
+
+    fn pod_to_details(self, pod: &Pod) -> Result<types::Pod> {
         let status = pod.status.as_ref().ok_or(Error::MissingData("status"))?;
         let conditions = status.clone().conditions;
         let container_statuses = status.clone().container_statuses;
@@ -541,7 +629,7 @@ impl Engine {
             }),
             container: container_status.map(|c| self.container_status_to_container_status(c)),
         })
-    }*/
+    }
 
     fn yaml_to_user(self, s: &str) -> Result<User> {
         serde_yaml::from_str(s).map_err(|err| Error::Failure(err.into()))
@@ -1207,5 +1295,243 @@ impl Engine {
                 Err(_) => None,
             })
             .collect())
+    }
+
+    // TODO to remove
+
+    // Creates a Session from a Pod annotations
+    fn pod_to_session(self, env: &Environment, pod: &Pod) -> Result<Session> {
+        let labels = pod
+            .metadata
+            .labels
+            .clone()
+            .ok_or(Error::MissingData("pod#metadata#labels"))?;
+        let unknown = "UNKNOWN OWNER".to_string();
+        let username = labels.get(OWNER_LABEL).unwrap_or(&unknown);
+        let annotations = &pod
+            .metadata
+            .annotations
+            .clone()
+            .ok_or(Error::MissingData("pod#metadata#annotations"))?;
+        let template = serde_yaml::from_str(
+            &annotations
+                .get(TEMPLATE_ANNOTATION)
+                .ok_or(Error::MissingData("template"))?,
+        )
+        .map_err(|err| Error::Failure(err.into()))?;
+        let duration = str_to_session_duration_minutes(
+            annotations
+                .get(WORKSPACE_DURATION_ANNOTATION)
+                .ok_or(Error::MissingData("template#session_duration"))?,
+        )?;
+
+        Ok(Session {
+            user_id: username.clone(),
+            template,
+            url: subdomain(&env.host, &username),
+            pod: self.clone().pod_to_details(&pod.clone())?,
+            duration,
+            node: pod
+                .clone()
+                .spec
+                .ok_or(Error::MissingData("pod#spec"))?
+                .node_name
+                .unwrap_or_else(|| "<Unknown>".to_string()),
+        })
+    }
+
+    pub async fn get_session(&self, id: &str) -> Result<Option<Session>> {
+        let client = client().await?;
+        let pod_api: Api<Pod> = Api::namespaced(client, &self.env.namespace);
+        let pod = pod_api.get(&pod_name(id)).await.ok();
+
+        match pod.map(|pod| self.clone().pod_to_session(&self.env, &pod)) {
+            Some(session) => session.map(Some),
+            None => Ok(None),
+        }
+    }
+
+    /// Lists all currently running sessions
+    pub async fn list_sessions(&self) -> Result<BTreeMap<String, Session>> {
+        let client = client().await?;
+        let pod_api: Api<Pod> = Api::namespaced(client, &self.env.namespace);
+        let pods = list_by_selector(
+            &pod_api,
+            format!("{}={}", COMPONENT_LABEL, COMPONENT_VALUE).to_string(),
+        )
+        .await?;
+
+        Ok(pods
+            .iter()
+            .flat_map(|pod| self.clone().pod_to_session(&self.env, pod).ok())
+            .map(|session| (session.clone().user_id, session))
+            .collect::<BTreeMap<String, Session>>())
+    }
+
+    pub async fn create_session(
+        &self,
+        user: &LoggedUser,
+        session_id: &str,
+        conf: SessionConfiguration,
+    ) -> Result<()> {
+        // Make sure some node on the right pools still have rooms
+        // Find pool affinity, lookup corresponding pool and capacity based on nodes, figure out if there is room left
+        // TODO: replace with custom scheduler
+        // * https://kubernetes.io/docs/tasks/extend-kubernetes/configure-multiple-schedulers/
+        // * https://kubernetes.io/blog/2017/03/advanced-scheduling-in-kubernetes/
+        let pool_id = conf.clone().pool_affinity.unwrap_or_else(|| {
+            user.clone()
+                .pool_affinity
+                .unwrap_or(self.clone().configuration.workspace.pool_affinity)
+        });
+        let pool = self
+            .get_pool(&pool_id)
+            .await?
+            .ok_or(Error::MissingData("no matching pool"))?;
+        let max_sessions_allowed =
+            pool.nodes.len() * self.configuration.workspace.max_workspaces_per_pod;
+        let sessions = self.list_sessions().await?;
+        if sessions.len() >= max_sessions_allowed {
+            // TODO Should trigger pool dynamic scalability. Right now this will only consider the pool lower bound.
+            // "Reached maximum number of concurrent sessions allowed: {}"
+            return Err(Error::ConcurrentWorkspacesLimitBreached(sessions.len()));
+        }
+        let client = client().await?;
+        // Access the right image id
+        let templates = self.clone().list_templates().await?;
+        let template = templates
+            .get(&conf.template.to_string())
+            .ok_or(Error::MissingData("no matching template"))?;
+
+        let namespace = &self.env.namespace;
+
+        let pod_api: Api<Pod> = Api::namespaced(client.clone(), namespace);
+
+        //TODO deploy a new ingress matching the route
+        // With the proper mapping
+        // Define the correct route
+        // Also deploy proper tcp mapping configmap https://kubernetes.github.io/ingress-nginx/user-guide/exposing-tcp-udp-services/
+
+        let mut sessions = BTreeMap::new();
+        sessions.insert(
+            session_id.to_string(),
+            template
+                .runtime
+                .as_ref()
+                .unwrap()
+                .ports
+                .clone()
+                .unwrap_or_default(),
+        );
+        self.patch_ingress(&sessions).await?;
+
+        let duration = conf
+            .duration
+            .unwrap_or(self.configuration.workspace.duration);
+
+        // Deploy a new pod for this image
+        pod_api
+            .create(
+                &PostParams::default(),
+                &create_pod(&self.env, session_id, template, &duration, &pool_id)?,
+            )
+            .await
+            .map_err(|err| Error::Failure(err.into()))?;
+
+        // Deploy the associated service
+        let service_api: Api<Service> = Api::namespaced(client.clone(), namespace);
+        let service = create_service(session_id, &template.runtime.as_ref().unwrap());
+        service_api
+            .create(&PostParams::default(), &service)
+            .await
+            .map_err(|err| Error::Failure(err.into()))?;
+
+        Ok(())
+    }
+
+    pub async fn update_session(
+        &self,
+        session_id: &str,
+        conf: SessionUpdateConfiguration,
+    ) -> Result<()> {
+        let session = self
+            .clone()
+            .get_session(&session_id)
+            .await?
+            .ok_or(Error::MissingData("no matching session"))?;
+
+        let duration = conf
+            .duration
+            .unwrap_or(self.configuration.workspace.duration);
+        let max_duration = self.configuration.workspace.max_duration;
+        if duration >= max_duration {
+            return Err(Error::DurationLimitBreached(max_duration.as_millis()));
+        }
+        if duration != session.duration {
+            let client = client().await?;
+            let pod_api: Api<Pod> = Api::namespaced(client, &self.env.namespace);
+            let params = PatchParams {
+                ..PatchParams::default()
+            };
+            let patch: Patch<json_patch::Patch> =
+                Patch::Json(json_patch::Patch(vec![PatchOperation::Add(AddOperation {
+                    path: format!(
+                        "/metadata/annotations/{}",
+                        WORKSPACE_DURATION_ANNOTATION.replace("/", "~1")
+                    ),
+                    value: json!(session_duration_annotation(duration)),
+                })]));
+            pod_api
+                .patch(&pod_name(&session.user_id), &params, &patch)
+                .await
+                .map_err(|err| Error::Failure(err.into()))?;
+        }
+
+        Ok(())
+    }
+
+    pub async fn delete_session(&self, id: &str) -> Result<()> {
+        // Undeploy the service by its id
+        let client = client().await?;
+        let service_api: Api<Service> = Api::namespaced(client.clone(), &self.env.namespace);
+        service_api
+            .delete(&service_name(id), &DeleteParams::default())
+            .await
+            .map_err(|err| Error::Failure(err.into()))?;
+
+        let pod_api: Api<Pod> = Api::namespaced(client.clone(), &self.env.namespace);
+        pod_api
+            .delete(&pod_name(id), &DeleteParams::default())
+            .await
+            .map_err(|err| Error::Failure(err.into()))?;
+
+        let subdomain = subdomain(&self.env.host, id);
+        let ingress_api: Api<Ingress> = Api::namespaced(client, &self.env.namespace);
+        let mut ingress: Ingress = ingress_api
+            .get(INGRESS_NAME)
+            .await
+            .map_err(|err| Error::Failure(err.into()))?
+            .clone();
+        let mut spec = ingress
+            .clone()
+            .spec
+            .ok_or(Error::MissingData("spec"))?
+            .clone();
+        let rules: Vec<IngressRule> = spec
+            .clone()
+            .rules
+            .unwrap()
+            .into_iter()
+            .filter(|rule| rule.clone().host.unwrap_or_else(|| "unknown".to_string()) != subdomain)
+            .collect();
+        spec.rules.replace(rules);
+        ingress.spec.replace(spec);
+
+        ingress_api
+            .replace(INGRESS_NAME, &PostParams::default(), &ingress)
+            .await
+            .map_err(|err| Error::Failure(err.into()))?;
+
+        Ok(())
     }
 }
