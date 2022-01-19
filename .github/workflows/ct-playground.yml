@@ -35,7 +35,7 @@ jobs:
           ENV: ${{ matrix.env }}
 
       - name: Audit URLs using Lighthouse
-        uses: treosh/lighthouse-ci-action@8.2.0
+        uses: foo-software/lighthouse-check-action@master
         with:
           urls: https://${{ steps.env.outputs.domain }}.substrate.dev/
 
