@@ -9,10 +9,8 @@ bases:
 
 resources:
     - namespaces.yaml
-    - backend-api-deployment.yaml
-    - backend-api-service.yaml
-    - backend-ui-deployment.yaml
-    - backend-ui-service.yaml
+    - backend-api.yaml
+    - backend-ui.yaml
     - cluster-role-binding.yaml
     - ingress.yaml
     - node-exporter.yaml
