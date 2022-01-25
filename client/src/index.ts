@@ -173,7 +173,7 @@ export class Client {
         return rpc(this.path(Client.sessionsResource, id), init, this.timeout);
     }
 
-    async listSessions(init: RequestInit = this.defaultInit): Promise<Record<string, Session>> {
+    async listSessions(init: RequestInit = this.defaultInit): Promise<Session[]> {
         return rpc(this.path(Client.sessionsResource), init, this.timeout);
     }
 
@@ -258,7 +258,7 @@ export class Client {
 
     // Templates
 
-    async listTemplates(init: RequestInit = this.defaultInit): Promise<Record<string, Template>> {
+    async listTemplates(init: RequestInit = this.defaultInit): Promise<Template[]> {
         return rpc(this.path(Client.templatesResource), init, this.timeout);
     }
 
