@@ -4,24 +4,24 @@
 #         Frontend       #
 ##########################
 
-FROM node:14 AS builder
+# See all images here: https://hub.docker.com/_/node
+FROM node:14.18.3-alpine AS builder
 
-WORKDIR /opt
+WORKDIR /app
 
-COPY package.json yarn.lock tsconfig.json .eslintrc.cjs /opt/
+COPY package.json package-lock.json tsconfig.json .eslintrc.cjs .
+COPY src /app/src
+COPY public /app/public
 
+# The custom base URL used to access the API, if any
+ARG BASE
+ENV BASE=$BASE
+
+# The git sha of the current source tree
 ARG GITHUB_SHA
 ENV GITHUB_SHA=$GITHUB_SHA
 
-ENV CI=true \
-    PARCEL_WORKERS=1
-
-RUN yarn install
-
-COPY src /opt/src
-COPY public /opt/public
-
-RUN yarn build
+RUN npm install && npm run build
 
 LABEL stage=builder
 
@@ -29,10 +29,8 @@ LABEL stage=builder
 #          Nginx         #
 ##########################
 
-FROM nginx:1.19.0-alpine
+FROM nginx:1.21.5-alpine
 
 COPY ./conf/nginx.conf /etc/nginx/conf.d/default.conf
 
-WORKDIR /usr/share/nginx/html
-
-COPY --from=builder /opt/dist/ .
+COPY --from=builder /app/dist/ /usr/share/nginx/html
