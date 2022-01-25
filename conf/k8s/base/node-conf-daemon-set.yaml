@@ -1,3 +1,5 @@
+# Configure each linux node so that they match user container requirements
+
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
