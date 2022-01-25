@@ -19,7 +19,7 @@ import TableFooter from '@mui/material/TableFooter';
 import TablePagination from '@mui/material/TablePagination';
 import TextField from '@mui/material/TextField';
 import { Autocomplete } from '@mui/material';
-import { Client, Configuration, LoggedUser, Pool, Repository, User, Workspace, WorkspaceConfiguration, WorkspaceUpdateConfiguration } from '@substrate/playground-client';
+import { Client, Configuration, LoggedUser, Pool, Repository, Template, User, Workspace, WorkspaceConfiguration, WorkspaceUpdateConfiguration } from '@substrate/playground-client';
 import { useStyles, EnhancedTableToolbar, NoResourcesContainer, TablePaginationActions, Resources } from '.';
 import { ErrorSnackbar } from '../../components';
 import { useInterval } from '../../hooks';
