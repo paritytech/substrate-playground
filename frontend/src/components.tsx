@@ -21,7 +21,7 @@ import Typography from '@mui/material/Typography';
 import { Configuration, LoggedUser } from "@substrate/playground-client";
 import { useInterval } from './hooks';
 import { Params } from "./index";
-import LogoSubstrate from "./LogoSubstrate";
+import { LogoSubstrate } from "./LogoSubstrate";
 
 function ErrorMessageAction({action, actionTitle = "TRY AGAIN"}: {action: (() => void) | (() => Promise<void>), actionTitle?: string}): JSX.Element {
     const [executing, setExecuting] = useState(false);
