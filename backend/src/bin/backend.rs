@@ -24,10 +24,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // Prints basic details
     log::info!("Running ROCKET in {:?} mode", Environment::active()?);
 
-    for (key, value) in env::vars() {
-        log::info!("var {}={}", key, value)
-    }
-
     match env::var("GITHUB_SHA") {
         Ok(version) => log::info!("Version {}", version),
         Err(_) => log::warn!("Unknown version"),
@@ -36,6 +32,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let manager = Manager::new().await?;
     let engine = manager.clone().engine;
     manager.clone().spawn_background_thread();
+
+    log::info!("Spawned");
 
     // Configure CORS
     let cors = CorsOptions {
@@ -127,6 +125,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .manage(Context { manager })
         .launch();
 
+
     // Launch blocks unless an error is returned
+
+    log::info!("Shutting down due to error");
+
     Err(error.into())
 }
