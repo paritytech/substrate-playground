@@ -209,14 +209,6 @@ k8s-undeploy-playground: requires-k8s ## Undeploy playground from kubernetes
 k8s-undeploy-theia: requires-k8s ## Undeploy all theia pods and services from kubernetes
 	kubectl delete pods,services -l app.kubernetes.io/component=theia
 
-###@ Dev
-
-k8s-dev:
-	@cd conf/k8s; skaffold dev --cleanup=false
-
-k8s-dev-delete:
-	@cd conf/k8s; skaffold delete
-
 ##@ DNS certificates
 
 generate-challenge: requires-env
