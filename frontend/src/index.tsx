@@ -2,8 +2,8 @@ import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom";
 import { State } from "xstate";
 import Analytics from "analytics";
-import simpleAnalyticsPlugin from "analytics-plugin-simple-analytics";
-import { Client, Configuration, LoggedUser, Workspace } from '@substrate/playground-client';
+import simpleAnalyticsPlugin from "@analytics/simple-analytics";
+import { Client, Configuration, LoggedUser, Template, Workspace } from '@substrate/playground-client';
 import { createTheme, ThemeProvider, Theme, StyledEngineProvider, adaptV4Theme } from '@mui/material/styles';
 import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
@@ -19,16 +19,13 @@ import { TheiaPanel } from './panels/theia';
 import { WorkspacePanel } from './panels/workspace';
 import { terms } from "./terms";
 import { hasAdminReadRights } from "./utils";
-import { SubstrateLight, SubstrateDark } from './themes';
-import LogoSubstrate from "./LogoSubstrate";
+import { SubstrateLight } from './themes';
 import { CssBaseline } from "@mui/material";
-
 
 declare module '@mui/styles/defaultTheme' {
   // eslint-disable-next-line @typescript-eslint/no-empty-interface
   interface DefaultTheme extends Theme {}
 }
-
 
 function MainPanel({ client, params, conf, user, id, templates, onRetry, onConnect, onAfterDeployed }: { client: Client, params: Params, conf: Configuration, user?: LoggedUser, templates: Record<string, Template>, id: PanelId, onRetry: () => void, onConnect: () => void, onAfterDeployed: () => void }): JSX.Element {
     switch(id) {
@@ -49,7 +46,6 @@ function MainPanel({ client, params, conf, user, id, templates, onRetry, onConne
         case PanelId.Theia:
           return <TheiaPanel client={client} autoDeploy={params.deploy} onMissingWorkspace={onRetry} onWorkspaceFailing={onRetry} onWorkspaceTimeout={onRetry} />;
     }
-    return <></>;
 }
 
 function ExtraTheiaNav({ client, conf, restartAction }: { client: Client, conf: Configuration, restartAction: () => void }): JSX.Element {
@@ -129,18 +125,6 @@ function App({ params }: { params: Params }): JSX.Element {
     const { deploy } = params;
     const [state, send] = useMachine(newMachine(client, deploy? PanelId.Theia: PanelId.Workspace), { devTools: true });
     const { panel, templates, error } = state.context;
-
-    /*const theme = createTheme({
-        palette: {
-          mode: 'light',
-          primary: {
-            main: 'rgba(38,224,162, 1)',
-          },
-          secondary: {
-            main: 'rgb(0, 255, 0)',
-          },
-        },
-    });*/
 
     const isTheia = state.matches(States.LOGGED) && panel == PanelId.Theia;
 
