@@ -241,4 +241,5 @@ gke-create-cluster: requires-env
         --zone us-central1-a \
         --node-locations us-central1-a \
         --machine-type n2d-standard-32 \
-        --num-nodes 1
+        --num-nodes 1 \
+        --enable-network-policy
