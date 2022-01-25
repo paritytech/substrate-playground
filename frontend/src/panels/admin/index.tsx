@@ -1,4 +1,3 @@
-import clsx from 'clsx';
 import React, { Dispatch, SetStateAction, useState } from "react";
 import { lighten, useTheme, Theme } from '@mui/material/styles';
 import createStyles from '@mui/styles/createStyles';
@@ -230,9 +229,6 @@ export function EnhancedTableToolbar({ user, label, selected = null, onCreate, o
   return (
     <>
       <Toolbar
-        className={clsx(classes.root, {
-          [classes.highlight]: selected != null,
-        })}
       >
         <Typography className={classes.title} variant="h6" id="tableTitle" component="div">
           {label}
@@ -247,7 +243,7 @@ export function EnhancedTableToolbar({ user, label, selected = null, onCreate, o
 export function AdminPanel({ client, user, conf }: { client: Client, user?: LoggedUser, conf: Configuration }): JSX.Element {
   const [value, setValue] = React.useState(0);
 
-  const handleChange = (_: React.ChangeEvent<Record<string, unknown>>, newValue: number) => {
+  const handleChange = (_: React.ChangeEvent<{}>, newValue: number) => {
     setValue(newValue);
   };
 
