@@ -24,7 +24,7 @@
         "@theia/mini-browser": "1.21.0",
         "@theia/monaco": "1.21.0",
         "@theia/navigator": "1.21.0",
-        "@theia/outline-view": "1.21.0",
+        "@theia/outline-view": "1.22.0",
         "@theia/output": "1.21.0",
         "@theia/plugin": "1.21.0",
         "@theia/plugin-dev": "1.21.0",
