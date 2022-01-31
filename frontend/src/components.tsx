@@ -247,8 +247,8 @@ export function Wrapper({ params, thin = false, children, nav}: { params: Params
             </Fade>
 
             {!thin &&
-            <Container style={{display: "flex", justifyContent: "space-between", alignItems: "center"}} component="footer" maxWidth={false}>
-                <Typography color="textSecondary">
+            <Container style={{display: "flex", justifyContent: "center", alignItems: "center", textAlign: 'center', marginBottom: 10}} component="footer" maxWidth={false}>
+                <Typography style={{ flex: 1 }} color="textSecondary">
                     {params.base != "/api" &&
                     <>Connected to {params.base}</>}
                 </Typography>
@@ -256,10 +256,10 @@ export function Wrapper({ params, thin = false, children, nav}: { params: Params
                     href="https://www.parity.io/privacy/"
                     rel="noreferrer"
                     variant="inherit"
-                    style={{ margin: 15 }}>
+                    style={{ flex: 1 }}>
                     Privacy Policy
                 </Link>
-                <Typography color="textSecondary">
+                <Typography style={{ flex: 1 }} color="textSecondary">
                     #{params.version || 'UNKNOWN'}
                 </Typography>
             </Container>}
