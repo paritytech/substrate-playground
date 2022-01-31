@@ -241,7 +241,7 @@ export function Wrapper({ params, thin = false, children, nav}: { params: Params
             {nav}
 
             <Fade in appear>
-                <div>
+                <div style={{display: "flex", flex: 1}}>
                   {children}
                 </div>
             </Fade>
