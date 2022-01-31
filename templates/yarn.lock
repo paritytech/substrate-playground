@@ -1887,6 +1887,23 @@
     semver "^5.4.1"
     write-json-file "^2.2.0"
 
+"@theia/application-package@1.22.1":
+  version "1.22.1"
+  resolved "https://registry.yarnpkg.com/@theia/application-package/-/application-package-1.22.1.tgz#f6fc3ca8bb7505b47c16b6924d38e64f79e01952"
+  integrity sha512-nJhU5W3vuXP9s5iQuwjT0OZ7uV+2H/Yrga7rFk1QHSDrVhHHukGluYlXxADRhBDxVaXUlcgbUspTtmBY40oAWw==
+  dependencies:
+    "@types/fs-extra" "^4.0.2"
+    "@types/request" "^2.0.3"
+    "@types/semver" "^5.4.0"
+    "@types/write-json-file" "^2.2.1"
+    changes-stream "^2.2.0"
+    deepmerge "^4.2.2"
+    fs-extra "^4.0.2"
+    is-electron "^2.1.0"
+    request "^2.82.0"
+    semver "^5.4.1"
+    write-json-file "^2.2.0"
+
 "@theia/bulk-edit@1.21.0":
   version "1.21.0"
   resolved "https://registry.yarnpkg.com/@theia/bulk-edit/-/bulk-edit-1.21.0.tgz#161259b48fe172ff8296acae1feced73bbe00679"
@@ -2014,6 +2031,76 @@
     ws "^7.1.2"
     yargs "^15.3.1"
 
+"@theia/core@1.22.1":
+  version "1.22.1"
+  resolved "https://registry.yarnpkg.com/@theia/core/-/core-1.22.1.tgz#b5af739a46de49b56fb18d1bb4ebd92522ba4c3b"
+  integrity sha512-fAVGz4ktV8UjDS6vwLqAR2bAjVLfy67DPj9hNK5c16q2Osw0GD+dvAf71gny2dDZHGAusfirA7ePXCgQE7lVlw==
+  dependencies:
+    "@babel/runtime" "^7.10.0"
+    "@phosphor/algorithm" "1"
+    "@phosphor/commands" "1"
+    "@phosphor/coreutils" "1"
+    "@phosphor/domutils" "1"
+    "@phosphor/dragdrop" "1"
+    "@phosphor/messaging" "1"
+    "@phosphor/properties" "1"
+    "@phosphor/signaling" "1"
+    "@phosphor/virtualdom" "1"
+    "@phosphor/widgets" "1"
+    "@primer/octicons-react" "^9.0.0"
+    "@theia/application-package" "1.22.1"
+    "@types/body-parser" "^1.16.4"
+    "@types/cookie" "^0.3.3"
+    "@types/dompurify" "^2.2.2"
+    "@types/express" "^4.16.0"
+    "@types/fs-extra" "^4.0.2"
+    "@types/lodash.debounce" "4.0.3"
+    "@types/lodash.throttle" "^4.1.3"
+    "@types/markdown-it" "^12.2.3"
+    "@types/react" "^16.8.0"
+    "@types/react-dom" "^16.8.0"
+    "@types/react-virtualized" "^9.18.3"
+    "@types/route-parser" "^0.1.1"
+    "@types/safer-buffer" "^2.1.0"
+    "@types/ws" "^5.1.2"
+    "@types/yargs" "^15"
+    "@vscode/codicons" "*"
+    ajv "^6.5.3"
+    body-parser "^1.17.2"
+    cookie "^0.4.0"
+    dompurify "^2.2.9"
+    drivelist "^9.0.2"
+    es6-promise "^4.2.4"
+    express "^4.16.3"
+    file-icons-js "~1.0.3"
+    font-awesome "^4.7.0"
+    fs-extra "^4.0.2"
+    fuzzy "^0.1.3"
+    iconv-lite "^0.6.0"
+    inversify "^5.1.1"
+    jschardet "^2.1.1"
+    keytar "7.2.0"
+    lodash.debounce "^4.0.8"
+    lodash.throttle "^4.1.1"
+    markdown-it "^12.3.2"
+    nsfw "^2.1.2"
+    p-debounce "^2.1.0"
+    perfect-scrollbar "^1.3.0"
+    react "^16.8.0"
+    react-dom "^16.8.0"
+    react-tooltip "^4.2.21"
+    react-virtualized "^9.20.0"
+    reconnecting-websocket "^4.2.0"
+    reflect-metadata "^0.1.10"
+    route-parser "^0.0.5"
+    safer-buffer "^2.1.2"
+    uuid "^8.3.2"
+    vscode-languageserver-protocol "~3.15.3"
+    vscode-uri "^2.1.1"
+    vscode-ws-jsonrpc "^0.2.0"
+    ws "^7.1.2"
+    yargs "^15.3.1"
+
 "@theia/debug@1.21.0":
   version "1.21.0"
   resolved "https://registry.yarnpkg.com/@theia/debug/-/debug-1.21.0.tgz#e4f8a0a05bc16f3303fe927b9795165c5459d1e6"
@@ -2057,6 +2144,16 @@
   dependencies:
     "@theia/core" "1.21.0"
     "@theia/variable-resolver" "1.21.0"
+    "@types/base64-arraybuffer" "0.1.0"
+    base64-arraybuffer "^0.1.5"
+
+"@theia/editor@1.22.1":
+  version "1.22.1"
+  resolved "https://registry.yarnpkg.com/@theia/editor/-/editor-1.22.1.tgz#15027a18a3a2bc068783d539d2afa3827514aca0"
+  integrity sha512-ltDIdfrywKKu5mbbm3g7vN4ZpGVq/kimTKfvpjja6gcBsZ0RcASjdzEth/v8ZIVovp/UbSUFdT2+7i76iYbSFA==
+  dependencies:
+    "@theia/core" "1.22.1"
+    "@theia/variable-resolver" "1.22.1"
     "@types/base64-arraybuffer" "0.1.0"
     base64-arraybuffer "^0.1.5"
 
@@ -2426,13 +2523,13 @@
     "@theia/core" "1.21.0"
     "@theia/navigator" "1.21.0"
 
-"@theia/typehierarchy@1.21.0":
-  version "1.21.0"
-  resolved "https://registry.yarnpkg.com/@theia/typehierarchy/-/typehierarchy-1.21.0.tgz#e1e136c76be9ec3eaeb0c5426aebeadd84050f3d"
-  integrity sha512-xJxsiL9zIn6pCACKI9u43Drh2PdY2TqDHc/lnRINhg163SoEkJQr5c9Q0mRQ0bjLIdl7QK9zIFFaD9+csKgQMA==
+"@theia/typehierarchy@1.22.1":
+  version "1.22.1"
+  resolved "https://registry.yarnpkg.com/@theia/typehierarchy/-/typehierarchy-1.22.1.tgz#cbe1c7217bb73cd73faa2fe2dd727dac8ff6a118"
+  integrity sha512-xAKbONWXUFQfnjIDQGp6nsIlGXQKUsa7lwv+Wt1SVtzEI3HW/YQ12Db08Dds11C8U9/BcYsdXJu5nNhoW7daPA==
   dependencies:
-    "@theia/core" "1.21.0"
-    "@theia/editor" "1.21.0"
+    "@theia/core" "1.22.1"
+    "@theia/editor" "1.22.1"
     "@types/uuid" "^7.0.3"
     uuid "^8.0.0"
 
@@ -2450,6 +2547,13 @@
   integrity sha512-yvexhzA3C6lpm2A6S3Oc87qCqId9xxVQlQRPuFkRIuNBDQpTb0FetYFBeRH7v5GdA8TO18tKI2iy3AXxqFmCcw==
   dependencies:
     "@theia/core" "1.21.0"
+
+"@theia/variable-resolver@1.22.1":
+  version "1.22.1"
+  resolved "https://registry.yarnpkg.com/@theia/variable-resolver/-/variable-resolver-1.22.1.tgz#504fcf12c360e4700a9bb4fcd1b30c0b75726b86"
+  integrity sha512-1QMqE6g6L7MMsZH+45nulAXbKEBbpwBkwYUx8c7msT+McWrQ9os+0Ff47i5P2FFvYY4WUR6uxA67JIu7EuaYoQ==
+  dependencies:
+    "@theia/core" "1.22.1"
 
 "@theia/workspace@1.21.0":
   version "1.21.0"
@@ -2674,6 +2778,14 @@
   version "10.0.2"
   resolved "https://registry.yarnpkg.com/@types/markdown-it/-/markdown-it-10.0.2.tgz#f93334b9c7821ddb19865dfd91ecf688094c2626"
   integrity sha512-FGKiVW1UgeIEAChYAuHcfCd0W4LsMEyrSyTVaZiuJhwR4BwSVUD8JKnzmWAMK2FHNLZSPGUaEkpa/dkZj2uq1w==
+  dependencies:
+    "@types/linkify-it" "*"
+    "@types/mdurl" "*"
+
+"@types/markdown-it@^12.2.3":
+  version "12.2.3"
+  resolved "https://registry.yarnpkg.com/@types/markdown-it/-/markdown-it-12.2.3.tgz#0d6f6e5e413f8daaa26522904597be3d6cd93b51"
+  integrity sha512-GKMHFfv3458yYy+v/N8gjufHO6MSZKCOXpZc5GXIWWy8uldwfmPn98vp81gZ5f9SVw8YYBctgfJ22a2d7AOMeQ==
   dependencies:
     "@types/linkify-it" "*"
     "@types/mdurl" "*"
@@ -3277,6 +3389,11 @@ argparse@^1.0.7:
   integrity sha512-o5Roy6tNG4SL/FOkCAN6RzjiakZS25RLYFrcMttJqbdd8BWrnA+fGz57iN5Pb06pvBGvl5gQ0B48dJlslXvoTg==
   dependencies:
     sprintf-js "~1.0.2"
+
+argparse@^2.0.1:
+  version "2.0.1"
+  resolved "https://registry.yarnpkg.com/argparse/-/argparse-2.0.1.tgz#246f50f3ca78a3240f6c997e8a9bd1eac49e4b38"
+  integrity sha512-8+9WqebbFzpX9OR+Wa6O29asIogeRMzcGtAINdpMHHyAg10f05aSFVBbcEqGf/PXw1EjAZ+q2/bEBg3DvurK3Q==
 
 array-differ@^3.0.0:
   version "3.0.0"
@@ -4626,6 +4743,11 @@ entities@~1.1.1:
   version "1.1.2"
   resolved "https://registry.yarnpkg.com/entities/-/entities-1.1.2.tgz#bdfa735299664dfafd34529ed4f8522a275fea56"
   integrity sha512-f2LZMYl1Fzu7YSBKg+RoROelpOaNrcGmE9AZubeDfrCEia483oW4MI4VyFd5VNHIgQ/7qm1I0wUHK1eJnn2y2w==
+
+entities@~2.1.0:
+  version "2.1.0"
+  resolved "https://registry.yarnpkg.com/entities/-/entities-2.1.0.tgz#992d3129cf7df6870b96c57858c249a120f8b8b5"
+  integrity sha512-hCx1oky9PFrJ611mf0ifBLBRW8lUUVRlFolb5gWRfIELabBlbp9xZvrqZLZAs+NxFnbfQoeGd8wDkygjg7U85w==
 
 env-paths@^2.2.0:
   version "2.2.0"
@@ -6201,6 +6323,13 @@ linkify-it@^2.0.0:
   dependencies:
     uc.micro "^1.0.1"
 
+linkify-it@^3.0.1:
+  version "3.0.3"
+  resolved "https://registry.yarnpkg.com/linkify-it/-/linkify-it-3.0.3.tgz#a98baf44ce45a550efb4d49c769d07524cc2fa2e"
+  integrity sha512-ynTsyrFSdE5oZ/O9GEf00kPngmOfVwazR5GKDq6EYfhlpFug3J2zybX56a2PRRpc9P+FuSoGNAwjlbDs9jJBPQ==
+  dependencies:
+    uc.micro "^1.0.1"
+
 load-json-file@^1.0.0:
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/load-json-file/-/load-json-file-1.1.0.tgz#956905708d58b4bab4c2261b04f59f31c99374c0"
@@ -6451,6 +6580,17 @@ markdown-it-anchor@~5.0.0:
   version "5.0.2"
   resolved "https://registry.yarnpkg.com/markdown-it-anchor/-/markdown-it-anchor-5.0.2.tgz#cdd917a05b7bf92fb736a6dae3385c6d0d0fa552"
   integrity sha512-AFM/woBI8QDJMS/9+MmsBMT5/AR+ImfOsunQZTZhzcTmna3rIzAzbOh5E0l6mlFM/i9666BpUtkqQ9bS7WApCg==
+
+markdown-it@^12.3.2:
+  version "12.3.2"
+  resolved "https://registry.yarnpkg.com/markdown-it/-/markdown-it-12.3.2.tgz#bf92ac92283fe983fe4de8ff8abfb5ad72cd0c90"
+  integrity sha512-TchMembfxfNVpHkbtriWltGWc+m3xszaRD0CZup7GFFhzIgQqxIfn3eGj1yZpfuflzPvfkt611B2Q/Bsk1YnGg==
+  dependencies:
+    argparse "^2.0.1"
+    entities "~2.1.0"
+    linkify-it "^3.0.1"
+    mdurl "^1.0.1"
+    uc.micro "^1.0.5"
 
 markdown-it@^8.4.0:
   version "8.4.2"
