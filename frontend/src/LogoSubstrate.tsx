@@ -9,7 +9,7 @@ const useStyles = makeStyles({
     display: 'block',
     width: '120px',
     '& img': {
-      maxWidth: '100%',
+      maxWidth: '130%',
     },
   },
 });

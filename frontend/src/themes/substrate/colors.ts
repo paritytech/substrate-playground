@@ -33,7 +33,7 @@ export default {
   light: {
     light: '#FFFFFF',
     main: '#eeeeee',
-    dark: '#F7F7F7',
+    dark: 'white',
     contrastText: 'rgba(17, 17, 17, 1)',
   },
   gradient: '(46deg, #a081d9 0%, #6c98f5 14%, #5ee7f9 34%, #d1e3cc 59%, #bb8ba6 99%)',

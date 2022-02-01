@@ -225,7 +225,7 @@ export function NavMenuLogged({ conf, user, onLogout }: { conf: Configuration, u
 
 export function Nav({ onPlayground, children }: { onPlayground: () => void, children?: React.ReactElement }): JSX.Element {
     return (
-        <AppBar style={{ padding: "2rem", borderBottom: "1px solid" }} position="sticky" color="transparent" elevation={1}>
+        <AppBar style={{ padding: "23px", borderColor: "rgb(229,231,235)", borderStyle: "solid", borderWidth: '0px 0px 1px 0px'}} position="sticky" color="transparent" elevation={1}>
             <Toolbar style={{ justifyContent: "space-between" }} variant="dense">
                 <LogoSubstrate theme={true} onClick={onPlayground} />
                 {children}
