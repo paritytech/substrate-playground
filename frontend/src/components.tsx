@@ -234,6 +234,30 @@ export function Nav({ onPlayground, children }: { onPlayground: () => void, chil
     );
 }
 
+export function Footer({ base, version }: { base: string, version?: string }): JSX.Element {
+    return (
+        <Container style={{display: "flex", justifyContent: "space-between", alignItems: "space-between", textAlign: 'center', padding: 24, backgroundColor: 'rgb(36,42,53)'}} component="footer" maxWidth={false}>
+            <div>
+                <Typography color="textSecondary" component="span">
+                    © 2022 Parity Technologies All Rights Reserved
+                </Typography>
+                <Link
+                    href="https://www.parity.io/privacy/"
+                    rel="noreferrer"
+                    color="textSecondary"
+                    variant="inherit"
+                    style={{marginLeft: 10}}>
+                    Privacy Policy
+                </Link>
+            </div>
+            <Typography color="textSecondary">
+                {base != "/api" && <>Connected to {base}</>}
+                #{version || 'UNKNOWN'}
+            </Typography>
+        </Container>
+    );
+}
+
 export function Wrapper({ params, thin = false, children, nav}: { params: Params, thin?: boolean, children: React.ReactElement, nav?: React.ReactElement}): JSX.Element {
     return (
         <div style={{display: "flex", flexDirection: "column", width: "inherit", height: "inherit"}}>
@@ -247,22 +271,7 @@ export function Wrapper({ params, thin = false, children, nav}: { params: Params
             </Fade>
 
             {!thin &&
-            <Container style={{display: "flex", justifyContent: "center", alignItems: "center", textAlign: 'center', marginBottom: 10}} component="footer" maxWidth={false}>
-                <Typography style={{ flex: 1 }} color="textSecondary">
-                    {params.base != "/api" &&
-                    <>Connected to {params.base}</>}
-                </Typography>
-                <Link
-                    href="https://www.parity.io/privacy/"
-                    rel="noreferrer"
-                    variant="inherit"
-                    style={{ flex: 1 }}>
-                    Privacy Policy
-                </Link>
-                <Typography style={{ flex: 1 }} color="textSecondary">
-                    #{params.version || 'UNKNOWN'}
-                </Typography>
-            </Container>}
+            <Footer base={params.base} version={params.version} />}
 
         </div>
     );
