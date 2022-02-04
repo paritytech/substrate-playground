@@ -22,7 +22,7 @@
     "@substrate/playground-client": "1.7.2",
     "@xstate/react": "2.0.0",
     "analytics": "0.7.21",
-    "broadcast-channel": "4.9.0",
+    "broadcast-channel": "4.10.0",
     "marked": "4.0.12",
     "react": "17.0.2",
     "react-dom": "17.0.2",
