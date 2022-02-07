@@ -45,4 +45,4 @@ EXPOSE 3000
 
 # https://github.com/Yelp/dumb-init
 ENTRYPOINT [ "dumb-init", "--" ]
-CMD [ "/home/openvscode-server/server.sh", "--port", "3000", "--folder", "/home/playground/workspace", "--disable-telemetry", "true", "--connectionToken", "1234"]
+CMD [ "/home/openvscode-server/server.sh", "--port", "3000", "--folder", "/home/playground/workspace", "--disable-telemetry", "true", "--without-connection-token"]
