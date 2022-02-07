@@ -1,9 +1,11 @@
+#
+# Continuously tests (every 30 minutes) staging and production environment using e2e tests.
+#
 name: Continuous Testing playground
 
 on:
   workflow_dispatch:
   schedule:
-    # * is a special character in YAML so you have to quote this string
     - cron:  '*/30 * * * *' # Every 30 minutes
 
 jobs:

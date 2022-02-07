@@ -1,3 +1,7 @@
+#
+# Continuously deploys 'website'
+#
+
 name: Continuous Deployment website
 
 on:
