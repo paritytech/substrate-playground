@@ -119,33 +119,32 @@ impl Manager {
                 match runtime.block_on(self.engine.list_workspaces()) {
                     Ok(workspaces) => {
                         for workspace in workspaces {
-                            match workspace.state {
-                                WorkspaceState::Running { start_time, .. } => {
-                                    if let Some(duration) = &start_time.elapsed().ok() {
-                                        if duration > &workspace.max_duration {
-                                            info!(
-                                                "Undeploying {} after {}",
-                                                workspace.user_id,
-                                                duration.as_secs() / 60
-                                            );
+                            if let WorkspaceState::Running { start_time, .. } = workspace.state {
+                                if let Some(duration) = &start_time.elapsed().ok() {
+                                    if duration > &workspace.max_duration {
+                                        info!(
+                                            "Undeploying {} after {}",
+                                            workspace.user_id,
+                                            duration.as_secs() / 60
+                                        );
 
-                                            match runtime.block_on(self.engine.delete_workspace(
-                                                &workspace_id(&workspace.user_id),
-                                            )) {
-                                                Ok(()) => (),
-                                                Err(err) => {
-                                                    warn!(
-                                                        "Error while undeploying {}: {}",
-                                                        workspace.user_id, err
-                                                    )
-                                                }
+                                        match runtime.block_on(
+                                            self.engine.delete_workspace(&workspace_id(
+                                                &workspace.user_id,
+                                            )),
+                                        ) {
+                                            Ok(()) => (),
+                                            Err(err) => {
+                                                warn!(
+                                                    "Error while undeploying {}: {}",
+                                                    workspace.user_id, err
+                                                )
                                             }
                                         }
-                                    } else {
-                                        error!("Failed to compute this workspace lifetime");
                                     }
+                                } else {
+                                    error!("Failed to compute this workspace lifetime");
                                 }
-                                _ => {}
                             }
                         }
                     }
@@ -193,7 +192,7 @@ impl Manager {
             return Err(Error::Unauthorized(Permission::AdminRead));
         }
 
-        new_runtime()?.block_on(self.engine.get_user(&id))
+        new_runtime()?.block_on(self.engine.get_user(id))
     }
 
     pub fn list_users(&self, user: &LoggedUser) -> Result<Vec<User>> {
@@ -371,7 +370,7 @@ impl Manager {
             return Err(Error::Unauthorized(Permission::AdminEdit));
         }
 
-        new_runtime()?.block_on(self.engine.create_repository(&id, conf))
+        new_runtime()?.block_on(self.engine.create_repository(id, conf))
     }
 
     pub fn update_repository(
@@ -384,7 +383,7 @@ impl Manager {
             return Err(Error::Unauthorized(Permission::AdminEdit));
         }
 
-        new_runtime()?.block_on(self.engine.update_repository(&id, conf))
+        new_runtime()?.block_on(self.engine.update_repository(id, conf))
     }
 
     pub fn delete_repository(&self, user: &LoggedUser, id: &str) -> Result<()> {
@@ -392,7 +391,7 @@ impl Manager {
             return Err(Error::Unauthorized(Permission::AdminEdit));
         }
 
-        new_runtime()?.block_on(self.engine.delete_repository(&id))
+        new_runtime()?.block_on(self.engine.delete_repository(id))
     }
 
     //Repository versions
@@ -411,7 +410,7 @@ impl Manager {
         _user: &LoggedUser,
         repository_id: &str,
     ) -> Result<Vec<RepositoryVersion>> {
-        new_runtime()?.block_on(self.engine.list_repository_versions(&repository_id))
+        new_runtime()?.block_on(self.engine.list_repository_versions(repository_id))
     }
 
     pub fn create_repository_version(
@@ -427,7 +426,7 @@ impl Manager {
 
         new_runtime()?.block_on(
             self.engine
-                .create_repository_version(&repository_id, &id, conf),
+                .create_repository_version(repository_id, id, conf),
         )
     }
 
@@ -441,7 +440,7 @@ impl Manager {
             return Err(Error::Unauthorized(Permission::AdminEdit));
         }
 
-        new_runtime()?.block_on(self.engine.delete_repository_version(&repository_id, &id))
+        new_runtime()?.block_on(self.engine.delete_repository_version(repository_id, id))
     }
 
     // Pools
@@ -451,7 +450,7 @@ impl Manager {
             return Err(Error::Unauthorized(Permission::AdminRead));
         }
 
-        new_runtime()?.block_on(self.engine.get_pool(&pool_id))
+        new_runtime()?.block_on(self.engine.get_pool(pool_id))
     }
 
     pub fn list_pools(&self, user: &LoggedUser) -> Result<Vec<Pool>> {

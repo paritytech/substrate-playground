@@ -56,11 +56,10 @@ fn main() -> Result<(), Box<dyn Error>> {
 
         // Fail if at least a build command failed
         let results = exec(args.path, on_create_command);
-        let errors = results
+        if results
             .iter()
-            .filter(|result| result.is_err() || !result.as_ref().unwrap().status.success())
-            .collect::<Vec<_>>();
-        if errors.len() > 0 {
+            .any(|result| result.is_err() || !result.as_ref().unwrap().status.success())
+        {
             // See https://www.joshmcguigan.com/blog/custom-exit-status-codes-rust/
             log::error!("Failed");
             std::process::exit(0);

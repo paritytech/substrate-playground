@@ -53,7 +53,7 @@ pub fn strip_jsonc_comments(jsonc_input: &str, preserve_locations: bool) -> Stri
                         json_output.push(last_char);
                     }
                 } else if preserve_locations {
-                    json_output.push_str(" ");
+                    json_output.push(' ');
                 }
                 last_char = Some(cur_char);
             }

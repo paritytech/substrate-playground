@@ -204,9 +204,11 @@ fn volume_template(repository_id: &str) -> PersistentVolumeClaim {
 fn running_or_pending_workspaces(workspaces: Vec<Workspace>) -> Vec<Workspace> {
     workspaces
         .into_iter()
-        .filter(|workspace| match &workspace.state {
-            WorkspaceState::Running { .. } | WorkspaceState::Deploying => true,
-            _ => false,
+        .filter(|workspace| {
+            matches!(
+                &workspace.state,
+                WorkspaceState::Running { .. } | WorkspaceState::Deploying
+            )
         })
         .collect()
 }
@@ -353,7 +355,7 @@ fn create_pod(
                 name: format!("{}-container", COMPONENT_VALUE),
                 image: Some(template.image.to_string()),
                 env: Some(pod_env_variables(
-                    &template.runtime.as_ref().unwrap(),
+                    template.runtime.as_ref().unwrap(),
                     &env.host,
                     session_id,
                 )),
@@ -657,7 +659,7 @@ impl Engine {
         let users = list_users(client, &self.env.namespace).await?;
         let user = users.get(id);
 
-        match user.map(|user| self.clone().yaml_to_user(&user)) {
+        match user.map(|user| self.clone().yaml_to_user(user)) {
             Some(user) => user.map(Some),
             None => Ok(None),
         }
@@ -669,7 +671,7 @@ impl Engine {
         Ok(list_users(client, &self.env.namespace)
             .await?
             .into_iter()
-            .flat_map(|(k, v)| self.clone().yaml_to_user(&v))
+            .flat_map(|(_k, v)| self.clone().yaml_to_user(&v))
             .collect())
     }
 
@@ -726,7 +728,7 @@ impl Engine {
 
     // Workspaces
 
-    fn pod_to_state(pod: &Pod) -> Result<types::WorkspaceState> {
+    fn pod_to_state(_pod: &Pod) -> Result<types::WorkspaceState> {
         /*Ok(types::WorkspaceState {
             phase: Phase::from_str(
                 &status
@@ -844,11 +846,11 @@ impl Engine {
             .ok_or(Error::MissingData("ingress#spec"))?;
         let mut rules: Vec<IngressRule> = spec.rules.unwrap_or_default();
         for (workspace_id, ports) in runtimes {
-            let subdomain = subdomain(&self.env.host, &workspace_id);
+            let subdomain = subdomain(&self.env.host, workspace_id);
             rules.push(IngressRule {
                 host: Some(subdomain.clone()),
                 http: Some(HTTPIngressRuleValue {
-                    paths: ingress_paths(service_name(&workspace_id), ports),
+                    paths: ingress_paths(service_name(workspace_id), ports),
                 }),
             });
         }
@@ -889,7 +891,7 @@ impl Engine {
         let pool = self
             .get_pool(&pool_id.clone())
             .await?
-            .ok_or(Error::UnknownPool(pool_id.clone()))?;
+            .ok_or_else(|| Error::UnknownPool(pool_id.clone()))?;
         let max_workspaces_allowed =
             pool.nodes.len() * self.configuration.workspace.max_workspaces_per_pod;
         let workspaces = self.list_workspaces().await?;
@@ -968,7 +970,7 @@ impl Engine {
     ) -> Result<()> {
         let workspace = self
             .clone()
-            .get_workspace(&workspace_id)
+            .get_workspace(workspace_id)
             .await?
             .ok_or(Error::UnknownResource)?;
 
@@ -1057,8 +1059,7 @@ impl Engine {
         let repository = repositories.get(id);
 
         match repository.map(|repository| {
-            serde_yaml::from_str::<Repository>(&repository)
-                .map_err(|err| Error::Failure(err.into()))
+            serde_yaml::from_str::<Repository>(repository).map_err(|err| Error::Failure(err.into()))
         }) {
             Some(repository) => repository.map(Some),
             None => Ok(None),
@@ -1073,8 +1074,7 @@ impl Engine {
                 .await?
                 .into_iter()
                 .map(|(_k, v)| {
-                    Ok(serde_yaml::from_str::<Repository>(&v)
-                        .map_err(|err| Error::Failure(err.into()))?)
+                    serde_yaml::from_str::<Repository>(&v).map_err(|err| Error::Failure(err.into()))
                 })
                 .collect::<Result<Vec<Repository>>>()?,
         )
@@ -1134,8 +1134,8 @@ impl Engine {
 
     pub async fn get_repository_version(
         &self,
-        repository_id: &str,
-        id: &str,
+        _repository_id: &str,
+        _id: &str,
     ) -> Result<Option<RepositoryVersion>> {
         // TODO
         Ok(Some(RepositoryVersion {
@@ -1152,7 +1152,7 @@ impl Engine {
 
     pub async fn list_repository_versions(
         &self,
-        repository_id: &str,
+        _repository_id: &str,
     ) -> Result<Vec<RepositoryVersion>> {
         // TODO list volume template
         Ok(vec![RepositoryVersion {
@@ -1188,7 +1188,7 @@ impl Engine {
         let namespace = &self.env.namespace;
         // Create volume
         let volume_api: Api<PersistentVolumeClaim> = Api::namespaced(client.clone(), namespace);
-        let volume = create_volume_template(&volume_api, &repository_id).await?;
+        let volume = create_volume_template(&volume_api, repository_id).await?;
 
         let job_api: Api<Job> = Api::namespaced(client.clone(), &self.env.namespace);
         let job = Job {
@@ -1249,7 +1249,7 @@ impl Engine {
         Ok(())
     }
 
-    pub async fn delete_repository_version(&self, repository_id: &str, id: &str) -> Result<()> {
+    pub async fn delete_repository_version(&self, _repository_id: &str, _id: &str) -> Result<()> {
         Ok(())
     }
 
@@ -1313,7 +1313,7 @@ impl Engine {
             .clone()
             .ok_or(Error::MissingData("pod#metadata#annotations"))?;
         let template = serde_yaml::from_str(
-            &annotations
+            annotations
                 .get(TEMPLATE_ANNOTATION)
                 .ok_or(Error::MissingData("template"))?,
         )
@@ -1327,8 +1327,8 @@ impl Engine {
         Ok(Session {
             user_id: username.clone(),
             template,
-            url: subdomain(&env.host, &username),
-            pod: self.clone().pod_to_details(&pod.clone())?,
+            url: subdomain(&env.host, username),
+            pod: self.pod_to_details(&pod.clone())?,
             duration,
             node: pod
                 .clone()
@@ -1439,7 +1439,7 @@ impl Engine {
 
         // Deploy the associated service
         let service_api: Api<Service> = Api::namespaced(client.clone(), namespace);
-        let service = create_service(session_id, &template.runtime.as_ref().unwrap());
+        let service = create_service(session_id, template.runtime.as_ref().unwrap());
         service_api
             .create(&PostParams::default(), &service)
             .await
@@ -1455,7 +1455,7 @@ impl Engine {
     ) -> Result<()> {
         let session = self
             .clone()
-            .get_session(&session_id)
+            .get_session(session_id)
             .await?
             .ok_or(Error::MissingData("no matching session"))?;
 
