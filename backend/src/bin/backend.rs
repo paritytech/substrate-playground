@@ -125,7 +125,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .manage(Context { manager })
         .launch();
 
-
     // Launch blocks unless an error is returned
 
     log::info!("Shutting down due to error");

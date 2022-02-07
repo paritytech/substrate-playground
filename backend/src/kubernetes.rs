@@ -39,8 +39,7 @@ use log::error;
 use serde::Serialize;
 use serde_json::json;
 use std::{
-    collections::BTreeMap, convert::TryFrom, env, num::ParseIntError, str::FromStr,
-    time::Duration,
+    collections::BTreeMap, convert::TryFrom, env, num::ParseIntError, str::FromStr, time::Duration,
 };
 
 const NODE_POOL_LABEL: &str = "cloud.google.com/gke-nodepool";
