@@ -75,14 +75,14 @@ jobs:
       - name: Check format
         uses: actions-rs/cargo@v1
         with:
-          command: check-fmt
+          command: fmt --all -- --check
           # Workaround https://github.com/actions-rs/cargo/issues/86
           args: --manifest-path backend/Cargo.toml
 
       - name: Check lints
         uses: actions-rs/cargo@v1
         with:
-          command: lint
+          command: clippy -- -D warnings -A deprecated
           # Workaround https://github.com/actions-rs/cargo/issues/86
           args: --manifest-path backend/Cargo.toml
 
