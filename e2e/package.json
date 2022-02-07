@@ -6,8 +6,13 @@
   "scripts": {
     "build": "tsc",
     "run:perf": "node dist/perf.js",
-    "test": "ava",
+    "test": "tsc && ava",
     "clean": "rm -rf dist/ node_modules/ yarn.lock"
+  },
+  "ava": {
+    "files": [
+      "test/*.ts"
+    ]
   },
   "dependencies": {
     "@substrate/playground-client": "1.7.2",
