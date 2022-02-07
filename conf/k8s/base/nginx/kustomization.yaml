@@ -1,5 +1,8 @@
-# See https://github.com/kubernetes/ingress-nginx/blob/master/docs/deploy/index.md#gce-gke
-# Copied from https://raw.githubusercontent.com/kubernetes/ingress-nginx/nginx-0.30.0/deploy/static/mandatory.yaml
+# See:
+# * https://github.com/kubernetes/ingress-nginx/blob/main/docs/deploy/index.md#quick-start
+# * https://github.com/kubernetes/ingress-nginx/tree/main/charts/ingress-nginx
+#
+# To update:
 
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
@@ -8,6 +11,8 @@ helmCharts:
 - name: ingress-nginx
   valuesInline:
     controller:
+      extraArgs:
+        default-ssl-certificate: "default/playground-tls"
       metrics:
         enabled: true
   releaseName: v4-0-13

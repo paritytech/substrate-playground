@@ -8,14 +8,11 @@ commonLabels:
 resources:
 - ../../base
 
-generatorOptions:
-  disableNameSuffixHash: true
-
 images:
 - name: paritytech/substrate-playground-backend-api
-  newTag: sha-b1733cf3
+  newTag: sha-1136246a
 - name: paritytech/substrate-playground-backend-ui
-  newTag: sha-b1733cf3
+  newTag: sha-1136246a
 
 patches:
 - patch: |-
@@ -27,3 +24,15 @@ patches:
     kind: Ingress
     name: ingress
     version: v1
+
+patchesStrategicMerge:
+- |-
+  apiVersion: networking.k8s.io/v1
+  kind: Ingress
+  metadata:
+    name: ingress
+  spec:
+    tls:
+    - hosts:
+      - '*.playground-dev.substrate.test'
+      secretName: playground-tls

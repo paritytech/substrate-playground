@@ -42,5 +42,9 @@ spec:
   ports:
   - name: ui-port
     port: 80
+  - name: https
+    protocol: TCP
+    port: 443
+    targetPort: 8080
   selector:
     app.kubernetes.io/component: backend-ui
