@@ -86,11 +86,6 @@ jobs:
           # Workaround https://github.com/actions-rs/cargo/issues/86
           args: --manifest-path backend/Cargo.toml -- -D warnings -A deprecated
 
-      - name: Check security
-        uses: actions-rs/audit-check@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-
   docker:
     runs-on: ubuntu-latest
     if: "! contains(github.event.head_commit.message, '[CI Skip]')"
