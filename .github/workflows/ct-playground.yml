@@ -46,7 +46,6 @@ jobs:
       - name: Run tests
         run: yarn && yarn test
         working-directory: ./e2e
-        continue-on-error: true
         timeout-minutes: 3
         env:
           ENV: ${{ matrix.env }}
