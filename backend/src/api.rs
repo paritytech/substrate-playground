@@ -3,7 +3,7 @@ use crate::{
     error::{Error, Result},
     github::{current_user, orgs, GitHubUser},
     types::{
-        Environment, LoggedUser, RepositoryConfiguration, RepositoryUpdateConfiguration,
+        LoggedUser, RepositoryConfiguration, RepositoryUpdateConfiguration,
         RepositoryVersionConfiguration, SessionConfiguration, SessionUpdateConfiguration,
         UserConfiguration, UserUpdateConfiguration, WorkspaceConfiguration,
         WorkspaceUpdateConfiguration,
