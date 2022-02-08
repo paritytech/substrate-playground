@@ -478,16 +478,6 @@ impl Engine {
         let namespace = config.clone().default_namespace.to_string();
         let client = Client::try_from(config).map_err(|err| Error::Failure(err.into()))?;
         let ingress_api: Api<Ingress> = Api::namespaced(client.clone(), &namespace);
-        let secured = if let Ok(ingress) = ingress_api.get(INGRESS_NAME).await {
-            ingress
-                .spec
-                .ok_or(Error::MissingData("spec"))?
-                .tls
-                .is_some()
-        } else {
-            false
-        };
-
         let host = if let Ok(ingress) = ingress_api.get(INGRESS_NAME).await {
             ingress
                 .spec
@@ -505,34 +495,25 @@ impl Engine {
         };
 
         // Retrieve 'static' configuration from Env variables
-        let github_client_id = var("GITHUB_CLIENT_ID")?;
-        let github_client_secret = var("GITHUB_CLIENT_SECRET")?;
-        let workspace_base_image = var("WORKSPACE_BASE_IMAGE")?;
-        let workspace_default_duration = var("WORKSPACE_DEFAULT_DURATION")?;
-        let workspace_max_duration = var("WORKSPACE_MAX_DURATION")?;
-        let workspace_default_pool_affinity = var("WORKSPACE_DEFAULT_POOL_AFFINITY")?;
-        let workspace_default_max_per_node = var("WORKSPACE_DEFAULT_MAX_PER_NODE")?;
-
         Ok(Engine {
             env: Environment {
-                secured,
                 host,
                 namespace: namespace.clone(),
             },
             configuration: Configuration {
-                github_client_id,
+                github_client_id: var("GITHUB_CLIENT_ID")?,
                 workspace: WorkspaceDefaults {
-                    base_image: workspace_base_image,
-                    duration: str_minutes_to_duration(&workspace_default_duration)?,
-                    max_duration: str_minutes_to_duration(&workspace_max_duration)?,
-                    pool_affinity: workspace_default_pool_affinity,
-                    max_workspaces_per_pod: workspace_default_max_per_node
+                    base_image: var("WORKSPACE_BASE_IMAGE")?,
+                    duration: str_minutes_to_duration(&var("WORKSPACE_DEFAULT_DURATION")?)?,
+                    max_duration: str_minutes_to_duration(&var("WORKSPACE_MAX_DURATION")?)?,
+                    pool_affinity: var("WORKSPACE_DEFAULT_POOL_AFFINITY")?,
+                    max_workspaces_per_pod: var("WORKSPACE_DEFAULT_MAX_PER_NODE")?
                         .parse()
                         .map_err(|err: ParseIntError| Error::Failure(err.into()))?,
                 },
             },
             secrets: Secrets {
-                github_client_secret,
+                github_client_secret: var("GITHUB_CLIENT_SECRET")?,
             },
         })
     }

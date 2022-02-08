@@ -15,7 +15,6 @@ pub struct Playground {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Environment {
-    pub secured: bool,
     pub host: String,
     pub namespace: String,
 }

@@ -394,10 +394,6 @@ fn query_segment(origin: &Origin) -> String {
     })
 }
 
-fn protocol(env: &Environment) -> String {
-    if env.secured { "https" } else { "http" }.to_string()
-}
-
 // Gets called from UI. Then redirects to the GitHub `auth_uri` which itself redirects to `/auth/github`
 #[get("/login/github")]
 pub fn github_login(
@@ -408,8 +404,7 @@ pub fn github_login(
 ) -> Redirect {
     let manager = state.manager.clone();
     let redirect_uri = format!(
-        "{}://{}/api/auth/github{}",
-        protocol(&manager.engine.env),
+        "https://{}/api/auth/github{}",
         manager.engine.env.host,
         query_segment(origin)
     );
