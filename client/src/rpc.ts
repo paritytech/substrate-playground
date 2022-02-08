@@ -9,28 +9,22 @@ export enum RpcErrorCode {
     TIMEOUT_ERROR = 1000,
 }
 
-export async function fetchWithTimeout(input: RequestInfo, init: RequestInit, timeout): Promise<Response> {
+// `fetch` but with a `timeout` in milliseconds. Relies on `AbortController`.
+export async function fetchWithTimeout(input: RequestInfo, { signal, ...options }: RequestInit = {}, timeout: number): Promise<Response> {
     const controller = new AbortController();
+    if (signal) signal.addEventListener("abort", () => controller.abort());
     const id = setTimeout(() => controller.abort(), timeout);
-    const response = await fetch(input, {
-      ...init,
+    const response = fetch(input, {
+      ...options,
       signal: controller.signal
     });
-    clearTimeout(id);
-    return response;
+    return response.finally(() => clearTimeout(id));
 }
 
 async function call<T>(input: RequestInfo, init: RequestInit, timeout: number): Promise<T> {
     try {
-        const controller = new AbortController();
-        const id = setTimeout(() => controller.abort(), timeout);
-        const response = await fetch(input, {
-          ...init,
-          signal: controller.signal
-        });
-        clearTimeout(id);
+        const response = await fetchWithTimeout(input, init, timeout);
         if (response.ok) {
-            // TODO check content-type
             try {
                 const { result, error } = await response.json();
                 if (error) {
@@ -53,10 +47,10 @@ async function call<T>(input: RequestInfo, init: RequestInit, timeout: number): 
     }
 }
 
-export async function rpc<T>(input: string, init: RequestInit, timeout: number): Promise<T> {
+export async function rpc<T>(input: string, { headers, ...options }: RequestInit = {}, timeout: number): Promise<T> {
     return await call(input, {
         method: 'GET',
-        headers: {'Accept': 'application/json', 'Content-Type': 'application/json'},
-        ...init
+        headers: {'Accept': 'application/json', 'Content-Type': 'application/json', ...headers},
+        ...options
     }, timeout);
 }
