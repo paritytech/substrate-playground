@@ -1,16 +1,18 @@
 import { Client, EnvironmentType, getAuthorization, getVerification, playgroundBaseURL } from '@substrate/playground-client';
-import 'cross-fetch/polyfill';
-import 'abort-controller/polyfill';
 import * as readline from 'readline';
 import yargs from 'yargs/yargs';
+import 'cross-fetch/dist/node-polyfill.js';
 
 interface Arguments {
+    [x: string]: unknown,
     env: string,
     template: string,
     instances: number,
+    _: (string | number)[],
+    $0: string,
 }
 
-const argv: Arguments = yargs(process.argv.slice(2))
+const argv: Arguments = await yargs(process.argv.slice(2))
 	.options({
 		'env': {
 			alias: 'e',
@@ -26,7 +28,7 @@ const argv: Arguments = yargs(process.argv.slice(2))
 		},
 		'instances': {
 			alias: 'i',
-			describe: 'provide the environment to interact with',
+			describe: 'number of instances',
 			type: 'number',
 			default: 50,
 		},
@@ -71,7 +73,7 @@ async function main() {
             for (let i = 0; i < argv.instances; i++) {
                 const id = Math.floor(Math.random() * Number.MAX_SAFE_INTEGER);
                 const name = `perftest-${id}`;
-                await loggedClient.createWorkspace(name, {template: argv.template});
+                await loggedClient.createWorkspace(name, {repositoryDetails: {id: argv.template, reference: argv.template}});
                 console.log(`Created workspace ${name}`);
             }
             console.log("Done");
