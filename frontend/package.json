@@ -18,7 +18,7 @@
     "@mui/icons-material": "5.4.1",
     "@mui/lab": "5.0.0-alpha.67",
     "@mui/material": "5.4.1",
-    "@mui/styles": "5.3.0",
+    "@mui/styles": "5.4.1",
     "@substrate/playground-client": "1.7.2",
     "@xstate/react": "2.0.0",
     "analytics": "0.8.0",
