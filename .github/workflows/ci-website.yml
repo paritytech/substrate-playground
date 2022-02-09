@@ -1,0 +1,23 @@
+#
+# Continuously tests 'website'
+#
+
+name: Continuous Integration website
+
+on:
+  pull_request:
+    branches:
+    - develop
+    paths:
+    - '.github/workflows/ci-website.yml'
+    - 'website/**'
+
+jobs:
+  build-website:
+    runs-on: ubuntu-18.04
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Build website
+      run: yarn && yarn build
+      working-directory: ./website
