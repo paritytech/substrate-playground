@@ -98,7 +98,7 @@ jobs:
           sudo apt-get install -y dnsmasq
           sudo cat /etc/dnsmasq.conf
           sudo bash -c 'echo "domain=substrate.test" >> /etc/dnsmasq.conf'
-          sudo bash -c 'echo "nameserver 127.0.0.1" > /etc/resolv.conf'
+          sudo bash -c 'echo "nameserver 127.0.0.1" >> /etc/resolv.conf'
           sudo systemctl disable systemd-resolved
           sudo systemctl stop systemd-resolved
           sudo systemctl enable dnsmasq
