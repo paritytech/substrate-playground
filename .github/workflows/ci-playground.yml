@@ -97,7 +97,7 @@ jobs:
         run: sudo systemctl disable systemd-resolved && sudo systemctl stop systemd-resolved && sudo rm /etc/resolv.conf && echo nameserver 8.8.8.8 | sudo tee /etc/resolv.conf && sudo apt-get install -y dnsmasq
 
       - name: Install dnsmasq
-        run:  sudo bash -c 'echo "address=/.test/127.0.0.1" >> /etc/dnsmasq.conf' && sudo mkdir -v /etc/resolver && sudo bash -c 'echo "nameserver 127.0.0.1" > /etc/resolver/test' && sudo systemctl restart dnsmasq
+        run:  sudo bash -c 'echo "address=/.test/127.0.0.1" >> /etc/dnsmasq.conf' && sudo mkdir -v /etc/resolver && sudo bash -c 'echo "nameserver 127.0.0.1" > /etc/resolver/substrate.test' && sudo systemctl restart dnsmasq
 
       - uses: docker/setup-buildx-action@v1
         with:
