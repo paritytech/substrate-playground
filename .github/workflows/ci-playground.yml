@@ -95,12 +95,10 @@ jobs:
 
       - name: Install dnsmasq
         run: |
-          sudo bash -c 'echo "[Resolve]\nDNSStubListener=no" >> /etc/systemd/resolved.conf'
+          sudo bash -c 'echo -e "[Resolve]\nDNSStubListener=no" >> /etc/systemd/resolved.conf'
           sudo systemctl restart systemd-resolved
           sudo apt-get install -y dnsmasq
-          sudo cat /etc/dnsmasq.conf
           sudo bash -c 'echo "domain=substrate.test" >> /etc/dnsmasq.conf'
-          sudo bash -c 'echo "nameserver 127.0.0.1" >> /etc/resolv.conf'
           sudo /etc/init.d/dnsmasq restart
 
       - uses: docker/setup-buildx-action@v1
