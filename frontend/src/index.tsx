@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom";
 import { State } from "xstate";
-import Analytics from "analytics";
-import simpleAnalyticsPlugin from "@analytics/simple-analytics";
 import { Client, Configuration, LoggedUser, Template, Workspace } from '@substrate/playground-client';
 import { createTheme, ThemeProvider, Theme, StyledEngineProvider, adaptV4Theme } from '@mui/material/styles';
 import Button from "@mui/material/Button";
@@ -121,6 +119,7 @@ function CustomNav({ client, send, state }: { client: Client, send: (event: Even
 const theme = createTheme(adaptV4Theme(SubstrateLight));
 
 function App({ params }: { params: Params }): JSX.Element {
+    console.log(params)
     const client = new Client(params.base, 30000, {credentials: "include"});
     const { deploy } = params;
     const [state, send] = useMachine(newMachine(client, deploy? PanelId.Theia: PanelId.Workspace), { devTools: true });
@@ -130,7 +129,9 @@ function App({ params }: { params: Params }): JSX.Element {
 
     useEffect(() => {
         // Remove transient parameters when logged, to prevent recursive behaviors
+        console.log("effect")
         if (state.matches(States.LOGGED)) {
+            console.log("remove")
             removeTransientsURLParams();
         }
     }, [state]);
@@ -195,14 +196,7 @@ function main(): void {
     if (members.length > 1) {
       document.domain = members.slice(members.length-2).join(".");
     }
-
-    const analytics = Analytics({
-        app: "substrate-playground",
-        plugins: [
-          simpleAnalyticsPlugin(),
-        ]
-    });
-
+console.log("main")
     ReactDOM.render(
         <App params={extractParams()} />,
         document.querySelector("main")
