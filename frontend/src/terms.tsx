@@ -1,10 +1,9 @@
-import crypto from 'crypto';
 import terms from 'bundle-text:./terms.md';
 
 const termsApprovedKey = 'termsApproved';
 
 function hash(s: string): string {
-    return crypto.createHash('md5').update(s).digest('hex');
+    return Array.from(s).reduce((hash, char) => 0 | (31 * hash + char.charCodeAt(0)), 0).toString();
 }
 
 export function approved(): boolean {
