@@ -220,6 +220,15 @@ get-challenge: requires-env
 k8s-update-certificate: requires-k8s
 	sudo kubectl create secret tls playground-tls --save-config --key /etc/letsencrypt/live/${PLAYGROUND_ID}.substrate.dev-0002/privkey.pem --cert /etc/letsencrypt/live/${PLAYGROUND_ID}.substrate.dev-0002/fullchain.pem --dry-run=client -o yaml | sudo kubectl apply -f -
 
+##@ K3d
+
+K3d_CLUSTER_NAME=pg-cluster
+
+k3d-create-cluster:
+	k3d cluster create ${K3d_CLUSTER_NAME} --k3s-arg '--tls-san=127.0.0.1@server:*' --k3s-arg '--no-deploy=traefik@server:*' --k3s-node-label "cloud.google.com/gke-nodepool=default-workspace@server:0" --port 80:80@loadbalancer --port 443:443@loadbalancer
+
+k3d-delete-cluster:
+	k3d cluster delete ${K3d_CLUSTER_NAME}
 
 ##@ Google Kubernetes Engine
 
