@@ -26,10 +26,29 @@ spec:
             name: backend-api-service
             port:
               name: api-port
-      - path: /grafana/
-        pathType: Prefix
-        backend:
-          service:
-            name: grafana-service
-            port:
-              name: grafana-port
+#      - path: /grafana/
+#        pathType: Prefix
+#        backend:
+#          service:
+#            name: grafana-service
+#            port:
+#              name: grafana-port
+#---
+#apiVersion: networking.k8s.io/v1
+#kind: NetworkPolicy
+#metadata:
+#  name: release-agent-egress-es
+#spec:
+#  podSelector:
+#    matchLabels:
+#      io.vamp: release-agent
+#  policyTypes:
+#  - Egress
+#  egress:
+#  - to:
+#    - namespaceSelector:
+#        matchLabels:
+#          role: core
+#    ports:
+#    - protocol: TCP
+#      port: 9200

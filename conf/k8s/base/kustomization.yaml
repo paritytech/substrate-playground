@@ -3,8 +3,8 @@ commonLabels:
     app.kubernetes.io/managed-by: kustomize
 
 bases:
-    - prometheus
-    - grafana
+    - prometheus2
+#    - grafana
     - nginx
 
 resources:
@@ -13,6 +13,6 @@ resources:
     - backend-ui.yaml
     - cluster-role-binding.yaml
     - ingress.yaml
-    - node-exporter.yaml
+#    - node-exporter.yaml
     - service-account.yaml
     - node-conf-daemon-set.yaml
