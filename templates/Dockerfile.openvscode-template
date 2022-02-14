@@ -8,6 +8,8 @@ ARG TEMPLATE_IMAGE
 FROM $TEMPLATE_IMAGE
 
 ARG OPENVSCODE_PLAYGROUND_HOME=$OPENVSCODE_HOME/openvscode-playground
+ARG OPENVSCODE_SERVER_ROOT="/home/.openvscode-server"
+ARG WORKSPACE="/home/playground/workspace"
 
 WORKDIR /home/
 
@@ -18,31 +20,35 @@ ENV OPENVSCODE_VERSION=1.64.2
 # Downloading the latest VSC Server release
 RUN wget https://github.com/gitpod-io/openvscode-server/releases/download/openvscode-server-v$OPENVSCODE_VERSION/openvscode-server-v$OPENVSCODE_VERSION-linux-x64.tar.gz \
     && tar -xzf openvscode-server-v$OPENVSCODE_VERSION-linux-x64.tar.gz \
-    && mv openvscode-server-v$OPENVSCODE_VERSION-linux-x64 openvscode-server \
+    && mv openvscode-server-v$OPENVSCODE_VERSION-linux-x64 ${OPENVSCODE_SERVER_ROOT} \
     && rm -rf openvscode-server-v$OPENVSCODE_VERSION-linux-x64.tar.gz
 
-COPY playground-extension openvscode-server/extensions/playground-extension
+COPY playground-extension ${OPENVSCODE_SERVER_ROOT}/extensions/playground-extension
 
 RUN chmod g+rw /home && \
-    chown -R playground:playground /home/openvscode-server && \
-    chown -R playground:playground /home/openvscode-server;
+    chown -R playground:playground ${OPENVSCODE_SERVER_ROOT}
 
 USER playground
 
 ## Install default extensions
 
-RUN /home/openvscode-server/server.sh --install-extension matklad.rust-analyzer \
+RUN ${OPENVSCODE_SERVER_ROOT}/bin/openvscode-server --install-extension matklad.rust-analyzer \
     --install-extension vsls-contrib.codetour \
     --install-extension redhat.vscode-yaml
 
-WORKDIR /home/playground/workspace/
+WORKDIR $WORKSPACE
 
-ENV EDITOR=code
-ENV VISUAL=code
-ENV GIT_EDITOR="code --wait"
+ENV LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
+    EDITOR=code \
+    VISUAL=code \
+    GIT_EDITOR="code --wait" \
+    OPENVSCODE_SERVER_ROOT=${OPENVSCODE_SERVER_ROOT} \
+    PATH="${OPENVSCODE_SERVER_ROOT}/bin/remote-cli:${PATH}"
 
 EXPOSE 3000
 
 # https://github.com/Yelp/dumb-init
-ENTRYPOINT [ "dumb-init", "--" ]
-CMD [ "/home/openvscode-server/server.sh", "--port", "3000", "--folder", "/home/playground/workspace", "--disable-telemetry", "true", "--without-connection-token"]
+#ENTRYPOINT [ "dumb-init", "--" ]
+#CMD [ "/home/openvscode-server/server.sh", "--port", "3000", "--folder", "/home/playground/workspace", "--disable-telemetry", "true", "--without-connection-token"]
+ENTRYPOINT [ "/bin/sh", "-c", "exec ${OPENVSCODE_SERVER_ROOT}/bin/openvscode-server --host 0.0.0.0 --without-connection-token ${WORKSPACE} \"${@}\"", "--" ]
