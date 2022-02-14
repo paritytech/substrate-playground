@@ -9,12 +9,11 @@
     "swizzle": "docusaurus swizzle",
     "deploy": "docusaurus deploy",
     "serve": "docusaurus serve",
-    "clean": "rm -rf node_modules/ dist/ .cache/ yarn.lock"
+    "clean": "rm -rf node_modules/ dist/ .cache/ .docusaurus/ build/ yarn.lock"
   },
   "dependencies": {
     "@docusaurus/core": "2.0.0-beta.15",
     "@docusaurus/preset-classic": "2.0.0-beta.15",
-    "@mdx-js/react": "1.6.22",
     "clsx": "1.1.1",
     "mermaid": "8.14.0",
     "react": "17.0.2",
