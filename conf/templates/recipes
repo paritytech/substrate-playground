@@ -9,7 +9,7 @@ description: '## A Hands-On Cookbook for Aspiring Blockchain Chefs
 
   '
 tags:
-  public: true
+  public: false
 runtime:
   ports:
     - name: wss
