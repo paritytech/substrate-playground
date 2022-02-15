@@ -8,17 +8,17 @@ use crate::{
     },
 };
 use json_patch::{AddOperation, PatchOperation, RemoveOperation};
-use k8s_openapi::api::{
+use k8s_openapi::{api::{
     core::v1::{
         Affinity, ConfigMap, Container, ContainerStatus, EnvVar, Node, NodeAffinity,
         NodeSelectorRequirement, NodeSelectorTerm, Pod, PodSpec, PreferredSchedulingTerm, Service,
-        ServicePort, ServiceSpec,
+        ServicePort, ServiceSpec, ResourceRequirements,
     },
     networking::v1::{
         HTTPIngressPath, HTTPIngressRuleValue, Ingress, IngressBackend, IngressRule,
         IngressServiceBackend, ServiceBackendPort,
     },
-};
+}, apimachinery::pkg::api::resource::Quantity};
 use k8s_openapi::apimachinery::pkg::{apis::meta::v1::ObjectMeta, util::intstr::IntOrString};
 use kube::{
     api::{Api, DeleteParams, ListParams, Patch, PatchParams, PostParams},
@@ -180,6 +180,19 @@ fn create_pod(
                 name: format!("{}-container", COMPONENT_VALUE),
                 image: Some(template.image.to_string()),
                 env: Some(pod_env_variables(template, &env.host, session_id)),
+                resources: Some(ResourceRequirements {
+                    requests: Some(BTreeMap::from([
+                        ("memory".to_string(), Quantity("50Gi".to_string())),
+                        ("ephemeral-storage".to_string(), Quantity("50Gi".to_string())),
+                        ("cpu".to_string(), Quantity("0.5".to_string())),
+                    ])),
+                    limits: Some(BTreeMap::from([
+                        ("memory".to_string(), Quantity("100Gi".to_string())),
+                        ("ephemeral-storage".to_string(), Quantity("50Gi".to_string())),
+                        ("cpu".to_string(), Quantity("1".to_string())),
+                    ])),
+                    ..Default::default()
+                }),
                 ..Default::default()
             }],
             termination_grace_period_seconds: Some(1),
