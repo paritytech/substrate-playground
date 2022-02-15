@@ -364,6 +364,19 @@ fn create_pod(
                     mount_path: "/repository".to_string(),
                     ..Default::default()
                 }]),
+                resources: Some(ResourceRequirements {
+                    requests: Some(BTreeMap::from([
+                        ("memory".to_string(), Quantity("50Gi".to_string())),
+                        ("ephemeral-storage".to_string(), Quantity("50Gi".to_string())),
+                        ("cpu".to_string(), Quantity("0.5".to_string())),
+                    ])),
+                    limits: Some(BTreeMap::from([
+                        ("memory".to_string(), Quantity("100Gi".to_string())),
+                        ("ephemeral-storage".to_string(), Quantity("50Gi".to_string())),
+                        ("cpu".to_string(), Quantity("1".to_string())),
+                    ])),
+                    ..Default::default()
+                }),
                 ..Default::default()
             }],
             termination_grace_period_seconds: Some(1),

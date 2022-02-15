@@ -5,9 +5,9 @@ FROM ubuntu:21.10
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Install required dependencies
-RUN apt-get update && \
-    apt-get upgrade -y && \
-    apt-get install -y make gcc g++ curl wget dumb-init python vim git cmake pkg-config libssl-dev git gcc build-essential git clang libclang-dev pkg-config xsel htop nodejs jq unzip binaryen
+RUN apt update && \
+    apt upgrade -y && \
+    DEBIAN_FRONTEND=noninteractive apt install -yq make gcc g++ curl wget dumb-init python vim git cmake pkg-config libssl-dev git gcc build-essential git clang libclang-dev pkg-config xsel htop nodejs jq unzip binaryen npm
 
 # Install rust as required by substrate env
 # Pick up the version from https://rust-lang.github.io/rustup-components-history/index.html (rls is required)
