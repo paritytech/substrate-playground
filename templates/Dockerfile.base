@@ -12,7 +12,7 @@ RUN apt update && \
 
 # Install rust as required by substrate env
 # Pick up the version from https://rust-lang.github.io/rustup-components-history/index.html (rls is required)
-ARG RUST_VERSION=nightly-2021-09-10
+ARG RUST_VERSION=nightly-2022-02-15
 ARG USER=playground
 ARG HOME=/home/$USER
 ARG WORKSPACE=$HOME/workspace
