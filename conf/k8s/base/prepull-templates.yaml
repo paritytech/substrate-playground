@@ -14,13 +14,13 @@ spec:
       initContainers:
         - name: front-end-template
           image: docker
-          command: ["docker", "pull", "paritytech/substrate-playground-template-front-end-template-theia:sha-6bd2268a"]
+          command: ["docker", "pull", "paritytech/substrate-playground-template-front-end-template-theia:sha-9d941160"]
           volumeMounts:
           - name: docker
             mountPath: /var/run
         - name: node-template
           image: docker
-          command: ["docker", "pull", "paritytech/substrate-playground-template-node-template-theia:sha-cbc9f0ca"]
+          command: ["docker", "pull", "paritytech/substrate-playground-template-node-template-theia:sha-9d941160"]
           volumeMounts:
           - name: docker
             mountPath: /var/run
@@ -32,7 +32,7 @@ spec:
             mountPath: /var/run
         - name: parachain-template
           image: docker
-          command: ["docker", "pull", "paritytech/substrate-playground-template-parachain-template-theia:sha-9ae77769"]
+          command: ["docker", "pull", "paritytech/substrate-playground-template-parachain-template-theia:sha-89f64a42"]
           volumeMounts:
           - name: docker
             mountPath: /var/run
