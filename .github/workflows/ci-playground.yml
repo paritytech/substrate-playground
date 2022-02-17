@@ -93,17 +93,8 @@ jobs:
 
       - uses: actions/checkout@v2
 
-      - name: Install dnsmasq
-        run: |
-          sudo systemctl disable systemd-resolved.service
-          sudo systemctl stop systemd-resolved.service
-          sudo rm /etc/resolv.conf
-          sudo cat /etc/NetworkManager/NetworkManager.conf
-          sudo sed -i.bak -e '/^dns=/d' -e '/^\[main\]/adns=dnsmasq' /etc/NetworkManager/NetworkManager.conf
-          sudo cat /etc/NetworkManager/NetworkManager.conf
-          sudo mkdir /etc/NetworkManager/dnsmasq.d
-          sudo bash -c 'echo -e "address=/dev/127.0.0.1" > /etc/NetworkManager/dnsmasq.d/dev'
-          sudo systemctl restart network-manager.service
+      - name: Install redirection
+        run: sudo bash -c 'echo "127.0.0.1 playground-dev.substrate.test" >> /etc/hosts'
 
       - uses: docker/setup-buildx-action@v1
         with:
