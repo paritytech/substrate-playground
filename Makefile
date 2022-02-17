@@ -100,8 +100,7 @@ build-template:
 	$(eval REPOSITORY=$(shell cat conf/templates/${TEMPLATE} | yq -r .repository))
 	$(eval REF=$(shell cat conf/templates/${TEMPLATE} | yq -r .ref))
 	$(eval REPOSITORY_CLONE=.clone)
-	@cd templates; git clone https://github.com/${REPOSITORY}.git ${REPOSITORY_CLONE} \
-    && cd ${REPOSITORY_CLONE} \
+	@mkdir -p templates/${REPOSITORY_CLONE}; cd templates/${REPOSITORY_CLONE}; git init; git remote add origin https://github.com/${REPOSITORY}.git; git fetch --all \
     && git checkout ${REF} \
     && git submodule init \
     && git submodule update \
