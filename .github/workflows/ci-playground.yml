@@ -97,7 +97,7 @@ jobs:
         run: |
           sudo mkdir /etc/NetworkManager/dnsmasq.d
           sudo bash -c 'echo -e "address=/dev/127.0.0.1" > /etc/NetworkManager/dnsmasq.d/dev'
-          sudo service networking restart
+          sudo killall NetworkManager && sudo NetworkManager
 
       - uses: docker/setup-buildx-action@v1
         with:
