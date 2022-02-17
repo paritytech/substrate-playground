@@ -87,7 +87,7 @@ jobs:
           args: --manifest-path backend/Cargo.toml -- -D warnings -A deprecated
 
   docker:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     if: "! contains(github.event.head_commit.message, '[CI Skip]')"
     steps:
 
@@ -95,10 +95,15 @@ jobs:
 
       - name: Install dnsmasq
         run: |
-          sudo apt install NetworkManager
+          sudo systemctl disable systemd-resolved.service
+          sudo systemctl stop systemd-resolved.service
+          sudo rm /etc/resolv.conf
+          sudo cat /etc/NetworkManager/NetworkManager.conf
+          sudo sed -i.bak -e '/^dns=/d' -e '/^\[main\]/adns=dnsmasq' /etc/NetworkManager/NetworkManager.conf
+          sudo cat /etc/NetworkManager/NetworkManager.conf
           sudo mkdir /etc/NetworkManager/dnsmasq.d
           sudo bash -c 'echo -e "address=/dev/127.0.0.1" > /etc/NetworkManager/dnsmasq.d/dev'
-          sudo service NetworkManager restart
+          sudo systemctl restart network-manager.service
 
       - uses: docker/setup-buildx-action@v1
         with:
