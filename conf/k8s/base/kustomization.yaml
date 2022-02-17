@@ -3,7 +3,7 @@ commonLabels:
     app.kubernetes.io/managed-by: kustomize
 
 bases:
-    - prometheus2
+#    - prometheus2
 #    - grafana
     - nginx
 
