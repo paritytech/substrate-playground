@@ -95,7 +95,7 @@ jobs:
 
       - name: Install dnsmasq
         run: |
-          sudo apt-get install -y dnsmasq
+          sudo mkdir /etc/NetworkManager/dnsmasq.d/dev
           sudo bash -c 'echo -e "address=/dev/127.0.0.1" >> /etc/NetworkManager/dnsmasq.d/dev'
           sudo systemctl service network-manager restart
 
