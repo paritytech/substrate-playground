@@ -5,7 +5,7 @@ import 'cross-fetch/dist/node-polyfill.js'; // TODO remove once moving to Node18
 function playgroundDomain(env: string): string {
     switch (env) {
       case "dev":
-        return "https://playground-dev.substrate.test";
+        return "https://playground-dev.substrate.localhost";
       case "staging":
         return "https://playground-staging.substrate.dev";
       case "production":
