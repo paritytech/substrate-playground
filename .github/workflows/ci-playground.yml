@@ -95,8 +95,10 @@ jobs:
 
       - name: Install dnsmasq
         run: |
+          sudo apt install NetworkManager
           sudo mkdir /etc/NetworkManager/dnsmasq.d
           sudo bash -c 'echo -e "address=/dev/127.0.0.1" > /etc/NetworkManager/dnsmasq.d/dev'
+          sudo service NetworkManager restart
 
       - uses: docker/setup-buildx-action@v1
         with:
