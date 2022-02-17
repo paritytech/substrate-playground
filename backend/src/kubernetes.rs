@@ -381,7 +381,6 @@ fn create_pod(
                         ),
                         ("cpu".to_string(), Quantity("1".to_string())),
                     ])),
-                    ..Default::default()
                 }),
                 ..Default::default()
             }],
