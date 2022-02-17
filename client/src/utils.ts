@@ -3,7 +3,7 @@ export enum EnvironmentType {dev, staging, production}
 export function playgroundBaseURL(env: EnvironmentType) {
     switch (env) {
         case EnvironmentType.dev:
-            return "http://playground-dev.substrate.localhost/api";
+            return "http://playground-dev.substrate.test/api";
         case EnvironmentType.staging:
             return "https://playground-staging.substrate.dev/api";
         case EnvironmentType.production:

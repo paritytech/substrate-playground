@@ -18,7 +18,7 @@ patches:
 - patch: |-
     - op: replace
       path: /spec/rules/0/host
-      value: playground-dev.substrate.localhost
+      value: playground-dev.substrate.test
   target:
     group: networking.k8s.io
     kind: Ingress
@@ -34,5 +34,5 @@ patchesStrategicMerge:
   spec:
     tls:
     - hosts:
-      - '*.playground-dev.substrate.localhost'
+      - '*.playground-dev.substrate.test'
       secretName: playground-tls
