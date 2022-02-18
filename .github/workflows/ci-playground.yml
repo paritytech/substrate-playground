@@ -119,7 +119,7 @@ jobs:
       - name: Set environment
         id: env
         run: |
-          echo ::set-output name=sha::sha-${GITHUB_SHA::8}
+          echo ::set-output name=sha::sha-${GITHUB_SHA::7}
 
       - name: Set up Kustomize
         run: |-
