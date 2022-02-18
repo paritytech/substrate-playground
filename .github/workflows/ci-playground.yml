@@ -132,7 +132,7 @@ jobs:
         working-directory: conf/k8s/overlays/dev
 
       - name: Deploy playground
-        run: SKIP_ACK=1 make k8s-deploy-playground
+        run: SKIP_ACK=1 make k8s-deploy-playground && sleep 120
 
       - name: Run tests
         run: yarn && yarn test
