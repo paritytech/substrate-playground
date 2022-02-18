@@ -101,7 +101,7 @@ jobs:
           install: true
 
       - name: Build backend images
-        run: make build-backend-docker-images
+        run: make push-backend-docker-images
 
       - uses: AbsaOSS/k3d-action@v2
         with:
@@ -130,6 +130,14 @@ jobs:
           ./kustomize edit set image paritytech/substrate-playground-backend-api:${{ steps.env.outputs.sha }}
           ./kustomize edit set image paritytech/substrate-playground-backend-ui:${{ steps.env.outputs.sha }}
         working-directory: conf/k8s/overlays/dev
+
+      - name: Configure playground
+        run: |-
+          SKIP_ACK=1 GH_CLIENT_ID=${{ secrets.GH_CLIENT_ID }} GH_CLIENT_SECRET=${{ secrets.GH_CLIENT_SECRET }} make k8s-setup-env
+          SKIP_ACK=1 make k8s-update-users-config
+          SKIP_ACK=1 make k8s-update-templates-config
+          openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout tls.key -out tls.crt -subj "/CN=playground-dev.substrate.test"
+          kubectl create secret tls playground-tls --save-config --key tls.key --cert tls.crt --dry-run=client -o yaml | kubectl apply -f -
 
       - name: Deploy playground
         run: SKIP_ACK=1 make k8s-deploy-playground && sleep 300
