@@ -81,7 +81,7 @@ clean: clean-frontend clean-backend ## Clean all generated files
 
 build-template-base: ## Build theia docker images
 	$(eval THEIA_DOCKER_IMAGE_VERSION=$(shell git rev-parse --short HEAD))
-	@cd templates; docker build --force-rm -f Dockerfile.base --label org.opencontainers.image.version=${THEIA_DOCKER_IMAGE_VERSION} -t ${TEMPLATE_BASE}:sha-${THEIA_DOCKER_IMAGE_VERSION} .
+	@cd templates; docker buildx build --load --force-rm -f Dockerfile.base --label org.opencontainers.image.version=${THEIA_DOCKER_IMAGE_VERSION} -t ${TEMPLATE_BASE}:sha-${THEIA_DOCKER_IMAGE_VERSION} .
 	docker image prune -f --filter label=stage=builder
 
 push-template-base: build-template-base ## Push a newly built theia image on docker.io
@@ -89,7 +89,7 @@ push-template-base: build-template-base ## Push a newly built theia image on doc
 
 build-template-theia-base:
 	$(eval THEIA_DOCKER_IMAGE_VERSION=$(shell git rev-parse --short HEAD))
-	@cd templates; docker build --force-rm -f Dockerfile.theia-base --label org.opencontainers.image.version=${THEIA_DOCKER_IMAGE_VERSION} -t ${TEMPLATE_THEIA_BASE}:sha-${THEIA_DOCKER_IMAGE_VERSION} .
+	@cd templates; docker buildx build --load --force-rm -f Dockerfile.theia-base --label org.opencontainers.image.version=${THEIA_DOCKER_IMAGE_VERSION} -t ${TEMPLATE_THEIA_BASE}:sha-${THEIA_DOCKER_IMAGE_VERSION} .
 	docker image prune -f --filter label=stage=builder
 
 push-template-theia-base: build-template-theia-base ## Push a newly built theia image on docker.io
@@ -110,8 +110,8 @@ build-template:
 
 	$(eval TAG=paritytech/substrate-playground-template-${TEMPLATE}:sha-${REV})
 	$(eval TAG_THEIA=paritytech/substrate-playground-template-${TEMPLATE}-theia:sha-${REV})
-	@cd templates; docker build --force-rm --build-arg BASE_TEMPLATE_VERSION=${BASE_TEMPLATE_VERSION} -t ${TAG} -f Dockerfile.template ${REPOSITORY_CLONE} \
-	&& docker build --force-rm --build-arg BASE_TEMPLATE_VERSION=${BASE_TEMPLATE_VERSION} --build-arg TEMPLATE_IMAGE=${TAG} -t ${TAG_THEIA} -f Dockerfile.theia-template .
+	@cd templates; docker buildx build --load --force-rm --build-arg BASE_TEMPLATE_VERSION=${BASE_TEMPLATE_VERSION} -t ${TAG} -f Dockerfile.template ${REPOSITORY_CLONE} \
+	&& docker buildx build --load --force-rm --build-arg BASE_TEMPLATE_VERSION=${BASE_TEMPLATE_VERSION} --build-arg TEMPLATE_IMAGE=${TAG} -t ${TAG_THEIA} -f Dockerfile.theia-template .
 	@rm -rf templates/${REPOSITORY_CLONE}
 
 build-openvscode-template:
@@ -130,8 +130,8 @@ build-openvscode-template:
 
 	$(eval TAG=paritytech/substrate-playground-template-${TEMPLATE}:sha-${REV})
 	$(eval TAG_OPENVSCODE=paritytech/substrate-playground-template-${TEMPLATE}-openvscode:sha-${REV})
-	@cd templates; docker build --force-rm --build-arg BASE_TEMPLATE_VERSION=${BASE_TEMPLATE_VERSION} -t ${TAG} -f Dockerfile.template ${REPOSITORY_CLONE} \
-	&& docker build --force-rm --build-arg TEMPLATE_IMAGE=${TAG} -t ${TAG_OPENVSCODE} -f Dockerfile.openvscode-template .
+	@cd templates; docker buildx build --load --force-rm --build-arg BASE_TEMPLATE_VERSION=${BASE_TEMPLATE_VERSION} -t ${TAG} -f Dockerfile.template ${REPOSITORY_CLONE} \
+	&& docker buildx build --load --force-rm --build-arg TEMPLATE_IMAGE=${TAG} -t ${TAG_OPENVSCODE} -f Dockerfile.openvscode-template .
 	@rm -rf templates/${REPOSITORY_CLONE}
 
 push-template: build-template
@@ -144,8 +144,8 @@ push-openvscode-template: build-openvscode-template
 
 build-backend-docker-images: ## Build backend docker images
 	$(eval PLAYGROUND_DOCKER_IMAGE_VERSION=$(shell git rev-parse --short HEAD))
-	@cd backend; docker build --force-rm -f Dockerfile --build-arg GITHUB_SHA="${PLAYGROUND_DOCKER_IMAGE_VERSION}" --label org.opencontainers.image.version=${PLAYGROUND_DOCKER_IMAGE_VERSION} -t ${PLAYGROUND_BACKEND_API_DOCKER_IMAGE_NAME}:sha-${PLAYGROUND_DOCKER_IMAGE_VERSION} .
-	@cd frontend; docker build --force-rm -f Dockerfile --build-arg GITHUB_SHA="${PLAYGROUND_DOCKER_IMAGE_VERSION}" --label org.opencontainers.image.version=${PLAYGROUND_DOCKER_IMAGE_VERSION} -t ${PLAYGROUND_BACKEND_UI_DOCKER_IMAGE_NAME}:sha-${PLAYGROUND_DOCKER_IMAGE_VERSION} .
+	@cd backend; docker buildx build --load --force-rm -f Dockerfile --build-arg GITHUB_SHA="${PLAYGROUND_DOCKER_IMAGE_VERSION}" --label org.opencontainers.image.version=${PLAYGROUND_DOCKER_IMAGE_VERSION} -t ${PLAYGROUND_BACKEND_API_DOCKER_IMAGE_NAME}:sha-${PLAYGROUND_DOCKER_IMAGE_VERSION} .
+	@cd frontend; docker buildx build --load --force-rm -f Dockerfile --build-arg GITHUB_SHA="${PLAYGROUND_DOCKER_IMAGE_VERSION}" --label org.opencontainers.image.version=${PLAYGROUND_DOCKER_IMAGE_VERSION} -t ${PLAYGROUND_BACKEND_UI_DOCKER_IMAGE_NAME}:sha-${PLAYGROUND_DOCKER_IMAGE_VERSION} .
 	docker image prune -f --filter label=stage=builder
 
 push-backend-docker-images: build-backend-docker-images ## Push newly built backend images on docker.io

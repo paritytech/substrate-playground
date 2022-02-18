@@ -101,7 +101,7 @@ jobs:
           install: true
 
       - name: Build backend images
-        run: make push-backend-docker-images
+        run: make build-backend-docker-images
 
       - uses: AbsaOSS/k3d-action@v2
         with:
