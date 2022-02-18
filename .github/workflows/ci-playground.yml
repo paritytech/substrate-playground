@@ -103,6 +103,9 @@ jobs:
       - name: Build backend images
         run: make build-backend-docker-images
 
+      - name: Show images
+        run: docker images
+
       - uses: AbsaOSS/k3d-action@v2
         with:
           cluster-name: "pg-cluster"
