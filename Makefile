@@ -192,8 +192,8 @@ k8s-cluster-status: requires-k8s
 	@kubectl get configmap playground-users &> /dev/null && [ $$? -eq 0 ] || (echo "Missing config 'playground-users'"; exit 1)
 	@kubectl get secrets playground-secrets &> /dev/null && [ $$? -eq 0 ] || (echo "Missing secrets 'playground-secrets'"; exit 1)
 	$(eval CURRENT_IP=$(shell kubectl get services ingress-nginx -o json | jq -r .status.loadBalancer.ingress[0].ip))
-	$(eval EXPECTED_IP=$(shell yq .patchesStrategicMerge[0] conf/k8s/overlays/berkeley-sp21/kustomization.yaml | sed 's/.*loadBalancerIP: \([^"]*\).*/\1/'))
-	@if [ "${CURRENT_IP}" != "${EXPECTED_IP}" ] ;then \
+	$(eval EXPECTED_IP=$(shell yq .patchesStrategicMerge[0] conf/k8s/overlays/${ENV}/kustomization.yaml | sed 's/.*loadBalancerIP: \([^"]*\).*/\1/'))
+	@if [[ "${CURRENT_IP}" != "${EXPECTED_IP}" ]] ;then \
 	  echo Incorrect IP \
 	  exit 1; \
 	fi
