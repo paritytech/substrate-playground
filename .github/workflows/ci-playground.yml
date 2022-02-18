@@ -135,9 +135,7 @@ jobs:
         working-directory: conf/k8s/overlays/dev
 
       - name: Load docker images
-        run: |
-          k3d image import paritytech/substrate-playground-backend-api:${{ steps.env.outputs.sha }} -c pg-cluster
-          k3d image import paritytech/substrate-playground-backend-ui:${{ steps.env.outputs.sha }} -c pg-cluster
+        run: k3d image import paritytech/substrate-playground-backend-api:${{ steps.env.outputs.sha }} paritytech/substrate-playground-backend-ui:${{ steps.env.outputs.sha }} -c pg-cluster
 
       - name: Configure playground
         run: |-
