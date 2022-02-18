@@ -151,7 +151,16 @@ jobs:
         run: SKIP_ACK=1 make k8s-deploy-playground && sleep 300
 
       - name: Display playground status
-        run: SKIP_ACK=1 make k8s-cluster-status && kubectl get pods -o wide && kubectl describe pods --selector='app.kubernetes.io/component=backend-api'
+        run: SKIP_ACK=1 make k8s-cluster-status
+
+      - name: Display playground status #2
+        run: kubectl get pods --field-selector status.phase!=Running
+
+      - name: Display playground status #3
+        run: kubectl describe pods --selector='app.kubernetes.io/component=backend-api'
+
+      - name: Display playground status #4
+        run: kubectl describe pods --selector='app.kubernetes.io/component=backend-ui'
 
       - name: Run tests
         run: yarn && yarn test
