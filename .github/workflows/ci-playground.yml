@@ -134,6 +134,11 @@ jobs:
           ./kustomize edit set image paritytech/substrate-playground-backend-ui:${{ steps.env.outputs.sha }}
         working-directory: conf/k8s/overlays/dev
 
+      - name: Load docker images
+        run: |
+          k3d image import paritytech/substrate-playground-backend-api:${{ steps.env.outputs.sha }} -c pg-cluster
+          k3d image import paritytech/substrate-playground-backend-ui:${{ steps.env.outputs.sha }} -c pg-cluster
+
       - name: Configure playground
         run: |-
           SKIP_ACK=1 GH_CLIENT_ID=${{ secrets.GH_CLIENT_ID }} GH_CLIENT_SECRET=${{ secrets.GH_CLIENT_SECRET }} make k8s-setup-env
