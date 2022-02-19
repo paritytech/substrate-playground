@@ -43,7 +43,7 @@ jobs:
           ENV: ${{ matrix.env }}
 
       - name: Audit URLs using Lighthouse
-        uses: foo-software/lighthouse-check-action@v7.1.1
+        uses: foo-software/lighthouse-check-action@v8.0.0
         with:
           urls: https://${{ steps.env.outputs.domain }}.substrate.dev/
 
