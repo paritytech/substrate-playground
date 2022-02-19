@@ -11,6 +11,7 @@ on:
     paths:
       - 'Makefile'
       - '.github/workflows/ci-playground.yml'
+      - 'conf/**'
       - 'backend/**'
       - 'frontend/**'
   pull_request:
@@ -19,6 +20,7 @@ on:
     paths:
       - 'Makefile'
       - '.github/workflows/ci-playground.yml'
+      - 'conf/**'
       - 'backend/**'
       - 'frontend/**'
 
