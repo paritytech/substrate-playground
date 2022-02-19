@@ -21,7 +21,7 @@ spec:
       containers:
       - name: backend-api
         image: paritytech/substrate-playground-backend-api
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
         command: ["backend"]
         securityContext:
           privileged: false

@@ -17,6 +17,7 @@ spec:
       containers:
       - name: backend-ui
         image: paritytech/substrate-playground-backend-ui
+        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 80
         resources:
