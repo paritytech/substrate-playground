@@ -5,6 +5,12 @@ name: Continuous Testing playground
 
 on:
   workflow_dispatch:
+  pull_request:
+    branches:
+    - develop
+    paths:
+    - '.github/workflows/ct-playground.yml'
+    - 'e2e/**'
   schedule:
     - cron:  '*/30 * * * *' # Every 30 minutes
 
