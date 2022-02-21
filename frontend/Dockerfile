@@ -9,7 +9,7 @@ FROM node:14.18.3-alpine AS builder
 
 WORKDIR /app
 
-COPY package.json yarn.lock tsconfig.json .eslintrc.cjs .
+COPY package.json yarn.lock tsconfig.json .
 COPY src /app/src
 COPY public /app/public
 
