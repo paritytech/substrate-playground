@@ -30,7 +30,7 @@ export class Client {
         if (!(headers instanceof Headers)) {
             throw Error('Unsupported headers type');
         }
-        headers.set('set-cookie', response.headers.get('set-cookie'));
+        headers.set('cookie', response.headers.get('set-cookie'));
         this.defaultInit.headers = headers;
     }
 
@@ -40,7 +40,7 @@ export class Client {
         if (!(headers instanceof Headers)) {
             throw Error('Unsupported headers type');
         }
-        headers.delete('set-cookie');
+        headers.delete('cookie');
         this.defaultInit.headers = headers;
     }
 
