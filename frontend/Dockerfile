@@ -9,7 +9,7 @@ FROM node:14.18.3-alpine AS builder
 
 WORKDIR /app
 
-COPY package.json package-lock.json tsconfig.json .eslintrc.cjs .
+COPY package.json yarn.lock tsconfig.json .eslintrc.cjs .
 COPY src /app/src
 COPY public /app/public
 
@@ -21,7 +21,7 @@ ENV BASE=$BASE
 ARG GITHUB_SHA
 ENV GITHUB_SHA=$GITHUB_SHA
 
-RUN npm install && npm run build
+RUN yarn install && yarn build
 
 LABEL stage=builder
 
