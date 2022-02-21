@@ -31,6 +31,7 @@ export class Client {
             throw Error('Unsupported headers type');
         }
         headers.set('set-cookie', response.headers.get('set-cookie'));
+        this.defaultInit.headers = headers;
     }
 
     async logout(init: RequestInit = this.defaultInit) {
@@ -40,6 +41,7 @@ export class Client {
             throw Error('Unsupported headers type');
         }
         headers.delete('set-cookie');
+        this.defaultInit.headers = headers;
     }
 
     path(...resources: string[]): string {
