@@ -1,6 +1,15 @@
 import { fetchWithTimeout, rpc } from './rpc';
 import { Playground, Pool, Workspace, WorkspaceConfiguration, WorkspaceUpdateConfiguration, User, UserConfiguration, UserUpdateConfiguration, Repository, RepositoryConfiguration, RepositoryUpdateConfiguration, RepositoryVersion, RepositoryVersionConfiguration, SessionConfiguration, Session, SessionUpdateConfiguration, Template, } from './types';
 
+function extractCookies(response: any): string {
+    const raw = response.headers.raw()['set-cookie'];
+    return raw.map((entry) => {
+        const parts = entry.split(';');
+        const cookiePart = parts[0];
+        return cookiePart;
+    }).join(';');
+}
+
 export class Client {
 
     static userResource = 'user';
@@ -21,6 +30,25 @@ export class Client {
         this.base = base;
         this.defaultInit = defaultInit;
         this.timeout = timeout;
+    }
+
+    // Login
+    async login(bearer: string, init: RequestInit = this.defaultInit) {
+        const response = await fetchWithTimeout(`${this.path('login')}?bearer=${bearer}`, init, this.timeout);
+        const headers = this.defaultInit.headers;
+        if (!(headers instanceof Headers)) {
+            throw Error('Unsupported headers type');
+        }
+        headers.set('set-cookie', response.headers.get('set-cookie'));
+    }
+
+    async logout(init: RequestInit = this.defaultInit) {
+        await fetchWithTimeout(this.path('logout'), init, this.timeout);
+        const headers = this.defaultInit.headers;
+        if (!(headers instanceof Headers)) {
+            throw Error('Unsupported headers type');
+        }
+        headers.delete('set-cookie');
     }
 
     path(...resources: string[]): string {
@@ -272,21 +300,9 @@ export class Client {
         return rpc(this.path(Client.poolsResource), init, this.timeout);
     }
 
-    // Login
-
-    async login(bearer: string, init: RequestInit = this.defaultInit): Promise<Response> {
-        return fetchWithTimeout(`${this.path('login')}?bearer=${bearer}`, {
-            ...init
-        }, this.timeout);
-    }
-
-    async logout(init: RequestInit = this.defaultInit): Promise<Response> {
-        return fetchWithTimeout(this.path('logout'), init, this.timeout);
-    }
-
 }
 
-export * from "./login";
+export * from "./auth";
 export * from "./rpc";
 export * from "./workspace";
 export * from "./types";
