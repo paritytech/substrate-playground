@@ -786,6 +786,7 @@ impl Engine {
     pub async fn get_workspace(&self, id: &str) -> Result<Option<Workspace>> {
         let client = client().await?;
         let pod_api: Api<Pod> = Api::namespaced(client, &self.env.namespace);
+        // TODO use get_opt?
         let pod = pod_api.get(&pod_name(id)).await.ok();
 
         match pod.map(|pod| Self::pod_to_workspace(&pod)) {
@@ -1341,6 +1342,7 @@ impl Engine {
     pub async fn get_session(&self, id: &str) -> Result<Option<Session>> {
         let client = client().await?;
         let pod_api: Api<Pod> = Api::namespaced(client, &self.env.namespace);
+        // TODO use get_opt?
         let pod = pod_api.get(&pod_name(id)).await.ok();
 
         match pod.map(|pod| self.clone().pod_to_session(&self.env, &pod)) {
