@@ -149,7 +149,7 @@ export function Repositories({ client, user }: { client: Client, user?: LoggedUs
                         </TableHead>
                         <TableBody>
                         {resources.map(repository => (
-                            <RepositoryRow client={client} repository={repository} />
+                            <RepositoryRow key={repository.id} client={client} repository={repository} />
                         ))}
                         </TableBody>
                     </Table>

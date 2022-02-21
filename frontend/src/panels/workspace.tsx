@@ -193,8 +193,6 @@ function TemplateSelector({client, conf, user, templates, onDeployed, onRetry}: 
                 </Container>
                 {errorMessage &&
                 <ErrorSnackbar open={true} message={errorMessage} onClose={() => setErrorMessage(null)} />}
-                {openCustom &&
-                <SessionCreationDialog client={client} user={user} template={selection[0]} conf={conf} templates={templates} show={openCustom} onCreate={onCreateClick} onHide={() => setOpenCustom(false)} />}
             </>
         );
     } else {

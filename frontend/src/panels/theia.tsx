@@ -39,8 +39,6 @@ export function TheiaPanel({ client, autoDeploy, onMissingWorkspace, onWorkspace
                             setUrl(url);
                             return;
                         }
-                    } else {
-
                     }
                 } else if (state.tag == 'Failed') {
                     const { reason } = state;

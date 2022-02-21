@@ -21,4 +21,4 @@ export function LogoSubstrate({ onClick, theme }: { onClick: MouseEventHandler |
       <img src={theme ? LogoLight : LogoDark}/>
     </Link>
   );
-};
+}

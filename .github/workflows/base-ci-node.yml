@@ -30,12 +30,11 @@ jobs:
         run: yarn install --check-files
 
       - name: Lint
+        if: hashFiles('.eslintrc.json') != ''
         run: yarn lint
-        continue-on-error: true
 
       - name: Audit
         run: yarn audit
-        continue-on-error: true
 
       - name: Build
         run: yarn build
