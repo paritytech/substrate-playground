@@ -1,3 +1,7 @@
+// Helper methods to get access to authentication tokens. Can then be used with `Client.login`.
+// See https://docs.github.com/en/developers/apps/building-oauth-apps/authorizing-oauth-apps
+//
+
 export interface Verification {
     deviceCode: string,
     userCode: string,
