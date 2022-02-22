@@ -5,6 +5,10 @@ import 'cross-fetch/dist/node-polyfill.js'; // TODO remove once moving to Node18
 
 const env = environmentTypeFromString(process.env.ENV);
 const accessToken = process.env.ACCESS_TOKEN;
+if (!accessToken) {
+    console.error("ACCESS_TOKEN env is not set");
+    process.exit(1);
+}
 
 function newClient(): Client {
     return new Client(playgroundBaseURL(env), 30000, {credentials: "include"});
