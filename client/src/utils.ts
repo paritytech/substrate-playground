@@ -1,5 +1,18 @@
 export enum EnvironmentType {dev, staging, production}
 
+export function environmentTypeFromString(s: string): EnvironmentType {
+    switch (s) {
+        case "dev":
+            return EnvironmentType.dev;
+        case "staging":
+            return EnvironmentType.staging;
+        case "production":
+            return EnvironmentType.production;
+        default:
+            throw new Error(`Unrecognized env ${s}`);
+    }
+}
+
 export function playgroundBaseURL(env: EnvironmentType) {
     switch (env) {
         case EnvironmentType.dev:
