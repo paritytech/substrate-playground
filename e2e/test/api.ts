@@ -30,7 +30,13 @@ test('authenticated - should be able to get current session', async (t) => {
 
     await client.getCurrentSession();
 
-    t.pass();
+    await client.logout();
+
+    try {
+        await client.getCurrentSession();
+    } catch {
+        t.pass();
+    }
 });
 
 test('unauthenticated - should be able to list templates', async (t) => {
