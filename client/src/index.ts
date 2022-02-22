@@ -17,7 +17,7 @@ export class Client {
     private readonly timeout: number;
     private readonly defaultInit: RequestInit;
 
-    constructor(base: string, timeout: number = 10000, defaultInit?: RequestInit) {
+    constructor(base: string, timeout: number = 10000, defaultInit: RequestInit = {}) {
         this.base = base;
         this.defaultInit = defaultInit;
         this.timeout = timeout;
@@ -26,21 +26,23 @@ export class Client {
     // Login
     async login(bearer: string, init: RequestInit = this.defaultInit) {
         const response = await fetchWithTimeout(`${this.path('login')}?bearer=${bearer}`, init, this.timeout);
-        const headers = this.defaultInit.headers || new Headers();
-        if (!(headers instanceof Headers)) {
+        const headers = this.defaultInit.headers;
+        if (headers instanceof Headers) {
             throw Error('Unsupported headers type');
         }
-        headers.set('cookie', response.headers.get('set-cookie'));
-        this.defaultInit.headers = headers;
+        this.defaultInit.headers = {
+            cookie: response.headers.get('set-cookie'),
+            ...headers
+        };
     }
 
     async logout(init: RequestInit = this.defaultInit) {
         await fetchWithTimeout(this.path('logout'), init, this.timeout);
-        const headers = this.defaultInit.headers || new Headers();
-        if (!(headers instanceof Headers)) {
+        const headers = this.defaultInit.headers;
+        if (headers instanceof Headers) {
             throw Error('Unsupported headers type');
         }
-        headers.delete('cookie');
+        delete headers['cookie'];
         this.defaultInit.headers = headers;
     }
 
