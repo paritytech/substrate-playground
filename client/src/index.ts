@@ -14,18 +14,18 @@ export class Client {
     static poolsResource = 'pools';
 
     private readonly base: string;
-    private readonly timeout: number;
+    private readonly defaultTimeout: number;
     private readonly defaultInit: RequestInit;
 
-    constructor(base: string, timeout: number = 10000, defaultInit: RequestInit = {}) {
+    constructor(base: string, defaultTimeout: number = 10000, defaultInit: RequestInit = {}) {
         this.base = base;
         this.defaultInit = defaultInit;
-        this.timeout = timeout;
+        this.defaultTimeout = defaultTimeout;
     }
 
     // Login
-    async login(bearer: string, init: RequestInit = this.defaultInit) {
-        const response = await fetchWithTimeout(`${this.path('login')}?bearer=${bearer}`, init, this.timeout);
+    async login(bearer: string, timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit) {
+        const response = await fetchWithTimeout(`${this.path('login')}?bearer=${bearer}`, init, timeout);
         const headers = this.defaultInit.headers;
         if (headers instanceof Headers) {
             throw Error('Unsupported headers type');
@@ -36,8 +36,8 @@ export class Client {
         };
     }
 
-    async logout(init: RequestInit = this.defaultInit) {
-        await fetchWithTimeout(this.path('logout'), init, this.timeout);
+    async logout(timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit) {
+        await fetchWithTimeout(this.path('logout'), init, timeout);
         const headers = this.defaultInit.headers;
         if (headers instanceof Headers) {
             throw Error('Unsupported headers type');
@@ -54,245 +54,245 @@ export class Client {
         return this.path(`login/github${queryParams}`);
     }
 
-    async get(init: RequestInit = this.defaultInit): Promise<Playground> {
-        return rpc(this.path(""), init, this.timeout);
+    async get(timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<Playground> {
+        return rpc(this.path(""), init, timeout);
     }
 
     // Current User
 
-    async getCurrentUser(init: RequestInit = this.defaultInit): Promise<User> {
+    async getCurrentUser(timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<User> {
         return rpc(this.path(Client.userResource), {
             ...init
-        }, this.timeout);
+        }, timeout);
     }
 
     // Users
 
-    async getUser(id: User['id'], init: RequestInit = this.defaultInit): Promise<User | null> {
-        return rpc(this.path(Client.usersResource, id), init, this.timeout);
+    async getUser(id: User['id'], timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<User | null> {
+        return rpc(this.path(Client.usersResource, id), init, timeout);
     }
 
-    async listUsers(init: RequestInit = this.defaultInit): Promise<User[]> {
-        return rpc(this.path(Client.usersResource), init, this.timeout);
+    async listUsers(timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<User[]> {
+        return rpc(this.path(Client.usersResource), init, timeout);
     }
 
-    async createUser(id: User['id'], conf: UserConfiguration, init: RequestInit = this.defaultInit): Promise<void> {
+    async createUser(id: User['id'], conf: UserConfiguration, timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<void> {
         return rpc(this.path(Client.usersResource, id), {
             method: 'PUT',
             body: JSON.stringify(conf),
             ...init
-        }, this.timeout);
+        }, timeout);
     }
 
-    async updateUser(id: User['id'], conf: UserUpdateConfiguration, init: RequestInit = this.defaultInit): Promise<void> {
+    async updateUser(id: User['id'], conf: UserUpdateConfiguration, timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<void> {
         return rpc(this.path(Client.usersResource, id), {
             method: 'PATCH',
             body: JSON.stringify(conf),
             ...init
-        }, this.timeout);
+        }, timeout);
     }
 
-    async deleteUser(id: User['id'], init: RequestInit = this.defaultInit): Promise<void> {
+    async deleteUser(id: User['id'], timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<void> {
         return rpc(this.path(Client.usersResource, id), {
             method: 'DELETE',
             ...init
-        }, this.timeout);
+        }, timeout);
     }
 
     // Current Workspace
 
-    async getCurrentWorkspace(init: RequestInit = this.defaultInit): Promise<Workspace | null> {
-        return rpc(this.path(Client.workspaceResource), init, this.timeout);
+    async getCurrentWorkspace(timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<Workspace | null> {
+        return rpc(this.path(Client.workspaceResource), init, timeout);
     }
 
-    async createCurrentWorkspace(conf: WorkspaceConfiguration, init: RequestInit = this.defaultInit): Promise<void> {
+    async createCurrentWorkspace(conf: WorkspaceConfiguration, timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<void> {
         return rpc(this.path(Client.workspaceResource), {
             method: 'PUT',
             body: JSON.stringify(conf),
             ...init
-        }, this.timeout);
+        }, timeout);
     }
 
-    async updateCurrentWorkspace(conf: WorkspaceUpdateConfiguration, init: RequestInit = this.defaultInit): Promise<void> {
+    async updateCurrentWorkspace(conf: WorkspaceUpdateConfiguration, timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<void> {
         return rpc(this.path(Client.workspaceResource), {
             method: 'PATCH',
             body: JSON.stringify(conf),
             ...init
-        }, this.timeout);
+        }, timeout);
     }
 
-    async deleteCurrentWorkspace(init: RequestInit = this.defaultInit): Promise<void> {
+    async deleteCurrentWorkspace(timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<void> {
         return rpc(this.path(Client.workspaceResource), {
             method: 'DELETE',
             ...init
-        }, this.timeout);
+        }, timeout);
     }
 
     // Workspaces
 
-    async getWorkspace(id: Workspace['id'], init: RequestInit = this.defaultInit): Promise<Workspace | null> {
-        return rpc(this.path(Client.workspacesResource, id), init, this.timeout);
+    async getWorkspace(id: Workspace['id'], timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<Workspace | null> {
+        return rpc(this.path(Client.workspacesResource, id), init, timeout);
     }
 
-    async listWorkspaces(init: RequestInit = this.defaultInit): Promise<Workspace[]> {
-        return rpc(this.path(Client.workspacesResource), init, this.timeout);
+    async listWorkspaces(timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<Workspace[]> {
+        return rpc(this.path(Client.workspacesResource), init, timeout);
     }
 
-    async createWorkspace(id: Workspace['id'], conf: WorkspaceConfiguration, init: RequestInit = this.defaultInit): Promise<void> {
+    async createWorkspace(id: Workspace['id'], conf: WorkspaceConfiguration, timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<void> {
         return rpc(this.path(Client.workspacesResource, id), {
             method: 'PUT',
             body: JSON.stringify(conf),
             ...init
-        }, this.timeout);
+        }, timeout);
     }
 
-    async updateWorkspace(id: Workspace['id'], conf: WorkspaceUpdateConfiguration, init: RequestInit = this.defaultInit): Promise<void> {
+    async updateWorkspace(id: Workspace['id'], conf: WorkspaceUpdateConfiguration, timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<void> {
         return rpc(this.path(Client.workspacesResource, id), {
             method: 'PATCH',
             body: JSON.stringify(conf),
             ...init
-        }, this.timeout);
+        }, timeout);
     }
 
-    async deleteWorkspace(id: Workspace['id'], init: RequestInit = this.defaultInit): Promise<void> {
+    async deleteWorkspace(id: Workspace['id'], timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<void> {
         return rpc(this.path(Client.workspacesResource, id), {
             method: 'DELETE',
             ...init
-        }, this.timeout);
+        }, timeout);
     }
 
     // Current Session
 
-    async getCurrentSession(init: RequestInit = this.defaultInit): Promise<Session | null> {
-        return rpc(this.path(Client.sessionResource), init, this.timeout);
+    async getCurrentSession(timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<Session | null> {
+        return rpc(this.path(Client.sessionResource), init, timeout);
     }
 
-    async createCurrentSession(conf: SessionConfiguration, init: RequestInit = this.defaultInit): Promise<void> {
+    async createCurrentSession(conf: SessionConfiguration, timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<void> {
         return rpc(this.path(Client.sessionResource), {
             method: 'PUT',
             body: JSON.stringify(conf),
             ...init
-        }, this.timeout);
+        }, timeout);
     }
 
-    async updateCurrentSession(conf: SessionUpdateConfiguration, init: RequestInit = this.defaultInit): Promise<void> {
+    async updateCurrentSession(conf: SessionUpdateConfiguration, timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<void> {
         return rpc(this.path(Client.sessionResource), {
             method: 'PATCH',
             body: JSON.stringify(conf),
             ...init
-        }, this.timeout);
+        }, timeout);
     }
 
-    async deleteCurrentSession(init: RequestInit = this.defaultInit): Promise<void> {
+    async deleteCurrentSession(timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<void> {
         return rpc(this.path(Client.sessionResource), {
             method: 'DELETE',
             ...init
-        }, this.timeout);
+        }, timeout);
     }
 
     // Sessions
 
-    async getSession(id: string, init: RequestInit = this.defaultInit): Promise<Session | null> {
-        return rpc(this.path(Client.sessionsResource, id), init, this.timeout);
+    async getSession(id: string, timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<Session | null> {
+        return rpc(this.path(Client.sessionsResource, id), init, timeout);
     }
 
-    async listSessions(init: RequestInit = this.defaultInit): Promise<Session[]> {
-        return rpc(this.path(Client.sessionsResource), init, this.timeout);
+    async listSessions(timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<Session[]> {
+        return rpc(this.path(Client.sessionsResource), init, timeout);
     }
 
-    async createSession(id: string, conf: SessionConfiguration, init: RequestInit = this.defaultInit): Promise<void> {
+    async createSession(id: string, conf: SessionConfiguration, timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<void> {
         return rpc(this.path(Client.sessionsResource, id), {
             method: 'PUT',
             body: JSON.stringify(conf),
             ...init
-        }, this.timeout);
+        }, timeout);
     }
 
-    async updateSession(id: string, conf: SessionUpdateConfiguration, init: RequestInit = this.defaultInit): Promise<void> {
+    async updateSession(id: string, conf: SessionUpdateConfiguration, timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<void> {
         return rpc(this.path(Client.sessionsResource, id), {
             method: 'PATCH',
             body: JSON.stringify(conf),
             ...init
-        }, this.timeout);
+        }, timeout);
     }
 
-    async deleteSession(id: string, init: RequestInit = this.defaultInit): Promise<void> {
+    async deleteSession(id: string, timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<void> {
         return rpc(this.path(Client.sessionsResource, id), {
             method: 'DELETE',
             ...init
-        }, this.timeout);
+        }, timeout);
     }
 
     // Repositories
 
-    async getRepository(id: Repository['id'], init: RequestInit = this.defaultInit): Promise<Repository | null> {
-        return rpc(this.path(Client.repositoriesResource, id), init, this.timeout);
+    async getRepository(id: Repository['id'], timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<Repository | null> {
+        return rpc(this.path(Client.repositoriesResource, id), init, timeout);
     }
 
-    async listRepositories(init: RequestInit = this.defaultInit): Promise<Repository[]> {
-        return rpc(this.path(Client.repositoriesResource), init, this.timeout);
+    async listRepositories(timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<Repository[]> {
+        return rpc(this.path(Client.repositoriesResource), init, timeout);
     }
 
-    async createRepository(id: Repository['id'], conf: RepositoryConfiguration, init: RequestInit = this.defaultInit): Promise<void> {
+    async createRepository(id: Repository['id'], conf: RepositoryConfiguration, timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<void> {
         return rpc(this.path(Client.repositoriesResource, id), {
             method: 'PUT',
             body: JSON.stringify(conf),
             ...init
-        }, this.timeout);
+        }, timeout);
     }
 
-    async updateRepository(id: Repository['id'], conf: RepositoryUpdateConfiguration, init: RequestInit = this.defaultInit): Promise<void> {
+    async updateRepository(id: Repository['id'], conf: RepositoryUpdateConfiguration, timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<void> {
         return rpc(this.path(Client.repositoriesResource, id), {
             method: 'PATCH',
             body: JSON.stringify(conf),
             ...init
-        }, this.timeout);
+        }, timeout);
     }
 
-    async deleteRepository(id: Repository['id'], init: RequestInit = this.defaultInit): Promise<void> {
+    async deleteRepository(id: Repository['id'], timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<void> {
         return rpc(this.path(Client.repositoriesResource, id), {
             method: 'DELETE',
             ...init
-        }, this.timeout);
+        }, timeout);
     }
 
-    async getRepositoryVersion(id: Repository['id'], version: string, init: RequestInit = this.defaultInit): Promise<RepositoryVersion | null> {
-        return rpc(this.path(Client.repositoriesResource, id, 'versions', version), init, this.timeout);
+    async getRepositoryVersion(id: Repository['id'], version: string, timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<RepositoryVersion | null> {
+        return rpc(this.path(Client.repositoriesResource, id, 'versions', version), init, timeout);
     }
 
-    async listRepositoryVersions(id: Repository['id'], init: RequestInit = this.defaultInit): Promise<RepositoryVersion[]> {
-        return rpc(this.path(Client.repositoriesResource, id, 'versions'), init, this.timeout);
+    async listRepositoryVersions(id: Repository['id'], timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<RepositoryVersion[]> {
+        return rpc(this.path(Client.repositoriesResource, id, 'versions'), init, timeout);
     }
 
-    async createRepositoryVersion(id: Repository['id'], version: string, conf: RepositoryVersionConfiguration, init: RequestInit = this.defaultInit): Promise<void> {
+    async createRepositoryVersion(id: Repository['id'], version: string, conf: RepositoryVersionConfiguration, timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<void> {
         return rpc(this.path(Client.repositoriesResource, id, 'versions', version), {
             method: 'PUT',
             body: JSON.stringify(conf),
             ...init
-        }, this.timeout);
+        }, timeout);
     }
 
-    async deleteRepositoryVersion(id: Repository['id'], version: string, init: RequestInit = this.defaultInit): Promise<void> {
+    async deleteRepositoryVersion(id: Repository['id'], version: string, timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<void> {
         return rpc(this.path(Client.repositoriesResource, id, 'versions', version), {
             method: 'DELETE',
             ...init
-        }, this.timeout);
+        }, timeout);
     }
 
     // Templates
 
-    async listTemplates(init: RequestInit = this.defaultInit): Promise<Template[]> {
-        return rpc(this.path(Client.templatesResource), init, this.timeout);
+    async listTemplates(timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<Template[]> {
+        return rpc(this.path(Client.templatesResource), init, timeout);
     }
 
     // Pools
 
-    async getPool(id: Pool['id'], init: RequestInit = this.defaultInit): Promise<Pool | null> {
-        return rpc(this.path(Client.poolsResource, id), init, this.timeout);
+    async getPool(id: Pool['id'], timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<Pool | null> {
+        return rpc(this.path(Client.poolsResource, id), init, timeout);
     }
 
-    async listPools(init: RequestInit = this.defaultInit): Promise<Pool[]> {
-        return rpc(this.path(Client.poolsResource), init, this.timeout);
+    async listPools(timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<Pool[]> {
+        return rpc(this.path(Client.poolsResource), init, timeout);
     }
 
 }
