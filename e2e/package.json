@@ -14,17 +14,17 @@
       "test/**.ts"
     ],
     "extensions": {
-        "ts": "module"
+      "ts": "module"
     },
     "nodeArguments": [
-        "--loader=ts-node/esm"
+      "--loader=ts-node/esm"
     ]
   },
   "engines": {
     "node": ">=16.0.0"
   },
   "dependencies": {
-    "@substrate/playground-client": "1.7.2",
+    "@substrate/playground-client": "1.8.4",
     "cross-fetch": "3.1.5",
     "yargs": "17.3.1"
   },

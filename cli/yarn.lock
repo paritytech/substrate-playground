@@ -2,10 +2,10 @@
 # yarn lockfile v1
 
 
-"@substrate/playground-client@1.7.2":
-  version "1.7.2"
-  resolved "https://registry.yarnpkg.com/@substrate/playground-client/-/playground-client-1.7.2.tgz#6503c92cbb5ddfa499f8fd0211db7bc4a45c753c"
-  integrity sha512-kNUg4shDpC74XUuCC9EitaJhKBgFK2Di0ysMx7emyuxqUgrTfyPXE6zXLXjJ7U2TStx6JprZ5elL0lNl1yF5/A==
+"@substrate/playground-client@1.8.4":
+  version "1.8.4"
+  resolved "https://registry.yarnpkg.com/@substrate/playground-client/-/playground-client-1.8.4.tgz#258c110309c4f842f4922ad9dbfee19299944483"
+  integrity sha512-28OgCyVphZ09EvIokU7LfR0l6myrn9VqBFZtJdNtfpYfG3LGClBKX1AkqsR3uJ0VrsQtMTN2xifssiy29vqn4Q==
   dependencies:
     uuid "8.3.2"
 
