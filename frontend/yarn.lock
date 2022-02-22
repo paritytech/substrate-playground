@@ -1020,10 +1020,10 @@
     "@react-spring/shared" "~9.4.3-beta.0"
     "@react-spring/types" "~9.4.3-beta.0"
 
-"@substrate/playground-client@1.7.2":
-  version "1.7.2"
-  resolved "https://registry.yarnpkg.com/@substrate/playground-client/-/playground-client-1.7.2.tgz#6503c92cbb5ddfa499f8fd0211db7bc4a45c753c"
-  integrity sha512-kNUg4shDpC74XUuCC9EitaJhKBgFK2Di0ysMx7emyuxqUgrTfyPXE6zXLXjJ7U2TStx6JprZ5elL0lNl1yF5/A==
+"@substrate/playground-client@1.8.3":
+  version "1.8.3"
+  resolved "https://registry.yarnpkg.com/@substrate/playground-client/-/playground-client-1.8.3.tgz#8d40b1aab62b2bf559a2447ef861a83b613cb778"
+  integrity sha512-6zNEXcg6axO41sHio/zOxnYqipbTX0CZxzQ7GhpbjMl1wLOoOazoyIOCuaJYpE2XEA8haFvP74ApWK3evzxr3w==
   dependencies:
     uuid "8.3.2"
 
