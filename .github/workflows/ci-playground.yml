@@ -136,3 +136,4 @@ jobs:
         timeout-minutes: 3
         env:
           ENV: dev
+          ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
