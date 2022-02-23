@@ -68,6 +68,31 @@ jobs:
           # Workaround https://github.com/actions-rs/cargo/issues/86
           args: --manifest-path backend/Cargo.toml -- -D warnings -A deprecated
 
+  # From https://code.visualstudio.com/docs/remote/devcontainer-cli#_adding-automation
+  build-devcontainer:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v2
+      - run: |
+          set -e
+
+          IMAGE_REPOSITORY="ghcr.io/paritytech/substrate-playground-devcontainer"
+
+          export DOCKER_BUILDKIT=1
+          export BUILDKIT_PROGRESS=plain
+
+          # Do the build - update
+          npm install -g "@vscode/dev-container-cli"
+          devcontainer build --no-cache --image-name "${IMAGE_REPOSITORY}" "."
+
+          # Push image to GitHub Container Registry
+          echo "${{ github.token }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          docker push "${IMAGE_REPOSITORY}"
+
+
   docker:
     runs-on: ubuntu-18.04
     if: "! contains(github.event.head_commit.message, '[CI Skip]')"
