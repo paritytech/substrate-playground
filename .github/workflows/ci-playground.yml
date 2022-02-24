@@ -155,6 +155,8 @@ jobs:
       - name: Deploy playground
         run: SKIP_ACK=1 make k8s-deploy-playground && sleep 300
 
+      # Will not run authenticated tests when triggered by PR
+      # See https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
       - name: Run e2e tests
         run: yarn && yarn test
         working-directory: ./e2e

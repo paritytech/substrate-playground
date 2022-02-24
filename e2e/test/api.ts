@@ -5,10 +5,6 @@ import 'cross-fetch/dist/node-polyfill.js'; // TODO remove once moving to Node18
 
 const env = environmentTypeFromString(process.env.ENV);
 const accessToken = process.env.ACCESS_TOKEN;
-if (!accessToken) {
-    console.error("ACCESS_TOKEN env is not set");
-    process.exit(1);
-}
 
 function newClient(): Client {
     return new Client(playgroundBaseURL(env), 30000, {credentials: "include"});
@@ -28,22 +24,25 @@ test('unauthenticated - should not be able to create a new workspace', async (t)
     }
 });
 
-test('authenticated - should be able to get current session', async (t) => {
-    const client = newClient();
-    await client.login(accessToken);
-
-    await client.getCurrentSession();
-
-    await client.logout();
-
-    try {
-        await client.getCurrentSession();
-    } catch {
-        t.pass();
-    }
-});
-
 test('unauthenticated - should be able to list templates', async (t) => {
     const details = await newClient().get();
     t.is(Object.keys(details.templates).length > 0, true);
 });
+
+
+if (accessToken) {
+    test('authenticated - should be able to get current session', async (t) => {
+        const client = newClient();
+        await client.login(accessToken);
+
+        await client.getCurrentSession();
+
+        await client.logout();
+
+        try {
+            await client.getCurrentSession();
+        } catch {
+            t.pass();
+        }
+    });
+}
