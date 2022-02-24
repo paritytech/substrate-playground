@@ -11,7 +11,6 @@ A hosted website that enables the user to navigate [Substrate](https://github.co
 More comprehensive documentation is accessible [here](https://paritytech.github.io/substrate-playground/docs/).
 
 Playground allows end-user to spin up a substrate based development environment in seconds. A full machine with terminal is then available from a web browser, ready to launch a chain and remotely access it.
-Playground templates can be [created and maintained](https://paritytech.github.io/substrate-playground/docs/extending/custom-template) by 3rd parties. Playground instances can be [integrated and manipulated](https://paritytech.github.io/substrate-playground/docs/extending/integration) via a JavaScript API.
 
 ## Trying it out
 
@@ -25,17 +24,9 @@ Documentation can be found at [paritytech.github.io/substrate-playground/](https
 
 Playground can be [integrated](https://paritytech.github.io/substrate-playground/docs/extending/integration) in external pages. This opens the door for more advanced usage e.g. interactive tutorials.
 
-### Contribute a template
-
-Extra `template` (custom docker images) can be [created](https://paritytech.github.io/substrate-playground/docs/extending/custom-template) and made available on playground.
-
 ## Roadmap
 
 Track progress [here](https://github.com/paritytech/substrate-playground/projects)
-
-## Deployment
-
-Playground is a set of containerized apps deployed on a kubernetes cluster. Fear not, it's quite simple to [deploy](https://paritytech.github.io/substrate-playground/docs/operating/deployment) it!
 
 ## License
 
