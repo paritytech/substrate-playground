@@ -18,7 +18,7 @@
         "@theia/editor-preview": "1.22.1",
         "@theia/file-search": "1.22.1",
         "@theia/keymaps": "1.22.1",
-        "@theia/markers": "1.22.1",
+        "@theia/markers": "1.23.0",
         "@theia/messages": "1.22.1",
         "@theia/metrics": "1.22.1",
         "@theia/mini-browser": "1.22.1",
