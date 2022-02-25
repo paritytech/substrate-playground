@@ -2415,6 +2415,11 @@
   resolved "https://registry.yarnpkg.com/@theia/plugin/-/plugin-1.22.1.tgz#dc3b39b9bd5f338f2f67336988d68848015308ae"
   integrity sha512-aUrprrcsBfmctQE2Ju4ADJjbLF09988GSUbWRMiNp5OvnDXQsb9V3BfXTQUQqcHsCTBds7KVqCC3WA0D9PoAWQ==
 
+"@theia/plugin@1.23.0":
+  version "1.23.0"
+  resolved "https://registry.yarnpkg.com/@theia/plugin/-/plugin-1.23.0.tgz#4cbce9a1028f1ff12b9da8f7e940aa6ead62090f"
+  integrity sha512-fZDM4WG870ZB7M6WnRpKRAc39ph3wtJIGohD4h9mgiSdLZTvQ396/1cVQjcRIMfRVrY6wf5q9/HDDUsz6pXcpA==
+
 "@theia/preferences@1.22.1":
   version "1.22.1"
   resolved "https://registry.yarnpkg.com/@theia/preferences/-/preferences-1.22.1.tgz#463e93b6fe6e469555334783444c1555204b8289"
