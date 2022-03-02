@@ -36,7 +36,7 @@ jobs:
     if: "! contains(github.event.head_commit.message, '[CI Skip]')"
     steps:
 
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       # Workaround https://github.com/actions-rs/toolchain/issues/110
       - run: cp backend/rust-toolchain .
@@ -75,7 +75,7 @@ jobs:
       contents: read
       packages: write
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - run: |
           set -e
 
@@ -98,7 +98,7 @@ jobs:
     if: "! contains(github.event.head_commit.message, '[CI Skip]')"
     steps:
 
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Install redirection
         run: echo "127.0.0.1 playground-dev.substrate.test" | sudo tee -a /etc/hosts
