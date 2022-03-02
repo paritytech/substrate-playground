@@ -33,7 +33,7 @@
     "@types/yargs": "17.0.8",
     "ava": "4.0.1",
     "playwright": "1.19.2",
-    "ts-node": "10.5.0",
+    "ts-node": "10.6.0",
     "typescript": "4.6.2"
   }
 }
