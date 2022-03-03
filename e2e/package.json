@@ -30,7 +30,7 @@
   },
   "devDependencies": {
     "@types/node": "17.0.21",
-    "@types/yargs": "17.0.8",
+    "@types/yargs": "17.0.9",
     "ava": "4.0.1",
     "playwright": "1.19.2",
     "ts-node": "10.6.0",
