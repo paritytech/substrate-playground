@@ -8,12 +8,49 @@
 	"engines": {
 		"vscode": "^1.57.0"
 	},
+	"extensionKind": [
+		"ui",
+		"workspace"
+	],
+	"capabilities": {
+		"untrustedWorkspaces": {
+			"supported": true
+		}
+	},
 	"categories": [
 		"Other"
 	],
 	"activationEvents": [
         "onStartupFinished"
 	],
+	"enabledApiProposals": [
+		"resolvers",
+		"terminalDataWriteEvent",
+		"notebookEditor",
+        "contribViewsRemote"
+	],
+    "contributes": {
+        "views": {
+            "remote": [
+              {
+                "id": "github.playground.explorer",
+                "name": "%extension.playground.remoteViewExplorer%",
+                "group": "targets@2",
+                "remoteName": "playground"
+            }
+            ]
+          },
+          "viewsWelcome": [
+			{
+				"view": "github.playground.explorer",
+				"contents": "%extension.playground.welcomeCreateCodespace%"
+			},
+			{
+				"view": "github.playground.explorer",
+				"contents": "%extension.playground.welcomeSignIn%"
+			}
+		]
+    },
 	"main": "./out/extension.js",
 	"scripts": {
 		"vscode:prepublish": "npm run compile",
@@ -23,6 +60,11 @@
 		"pretest": "npm run compile && npm run lint",
 		"test": "node ./out/test/runTest.js"
 	},
+    "dependencies": {
+        "@substrate/playground-client": "1.8.4",
+        "cross-fetch": "3.1.5",
+        "@octokit/rest": "^18.0.0"
+    },
 	"devDependencies": {
 		"@types/node": "16.11.1",
 		"@types/vscode": "1.61.0",
