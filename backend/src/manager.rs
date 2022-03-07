@@ -95,8 +95,6 @@ impl Manager {
                                             self.clone()
                                                 .metrics
                                                 .observe_deploy_duration(duration.as_secs_f64());
-                                        } else {
-                                            error!("Failed to compute this session lifetime");
                                         }
                                     }
                                     _ => {}
@@ -135,8 +133,6 @@ impl Manager {
                                         }
                                     }
                                 }
-                            } else {
-                                error!("Failed to compute this session lifetime");
                             }
                         }
                     }
