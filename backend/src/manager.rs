@@ -313,6 +313,9 @@ impl Manager {
 
         let session_id = session_id(id);
         let result = new_runtime()?.block_on(self.engine.delete_session(&session_id));
+
+        info!("Deleted session {}", session_id);
+
         match &result {
             Ok(_) => {
                 self.metrics.inc_undeploy_counter();
