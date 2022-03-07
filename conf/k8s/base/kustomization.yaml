@@ -16,7 +16,6 @@ resources:
     - cluster-role-binding.yaml
     - ingress.yaml
     - nginx.yaml
-    - node-exporter.yaml
     - service-account.yaml
     - node-conf-daemon-set.yaml
     - prepull-templates.yaml
