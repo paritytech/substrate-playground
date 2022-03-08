@@ -15,7 +15,7 @@
     "vscode-uri": "3.0.3"
   },
   "devDependencies": {
-    "typescript": "4.5.5"
+    "typescript": "4.6.2"
   },
   "scripts": {
     "prepare": "yarn run build",
