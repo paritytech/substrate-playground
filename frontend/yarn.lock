@@ -3371,10 +3371,10 @@ wrappy@1:
   resolved "https://registry.yarnpkg.com/wrappy/-/wrappy-1.0.2.tgz#b5243d8f3ec1aa35f1364605bc0d1036e30ab69f"
   integrity sha1-tSQ9jz7BqjXxNkYFvA0QNuMKtp8=
 
-xstate@4.30.5:
-  version "4.30.5"
-  resolved "https://registry.yarnpkg.com/xstate/-/xstate-4.30.5.tgz#c2c6753542578bf15e707b759ebb671f55849410"
-  integrity sha512-iZhIoZP8Alq4qI8eN/iAYiBRLfLSbSdI29LYsgk2DUvAwMV2J9xGw6CUT2HcH+5Rp5G3XzG6ByRfRmJJ+eEuDQ==
+xstate@4.30.6:
+  version "4.30.6"
+  resolved "https://registry.yarnpkg.com/xstate/-/xstate-4.30.6.tgz#62b6dea37a500e0e1c0ff7c553a801eea5119554"
+  integrity sha512-V7liK1cjkZRh6R/MSneG8S5VLGRatpOUcnNieiYJX4LbwKi9eUVUH5V04ugJYVcJ+2oKDKvEFvzk0VnSC7lTag==
 
 xxhash-wasm@^0.4.2:
   version "0.4.2"
