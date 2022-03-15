@@ -47,7 +47,7 @@ jobs:
         with:
           urls: https://${{ steps.env.outputs.domain }}.substrate.dev/
 
-      - uses: microsoft/playwright-github-action@v1.5.0
+      - uses: microsoft/playwright-github-action@v1.5.1
 
       - name: Run tests
         run: yarn && yarn test
