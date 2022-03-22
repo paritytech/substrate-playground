@@ -201,7 +201,7 @@ k8s-dev-delete: requires-k8s
 	@cd conf/k8s; skaffold delete
 
 k8s-deploy-playground: requires-k8s ## Deploy playground on kubernetes
-	kustomize build conf/k8s/overlays/${ENV}/ | kubectl apply --record -f -
+	kustomize build conf/k8s/overlays/${ENV}/ | kubectl apply -f -
 
 k8s-undeploy-playground: requires-k8s ## Undeploy playground from kubernetes
 	kustomize build conf/k8s/overlays/${ENV}/ | kubectl delete -f -
@@ -216,7 +216,7 @@ k8s-update-users-config: requires-k8s ## Creates or replaces the `users` config 
 	kubectl create configmap playground-users --namespace=${NAMESPACE} --from-file=conf/k8s/overlays/${ENV}/users/ --dry-run=client -o yaml | kubectl apply -f -
 
 k8s-prepull-templates: requires-k8s ## Deploy playground on kubernetes
-	kubectl apply --record -f conf/k8s/base/prepull-templates.yaml
+	kubectl apply -f conf/k8s/base/prepull-templates.yaml
 
 ##@ K3d
 
