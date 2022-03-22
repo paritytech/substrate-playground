@@ -8,6 +8,15 @@ export enum RpcErrorCode {
     TIMEOUT_ERROR = 1000,
 }
 
+export class RpcError extends Error {
+    readonly code;
+
+    constructor(code: RpcErrorCode, message: string) {
+        super(message);
+        this.code = code;
+    }
+}
+
 export async function fetchWithTimeout(input: RequestInfo, init: RequestInit, timeout): Promise<Response> {
     const controller = new AbortController();
     const id = setTimeout(() => controller.abort(), timeout);
@@ -39,17 +48,16 @@ async function call<T>(input: RequestInfo, init: RequestInit, timeout: number): 
                 }
             } catch (e) {
                 // Failed to parse as JSON
-                return Promise.reject({code: RpcErrorCode.PARSE_ERROR, message: response.statusText});
+                return Promise.reject(new RpcError(RpcErrorCode.PARSE_ERROR, response.statusText));
             }
         } else {
             if (response.status == 401) {
-                return Promise.reject({code: RpcErrorCode.INVALID_REQUEST, message: "User unauthorized"});
+                return Promise.reject(new RpcError(RpcErrorCode.INVALID_REQUEST, 'User unauthorized'));
             }
-            return Promise.reject({code: RpcErrorCode.SERVER_ERROR, message: response.statusText});
+            return Promise.reject(new RpcError(RpcErrorCode.SERVER_ERROR, response.statusText));
         }
     } catch (e) {
-        console.error(e);
-        return Promise.reject({code: RpcErrorCode.TIMEOUT_ERROR, message: `Failed to fetch`});
+        return Promise.reject(new RpcError(RpcErrorCode.TIMEOUT_ERROR, 'Failed to fetch'));
     }
 }
 

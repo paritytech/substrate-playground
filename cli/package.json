@@ -19,7 +19,7 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsc --jsx react",
+    "build": "tsc",
     "start": "node dist/index.js",
     "clean": "rm -rf dist/ node_modules/ yarn.lock",
     "preversion": "test -z \"$(git diff-index --name-only HEAD --)\"",
@@ -27,8 +27,8 @@
     "release": "yarn version"
   },
   "dependencies": {
-    "@substrate/playground-client": "1.5.0",
-    "abort-controller": "3.0.0",
+    "@substrate/playground-client": "1.8.4",
+    "clipboardy": "2.3.0",
     "cross-fetch": "3.1.4",
     "ink": "3.0.8",
     "ink-big-text": "1.2.0",
@@ -36,8 +36,9 @@
     "ink-link": "2.0.0",
     "ink-markdown": "1.0.1",
     "ink-select-input": "4.2.0",
-    "ink-spinner": "4.0.1",
+    "ink-spinner": "4.0.3",
     "lookpath": "1.2.0",
+    "open": "^8.4.0",
     "react": "16.14.0",
     "yargs": "16.2.0"
   },
