@@ -218,6 +218,16 @@ k8s-update-users-config: requires-k8s ## Creates or replaces the `users` config 
 k8s-prepull-templates: requires-k8s ## Deploy playground on kubernetes
 	kubectl apply --record -f conf/k8s/base/prepull-templates.yaml
 
+##@ K3d
+
+K3d_CLUSTER_NAME=pg-cluster
+
+k3d-create-cluster:
+	k3d cluster create ${K3d_CLUSTER_NAME} --k3s-arg '--tls-san=127.0.0.1@server:*' --k3s-arg '--no-deploy=traefik@server:*' --k3s-node-label "cloud.google.com/gke-nodepool=default-workspace@server:0" --port 80:80@loadbalancer --port 443:443@loadbalancer
+
+k3d-delete-cluster:
+	k3d cluster delete ${K3d_CLUSTER_NAME}
+
 ##@ DNS certificates
 
 generate-challenge: requires-env
