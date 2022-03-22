@@ -43,5 +43,6 @@ yarn publish
 
 ```shell
 yarn
-node index.js
+yarn build
+yarn start
 ```
