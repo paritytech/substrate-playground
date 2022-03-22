@@ -729,7 +729,7 @@ impl Engine {
         let mut rules: Vec<IngressRule> = spec
             .clone()
             .rules
-            .ok_or(Error::MissingData("ingreee#spec#rules"))?;
+            .ok_or(Error::MissingData("ingress#spec#rules"))?;
         for (session_id, template) in templates {
             let subdomain = subdomain(&self.env.host, &session_id);
             rules.push(IngressRule {
