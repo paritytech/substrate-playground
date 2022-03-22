@@ -12,7 +12,6 @@ jobs:
     strategy:
       matrix:
         env: [staging, production]
-      max-parallel: 1
     steps:
       - uses: actions/checkout@v2
         with:
@@ -44,15 +43,6 @@ jobs:
       - name: Run tests
         run: yarn && yarn test
         working-directory: ./e2e
-        continue-on-error: true
-        timeout-minutes: 3
+        timeout-minutes: 10
         env:
           ENV: ${{ matrix.env }}
-
-      - if: ${{ failure() }}
-        uses: s3krit/matrix-message-action@v0.0.3
-        with:
-          room_id: ${{ secrets.MATRIX_ROOM_ID }}
-          access_token: ${{ secrets.MATRIX_ACCESS_TOKEN }}
-          message: "Integration tests failed"
-          server: "matrix.parity.io"
