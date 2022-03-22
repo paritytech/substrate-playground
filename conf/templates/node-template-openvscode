@@ -1,0 +1,24 @@
+repository: substrate-developer-hub/substrate-node-template
+image: paritytech/substrate-playground-template-node-template-openvscode:sha-8bb8eac6
+ref: 8bb8eac6dd283501dfea8f6c8bff0dcb59f1b043
+name: Node template
+description: '
+A “skeleton blockchain” with essential capabilities, including P2P networking, consensus, finality, account, transaction and sudo governance modules.
+
+Runtime modules:
+
+* pallet_balances
+
+* pallet_transaction_payment
+
+* pallet_sudo
+
+* pallet_template'
+tags:
+  public: false
+runtime:
+  ports:
+    - name: wss
+      protocol: TCP
+      path: /wss
+      port: 9944
