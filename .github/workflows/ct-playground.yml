@@ -18,9 +18,9 @@ jobs:
   test:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         env: [staging, production]
-      max-parallel: 1
     steps:
       - uses: actions/checkout@v3
         with:
@@ -52,7 +52,7 @@ jobs:
       - name: Run tests
         run: yarn && yarn test
         working-directory: ./e2e
-        timeout-minutes: 3
+        timeout-minutes: 5
         env:
           ENV: ${{ matrix.env }}
           ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
