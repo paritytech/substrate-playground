@@ -222,8 +222,13 @@ k8s-update-certificate: requires-k8s
 
 K3d_CLUSTER_NAME=pg-cluster
 
+dev-create-certificate:
+	openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout tls.key -out tls.crt -subj "/CN=playground-dev.substrate.test"
+
 k3d-create-cluster:
-	k3d cluster create ${K3d_CLUSTER_NAME} --k3s-arg '--tls-san=127.0.0.1@server:*' --k3s-arg '--no-deploy=traefik@server:*' --k3s-node-label "cloud.google.com/gke-nodepool=default-workspace@server:0" --port 80:80@loadbalancer --port 443:443@loadbalancer
+	k3d cluster create ${K3d_CLUSTER_NAME} --servers 3 --k3s-arg '--tls-san=127.0.0.1@server:*' --k3s-arg '--no-deploy=traefik@server:*'\
+        --k3s-node-label "cloud.google.com/gke-nodepool=default-workspace@server:0" --k3s-node-label "cloud.google.com/gke-nodepool=default-workspace@server:1"\
+        --port 80:80@loadbalancer --port 443:443@loadbalancer
 
 k3d-delete-cluster:
 	k3d cluster delete ${K3d_CLUSTER_NAME}
