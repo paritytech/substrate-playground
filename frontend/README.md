@@ -16,7 +16,7 @@ Basically each time you save a file, you will see automatically the result at ht
 The base URL used to access the remote API server can be customized:
 
 ```bash
-BASE_URL=https://playground-staging.substrate.dev yarn dev
+BASE=https://playground-staging.substrate.dev/api yarn dev
 ```
 
 ## Build production bundle
