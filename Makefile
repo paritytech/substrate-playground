@@ -54,6 +54,13 @@ else
   CONTEXT=gke_${GKE_PROJECT}_${GKE_ZONE}_${GKE_CLUSTER}
 endif
 
+# Derive DOMAIN from ENV
+ifeq ($(ENV), production)
+  DOMAIN=playground
+else
+  DOMAIN=${PLAYGROUND_ID}
+endif
+
 COLOR_BOLD:= $(shell tput bold)
 COLOR_RED:= $(shell tput bold; tput setaf 1)
 COLOR_GREEN:= $(shell tput bold; tput setaf 2)
@@ -210,13 +217,13 @@ k8s-undeploy-theia: requires-k8s ## Undeploy all theia pods and services from ku
 ##@ DNS certificates
 
 generate-challenge: requires-env
-	sudo certbot certonly --manual --preferred-challenges dns --server https://acme-v02.api.letsencrypt.org/directory --agree-tos -m admin@parity.io -d *.${PLAYGROUND_ID}.substrate.dev -d ${PLAYGROUND_ID}.substrate.dev
+	sudo certbot certonly --manual --preferred-challenges dns --server https://acme-v02.api.letsencrypt.org/directory --agree-tos -m admin@parity.io -d *.${DOMAIN}.substrate.dev -d ${DOMAIN}.substrate.dev --cert-name ${DOMAIN}.substrate.dev
 
 get-challenge: requires-env
-	dig +short TXT _acme-challenge.${PLAYGROUND_ID}.substrate.dev @8.8.8.8
+	dig +short TXT _acme-challenge.${DOMAIN}.substrate.dev @8.8.8.8
 
 k8s-update-certificate: requires-k8s
-	sudo kubectl create secret tls playground-tls --save-config --key /etc/letsencrypt/live/${PLAYGROUND_ID}.substrate.dev-0002/privkey.pem --cert /etc/letsencrypt/live/${PLAYGROUND_ID}.substrate.dev-0002/fullchain.pem --dry-run=client -o yaml | sudo kubectl apply -f -
+	sudo kubectl create secret tls playground-tls --save-config --key /etc/letsencrypt/live/${DOMAIN}.substrate.dev/privkey.pem --cert /etc/letsencrypt/live/${DOMAIN}.substrate.dev/fullchain.pem --dry-run=client -o yaml | sudo kubectl apply -f -
 
 ##@ K3d
 
@@ -226,7 +233,7 @@ dev-create-certificate:
 	openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout tls.key -out tls.crt -subj "/CN=playground-dev.substrate.test"
 
 k3d-create-cluster:
-	k3d cluster create ${K3d_CLUSTER_NAME} --servers 3 --k3s-arg '--tls-san=127.0.0.1@server:*' --k3s-arg '--no-deploy=traefik@server:*'\
+	k3d cluster create ${K3d_CLUSTER_NAME} --servers 2 --k3s-arg '--tls-san=127.0.0.1@server:*' --k3s-arg '--no-deploy=traefik@server:*'\
         --k3s-node-label "cloud.google.com/gke-nodepool=default-workspace@server:0" --k3s-node-label "cloud.google.com/gke-nodepool=default-workspace@server:1"\
         --port 80:80@loadbalancer --port 443:443@loadbalancer
 
