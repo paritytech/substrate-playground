@@ -8,6 +8,7 @@ title: Build
 So you wanna build and run Playground?
 
 ```shell
+make dev-create-certificate
 make k3d-create-cluster
 
 make k8s-setup-env
