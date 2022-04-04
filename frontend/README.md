@@ -11,13 +11,7 @@ This command will:
 - start a development server at http://localhost:1234 with [hot module replacement](https://en.parceljs.org/hmr.html)
 - build automatically development javascript files with source maps
 
-Basically each time you save a file, you will see automatically the result at http://localhost:1234 without refreshing the page.
-
-The base URL used to access the remote API server can be customized:
-
-```bash
-BASE=https://playground-staging.substrate.dev/api yarn dev
-```
+Each time you save a file, you will see automatically the result at http://localhost:1234 without refreshing the page.
 
 ## Build production bundle
 

@@ -177,7 +177,7 @@ function extractParams(): Params {
     const deploy = params.get('deploy');
     return {deploy: deploy,
             version: process.env.GITHUB_SHA,
-            base: process.env.BASE || "/api"};
+            base: "/api"};
 }
 
 function removeTransientsURLParams() {
