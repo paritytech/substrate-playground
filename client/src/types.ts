@@ -8,7 +8,6 @@ export interface OwnedResource {
 export interface Playground {
     env: Environment,
     configuration: Configuration,
-    templates: Record<string, Template>,
     user?: LoggedUser,
 }
 
