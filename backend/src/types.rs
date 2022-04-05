@@ -9,7 +9,6 @@ use std::{
 pub struct Playground {
     pub env: Environment,
     pub configuration: Configuration,
-    pub templates: BTreeMap<String, Template>,
     pub user: Option<LoggedUser>,
 }
 
