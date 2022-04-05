@@ -12,7 +12,6 @@ use crate::{
 };
 use log::{error, info, warn};
 use std::{
-    collections::BTreeMap,
     collections::HashSet,
     sync::{Arc, Mutex},
     thread::{self, JoinHandle},
@@ -166,9 +165,7 @@ fn workspace_id(id: &str) -> String {
 
 impl Manager {
     pub fn get(self, user: LoggedUser) -> Result<Playground> {
-        let templates = new_runtime()?.block_on(self.clone().engine.list_templates())?;
         Ok(Playground {
-            templates,
             user: Some(user),
             env: self.engine.env,
             configuration: self.engine.configuration,
@@ -176,9 +173,7 @@ impl Manager {
     }
 
     pub fn get_unlogged(&self) -> Result<Playground> {
-        let templates = new_runtime()?.block_on(self.clone().engine.list_templates())?;
         Ok(Playground {
-            templates,
             user: None,
             env: self.clone().engine.env,
             configuration: self.clone().engine.configuration,
@@ -473,7 +468,7 @@ impl Manager {
         new_runtime()?.block_on(self.engine.get_session(&session_id(id)))
     }
 
-    pub fn list_sessions(&self, user: &LoggedUser) -> Result<BTreeMap<String, Session>> {
+    pub fn list_sessions(&self, user: &LoggedUser) -> Result<Vec<Session>> {
         if !user.has_admin_read_rights() {
             return Err(Error::Unauthorized(Permission::AdminRead));
         }
@@ -577,7 +572,7 @@ impl Manager {
 
     // Templates
 
-    pub fn list_templates(&self) -> Result<BTreeMap<String, Template>> {
+    pub fn list_templates(&self) -> Result<Vec<Template>> {
         new_runtime()?.block_on(self.clone().engine.list_templates())
     }
 }
