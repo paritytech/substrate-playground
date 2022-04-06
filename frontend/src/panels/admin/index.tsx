@@ -23,7 +23,7 @@ import FirstPageIcon from '@mui/icons-material/FirstPage';
 import KeyboardArrowLeft from '@mui/icons-material/KeyboardArrowLeft';
 import KeyboardArrowRight from '@mui/icons-material/KeyboardArrowRight';
 import LastPageIcon from '@mui/icons-material/LastPage';
-import { Client, Configuration, IdentifiedResource, LoggedUser } from '@substrate/playground-client';
+import { Client, Configuration, LoggedUser } from '@substrate/playground-client';
 import { CenteredContainer, LoadingPanel } from '../../components';
 import { useInterval } from '../../hooks';
 import { hasAdminEditRights } from '../../utils';
@@ -32,6 +32,8 @@ import { Pools } from './pools';
 import { Users } from './users';
 import { Repositories } from './repositories';
 import { Workspaces } from './workspaces';
+import { Sessions } from './sessions';
+import { Templates } from "./templates";
 
 export const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -240,7 +242,17 @@ export function EnhancedTableToolbar({ user, label, selected = null, onCreate, o
   );
 }
 
-export function AdminPanel({ client, user, conf }: { client: Client, user?: LoggedUser, conf: Configuration }): JSX.Element {
+const panels = {
+    Details: (_client: Client, conf: Configuration, _user?: LoggedUser) => <Details conf={conf} /> ,
+    Repositories: (client: Client, _conf: Configuration, user?: LoggedUser) => <Repositories client={client} user={user} />,
+    Users: (client: Client, conf: Configuration, user?: LoggedUser) => <Users client={client} user={user} conf={conf} />,
+    Workspaces: (client: Client, conf: Configuration, user?: LoggedUser) => <Workspaces client={client} conf={conf} user={user} />,
+    Pools: (client: Client, _conf: Configuration, user?: LoggedUser) => <Pools client={client} user={user} />,
+    Templates: (client: Client, conf: Configuration, user?: LoggedUser) => <Templates client={client} user={user} />,
+    Sessions: (client: Client, conf: Configuration, user?: LoggedUser) => <Sessions client={client} user={user} />
+};
+
+export function AdminPanel({ client, conf, user }: { client: Client, conf: Configuration, user?: LoggedUser }): JSX.Element {
   const [value, setValue] = React.useState(0);
 
   const handleChange = (_: React.ChangeEvent<unknown>, newValue: number) => {
@@ -250,23 +262,13 @@ export function AdminPanel({ client, user, conf }: { client: Client, user?: Logg
   return (
     <CenteredContainer>
       <Tabs value={value} onChange={handleChange} aria-label="wrapped label tabs example">
-        <Tab label="Details" />
-        <Tab label="Repositories" />
-        <Tab label="Users" />
-        <Tab label="Workspaces" />
-        <Tab label="Pools" />
+      {Object.keys(panels).map((panel) =>
+        <Tab label={panel} />)
+      }
       </Tabs>
 
       <Paper style={{ display: "flex", overflowY: "auto", flexDirection: "column", alignItems: 'center', justifyContent: 'center', textAlign: 'center', marginTop: 20, width: "80vw", height: "80vh" }} elevation={3}>
-        {value == 0
-          ? <Details conf={conf} />
-          : value == 1
-            ? <Repositories client={client} user={user} />
-            : value == 2
-              ? <Users client={client} user={user} conf={conf} />
-              : value == 3
-                ? <Workspaces client={client} conf={conf} user={user} />
-                : <Pools client={client} user={user} />}
+        {Object.values(panels)[value](client, conf, user)}
       </Paper>
     </CenteredContainer>
   );
