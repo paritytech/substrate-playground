@@ -258,7 +258,7 @@ export function Footer({ base, version }: { base: string, version?: string }): J
     );
 }
 
-export function Wrapper({ params, thin = false, children, nav}: { params: Params, thin?: boolean, children: React.ReactElement, nav?: React.ReactElement}): JSX.Element {
+export function Wrapper({ params, children, nav}: { params: Params, children: React.ReactElement, nav?: React.ReactElement}): JSX.Element {
     return (
         <div style={{display: "flex", flexDirection: "column", width: "inherit", height: "inherit"}}>
 
@@ -269,9 +269,6 @@ export function Wrapper({ params, thin = false, children, nav}: { params: Params
                   {children}
                 </div>
             </Fade>
-
-            {!thin &&
-            <Footer base={params.base} version={params.version} />}
 
         </div>
     );
