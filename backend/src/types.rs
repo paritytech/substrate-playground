@@ -302,6 +302,7 @@ fn default_as_false() -> bool {
 
 #[derive(Serialize, Clone, Debug)]
 pub struct Session {
+    pub id: String,
     pub user_id: String,
     pub template: Template,
     pub url: String,
