@@ -161,8 +161,7 @@ export interface Node {
 /////
 
 
-export interface Session {
-    userId: string,
+export interface Session extends IdentifiedResource, OwnedResource {
     url: string,
     template: Template,
     pod: Pod,
