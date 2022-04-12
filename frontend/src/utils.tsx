@@ -32,6 +32,10 @@ export function isParitytechMember(user: LoggedUser): boolean {
     return user.organizations.indexOf('paritytech') != -1;
 }
 
+export function canCustomize(user: LoggedUser): boolean {
+    return canCustomizeDuration(user) || canCustomizePoolAffinity(user);
+}
+
 export function canCustomizeDuration(user: LoggedUser): boolean {
     return user.admin || user.canCustomizeDuration || isParitytechMember(user);
 }
@@ -82,4 +86,8 @@ export function workspaceUrl(workspace: Workspace): string | null {
 
 export function find<T extends IdentifiedResource>(resources: T[], id: string): T | undefined {
     return resources.find(resource => resource.id == id);
+}
+
+export function remove<T extends IdentifiedResource>(resources: T[], id: string): T[] {
+    return resources.filter(resource => resource.id !== id);
 }
