@@ -129,7 +129,10 @@ fn str_minutes_to_duration(str: &str) -> Result<Duration> {
     ))
 }
 
-fn create_pod_annotations(template: &Template, duration: &Duration) -> Result<BTreeMap<String, String>> {
+fn create_pod_annotations(
+    template: &Template,
+    duration: &Duration,
+) -> Result<BTreeMap<String, String>> {
     let mut annotations = BTreeMap::new();
     let s = serde_yaml::to_string(template).map_err(|err| Error::Failure(err.into()))?;
     annotations.insert(TEMPLATE_ANNOTATION.to_string(), s);
@@ -168,7 +171,10 @@ fn volume_template_name(repository_id: &str) -> String {
 fn volume(workspace_id: &str, repository_id: &str) -> PersistentVolumeClaim {
     let mut labels = BTreeMap::new();
     labels.insert(APP_LABEL.to_string(), APP_VALUE.to_string());
-    labels.insert(COMPONENT_LABEL.to_string(), COMPONENT_WORKSPACE_VALUE.to_string());
+    labels.insert(
+        COMPONENT_LABEL.to_string(),
+        COMPONENT_WORKSPACE_VALUE.to_string(),
+    );
     labels.insert(OWNER_LABEL.to_string(), workspace_id.to_string());
 
     let mut requests = BTreeMap::new();
@@ -200,7 +206,10 @@ fn volume(workspace_id: &str, repository_id: &str) -> PersistentVolumeClaim {
 fn volume_template(repository_id: &str) -> PersistentVolumeClaim {
     let mut labels = BTreeMap::new();
     labels.insert(APP_LABEL.to_string(), APP_VALUE.to_string());
-    labels.insert(COMPONENT_LABEL.to_string(), COMPONENT_WORKSPACE_VALUE.to_string());
+    labels.insert(
+        COMPONENT_LABEL.to_string(),
+        COMPONENT_WORKSPACE_VALUE.to_string(),
+    );
 
     let mut requests = BTreeMap::new();
     requests.insert("storage".to_string(), Quantity("5Gi".to_string()));
@@ -269,7 +278,10 @@ fn create_workspace_pod(
 ) -> Result<Pod> {
     let mut labels = BTreeMap::new();
     labels.insert(APP_LABEL.to_string(), APP_VALUE.to_string());
-    labels.insert(COMPONENT_LABEL.to_string(), COMPONENT_WORKSPACE_VALUE.to_string());
+    labels.insert(
+        COMPONENT_LABEL.to_string(),
+        COMPONENT_WORKSPACE_VALUE.to_string(),
+    );
     labels.insert(OWNER_LABEL.to_string(), workspace_id.to_string());
 
     let volume_name = "repo".to_string();
@@ -454,10 +466,16 @@ fn create_service(workspace_id: &str, runtime: &RepositoryRuntimeConfiguration) 
     }
 }
 
-fn create_workspace_service(workspace_id: &str, runtime: &RepositoryRuntimeConfiguration) -> Service {
+fn create_workspace_service(
+    workspace_id: &str,
+    runtime: &RepositoryRuntimeConfiguration,
+) -> Service {
     let mut labels = BTreeMap::new();
     labels.insert(APP_LABEL.to_string(), APP_VALUE.to_string());
-    labels.insert(COMPONENT_LABEL.to_string(), COMPONENT_WORKSPACE_VALUE.to_string());
+    labels.insert(
+        COMPONENT_LABEL.to_string(),
+        COMPONENT_WORKSPACE_VALUE.to_string(),
+    );
     labels.insert(OWNER_LABEL.to_string(), workspace_id.to_string());
     let mut selector = BTreeMap::new();
     selector.insert(OWNER_LABEL.to_string(), workspace_id.to_string());
