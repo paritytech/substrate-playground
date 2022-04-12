@@ -48,7 +48,10 @@ const HOSTNAME_LABEL: &str = "kubernetes.io/hostname";
 const APP_LABEL: &str = "app.kubernetes.io/part-of";
 const APP_VALUE: &str = "playground";
 const COMPONENT_LABEL: &str = "app.kubernetes.io/component";
-const COMPONENT_VALUE: &str = "workspace";
+const COMPONENT_VALUE: &str = "session";
+
+const COMPONENT_WORKSPACE_VALUE: &str = "workspace";
+
 const OWNER_LABEL: &str = "app.kubernetes.io/owner";
 const INGRESS_NAME: &str = "ingress";
 const TEMPLATE_ANNOTATION: &str = "playground.substrate.io/template";
@@ -62,8 +65,16 @@ pub fn pod_name(user: &str) -> String {
     format!("{}-{}", COMPONENT_VALUE, user)
 }
 
+pub fn pod_workspace_name(user: &str) -> String {
+    format!("{}-{}", COMPONENT_WORKSPACE_VALUE, user)
+}
+
 pub fn service_name(workspace_id: &str) -> String {
     format!("{}-service-{}", COMPONENT_VALUE, workspace_id)
+}
+
+pub fn service_workspace_name(workspace_id: &str) -> String {
+    format!("{}-service-{}", COMPONENT_WORKSPACE_VALUE, workspace_id)
 }
 
 // TODO to remove
@@ -118,7 +129,18 @@ fn str_minutes_to_duration(str: &str) -> Result<Duration> {
     ))
 }
 
-fn create_pod_annotations(duration: &Duration) -> Result<BTreeMap<String, String>> {
+fn create_pod_annotations(template: &Template, duration: &Duration) -> Result<BTreeMap<String, String>> {
+    let mut annotations = BTreeMap::new();
+    let s = serde_yaml::to_string(template).map_err(|err| Error::Failure(err.into()))?;
+    annotations.insert(TEMPLATE_ANNOTATION.to_string(), s);
+    annotations.insert(
+        WORKSPACE_DURATION_ANNOTATION.to_string(),
+        workspace_duration_annotation(*duration),
+    );
+    Ok(annotations)
+}
+
+fn create_pod_workspace_annotations(duration: &Duration) -> Result<BTreeMap<String, String>> {
     let mut annotations = BTreeMap::new();
     annotations.insert(
         WORKSPACE_DURATION_ANNOTATION.to_string(),
@@ -146,7 +168,7 @@ fn volume_template_name(repository_id: &str) -> String {
 fn volume(workspace_id: &str, repository_id: &str) -> PersistentVolumeClaim {
     let mut labels = BTreeMap::new();
     labels.insert(APP_LABEL.to_string(), APP_VALUE.to_string());
-    labels.insert(COMPONENT_LABEL.to_string(), COMPONENT_VALUE.to_string());
+    labels.insert(COMPONENT_LABEL.to_string(), COMPONENT_WORKSPACE_VALUE.to_string());
     labels.insert(OWNER_LABEL.to_string(), workspace_id.to_string());
 
     let mut requests = BTreeMap::new();
@@ -178,7 +200,7 @@ fn volume(workspace_id: &str, repository_id: &str) -> PersistentVolumeClaim {
 fn volume_template(repository_id: &str) -> PersistentVolumeClaim {
     let mut labels = BTreeMap::new();
     labels.insert(APP_LABEL.to_string(), APP_VALUE.to_string());
-    labels.insert(COMPONENT_LABEL.to_string(), COMPONENT_VALUE.to_string());
+    labels.insert(COMPONENT_LABEL.to_string(), COMPONENT_WORKSPACE_VALUE.to_string());
 
     let mut requests = BTreeMap::new();
     requests.insert("storage".to_string(), Quantity("5Gi".to_string()));
@@ -247,15 +269,15 @@ fn create_workspace_pod(
 ) -> Result<Pod> {
     let mut labels = BTreeMap::new();
     labels.insert(APP_LABEL.to_string(), APP_VALUE.to_string());
-    labels.insert(COMPONENT_LABEL.to_string(), COMPONENT_VALUE.to_string());
+    labels.insert(COMPONENT_LABEL.to_string(), COMPONENT_WORKSPACE_VALUE.to_string());
     labels.insert(OWNER_LABEL.to_string(), workspace_id.to_string());
 
     let volume_name = "repo".to_string();
     Ok(Pod {
         metadata: ObjectMeta {
-            name: Some(pod_name(workspace_id)),
+            name: Some(pod_workspace_name(workspace_id)),
             labels: Some(labels),
-            annotations: Some(create_pod_annotations(duration)?),
+            annotations: Some(create_pod_workspace_annotations(duration)?),
             ..Default::default()
         },
         spec: Some(PodSpec {
@@ -279,7 +301,7 @@ fn create_workspace_pod(
                 ..Default::default()
             }),
             containers: vec![Container {
-                name: format!("{}-container", COMPONENT_VALUE),
+                name: format!("{}-container", COMPONENT_WORKSPACE_VALUE),
                 image: Some(
                     runtime
                         .clone()
@@ -328,7 +350,7 @@ fn create_pod(
         metadata: ObjectMeta {
             name: Some(pod_name(session_id)),
             labels: Some(labels),
-            annotations: Some(create_pod_annotations(duration)?),
+            annotations: Some(create_pod_annotations(template, duration)?),
             ..Default::default()
         },
         spec: Some(PodSpec {
@@ -359,14 +381,9 @@ fn create_pod(
                     &env.host,
                     session_id,
                 )),
-                volume_mounts: Some(vec![VolumeMount {
-                    name: "repo".to_string(),
-                    mount_path: "/repository".to_string(),
-                    ..Default::default()
-                }]),
                 resources: Some(ResourceRequirements {
                     requests: Some(BTreeMap::from([
-                        ("memory".to_string(), Quantity("32Gi".to_string())),
+                        ("memory".to_string(), Quantity("1Gi".to_string())),
                         (
                             "ephemeral-storage".to_string(),
                             Quantity("25Gi".to_string()),
@@ -385,14 +402,6 @@ fn create_pod(
                 ..Default::default()
             }],
             termination_grace_period_seconds: Some(1),
-            volumes: Some(vec![Volume {
-                name: "repo".to_string(),
-                persistent_volume_claim: Some(PersistentVolumeClaimVolumeSource {
-                    claim_name: "claim".to_string(),
-                    ..Default::default()
-                }),
-                ..Default::default()
-            }]),
             ..Default::default()
         }),
         ..Default::default()
@@ -432,6 +441,52 @@ fn create_service(workspace_id: &str, runtime: &RepositoryRuntimeConfiguration) 
     Service {
         metadata: ObjectMeta {
             name: Some(service_name(workspace_id)),
+            labels: Some(labels),
+            ..Default::default()
+        },
+        spec: Some(ServiceSpec {
+            type_: Some("NodePort".to_string()),
+            selector: Some(selector),
+            ports: Some(ports),
+            ..Default::default()
+        }),
+        ..Default::default()
+    }
+}
+
+fn create_workspace_service(workspace_id: &str, runtime: &RepositoryRuntimeConfiguration) -> Service {
+    let mut labels = BTreeMap::new();
+    labels.insert(APP_LABEL.to_string(), APP_VALUE.to_string());
+    labels.insert(COMPONENT_LABEL.to_string(), COMPONENT_WORKSPACE_VALUE.to_string());
+    labels.insert(OWNER_LABEL.to_string(), workspace_id.to_string());
+    let mut selector = BTreeMap::new();
+    selector.insert(OWNER_LABEL.to_string(), workspace_id.to_string());
+
+    // The theia port itself is mandatory
+    let mut ports = vec![ServicePort {
+        name: Some("web".to_string()),
+        protocol: Some("TCP".to_string()),
+        port: THEIA_WEB_PORT,
+        ..Default::default()
+    }];
+    if let Some(mut runtime_ports) = runtime.ports.clone().map(|ports| {
+        ports
+            .iter()
+            .map(|port| ServicePort {
+                name: Some(port.clone().name),
+                protocol: port.clone().protocol,
+                port: port.port,
+                target_port: port.clone().target.map(IntOrString::Int),
+                ..Default::default()
+            })
+            .collect::<Vec<ServicePort>>()
+    }) {
+        ports.append(&mut runtime_ports);
+    };
+
+    Service {
+        metadata: ObjectMeta {
+            name: Some(service_workspace_name(workspace_id)),
             labels: Some(labels),
             ..Default::default()
         },
@@ -635,7 +690,7 @@ impl Engine {
         serde_yaml::from_str(s).map_err(|err| Error::Failure(err.into()))
     }
 
-    pub async fn list_templates(self) -> Result<BTreeMap<String, Template>> {
+    pub async fn list_templates(self) -> Result<Vec<Template>> {
         let client = client().await?;
 
         Ok(get_templates(client, &self.env.namespace)
@@ -643,13 +698,13 @@ impl Engine {
             .into_iter()
             .filter_map(|(k, v)| {
                 if let Ok(template) = serde_yaml::from_str(&v) {
-                    Some((k, template))
+                    Some(template)
                 } else {
                     error!("Error while parsing template {}", k);
                     None
                 }
             })
-            .collect::<BTreeMap<String, Template>>())
+            .collect::<Vec<Template>>())
     }
 
     pub async fn get_user(&self, id: &str) -> Result<Option<User>> {
@@ -787,7 +842,7 @@ impl Engine {
         let client = client().await?;
         let pod_api: Api<Pod> = Api::namespaced(client, &self.env.namespace);
         // TODO use get_opt?
-        let pod = pod_api.get(&pod_name(id)).await.ok();
+        let pod = pod_api.get(&pod_workspace_name(id)).await.ok();
 
         match pod.map(|pod| Self::pod_to_workspace(&pod)) {
             Some(workspace) => workspace.map(Some),
@@ -822,7 +877,7 @@ impl Engine {
         let pod_api: Api<Pod> = Api::namespaced(client, &self.env.namespace);
         let pods = list_by_selector(
             &pod_api,
-            format!("{}={}", COMPONENT_LABEL, COMPONENT_VALUE).to_string(),
+            format!("{}={}", COMPONENT_LABEL, COMPONENT_WORKSPACE_VALUE).to_string(),
         )
         .await?;
 
@@ -954,7 +1009,7 @@ impl Engine {
 
         // Deploy the associated service
         let service_api: Api<Service> = Api::namespaced(client.clone(), namespace);
-        let service = create_service(user_id, runtime);
+        let service = create_workspace_service(user_id, runtime);
         service_api
             .create(&PostParams::default(), &service)
             .await
@@ -996,7 +1051,7 @@ impl Engine {
                     value: json!(workspace_duration_annotation(duration)),
                 })]));
             pod_api
-                .patch(&pod_name(&workspace.user_id), &params, &patch)
+                .patch(&pod_workspace_name(&workspace.user_id), &params, &patch)
                 .await
                 .map_err(|err| Error::Failure(err.into()))?;
         }
@@ -1009,13 +1064,13 @@ impl Engine {
         let client = client().await?;
         let service_api: Api<Service> = Api::namespaced(client.clone(), &self.env.namespace);
         service_api
-            .delete(&service_name(id), &DeleteParams::default())
+            .delete(&service_workspace_name(id), &DeleteParams::default())
             .await
             .map_err(|err| Error::Failure(err.into()))?;
 
         let pod_api: Api<Pod> = Api::namespaced(client.clone(), &self.env.namespace);
         pod_api
-            .delete(&pod_name(id), &DeleteParams::default())
+            .delete(&pod_workspace_name(id), &DeleteParams::default())
             .await
             .map_err(|err| Error::Failure(err.into()))?;
 
@@ -1325,6 +1380,7 @@ impl Engine {
         )?;
 
         Ok(Session {
+            id: username.clone(),
             user_id: username.clone(),
             template,
             url: subdomain(&env.host, username),
@@ -1352,7 +1408,7 @@ impl Engine {
     }
 
     /// Lists all currently running sessions
-    pub async fn list_sessions(&self) -> Result<BTreeMap<String, Session>> {
+    pub async fn list_sessions(&self) -> Result<Vec<Session>> {
         let client = client().await?;
         let pod_api: Api<Pod> = Api::namespaced(client, &self.env.namespace);
         let pods = list_by_selector(
@@ -1364,8 +1420,8 @@ impl Engine {
         Ok(pods
             .iter()
             .flat_map(|pod| self.clone().pod_to_session(&self.env, pod).ok())
-            .map(|session| (session.clone().user_id, session))
-            .collect::<BTreeMap<String, Session>>())
+            .map(|session| session)
+            .collect())
     }
 
     pub async fn create_session(
@@ -1400,7 +1456,8 @@ impl Engine {
         // Access the right image id
         let templates = self.clone().list_templates().await?;
         let template = templates
-            .get(&conf.template.to_string())
+            .iter()
+            .find(|template| template.name == conf.template.to_string())
             .ok_or(Error::MissingData("no matching template"))?;
 
         let namespace = &self.env.namespace;
