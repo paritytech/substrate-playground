@@ -25,10 +25,6 @@ import { ErrorSnackbar } from '../../components';
 import { useInterval } from '../../hooks';
 import { canCustomizeDuration, canCustomizePoolAffinity, find, workspaceUrl } from '../../utils';
 
-export function canCustomize(user: LoggedUser): boolean {
-    return canCustomizeDuration(user) || canCustomizePoolAffinity(user);
-}
-
 export function WorkspaceCreationDialog({ client, conf, workspaces, user, template, templates, show, onCreate, onHide, allowUserSelection = false }: { client: Client, conf: Configuration, workspaces?: Workspace[], user?: LoggedUser, template?: string, templates: Repository[] | undefined, show: boolean, onCreate: (conf: WorkspaceConfiguration, id?: string) => void, onHide: () => void , allowUserSelection?: boolean}): JSX.Element {
     const [selectedUser, setUser] = React.useState<string | undefined | null>(user?.id);
     const [selectedTemplate, setTemplate] = React.useState<string | null>(null);
