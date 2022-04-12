@@ -24,12 +24,6 @@ test('unauthenticated - should not be able to create a new workspace', async (t)
     }
 });
 
-test('unauthenticated - should be able to list templates', async (t) => {
-    const details = await newClient().get();
-    t.is(Object.keys(details.templates).length > 0, true);
-});
-
-
 if (accessToken) {
     test('authenticated - should be able to get current session', async (t) => {
         const client = newClient();
