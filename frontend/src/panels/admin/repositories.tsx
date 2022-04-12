@@ -19,7 +19,7 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
-import { Client, LoggedUser, Repository, RepositoryConfiguration, RepositoryVersion, RepositoryVersionConfiguration } from "@substrate/playground-client";
+import { Client, LoggedUser, Repository, RepositoryConfiguration, RepositoryVersion } from "@substrate/playground-client";
 import { useStyles, EnhancedTableToolbar, Resources } from '.';
 import { ErrorSnackbar } from '../../components';
 import { find } from "../../utils";
@@ -164,7 +164,7 @@ export function Repositories({ client, user }: { client: Client, user?: LoggedUs
                         try {
                             await client.createRepository(id, conf);
                             await client.createRepositoryVersion(id, "1", {reference: "master"});
-                        } catch (e) {
+                        } catch (e: any) {
                             setErrorMessage(`Error during creation: ${e.message}`);
                         }
                     }}
