@@ -13,6 +13,5 @@ resources:
     - backend-ui.yaml
     - cluster-role-binding.yaml
     - ingress.yaml
-#    - node-exporter.yaml
     - service-account.yaml
     - node-conf-daemon-set.yaml
