@@ -47,6 +47,8 @@ export class WorkspaceClient {
             }, timeout);
             const id = uuidv4();
             const callback = (event: MessageEvent<Response<T>>) => {
+                // TODO filter origin: if (event.origin !== 'https://video.example.com') return;
+                // See https://developer.chrome.com/blog/immutable-document-domain/
                 if (event.data.id == id) {
                     window.removeEventListener('message', callback, false);
                     clearTimeout(timeoutId);
