@@ -1438,7 +1438,6 @@ impl Engine {
         Ok(pods
             .iter()
             .flat_map(|pod| self.clone().pod_to_session(&self.env, pod).ok())
-            .map(|session| session)
             .collect())
     }
 
@@ -1475,7 +1474,7 @@ impl Engine {
         let templates = self.clone().list_templates().await?;
         let template = templates
             .iter()
-            .find(|template| template.name == conf.template.to_string())
+            .find(|template| template.name == conf.template)
             .ok_or(Error::MissingData("no matching template"))?;
 
         let namespace = &self.env.namespace;
