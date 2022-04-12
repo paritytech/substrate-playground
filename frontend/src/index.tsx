@@ -1,20 +1,19 @@
 import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom";
-import { State } from "xstate";
-import { Client, Configuration, LoggedUser, Template, Workspace } from '@substrate/playground-client';
+import { Client, Configuration, LoggedUser, Workspace } from '@substrate/playground-client';
 import { createTheme, ThemeProvider, Theme, StyledEngineProvider, adaptV4Theme } from '@mui/material/styles';
 import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
 import { useMachine } from '@xstate/react';
-import { CenteredContainer, ErrorMessage, LoadingPanel, Nav, NavMenuLogged, NavMenuUnlogged, NavSecondMenuAdmin, Wrapper } from './components';
+import { CenteredContainer, ErrorMessage, Footer, LoadingPanel, Nav, NavMenuLogged, NavMenuUnlogged, NavSecondMenuAdmin } from './components';
 import { useInterval } from "./hooks";
-import { newMachine, Context, Event, Events, PanelId, States, Typestate, SchemaType } from './lifecycle';
+import { newMachine, Events, PanelId, States } from './lifecycle';
 import { AdminPanel } from './panels/admin/index';
 import { LoginPanel } from './panels/login';
 import { StatsPanel } from './panels/stats';
 import { TermsPanel } from './panels/terms';
-import { TheiaPanel } from './panels/theia';
-import { WorkspacePanel } from './panels/workspace';
+import { RunningSessionPanel } from './panels/session_running';
+import { SessionPanel } from './panels/session';
 import { terms } from "./terms";
 import { hasAdminReadRights } from "./utils";
 import { SubstrateLight } from './themes';
@@ -25,15 +24,15 @@ declare module '@mui/styles/defaultTheme' {
   interface DefaultTheme extends Theme {}
 }
 
-function MainPanel({ client, params, conf, user, id, templates, onRetry, onConnect, onAfterDeployed }: { client: Client, params: Params, conf: Configuration, user?: LoggedUser, templates: Record<string, Template>, id: PanelId, onRetry: () => void, onConnect: () => void, onAfterDeployed: () => void }): JSX.Element {
-    switch(id) {
+function MainPanel({ client, params, conf, user, panel, onRetry, onConnect, onAfterDeployed }: { client: Client, params: Params, conf: Configuration, user?: LoggedUser, panel: PanelId, onRetry: () => void, onConnect: () => void, onAfterDeployed: () => void }): JSX.Element {
+    switch(panel) {
         case PanelId.Workspace:
-          return <WorkspacePanel client={client} conf={conf} templates={templates} user={user} onRetry={onRetry}
+          return <SessionPanel client={client} conf={conf} user={user} onRetry={onRetry}
                     onStop={async () => {
-                        await client.deleteCurrentWorkspace();
+                        await client.deleteCurrentSession();
                     }}
                     onDeployed={async conf => {
-                        await client.createCurrentWorkspace(conf);
+                        await client.createCurrentSession(conf);
                         onAfterDeployed();
                     }}
                     onConnect={onConnect} />;
@@ -42,7 +41,7 @@ function MainPanel({ client, params, conf, user, id, templates, onRetry, onConne
         case PanelId.Admin:
           return <AdminPanel client={client} conf={conf} user={user} />;
         case PanelId.Theia:
-          return <TheiaPanel client={client} autoDeploy={params.deploy} onMissingWorkspace={onRetry} onWorkspaceFailing={onRetry} onWorkspaceTimeout={onRetry} />;
+          return <RunningSessionPanel client={client} autoDeploy={params.deploy} onMissingSession={onRetry} onSessionFailing={onRetry} onSessionTimeout={onRetry} />;
     }
 }
 
@@ -95,23 +94,26 @@ function restart(send: (event: Events) => void) { send(Events.RESTART)}
 
 function selectPanel(send: (event: Events, payload: Record<string, unknown>) => void, id: PanelId) { send(Events.SELECT, {panel: id})}
 
-function CustomNav({ client, send, state }: { client: Client, send: (event: Events) => void, state: State<Context, Event, SchemaType, Typestate> }): JSX.Element  {
-    const { panel } = state.context;
+function CustomLoggedNav({ client, send, conf, user, panel }: { client: Client, send: (event: Events) => void, conf: Configuration, user: LoggedUser, panel: PanelId }): JSX.Element  {
     return (
         <Nav onPlayground={() => selectPanel(send, PanelId.Workspace)}>
             <>
-            {state.matches(States.LOGGED)
-            ? <>
-                {(panel == PanelId.Theia) &&
-                <ExtraTheiaNav client={client} conf={state.context.conf} restartAction={() => restart(send)} />}
-                <div style={{display: "flex", alignItems: "center"}}>
-                    {hasAdminReadRights(state.context.user) &&
-                    <NavSecondMenuAdmin onAdminClick={() => selectPanel(send, PanelId.Admin)} onStatsClick={() => selectPanel(send, PanelId.Stats)} />}
-                    <NavMenuLogged conf={state.context.conf} user={state.context.user} onLogout={() => send(Events.LOGOUT)} />
-                </div>
-                </>
-                : <NavMenuUnlogged />}
+              {(panel == PanelId.Theia) &&
+                <ExtraTheiaNav client={client} conf={conf} restartAction={() => restart(send)} />}
+              <div style={{display: "flex", alignItems: "center"}}>
+                  {hasAdminReadRights(user) &&
+                  <NavSecondMenuAdmin onAdminClick={() => selectPanel(send, PanelId.Admin)} onStatsClick={() => selectPanel(send, PanelId.Stats)} />}
+                  <NavMenuLogged conf={conf} user={user} onLogout={() => send(Events.LOGOUT)} />
+              </div>
             </>
+        </Nav>
+    );
+}
+
+function CustomNav({ send }: { send: (event: Events) => void }): JSX.Element  {
+    return (
+        <Nav onPlayground={() => selectPanel(send, PanelId.Workspace)}>
+            <NavMenuUnlogged />
         </Nav>
     );
 }
@@ -119,37 +121,33 @@ function CustomNav({ client, send, state }: { client: Client, send: (event: Even
 const theme = createTheme(adaptV4Theme(SubstrateLight));
 
 function App({ params }: { params: Params }): JSX.Element {
-    console.log(params)
     const client = new Client(params.base, 30000, {credentials: "include"});
     const { deploy } = params;
     const [state, send] = useMachine(newMachine(client, deploy? PanelId.Theia: PanelId.Workspace), { devTools: true });
-    const { panel, templates, error } = state.context;
-
-    const isTheia = state.matches(States.LOGGED) && panel == PanelId.Theia;
+    const { panel, error } = state.context;
+    const logged = state.matches(States.LOGGED);
 
     useEffect(() => {
         // Remove transient parameters when logged, to prevent recursive behaviors
-        console.log("effect")
-        if (state.matches(States.LOGGED)) {
-            console.log("remove")
+        if (logged) {
             removeTransientsURLParams();
         }
     }, [state]);
-
 
     return (
         <StyledEngineProvider injectFirst>
             <ThemeProvider theme={theme}>
                 <CssBaseline />
                 <div style={{ display: "flex", width: "100vw", height: "100vh", alignItems: "center", justifyContent: "center" }}>
-                    <Wrapper thin={isTheia}
-                             nav={<CustomNav client={client} send={send} state={state} />}
-                             params={params}>
-                       {state.matches(States.LOGGED)
-                       ? <MainPanel client={client} params={params} templates={templates} conf={state.context.conf} user={state.context.user} id={panel}
-                                    onRetry={() => restart(send)}
-                                    onAfterDeployed={() => selectPanel(send, PanelId.Theia)}
-                                    onConnect={() => selectPanel(send, PanelId.Theia)} />
+                    <div style={{display: "flex", flexDirection: "column", width: "inherit", height: "inherit"}}>
+                       {logged
+                       ? <CustomLoggedNav client={client} send={send} conf={state.context.conf} user={state.context.user} panel={panel} />
+                       : <CustomNav send={send} />}
+                       {logged
+                       ? <MainPanel client={client} params={params} conf={state.context.conf} user={state.context.user} panel={panel}
+                                 onRetry={() => restart(send)}
+                                 onAfterDeployed={() => selectPanel(send, PanelId.Theia)}
+                                 onConnect={() => selectPanel(send, PanelId.Theia)} />
                        : state.matches(States.TERMS_UNAPPROVED)
                          ? <TermsPanel terms={terms} onTermsApproved={() => send(Events.TERMS_APPROVAL)} />
                          : state.matches(States.UNLOGGED)
@@ -159,7 +157,9 @@ function App({ params }: { params: Params }): JSX.Element {
                          </CenteredContainer>
                          : <LoginPanel client={client} />
                          : <LoadingPanel />}
-                    </Wrapper>
+                       {panel == PanelId.Theia &&
+                         <Footer base={params.base} version={params.version} />}
+                    </div>
                 </div>
             </ThemeProvider>
         </StyledEngineProvider>
@@ -191,12 +191,6 @@ function removeTransientsURLParams() {
 }
 
 function main(): void {
-    // Set domain to root DNS so that they share the same origin and communicate
-    const members = document.domain.split(".");
-    if (members.length > 1) {
-      document.domain = members.slice(members.length-2).join(".");
-    }
-console.log("main")
     ReactDOM.render(
         <App params={extractParams()} />,
         document.querySelector("main")
