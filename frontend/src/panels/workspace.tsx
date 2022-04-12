@@ -25,7 +25,7 @@ import Typography from '@mui/material/Typography';
 import { Theme } from '@mui/material/styles';
 import makeStyles from '@mui/styles/makeStyles';
 import createStyles from '@mui/styles/createStyles';
-import { Client, Configuration, NameValuePair, LoggedUser, Port, Workspace, WorkspaceConfiguration, Repository, WorkspaceState, RepositoryRuntimeConfiguration, RepositoryConfiguration, Template } from '@substrate/playground-client';
+import { Client, Configuration, NameValuePair, LoggedUser, Port, Workspace, WorkspaceConfiguration, Repository, WorkspaceState, RepositoryRuntimeConfiguration, RepositoryConfiguration, Template, SessionConfiguration } from '@substrate/playground-client';
 import { WorkspaceCreationDialog, canCustomize } from "./admin/workspaces";
 import { CenteredContainer, ErrorMessage, ErrorSnackbar, LoadingPanel } from "../components";
 import { useInterval } from "../hooks";

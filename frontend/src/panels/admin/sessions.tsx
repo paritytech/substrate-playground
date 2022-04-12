@@ -1,368 +1,420 @@
-import React, { useState } from "react";
-import { marked } from 'marked';
-import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
+import React, { Dispatch, SetStateAction, useState } from "react";
 import Button from '@mui/material/Button';
 import ButtonGroup from "@mui/material/ButtonGroup";
-import Card from '@mui/material/Card';
-import CardContent from '@mui/material/CardContent';
-import ClickAwayListener from "@mui/material/ClickAwayListener";
 import Container from "@mui/material/Container";
-import Divider from '@mui/material/Divider';
-import Grow from '@mui/material/Grow';
-import List from '@mui/material/List';
-import ListItem from '@mui/material/ListItem';
-import ListItemText from '@mui/material/ListItemText';
 import MenuItem from '@mui/material/MenuItem';
-import MenuList from '@mui/material/MenuList';
 import Paper from '@mui/material/Paper';
-import Popper from '@mui/material/Popper';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
-import Typography from '@mui/material/Typography';
-import { makeStyles, createStyles, Theme } from '@mui/styles';
-import { Client, Configuration, NameValuePair, LoggedUser, Port, Session, SessionConfiguration, Template } from '@substrate/playground-client';
-import { CenteredContainer, ErrorMessage, ErrorSnackbar, LoadingPanel } from "../../components";
+import { Client, Configuration, LoggedUser, Session, SessionConfiguration, Template, Pool, User, SessionUpdateConfiguration } from '@substrate/playground-client';
+import { ErrorSnackbar } from "../../components";
 import { useInterval } from "../../hooks";
-import { formatDuration } from "../../utils";
+import { canCustomizeDuration, canCustomizePoolAffinity, find, remove } from "../../utils";
+import { Autocomplete, Checkbox, Dialog, DialogContent, DialogTitle, IconButton, Link, TableFooter, TablePagination, TextField } from "@mui/material";
+import { FirstPage, KeyboardArrowLeft, KeyboardArrowRight, LastPage } from "@mui/icons-material";
+import { EnhancedTableToolbar, NoResourcesContainer, Resources } from ".";
+import { useTheme } from "@mui/styles";
 
-const useStyles = makeStyles((theme: Theme) =>
-    createStyles({
-        root: {
-            '& > * + *': {
-                marginLeft: theme.spacing(2),
-            },
-        },
-    }),
-);
+export function SessionCreationDialog({ client, conf, sessions, user, template, templates, show, onCreate, onHide, allowUserSelection = false }: { client: Client, conf: Configuration, sessions?: Session[], user: LoggedUser, template?: string, templates: Template[] | null, show: boolean, onCreate: (conf: SessionConfiguration, id?: string, ) => void, onHide: () => void , allowUserSelection?: boolean}): JSX.Element {
+    const [selectedUser, setUser] = React.useState<string | null>(user.id);
+    const [selectedTemplate, setTemplate] = React.useState<string | null>(null);
+    const [duration, setDuration] = React.useState(conf.workspace.duration);
+    const [poolAffinity, setPoolAffinity] = React.useState(conf.workspace.poolAffinity);
+    const [pools, setPools] = useState<Pool[] | null>(null);
+    const [users, setUsers] = useState<User[] | null>(null);
 
-const options = [{id: 'create', label: 'Create'}, {id: 'custom', label: 'Customize and Create'}];
+    useInterval(async () => {
+        setPools(await client.listPools());
+        if (allowUserSelection) {
+            setUsers(await client.listUsers());
+        }
+    }, 5000);
 
-export default function SplitButton({ template, disabled, onCreate, onCreateCustom }: { template: string, disabled: boolean, onCreate: (conf: SessionConfiguration) => void, onCreateCustom: () => void}): JSX.Element {
-  const [open, setOpen] = React.useState(false);
-  const anchorRef = React.useRef<HTMLDivElement>(null);
-  const [selectedIndex, setSelectedIndex] = React.useState(0);
+    const handleUserChange = (_event: unknown, newValue: string | null) => setUser(newValue);
+    const handleTemplateChange = (event: React.ChangeEvent<HTMLInputElement>) => setTemplate(event.target.value);
+    const handleDurationChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const duration = Number.parseInt(event.target.value);
+        setDuration(Number.isNaN(duration)? 0 : duration);
+    };
+    const handlePoolAffinityChange = (event: React.ChangeEvent<HTMLInputElement>) => setPoolAffinity(event.target.value);
 
-  const handleClick = () => {
-      const selection = options[selectedIndex];
-      if (selection.id == 'create') {
-        onCreate({template: template});
-      } else {
-        onCreateCustom();
-      }
-  };
+    const currentUser = selectedUser || user.id;
+    const currentTemplate = template || selectedTemplate;
 
-  const handleMenuItemClick = (
-    _event: React.MouseEvent<HTMLLIElement, MouseEvent>,
-    index: number,
-  ) => {
-    setSelectedIndex(index);
-    setOpen(false);
-  };
-
-  const handleToggle = () => {
-    setOpen((prevOpen) => !prevOpen);
-  };
-
-  const handleClose = (event: React.MouseEvent<Document, MouseEvent>) => {
-    if (anchorRef.current && anchorRef.current.contains(event.target as HTMLElement)) {
-      return;
+    function valid(): boolean {
+        if (duration <= 0) {
+            return false;
+        }
+        if (!currentUser) {
+            return false;
+        }
+        if (!currentTemplate) {
+            return false;
+        }
+        if (!poolAffinity) {
+            return false;
+        }
+        if (sessions && find(sessions, currentUser) != null) {
+            return false;
+        }
+        return true;
     }
 
-    setOpen(false);
-  };
-
-  return (
-      <>
-        <ButtonGroup variant="contained" color="primary" ref={anchorRef} aria-label="split button">
-          <Button onClick={handleClick} disabled={disabled}>{options[selectedIndex].label}</Button>
-          <Button
-            color="primary"
-            size="small"
-            aria-controls={open ? 'split-button-menu' : undefined}
-            aria-expanded={open ? 'true' : undefined}
-            aria-label="select merge strategy"
-            aria-haspopup="menu"
-            onClick={handleToggle}
-          >
-            <ArrowDropDownIcon />
-          </Button>
-        </ButtonGroup>
-        <Popper open={open} anchorEl={anchorRef.current} role={undefined} transition disablePortal>
-          {({ TransitionProps, placement }) => (
-            <Grow
-              {...TransitionProps}
-              style={{
-                transformOrigin: placement === 'bottom' ? 'center top' : 'center bottom',
-              }}
-            >
-              <Paper>
-                <ClickAwayListener onClickAway={handleClose}>
-                  <MenuList id="split-button-menu">
-                    {options.map((option, index) => (
-                      <MenuItem
-                        key={option.id}
-                        selected={index === selectedIndex}
-                        onClick={(event) => handleMenuItemClick(event, index)}
-                      >
-                        {option.label}
-                      </MenuItem>
-                    ))}
-                  </MenuList>
-                </ClickAwayListener>
-              </Paper>
-            </Grow>
-          )}
-        </Popper>
-      </>
-  );
+    return (
+        <Dialog open={show} onClose={onHide} maxWidth="md">
+            <DialogTitle>Session details</DialogTitle>
+            <DialogContent>
+                <Container style={{display: "flex", flexDirection: "column"}}>
+                    {allowUserSelection &&
+                    <Autocomplete
+                        size="small"
+                        freeSolo
+                        onInputChange={handleUserChange}
+                        options={users ? Object.keys(users) : []}
+                        defaultValue={user.id}
+                        getOptionLabel={(user) => user}
+                        renderInput={(params) => <TextField {...params} label="User" />}
+                      />
+                    }
+                    {!template &&
+                    <TextField
+                        style={{marginBottom: 20}}
+                        select
+                        value={template}
+                        onChange={handleTemplateChange}
+                        required
+                        label="Template"
+                        >
+                    {templates &&
+                    Object.keys(templates).map(id => (
+                        <MenuItem key={id} value={id}>
+                        {id}
+                        </MenuItem>))
+                    }
+                    </TextField>
+                    }
+                    {canCustomizePoolAffinity(user) &&
+                    <TextField
+                        style={{marginBottom: 20}}
+                        select
+                        value={poolAffinity}
+                        onChange={handlePoolAffinityChange}
+                        required
+                        label="Pool affinity"
+                        >
+                    {pools &&
+                    Object.keys(pools).map(id => (
+                        <MenuItem key={id} value={id}>
+                        {id}
+                        </MenuItem>))
+                    }
+                    </TextField>
+                    }
+                    {canCustomizeDuration(user) &&
+                    <TextField
+                        style={{marginBottom: 20}}
+                        value={duration}
+                        onChange={handleDurationChange}
+                        required
+                        type="number"
+                        label="Duration"
+                        />}
+                    <ButtonGroup style={{alignSelf: "flex-end", marginTop: 20}} size="small">
+                        <Button disabled={!valid()} onClick={() => {onCreate({template: currentTemplate || "", duration: duration, poolAffinity: poolAffinity}, currentUser); onHide();}}>CREATE</Button>
+                        <Button onClick={onHide}>CLOSE</Button>
+                    </ButtonGroup>
+                </Container>
+            </DialogContent>
+        </Dialog>
+    );
 }
 
-function TemplateSelector({client, conf, user, onDeployed, onRetry}: {client: Client, conf: Configuration, user?: LoggedUser, onDeployed: (conf: SessionConfiguration) => Promise<void>, onRetry: () => void}): JSX.Element {
-    const [templates, setTemplates] = useState<Record<string, Template> | undefined>();
-    const publicTemplates = Object.entries(templates || {}).filter(([, v]) => v.tags?.public == "true");
-    const templatesAvailable = publicTemplates.length > 0;
-    const [selection, select] = useState<[string, Template]>();
-    const [deploying, setDeploying] = useState(false);
-    const [errorMessage, setErrorMessage] = useState<string | null>(null);
-    const [openCustom, setOpenCustom] = useState(false);
-    const classes = useStyles();
-
-    useInterval(async () => setTemplates(await client.listTemplates()), 5000);
+function SessionUpdateDialog({ id, duration, show, onUpdate, onHide }: { id: string, duration: number, show: boolean, onUpdate: (id: string, conf: SessionUpdateConfiguration) => void, onHide: () => void }): JSX.Element {
+    const [newDuration, setDuration] = React.useState(0);
 
     React.useEffect(() => {
-        if (!selection) {
-            select(publicTemplates?.[0] || null);
-        }
-    }, [publicTemplates]);
+        setDuration(duration);
+    }, []);
 
-    async function onCreateClick(conf: SessionConfiguration): Promise<void> {
-        try {
-            setDeploying(true);
-            await onDeployed(conf);
-        } catch (e) {
-            setErrorMessage(`Failed to create a new session: ${e}`);
-        } finally {
-            setDeploying(false);
-        }
-    }
-
-    function createEnabled(): boolean {
-        if (!templatesAvailable) {
-            return false;
-        } else {
-            return !deploying;
-        }
-    }
-
-    if (templates == undefined) {
-        return <LoadingPanel />;
-    } else if (selection) {
-        return (
-            <>
-                <Typography variant="h5" style={{padding: 20}}>Select a template</Typography>
-                <Divider orientation="horizontal" />
-                <Container style={{display: "flex", flex: 1, padding: 0, alignItems: "center", overflowY: "auto"}}>
-                    <div style={{display: "flex", flex: 1, flexDirection: "row", minHeight: 0, height: "100%"}}>
-                            <List style={{paddingTop: 0, paddingBottom: 0, overflowY: "auto"}}>
-                                {publicTemplates.map(([id, template], index: number) => (
-                                <ListItem button key={index} selected={selection[1].name === template.name} onClick={() => select([id, template])}>
-                                    <ListItemText primary={template.name} />
-                                </ListItem>
-                                ))}
-                            </List>
-                            <Divider flexItem={true} orientation={"vertical"} light={true} />
-                            <div style={{flex: 1, marginLeft: 20, paddingRight: 20, overflow: "auto", textAlign: "left"}}>
-                                <Typography>
-                                    <span dangerouslySetInnerHTML={{__html:marked(selection[1].description)}}></span>
-                                </Typography>
-                                <Divider orientation={"horizontal"} light={true} />
-                                <Typography className={classes.root} variant="overline">
-                                    #{selection[1].image}
-                                </Typography>
-                            </div>
-                        </div>
+    const handleDurationChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const duration = Number.parseInt(event.target.value);
+        setDuration(Number.isNaN(duration)? 0 : duration);
+    };
+    return (
+        <Dialog open={show} onClose={onHide} maxWidth="md">
+            <DialogTitle>Session details</DialogTitle>
+            <DialogContent>
+                <Container style={{display: "flex", flexDirection: "column"}}>
+                    <TextField
+                        style={{marginBottom: 20}}
+                        value={newDuration}
+                        onChange={handleDurationChange}
+                        required
+                        type="number"
+                        label="Duration"
+                        autoFocus
+                        />
+                    <ButtonGroup style={{alignSelf: "flex-end", marginTop: 20}} size="small">
+                        <Button disabled={ newDuration <= 0 || duration == newDuration} onClick={() => {onUpdate(id.toLowerCase(), {duration: newDuration}); onHide();}}>UPDATE</Button>
+                        <Button onClick={onHide}>CLOSE</Button>
+                    </ButtonGroup>
                 </Container>
-                <Divider orientation="horizontal" />
-                <Container style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", paddingTop: 10, paddingBottom: 10 }}>
-                    {user
-                    ? <SplitButton template={selection[0]} onCreate={() => onCreateClick({template: selection[0]})} onCreateCustom={() => setOpenCustom(true)} disabled={!createEnabled()} />
-                    : <Button onClick={() => onCreateClick({template: selection[0]})} color="primary" variant="contained" disableElevation disabled={!createEnabled()}>
-                          Create
-                      </Button>}
-                </Container>
-                {errorMessage &&
-                <ErrorSnackbar open={true} message={errorMessage} onClose={() => setErrorMessage(null)} />}
-            </>
-        );
-    } else {
-        return (
-            <CenteredContainer>
-                <ErrorMessage reason="Can't find any public template. The templates configuration might be incorrect." action={onRetry} />
-            </CenteredContainer>
-        );
-    }
-}
-
-function EnvTable({ env }: {env?: NameValuePair[]}): JSX.Element {
-    return (
-        <TableContainer component={Paper}>
-            <Table size="small" aria-label="a dense table">
-                <TableHead>
-                    <TableRow>
-                        <TableCell>Name</TableCell>
-                        <TableCell align="right">Value</TableCell>
-                    </TableRow>
-                </TableHead>
-                {env &&
-                    <TableBody>
-                        {env.map(e => (
-                            <TableRow key={e.name}>
-                                <TableCell component="th" scope="row">
-                                    {e.name}
-                                </TableCell>
-                                <TableCell align="right">{e.value}</TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                }
-            </Table>
-        </TableContainer>
+            </DialogContent>
+        </Dialog>
     );
 }
+interface TablePaginationActionsProps {
+    count: number;
+    page: number;
+    rowsPerPage: number;
+    onChangePage: (event: React.MouseEvent<HTMLButtonElement>, newPage: number) => void;
+  }
 
-function PortsTable({ ports }: {ports?: Port[]}): JSX.Element {
+  function TablePaginationActions(props: TablePaginationActionsProps) {
+    const theme = useTheme();
+    const { count, page, rowsPerPage, onChangePage } = props;
+
+    const handleFirstPageButtonClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+      onChangePage(event, 0);
+    };
+
+    const handleBackButtonClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+      onChangePage(event, page - 1);
+    };
+
+    const handleNextButtonClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+      onChangePage(event, page + 1);
+    };
+
+    const handleLastPageButtonClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+      onChangePage(event, Math.max(0, Math.ceil(count / rowsPerPage) - 1));
+    };
+
     return (
-        <TableContainer component={Paper}>
-            <Table size="small" aria-label="a dense table">
-                <TableHead>
-                    <TableRow>
-                        <TableCell>Name</TableCell>
-                        <TableCell>Path</TableCell>
-                        <TableCell>Value</TableCell>
-                    </TableRow>
-                </TableHead>
-                {ports &&
-                    <TableBody>
-                        {ports.map(port => (
-                            <TableRow key={port.name}>
-                                <TableCell component="th" scope="row">
-                                    {port.name}
-                                </TableCell>
-                                <TableCell>{port.path}</TableCell>
-                                <TableCell>{port.port}</TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                }
-            </Table>
-        </TableContainer>
+      <div>
+        <IconButton
+          onClick={handleFirstPageButtonClick}
+          disabled={page === 0}
+          aria-label="first page"
+        >
+          {theme.direction === 'rtl' ? <LastPage /> : <FirstPage />}
+        </IconButton>
+        <IconButton onClick={handleBackButtonClick} disabled={page === 0} aria-label="previous page">
+          {theme.direction === 'rtl' ? <KeyboardArrowRight /> : <KeyboardArrowLeft />}
+        </IconButton>
+        <IconButton
+          onClick={handleNextButtonClick}
+          disabled={page >= Math.ceil(count / rowsPerPage) - 1}
+          aria-label="next page"
+        >
+          {theme.direction === 'rtl' ? <KeyboardArrowLeft /> : <KeyboardArrowRight />}
+        </IconButton>
+        <IconButton
+          onClick={handleLastPageButtonClick}
+          disabled={page >= Math.ceil(count / rowsPerPage) - 1}
+          aria-label="last page"
+        >
+          {theme.direction === 'rtl' ? <FirstPage /> : <LastPage />}
+        </IconButton>
+      </div>
     );
-}
+  }
 
-export function SessionDetails({ session }: {session: Session}): JSX.Element {
-    const { pod, template, duration } = session;
-    const { name, runtime } = template;
-    const { container, phase, startTime, conditions } = pod;
-    const reason = container?.reason || (conditions && conditions.length > 0 && conditions[0].reason);
-    return (
-        <Card style={{ margin: 20 }} variant="outlined">
-            <CardContent>
-                <Typography>
-                    {name}
-                </Typography>
-                {startTime &&
-                <Typography color="textSecondary" gutterBottom>
-                Started {formatDuration(startTime)} ago ({formatDuration(duration*60-startTime)} left)
-                </Typography>
-                }
-                <Typography color="textSecondary" gutterBottom>
-                Phase: <em>{phase}</em> {reason && `(${reason})`}
-                </Typography>
-                {runtime &&
-                    <div style={{display: "flex", paddingTop: 20}}>
-                        <div style={{flex: 1, paddingRight: 10}}>
-                            <Typography variant="h6" id="tableTitle" component="div">
-                            Environment
-                            </Typography>
-                            <EnvTable env={runtime.env} />
-                        </div>
-                        <div style={{ flex: 1 }}>
-                            <Typography variant="h6" id="tableTitle" component="div">
-                                Ports
-                            </Typography>
-                            <PortsTable ports={runtime.ports} />
-                        </div>
-                    </div>
-                }
-            </CardContent>
-        </Card>
-    );
-}
-
-function ExistingSession({session, onStop, onConnect}: {session: Session, onStop: () => void, onConnect: (session: Session) => void}): JSX.Element {
-    const [stopping, setStopping] = useState(false);
+export function Sessions({ client, conf, user }: { client: Client, conf: Configuration, user: LoggedUser }): JSX.Element {
+    const [selected, setSelected] = useState<string | null>(null);
+    const [showCreationDialog, setShowCreationDialog] = useState(false);
+    const [showUpdateDialog, setShowUpdateDialog] = useState(false);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
+    const isSelected = (name: string) => selected == name;
+    const handleClick = (_event: React.MouseEvent<unknown>, name: string) => {
+        if (selected == name) {
+            setSelected(null);
+        } else {
+            setSelected(name);
+        }
+    };
+    const [templates, setTemplates] = useState<Template[] | null>(null);
 
-    function onConnectClick(session: Session): void {
+    useInterval(async () => {
+        const templates = await client.listTemplates();
+        setTemplates(templates);
+    }, 5000);
+
+    function sessionMock(conf: SessionConfiguration): Session {
+        return {
+            id: "",
+            duration: conf.duration || 0,
+            maxDuration: 0,
+            template: {name: "", image: "", description: ""},
+            userId: "",
+            url: "",
+            pod: {phase: 'Pending', reason: "", message: ""},
+            node: ""
+        };
+    }
+
+    async function onCreate(conf: SessionConfiguration, id: string | null | undefined, setSessions: Dispatch<SetStateAction<Session[] | null>>): Promise<void> {
         try {
-            onConnect(session);
-        } catch {
-            setErrorMessage("Failed to connect to the session");
+            if (id) {
+                await client.createSession(id, conf);
+                setSessions((sessions: Session[] | null) => {
+                    if (sessions) {
+                        sessions[id] = sessionMock(conf);
+                    }
+                    return {...sessions};
+                });
+            } else {
+                await client.createCurrentSession(conf);
+            }
+        } catch (e) {
+            console.error(e);
+            setErrorMessage(`Failed to create session: ${e}`);
         }
     }
 
-    function onStopClick(): void {
+    async function onUpdate(id: string, conf: SessionUpdateConfiguration, setSessions: Dispatch<SetStateAction<Session[] | null>>): Promise<void> {
         try {
-            setStopping(true);
-            onStop();
-        } catch {
-            setStopping(false);
-            setErrorMessage("Failed to stop the session");
+            await client.updateSession(id, conf);
+            setSessions((sessions: Session[] | null) => {
+                if (sessions && conf.duration) {
+                    const session = find(sessions, id);
+                    if (session) {
+                        session.duration = conf.duration;
+                    }
+                }
+                return {...sessions};
+            });
+        } catch (e) {
+            console.error(e);
+            setErrorMessage("Failed to update session");
         }
     }
 
+    async function onDelete(setSessions: Dispatch<SetStateAction<Session[] | null>>): Promise<void> {
+        if (selected) {
+            try {
+                await client.deleteSession(selected);
+
+                setSessions((sessions: Session[] | null) => {
+                    if (sessions) {
+                        return remove(sessions, selected);
+                    }
+                    return sessions;
+                });
+                setSelected(null);
+            } catch (e) {
+                console.error(e);
+                setErrorMessage("Failed to delete session");
+            }
+        } else {
+            setErrorMessage("Can't delete currently logged session");
+        }
+    }
+
+    const [page, setPage] = React.useState(0);
+    const [rowsPerPage, setRowsPerPage] = React.useState(5);
+    const handleChangePage = (event: React.MouseEvent<HTMLButtonElement> | null, newPage: number) => {
+      setPage(newPage);
+    };
+
+    const handleChangeRowsPerPage = (
+      event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+    ) => {
+      setRowsPerPage(parseInt(event.target.value, 10));
+      setPage(0);
+    };
+
+    const stopPropagation = (event: React.SyntheticEvent) => event.stopPropagation();
+
     return (
-        <>
-            <Typography variant="h5" style={{padding: 20}}>Existing session</Typography>
-            <Divider orientation="horizontal" />
-            <Container style={{display: "flex", flex: 1, padding: 0, justifyContent: "center", alignItems: "center", overflowY: "auto"}}>
-                <SessionDetails session={session} />
-            </Container>
-            <Divider orientation="horizontal" />
-            <Container style={{display: "flex", flexDirection: "column", alignItems: "flex-end", paddingTop: 10, paddingBottom: 10}}>
-                <ButtonGroup style={{alignSelf: "flex-end"}} size="small">
-                    <Button onClick={onStopClick} disabled={stopping} color="secondary" disableElevation>
-                        Stop
-                    </Button>
-                    <Button onClick={() => onConnectClick(session)} disabled={stopping || session.pod.phase !== 'Running'} disableElevation>
-                        Connect
-                    </Button>
-                </ButtonGroup>
-            </Container>
-            {errorMessage &&
-            <ErrorSnackbar open={true} message={errorMessage} onClose={() => setErrorMessage(null)} />}
-        </>
-    );
-}
-
-export function SessionPanel({ client, conf, user, onDeployed, onConnect, onRetry, onStop }: {client: Client, conf: Configuration, user?: LoggedUser, onStop: () => void, onConnect: (session: Session) => void, onDeployed: (conf: SessionConfiguration) => Promise<void>, onRetry: () => void}): JSX.Element {
-    const [session, setSession] = useState<Session | null | undefined>(undefined);
-
-    useInterval(async () => setSession(await client.getCurrentSession()), 5000);
-
-    return (
-        <Container style={{ display: "flex", flex: 1, justifyContent: "center", alignItems: "center" }}>
-            <Paper style={{ display: "flex", flexDirection: "column", height: "60vh", width: "60vw", justifyContent: "center"}} elevation={3}>
-                {session === undefined
-                 ? <LoadingPanel />
-                 : session
-                 ?<ExistingSession session={session} onConnect={onConnect} onStop={onStop} />
-                 : <TemplateSelector client={client} conf={conf} user={user} onRetry={onRetry} onDeployed={onDeployed} />}
-            </Paper>
-        </Container>
+        <Resources<Session> callback={async () => await client.listSessions()}>
+            {(resources: Session[], setSessions: Dispatch<SetStateAction<Session[] | null>>) => {
+                const allResources = Object.entries(resources);
+                const filteredResources = rowsPerPage > 0 ? allResources.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage) : allResources;
+                return (
+                    <>
+                        {filteredResources.length > 0
+                        ?
+                        <>
+                            <EnhancedTableToolbar user={user} label="Sessions" selected={selected} onCreate={() => setShowCreationDialog(true)} onUpdate={() => setShowUpdateDialog(true)} onDelete={() => onDelete(setSessions)} />
+                            <TableContainer component={Paper}>
+                                <Table aria-label="simple table">
+                                    <TableHead>
+                                        <TableRow>
+                                            <TableCell></TableCell>
+                                            <TableCell>ID</TableCell>
+                                            <TableCell>Template</TableCell>
+                                            <TableCell>URL</TableCell>
+                                            <TableCell>Duration</TableCell>
+                                            <TableCell>Phase</TableCell>
+                                            <TableCell>Node</TableCell>
+                                        </TableRow>
+                                    </TableHead>
+                                    <TableBody>
+                                    {filteredResources.map(([id, session]: [id: string, session: Session], index: number) => {
+                                        const isItemSelected = isSelected(id);
+                                        const labelId = `enhanced-table-checkbox-${index}`;
+                                        return (
+                                            <TableRow
+                                                key={id}
+                                                hover
+                                                onClick={(event) => handleClick(event, id)}
+                                                role="checkbox"
+                                                aria-checked={isItemSelected}
+                                                tabIndex={-1}
+                                                selected={isItemSelected}>
+                                                <TableCell padding="checkbox">
+                                                    <Checkbox
+                                                        checked={isItemSelected}
+                                                        inputProps={{ 'aria-labelledby': labelId }}
+                                                    />
+                                                </TableCell>
+                                                <TableCell component="th" scope="row">
+                                                    <Link href={`https://github.com/${id}`} target="_blank" rel="noreferrer" onClick={stopPropagation}>{id}</Link>
+                                                </TableCell>
+                                                <TableCell>{session.template.name}</TableCell>
+                                                <TableCell><Link href={`//${session.url}`} target="_blank" rel="noreferrer" onClick={stopPropagation}>Browse {session.url}</Link></TableCell>
+                                                <TableCell>{session.duration}</TableCell>
+                                                <TableCell>{session.pod.phase}</TableCell>
+                                                <TableCell>{session.node}</TableCell>
+                                            </TableRow>
+                                        )})}
+                                    </TableBody>
+                                    <TableFooter>
+                                        <TableRow>
+                                            <TablePagination
+                                                rowsPerPageOptions={[5, 10, 25, { label: 'All', value: -1 }]}
+                                                colSpan={3}
+                                                count={Object.entries(resources).length}
+                                                rowsPerPage={rowsPerPage}
+                                                page={page}
+                                                SelectProps={{
+                                                    inputProps: { 'aria-label': 'rows per page' },
+                                                    native: true,
+                                                }}
+                                                onChangePage={handleChangePage}
+                                                onChangeRowsPerPage={handleChangeRowsPerPage}
+                                                ActionsComponent={TablePaginationActions}
+                                                />
+                                        </TableRow>
+                                    </TableFooter>
+                                </Table>
+                            </TableContainer>
+                        </>
+                        : <NoResourcesContainer user={user} label="No sessions" action={() => setShowCreationDialog(true)} />}
+                        {errorMessage &&
+                        <ErrorSnackbar open={true} message={errorMessage} onClose={() => setErrorMessage(null)} />}
+                        {showCreationDialog &&
+                        <SessionCreationDialog allowUserSelection={true} client={client} conf={conf} sessions={resources} user={user} templates={templates} show={showCreationDialog} onCreate={(conf, id) => onCreate(conf, id, setSessions)} onHide={() => setShowCreationDialog(false)} />}
+                        {(selected && showUpdateDialog) &&
+                        <SessionUpdateDialog id={selected} duration={find(resources, selected)?.duration} show={showUpdateDialog} onUpdate={(id, conf) => onUpdate(id, conf, setSessions)} onHide={() => setShowUpdateDialog(false)} />}
+                    </>
+                );
+            }}
+        </Resources>
     );
 }
