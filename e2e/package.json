@@ -4,8 +4,6 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "build": "tsc",
-    "run:perf": "node dist/perf.js",
     "test": "ava",
     "clean": "rm -rf dist/ node_modules/ yarn.lock"
   },
@@ -25,12 +23,10 @@
   },
   "dependencies": {
     "@substrate/playground-client": "1.8.5",
-    "cross-fetch": "3.1.5",
-    "yargs": "17.4.1"
+    "cross-fetch": "3.1.5"
   },
   "devDependencies": {
     "@types/node": "17.0.23",
-    "@types/yargs": "17.0.10",
     "ava": "4.2.0",
     "playwright": "1.20.2",
     "ts-node": "10.7.0",
