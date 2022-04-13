@@ -52,10 +52,9 @@ impl<'a, 'r> FromRequest<'a, 'r> for LoggedUser {
             })?;
             let gh_user = runtime.block_on(current_user(token_value)).map_err(|err| {
                 // A token is present, but can't be used to access user details
-                clear(cookies);
                 log::warn!("Error while accessing user details: {}", err);
                 (
-                    Status::BadRequest,
+                    Status::Unauthorized,
                     format!("Can't access user details {}", err),
                 )
             })?;
@@ -397,22 +396,14 @@ fn query_segment(origin: &Origin) -> String {
 // Gets called from UI. Then redirects to the GitHub `auth_uri` which itself redirects to `/auth/github`
 #[get("/login/github")]
 pub fn github_login(
-    state: State<'_, Context>,
-    origin: &Origin,
     oauth2: OAuth2<GitHubUser>,
     mut cookies: Cookies<'_>,
 ) -> Redirect {
-    let manager = state.manager.clone();
-    let redirect_uri = format!(
-        "https://{}/api/auth/github{}",
-        manager.engine.env.host,
-        query_segment(origin)
-    );
     oauth2
         .get_redirect_extras(
             &mut cookies,
             &["user:read"],
-            &[("redirect_uri", &redirect_uri)],
+            &[],
         )
         .unwrap()
 }
@@ -449,13 +440,17 @@ pub fn logout(cookies: Cookies<'_>) {
 }
 
 fn clear(mut cookies: Cookies<'_>) {
-    cookies.remove_private(Cookie::named(COOKIE_TOKEN));
+    cookies.remove_private(
+        Cookie::build(COOKIE_TOKEN, "")
+            .same_site(SameSite::Lax)
+            .finish(),
+    );
 }
 
 #[allow(dead_code)]
-#[catch(400)] // TODO move to catch(default) once it's available
-pub fn bad_request_catcher(_req: &Request<'_>) -> content::Html<String> {
-    content::Html("<p>Sorry something unexpected happened!</p>".to_string())
+#[catch(401)]
+pub fn bad_request_catcher(_req: &Request<'_>) {
+    clear(_req.cookies())
 }
 
 /// Backport, TODO delete
