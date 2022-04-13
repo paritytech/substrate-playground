@@ -114,7 +114,7 @@ export default function SplitButton({ template, disabled, onCreate, onCreateCust
 }
 
 function TemplateSelector({client, conf, user, onDeployed, onRetry}: {client: Client, conf: Configuration, user?: LoggedUser, onDeployed: (conf: SessionConfiguration) => Promise<void>, onRetry: () => void}): JSX.Element {
-    const [templates, setTemplates] = useState<Template[]>([]);
+    const [templates, setTemplates] = useState<Template[]>();
     const [deploying, setDeploying] = useState(false);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [openCustom, setOpenCustom] = useState(false);
@@ -146,7 +146,9 @@ function TemplateSelector({client, conf, user, onDeployed, onRetry}: {client: Cl
         return !deploying;
     }
 
-    if (selection) {
+    if (!templates) {
+        return <LoadingPanel />;
+    } else if (selection) {
         return (
             <>
                 <Typography variant="h5" style={{padding: 20}}>Select a template</Typography>
