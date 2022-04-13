@@ -31,7 +31,9 @@ jobs:
 
       - name: Build
         run: |
-          [[ $(cat package.json| jq .scripts.build) != null ]] && yarn build
+          if ./jq -e '.scripts | has("build")' package.json > /dev/null; then
+              yarn build
+          fi
 
       - name: Lint
         if: hashFiles('.eslintrc.json') != ''
