@@ -85,7 +85,6 @@ export function newMachine(client: Client, id: PanelId): StateMachine<Context, S
                 src: () => async (callback) => {
                     try {
                         const { configuration, user } = (await client.get());
-                        console.log(user)
                         if (user) {
                             callback({type: Events.LOGIN, user: user, conf: configuration});
                         } else {
