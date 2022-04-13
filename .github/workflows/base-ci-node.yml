@@ -30,7 +30,8 @@ jobs:
         run: yarn install --check-files
 
       - name: Build
-        run: yarn build
+        run: |
+          [[ $(cat package.json| jq .scripts.build) != null ]] && yarn build
 
       - name: Lint
         if: hashFiles('.eslintrc.json') != ''
