@@ -20,6 +20,7 @@ export enum Events {
 
 export enum Actions {
     STORE_TERMS_HASH = '@action/STORE_TERMS_HASH',
+    LOGOUT = '@action/LOGOUT',
 }
 
 export type Event =
@@ -36,7 +37,6 @@ export enum States {
     SETUP = '@state/SETUP',
     LOGGED = '@state/LOGGED',
     UNLOGGED = '@state/UNLOGGED',
-    UNLOGGING = '@state/UNLOGGING',
 }
 
 export type Typestate =
@@ -55,11 +55,7 @@ export type Typestate =
   | {
       value: States.UNLOGGED;
       context: Context;
-    }
-  | {
-      value: States.UNLOGGING;
-      context: Context;
-     };
+    };
 
 export interface SchemaType extends StateSchema {
     states: {
@@ -67,7 +63,6 @@ export interface SchemaType extends StateSchema {
         [States.SETUP]: Record<string, unknown>;
         [States.LOGGED]: Record<string, unknown>;
         [States.UNLOGGED]: Record<string, unknown>;
-        [States.UNLOGGING]: Record<string, unknown>;
     };
 }
 
@@ -90,10 +85,11 @@ export function newMachine(client: Client, id: PanelId): StateMachine<Context, S
                 src: () => async (callback) => {
                     try {
                         const { configuration, user } = (await client.get());
+                        console.log(user)
                         if (user) {
                             callback({type: Events.LOGIN, user: user, conf: configuration});
                         } else {
-                            callback({type: Events.UNLOGIN, conf: configuration});
+                            callback({type: Events.UNLOGIN});
                         }
                     } catch (e: any) {
                         const error = e.message || JSON.stringify(e);
@@ -111,34 +107,28 @@ export function newMachine(client: Client, id: PanelId): StateMachine<Context, S
                                   })},
                  [Events.UNLOGIN]: {target: States.UNLOGGED,
                                     actions: assign((_, event) => {
-                                      return {
-                                        conf: event.conf,
-                                        error: event.error,
-                                      }
+                                      return { error: event.error }
                                     })}}
-        },
-        [States.UNLOGGED]: {
-            on: {[Events.RESTART]: States.SETUP,}
         },
         [States.LOGGED]: {
             on: {[Events.RESTART]: States.SETUP,
-                 [Events.LOGOUT]: {target: States.UNLOGGING},
+                 [Events.LOGOUT]: {target: States.UNLOGGED},
                  [Events.SELECT]: {actions: assign({ panel: (_, event) => event.panel})}}
         },
-        [States.UNLOGGING]: {
-            invoke: {
-                src: async () => {
-                    await client.logout();
-                },
-                onDone: {target: States.SETUP}
-            }
-        },
+        [States.UNLOGGED]: {
+            on: {[Events.RESTART]:
+                 {target: States.SETUP,
+                  actions: [Actions.STORE_TERMS_HASH]}},
+        }
     }
   },
   {
     actions: {
       [Actions.STORE_TERMS_HASH]: () => {
         approve();
+      },
+      [Actions.LOGOUT]: () => {
+        client.logout();
       },
     }
   });
