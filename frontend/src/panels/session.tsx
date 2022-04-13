@@ -84,7 +84,7 @@ export default function SplitButton({ template, disabled, onCreate, onCreateCust
           </Button>
         </ButtonGroup>
         <Popper open={open} anchorEl={anchorRef.current} role={undefined} transition disablePortal>
-          {({ TransitionProps, placement }: { TransitionProps: any, placement: any }) => (
+          {({ TransitionProps, placement }) => (
             <Grow
               {...TransitionProps}
               style={{
