@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { useSpring, animated } from 'react-spring'
 import { Alert, AlertTitle } from '@mui/material';
 import AppBar from '@mui/material/AppBar';
 import Avatar from '@mui/material/Avatar';
@@ -103,19 +102,15 @@ function Phase({ value }: { value: string }): JSX.Element {
 
 export function Loading({ phase, retry = 0 }: { phase?: string, retry?: number }): JSX.Element {
     const [phrase, setPhrase] = useState(loadingPhrases[0]);
-    const [props, spring] = useSpring(() => ({ opacity: 1 }));
 
     useInterval(() => {
-        spring.update({ opacity: 0 });
-
         setTimeout(function () { setPhrase(loadingPhrases[Math.floor(Math.random() * loadingPhrases.length)]); }, 500);
-        setTimeout(function () { spring.update({ opacity: 1 }); }, 1000);
     }, 3000);
 
     return (
         <div style={{ display: "flex", flex: 1, justifyContent: "center", alignItems: "center", flexDirection: "column", textAlign: "center" }}>
             <Typography variant="h3">Please wait, because</Typography>
-            <animated.h1 style={props}>{phrase}</animated.h1>
+            <Typography variant="h1">{phrase}</Typography>
             {(retry > 10) &&
                 <div>It looks like it takes longer than expected to load. Please be patient :)</div>}
             {phase
@@ -258,7 +253,7 @@ export function Footer({ base, version }: { base: string, version?: string }): J
     );
 }
 
-export function Wrapper({ params, children, nav}: { params: Params, children: React.ReactElement, nav?: React.ReactElement}): JSX.Element {
+export function Wrapper({ params, thin = false, children, nav}: { params: Params, thin?: boolean, children: React.ReactElement, nav?: React.ReactElement}): JSX.Element {
     return (
         <div style={{display: "flex", flexDirection: "column", width: "inherit", height: "inherit"}}>
 
@@ -269,6 +264,9 @@ export function Wrapper({ params, children, nav}: { params: Params, children: Re
                   {children}
                 </div>
             </Fade>
+
+            {!thin &&
+            <Footer base={params.base} version={params.version} />}
 
         </div>
     );
