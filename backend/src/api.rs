@@ -11,7 +11,7 @@ use crate::{
     Context,
 };
 use request::FormItems;
-use rocket::response::{content, Redirect};
+use rocket::response::Redirect;
 use rocket::{
     catch, delete, get,
     http::{Cookie, Cookies, SameSite, Status},
