@@ -171,27 +171,30 @@ interface TablePaginationActionsProps {
     count: number;
     page: number;
     rowsPerPage: number;
-    onChangePage: (event: React.MouseEvent<HTMLButtonElement>, newPage: number) => void;
+    onPageChange: (
+      event: React.MouseEvent<HTMLButtonElement>,
+      newPage: number,
+    ) => void;
   }
 
   function TablePaginationActions(props: TablePaginationActionsProps) {
     const theme = useTheme();
-    const { count, page, rowsPerPage, onChangePage } = props;
+    const { count, page, rowsPerPage, onPageChange } = props;
 
     const handleFirstPageButtonClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-      onChangePage(event, 0);
+        onPageChange(event, 0);
     };
 
     const handleBackButtonClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-      onChangePage(event, page - 1);
+        onPageChange(event, page - 1);
     };
 
     const handleNextButtonClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-      onChangePage(event, page + 1);
+        onPageChange(event, page + 1);
     };
 
     const handleLastPageButtonClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-      onChangePage(event, Math.max(0, Math.ceil(count / rowsPerPage) - 1));
+        onPageChange(event, Math.max(0, Math.ceil(count / rowsPerPage) - 1));
     };
 
     return (
@@ -224,17 +227,17 @@ interface TablePaginationActionsProps {
     );
   }
 
-export function Sessions({ client, conf, user }: { client: Client, conf: Configuration, user: LoggedUser }): JSX.Element {
-    const [selected, setSelected] = useState<string | null>(null);
+export function Sessions({ client, conf, user }: { client: Client, conf: Configuration, user?: LoggedUser }): JSX.Element {
+    const [selected, setSelected] = useState<Session | null>(null);
     const [showCreationDialog, setShowCreationDialog] = useState(false);
     const [showUpdateDialog, setShowUpdateDialog] = useState(false);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
-    const isSelected = (name: string) => selected == name;
-    const handleClick = (_event: React.MouseEvent<unknown>, name: string) => {
-        if (selected == name) {
+    const isSelected = (name: string) => selected?.id == name;
+    const handleClick = (session: Session) => {
+        if (isSelected(session.id)) {
             setSelected(null);
         } else {
-            setSelected(name);
+            setSelected(session);
         }
     };
     const [templates, setTemplates] = useState<Template[] | null>(null);
@@ -263,16 +266,15 @@ export function Sessions({ client, conf, user }: { client: Client, conf: Configu
                 await client.createSession(id, conf);
                 setSessions((sessions: Session[] | null) => {
                     if (sessions) {
-                        sessions[id] = sessionMock(conf);
+                        sessions.concat(sessionMock(conf));
                     }
-                    return {...sessions};
+                    return sessions;
                 });
             } else {
                 await client.createCurrentSession(conf);
             }
-        } catch (e) {
-            console.error(e);
-            setErrorMessage(`Failed to create session: ${e}`);
+        } catch (e: any) {
+            setErrorMessage(`Failed to create session: ${e.toString()}`);
         }
     }
 
@@ -286,22 +288,21 @@ export function Sessions({ client, conf, user }: { client: Client, conf: Configu
                         session.duration = conf.duration;
                     }
                 }
-                return {...sessions};
+                return sessions;
             });
-        } catch (e) {
-            console.error(e);
-            setErrorMessage("Failed to update session");
+        } catch (e: any) {
+            setErrorMessage(`Failed to update session: ${e.toString()}`);
         }
     }
 
     async function onDelete(setSessions: Dispatch<SetStateAction<Session[] | null>>): Promise<void> {
         if (selected) {
             try {
-                await client.deleteSession(selected);
+                await client.deleteSession(selected.id);
 
                 setSessions((sessions: Session[] | null) => {
                     if (sessions) {
-                        return remove(sessions, selected);
+                        return remove(sessions, selected.id);
                     }
                     return sessions;
                 });
@@ -340,7 +341,7 @@ export function Sessions({ client, conf, user }: { client: Client, conf: Configu
                         {filteredResources.length > 0
                         ?
                         <>
-                            <EnhancedTableToolbar user={user} label="Sessions" selected={selected} onCreate={() => setShowCreationDialog(true)} onUpdate={() => setShowUpdateDialog(true)} onDelete={() => onDelete(setSessions)} />
+                            <EnhancedTableToolbar user={user} label="Sessions" selected={selected?.id} onCreate={() => setShowCreationDialog(true)} onUpdate={() => setShowUpdateDialog(true)} onDelete={() => onDelete(setSessions)} />
                             <TableContainer component={Paper}>
                                 <Table aria-label="simple table">
                                     <TableHead>
@@ -362,7 +363,7 @@ export function Sessions({ client, conf, user }: { client: Client, conf: Configu
                                             <TableRow
                                                 key={id}
                                                 hover
-                                                onClick={(event) => handleClick(event, id)}
+                                                onClick={() => handleClick(session)}
                                                 role="checkbox"
                                                 aria-checked={isItemSelected}
                                                 tabIndex={-1}
@@ -396,8 +397,8 @@ export function Sessions({ client, conf, user }: { client: Client, conf: Configu
                                                     inputProps: { 'aria-label': 'rows per page' },
                                                     native: true,
                                                 }}
-                                                onChangePage={handleChangePage}
-                                                onChangeRowsPerPage={handleChangeRowsPerPage}
+                                                onPageChange={handleChangePage}
+                                                onRowsPerPageChange={handleChangeRowsPerPage}
                                                 ActionsComponent={TablePaginationActions}
                                                 />
                                         </TableRow>
@@ -408,10 +409,10 @@ export function Sessions({ client, conf, user }: { client: Client, conf: Configu
                         : <NoResourcesContainer user={user} label="No sessions" action={() => setShowCreationDialog(true)} />}
                         {errorMessage &&
                         <ErrorSnackbar open={true} message={errorMessage} onClose={() => setErrorMessage(null)} />}
-                        {showCreationDialog &&
+                        {user && showCreationDialog &&
                         <SessionCreationDialog allowUserSelection={true} client={client} conf={conf} sessions={resources} user={user} templates={templates} show={showCreationDialog} onCreate={(conf, id) => onCreate(conf, id, setSessions)} onHide={() => setShowCreationDialog(false)} />}
                         {(selected && showUpdateDialog) &&
-                        <SessionUpdateDialog id={selected} duration={find(resources, selected)?.duration} show={showUpdateDialog} onUpdate={(id, conf) => onUpdate(id, conf, setSessions)} onHide={() => setShowUpdateDialog(false)} />}
+                        <SessionUpdateDialog id={selected.id} duration={selected.duration} show={showUpdateDialog} onUpdate={(id, conf) => onUpdate(id, conf, setSessions)} onHide={() => setShowUpdateDialog(false)} />}
                     </>
                 );
             }}
