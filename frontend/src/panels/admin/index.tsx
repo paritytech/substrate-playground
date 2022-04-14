@@ -248,8 +248,8 @@ const panels = {
     Users: (client: Client, conf: Configuration, user?: LoggedUser) => <Users client={client} user={user} conf={conf} />,
     Workspaces: (client: Client, conf: Configuration, user?: LoggedUser) => <Workspaces client={client} conf={conf} user={user} />,
     Pools: (client: Client, _conf: Configuration, user?: LoggedUser) => <Pools client={client} user={user} />,
-    Templates: (client: Client, conf: Configuration, user?: LoggedUser) => <Templates client={client} user={user} />,
-    Sessions: (client: Client, conf: Configuration, user?: LoggedUser) => <Sessions client={client} user={user} />
+    Templates: (client: Client, _conf: Configuration, user?: LoggedUser) => <Templates client={client} user={user} />,
+    Sessions: (client: Client, conf: Configuration, user?: LoggedUser) => <Sessions client={client} conf={conf} user={user} />
 };
 
 export function AdminPanel({ client, conf, user }: { client: Client, conf: Configuration, user?: LoggedUser }): JSX.Element {
