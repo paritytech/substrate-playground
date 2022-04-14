@@ -24,16 +24,16 @@ export function TheiaPanel({ client, autoDeploy, onMissingWorkspace, onWorkspace
 
     useEffect(() => {
         function createWorkspace(id: string): void {
-            client.createCurrentSession({repositoryDetails: {id: id, reference: ""}}).then(fetchData);
+            client.createCurrentWorkspace({repositoryDetails: {id: id, reference: ""}}).then(fetchData);
         }
 
         async function fetchData() {
-            const session = await client.getCurrentSession();
-            const phase = session?.state.tag;
-            if (session) {
+            const workspace = await client.getCurrentWorkspace();
+            const phase = workspace?.state.tag;
+            if (workspace) {
                 if (phase == 'Running') {
                     // Check URL is fine
-                    const url = workspaceUrl(session);
+                    const url = workspaceUrl(workspace);
                     if (url) {
                         if ((await fetchWithTimeout(url)).ok) {
                             setUrl(url);
@@ -41,7 +41,7 @@ export function TheiaPanel({ client, autoDeploy, onMissingWorkspace, onWorkspace
                         }
                     }
                 } else if (phase == 'Failed') {
-                    setError({reason: session.state.reason || 'Pod crashed', action: onWorkspaceFailing});
+                    setError({reason: workspace.state.reason || 'Pod crashed', action: onWorkspaceFailing});
                 }
                 // The repository is being deployed, nothing to do
             }
@@ -51,7 +51,7 @@ export function TheiaPanel({ client, autoDeploy, onMissingWorkspace, onWorkspace
                 setLoading({phase: phase || 'Unknown', retry: retry + 1});
                 setTimeout(fetchData, 1000);
             } else if (retry == maxRetries) {
-                setError({reason: "Couldn't access the session in time",
+                setError({reason: "Couldn't access the workspace in time",
                           action: onWorkspaceTimeout});
             }
         }
@@ -68,7 +68,7 @@ export function TheiaPanel({ client, autoDeploy, onMissingWorkspace, onWorkspace
                 }
 
                 try {
-                    client.getCurrentSession().then(workspace => {
+                    client.getCurrentWorkspace().then(workspace => {
                         if (workspace) {
                             setError({reason: "You can only have one active substrate playground workspace open at a time. \n Please close all other workspaces to open a new one",
                                       action: () => {
