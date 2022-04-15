@@ -25,11 +25,11 @@ import Typography from '@mui/material/Typography';
 import { Theme } from '@mui/material/styles';
 import makeStyles from '@mui/styles/makeStyles';
 import createStyles from '@mui/styles/createStyles';
-import { Client, Configuration, NameValuePair, LoggedUser, Port, Workspace, WorkspaceConfiguration, Repository, WorkspaceState, RepositoryRuntimeConfiguration, RepositoryConfiguration, Template, SessionConfiguration } from '@substrate/playground-client';
-import { WorkspaceCreationDialog, canCustomize } from "./admin/workspaces";
+import { Client, Configuration, NameValuePair, LoggedUser, Port, Workspace, WorkspaceConfiguration, Repository, WorkspaceState, RepositoryRuntimeConfiguration, RepositoryConfiguration, Template } from '@substrate/playground-client';
+import { WorkspaceCreationDialog } from "./admin/workspaces";
 import { CenteredContainer, ErrorMessage, ErrorSnackbar, LoadingPanel } from "../components";
 import { useInterval } from "../hooks";
-import { formatDuration } from "../utils";
+import { canCustomize, formatDuration } from "../utils";
 import { marked } from "marked";
 
 const useStyles = makeStyles((theme: Theme) =>
@@ -71,7 +71,7 @@ export default function SplitButton({ repository, disabled, onCreate, onCreateCu
     setOpen((prevOpen) => !prevOpen);
   };
 
-  const handleClose = (event: React.MouseEvent<Document, MouseEvent>) => {
+  const handleClose = (event: MouseEvent | TouchEvent) => {
     if (anchorRef.current && anchorRef.current.contains(event.target as HTMLElement)) {
       return;
     }
@@ -129,7 +129,7 @@ function workspaceConfiguration(repository: Repository, reference: string): Work
     return {repositoryDetails: {id: repository.id, reference: reference}};
 }
 
-function TemplateSelector({client, conf, user, templates, onDeployed, onRetry}: {client: Client, conf: Configuration, user: LoggedUser, templates: Record<string, Template>, onDeployed: (conf: SessionConfiguration) => Promise<void>, onRetry: () => void}): JSX.Element {
+function TemplateSelector({client, conf, user, templates, onDeployed, onRetry}: {client: Client, conf: Configuration, user?: LoggedUser, templates: Record<string, Template>, onDeployed: (conf: WorkspaceConfiguration) => Promise<void>, onRetry: () => void}): JSX.Element {
     const publicTemplates = Object.entries(templates).filter(([, v]) => v.tags?.public == "true");
     const templatesAvailable = publicTemplates.length > 0;
     const [selection, select] = useState(templatesAvailable ? publicTemplates[0] : null);
@@ -138,12 +138,12 @@ function TemplateSelector({client, conf, user, templates, onDeployed, onRetry}: 
     const [openCustom, setOpenCustom] = React.useState(false);
     const classes = useStyles();
 
-    async function onCreateClick(conf: SessionConfiguration): Promise<void> {
+    async function onCreateClick(conf: WorkspaceConfiguration): Promise<void> {
         try {
             setDeploying(true);
             await onDeployed(conf);
-        } catch (e) {
-            setErrorMessage(`Failed to create a new session: ${e.message}`);
+        } catch (e: any) {
+            setErrorMessage(`Failed to create a new workspace: ${e.message}`);
         } finally {
             setDeploying(false);
         }
@@ -185,8 +185,8 @@ function TemplateSelector({client, conf, user, templates, onDeployed, onRetry}: 
                 </Container>
                 <Divider orientation="horizontal" />
                 <Container style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", paddingTop: 10, paddingBottom: 10 }}>
-                    {canCustomize(user)
-                    ? <SplitButton repository={selection[1]} template={selection[0]} onCreate={() => onCreateClick({repositoryDetails: {id: selection[0], reference: ""}})} onCreateCustom={() => setOpenCustom(true)} disabled={!createEnabled()} />
+                    {user && canCustomize(user)
+                    ? <SplitButton repository={selection[1]} onCreate={() => onCreateClick({repositoryDetails: {id: selection[0], reference: ""}})} onCreateCustom={() => setOpenCustom(true)} disabled={!createEnabled()} />
                     : <Button onClick={() => onCreateClick({repositoryDetails: {id: selection[0], reference: ""}})} color="primary" variant="contained" disableElevation disabled={!createEnabled()}>
                           Create
                       </Button>}
@@ -216,7 +216,7 @@ function RepositorySelector({client, conf, user, onDeployed, onRetry}: {client: 
     useInterval(async () => {
         try {
             setRepositories(await client.listRepositories());
-        } catch (e) {
+        } catch (e: any) {
             setErrorMessage(e.message);
             setRepositories([]);
         }
@@ -232,7 +232,7 @@ function RepositorySelector({client, conf, user, onDeployed, onRetry}: {client: 
         try {
             setDeploying(true);
             await onDeployed(conf);
-        } catch (e) {
+        } catch (e: any) {
             setErrorMessage(`Failed to create a new workspace: ${e.message}`);
         } finally {
             setDeploying(false);
