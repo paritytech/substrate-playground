@@ -115,7 +115,7 @@ function RepositoryRow({ client, repository }: { client: Client, repository: Rep
                                 <TableCell component="th" scope="row">
                                     {version.reference}
                                 </TableCell>
-                                <TableCell>{version.imageSource}</TableCell>
+                                <TableCell>{version.imageSource?.tag}</TableCell>
                                 <TableCell align="right">{version.state.tag}</TableCell>
                                 </TableRow>
                             ))}
