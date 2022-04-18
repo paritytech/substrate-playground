@@ -24,7 +24,7 @@ import KeyboardArrowLeft from '@mui/icons-material/KeyboardArrowLeft';
 import KeyboardArrowRight from '@mui/icons-material/KeyboardArrowRight';
 import LastPageIcon from '@mui/icons-material/LastPage';
 import { Client, Configuration, LoggedUser } from '@substrate/playground-client';
-import { CenteredContainer, LoadingPanel } from '../../components';
+import { CenteredContainer, ErrorSnackbar, LoadingPanel } from '../../components';
 import { useInterval } from '../../hooks';
 import { hasAdminEditRights } from '../../utils';
 import { Details } from './details';
@@ -65,13 +65,14 @@ export function NoResourcesContainer({ user, label, action }: { user?: LoggedUse
 
 export function Resources<T>({ children, callback }: { children: (resources: T[], setter: Dispatch<SetStateAction<T[] | null>>) => NonNullable<React.ReactNode>, callback: () => Promise<T[]> }): JSX.Element {
   const [resources, setResources] = useState<T[] | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useInterval(async () => {
     try {
       setResources(await callback());
-    } catch (e) {
-      setResources([]);
-      console.error(e);
+    } catch (e: any) {
+        setResources([]);
+        setErrorMessage(`Error during fetching: ${e.message}`);
     }
   }, 5000);
 
@@ -81,6 +82,7 @@ export function Resources<T>({ children, callback }: { children: (resources: T[]
     return (
       <Container>
         {children(resources, setResources)}
+        {errorMessage && <ErrorSnackbar open={true} message={errorMessage} onClose={() => setErrorMessage(null)} />}
       </Container>
     );
   }
