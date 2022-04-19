@@ -135,8 +135,8 @@ function TemplateSelector({client, conf, user, onDeployed, onRetry}: {client: Cl
         try {
             setDeploying(true);
             await onDeployed(conf);
-        } catch (e) {
-            setErrorMessage(`Failed to create a new session: ${e}`);
+        } catch (e: any) {
+            setErrorMessage(`Failed to create a new session: ${e.message}`);
         } finally {
             setDeploying(false);
         }
