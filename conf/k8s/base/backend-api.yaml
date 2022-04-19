@@ -98,15 +98,6 @@ spec:
             port: 8080
           initialDelaySeconds: 2
           periodSeconds: 2
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-              - matchExpressions:
-                - key: cloud.google.com/gke-nodepool
-                  operator: In
-                  values:
-                  - default-system
 ---
 apiVersion: v1
 kind: Service
