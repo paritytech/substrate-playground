@@ -31,7 +31,7 @@ use k8s_openapi::apimachinery::pkg::{
     api::resource::Quantity, apis::meta::v1::ObjectMeta, util::intstr::IntOrString,
 };
 use kube::{
-    api::{Api, DeleteParams, ListParams, Patch, PatchParams, PostParams},
+    api::{Api, DeleteParams, Patch, PatchParams, PostParams},
     Client, Resource,
 };
 
@@ -42,7 +42,9 @@ use std::{
     collections::BTreeMap, convert::TryFrom, env, num::ParseIntError, str::FromStr, time::Duration,
 };
 
-const NODE_POOL_LABEL: &str = "cloud.google.com/gke-nodepool";
+const NODE_POOL_LABEL: &str = "app.playground/pool";
+
+const NODE_POOL_TYPE_LABEL: &str = "app.playground/pool-type";
 const INSTANCE_TYPE_LABEL: &str = "node.kubernetes.io/instance-type";
 const HOSTNAME_LABEL: &str = "kubernetes.io/hostname";
 const APP_LABEL: &str = "app.kubernetes.io/part-of";
@@ -1344,17 +1346,13 @@ impl Engine {
         let client = client().await?;
         let node_api: Api<Node> = Api::all(client);
 
-        let nodes = node_api
-            .list(&ListParams::default())
-            .await
-            .map(|l| l.items)
-            .map_err(|err| Error::Failure(err.into()))?;
+        let nodes = list_by_selector(&node_api, format!("{}={}", NODE_POOL_TYPE_LABEL, &"user").to_string()).await?;
 
-        let default = "default".to_string();
+        let missing = "<missing>".to_string();
         let nodes_by_pool: BTreeMap<String, Vec<Node>> =
             nodes.iter().fold(BTreeMap::new(), |mut acc, node| {
                 let labels = node.metadata.labels.clone().unwrap_or_default();
-                let key = labels.get(NODE_POOL_LABEL).unwrap_or(&default);
+                let key = labels.get(NODE_POOL_LABEL).unwrap_or(&missing);
                 let nodes = acc.entry(key.clone()).or_insert_with(Vec::new);
                 nodes.push(node.clone());
                 acc
