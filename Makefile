@@ -182,7 +182,7 @@ endif
 k8s-setup-env: requires-k8s
 	@read -p "GH client ID?" CLIENT_ID; \
 	read -p "GH client secret?" CLIENT_SECRET; \
-	kubectl create configmap playground-config --from-literal=github.clientId="$${CLIENT_ID}" --from-literal=workspace.baseImage="paritytech/base-ci:latest" --from-literal=workspace.defaultDuration="45" --from-literal=workspace.maxDuration="1440" --from-literal=workspace.defaultMaxPerNode="6" --from-literal=workspace.defaultPoolAffinity="default-workspace" --dry-run=client -o yaml | kubectl apply -f - && \
+	kubectl create configmap playground-config --from-literal=github.clientId="$${CLIENT_ID}" --from-literal=workspace.baseImage="paritytech/base-ci:latest" --from-literal=workspace.defaultDuration="45" --from-literal=workspace.maxDuration="1440" --from-literal=workspace.defaultMaxPerNode="6" --from-literal=workspace.defaultPoolAffinity="default" --dry-run=client -o yaml | kubectl apply -f - && \
 	kubectl create secret generic playground-secrets --from-literal=github.clientSecret="$${CLIENT_SECRET}" --from-literal=rocket.secretKey=`openssl rand -base64 32` --dry-run=client -o yaml | kubectl apply -f -
 
 k8s-update-templates-config: requires-k8s ## Creates or replaces the `templates` config map from `conf/k8s/overlays/ENV/templates`
@@ -233,9 +233,11 @@ dev-create-certificate:
 	openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout tls.key -out tls.crt -subj "/CN=playground-dev.substrate.test"
 
 k3d-create-cluster:
-	k3d cluster create ${K3d_CLUSTER_NAME} --servers 1 --k3s-arg '--tls-san=127.0.0.1@server:*' --k3s-arg '--no-deploy=traefik@server:*'\
-        --k3s-node-label "cloud.google.com/gke-nodepool=default-workspace@server:0" --k3s-node-label "cloud.google.com/gke-nodepool=default-system@server:0"\
-        --port 80:80@loadbalancer --port 443:443@loadbalancer
+	k3d cluster create ${K3d_CLUSTER_NAME} --servers 2 --port 80:80@loadbalancer --port 443:443@loadbalancer \
+        --k3s-arg '--tls-san=127.0.0.1@server:*' --k3s-arg '--no-deploy=traefik@server:*' \
+        --k3s-node-label "app.playground/pool=default@server:1" \
+        --k3s-node-label "app.playground/pool-type=user@server:1" \
+        --k3s-arg '--node-taint=app.playground/pool-type=user:NoExecute@server:1'
 
 k3d-delete-cluster:
 	k3d cluster delete ${K3d_CLUSTER_NAME}
