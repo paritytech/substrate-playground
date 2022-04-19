@@ -39,28 +39,33 @@ impl Manager {
         let metrics = Metrics::new().map_err(|err| Error::Failure(err.into()))?;
         let engine = Engine::new().await?;
         // Go through all existing workspaces and update the ingress
+        // TODO remove once migrated to per workspace nginx
         match engine.clone().list_workspaces().await {
             Ok(workspaces) => {
                 let running = workspaces
                     .iter()
                     .flat_map(|i| match &i.state {
                         WorkspaceState::Running { .. } => {
-                            // TODO remove once migrated to per workspace nginx
                             Some((i.id.clone(), vec![]))
                         }
                         _ => None,
                     })
                     .collect();
-                engine.clone().patch_ingress(&running).await?;
-
-                if running.is_empty() {
-                    info!("No sesssions restored");
+                if let  Err(err) = engine.clone().patch_ingress(&running).await {
+                    error!(
+                        "Failed to patch ingress: {}. Existing workspaces won't be accessible",
+                        err
+                    )
                 } else {
-                    info!("Restored sesssions for {:?}", running.keys());
+                    if running.is_empty() {
+                        info!("No sesssions restored");
+                    } else {
+                        info!("Restored sesssions for {:?}", running.keys());
+                    }
                 }
             }
             Err(err) => error!(
-                "Failed to call list_all: {}. Existing workspaces won't be accessible",
+                "Failed to list workspaces: {}. Existing workspaces won't be accessible",
                 err
             ),
         }
