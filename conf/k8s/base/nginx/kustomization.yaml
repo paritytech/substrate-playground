@@ -15,6 +15,6 @@ helmCharts:
         default-ssl-certificate: "default/playground-tls"
       metrics:
         enabled: true
-  releaseName: v4-0-13
-  version: 4.0.13
+  releaseName: v4-0-18
+  version: 4.0.18
   repo: https://kubernetes.github.io/ingress-nginx
