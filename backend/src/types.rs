@@ -301,6 +301,7 @@ fn default_as_false() -> bool {
 // TODO to remove
 
 #[derive(Serialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct Session {
     pub id: String,
     pub user_id: String,
