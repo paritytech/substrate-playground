@@ -248,11 +248,28 @@ gke-static-ip: requires-k8s
 	gcloud compute addresses describe --region=${GKE_REGION} --format="value(address)"
 
 gke-create-cluster: requires-env
-	# See https://cloud.google.com/compute/docs/machine-types
+# See https://cloud.google.com/compute/docs/machine-types
 	gcloud container clusters create ${GKE_CLUSTER} \
         --release-channel regular \
         --zone us-central1-a \
         --node-locations us-central1-a \
-        --machine-type n2d-standard-32 \
+        --image-type=COS_CONTAINERD \
+        --machine-type n2d-standard-4 \
+        --disk-size=100GB \
+        --disk-type=pd-standard \
         --num-nodes 1 \
         --enable-network-policy
+
+gke-create-user-nodepool: requires-env
+	gcloud container node-pools create user-default \
+        --cluster ${GKE_CLUSTER} \
+        --num-nodes 1 \
+        --node-labels app.playground/pool=default,app.playground/pool-type=user\
+        --node-taints app.playground/pool-type=user:NoExecute \
+        --disk-size=250GB \
+        --disk-type=pd-standard \
+        --image-type=COS_CONTAINERD \
+        --machine-type n2d-standard-8 \
+        --num-nodes 1 \
+        --zone us-central1-a \
+        --node-locations us-central1-a
