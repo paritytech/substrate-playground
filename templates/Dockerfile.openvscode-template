@@ -15,7 +15,7 @@ WORKDIR /home/
 
 USER root
 
-ENV OPENVSCODE_VERSION=1.66.0
+ENV OPENVSCODE_VERSION=1.66.1
 
 # Downloading the latest VSC Server release
 RUN wget https://github.com/gitpod-io/openvscode-server/releases/download/openvscode-server-v$OPENVSCODE_VERSION/openvscode-server-v$OPENVSCODE_VERSION-linux-x64.tar.gz \
@@ -31,8 +31,9 @@ RUN chmod g+rw /home && \
 USER playground
 
 ## Install default extensions
-
-RUN ${OPENVSCODE_SERVER_ROOT}/bin/openvscode-server --install-extension matklad.rust-analyzer \
+# https://marketplace.visualstudio.com/items?itemName=Zerotaskx.rust-extension-pack
+RUN ${OPENVSCODE_SERVER_ROOT}/bin/openvscode-server
+    --install-extension matklad.rust-analyzer \
     --install-extension vsls-contrib.codetour \
     --install-extension redhat.vscode-yaml
 
