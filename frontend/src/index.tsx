@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom";
-import { Client, Configuration, LoggedUser, Workspace } from '@substrate/playground-client';
+import { Client, Configuration, LoggedUser, Session } from '@substrate/playground-client';
 import { createTheme, ThemeProvider, Theme, StyledEngineProvider, adaptV4Theme } from '@mui/material/styles';
 import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
@@ -46,42 +46,42 @@ function MainPanel({ client, params, conf, user, panel, onRetry, onConnect, onAf
 }
 
 function ExtraTheiaNav({ client, conf, restartAction }: { client: Client, conf: Configuration, restartAction: () => void }): JSX.Element {
-    const [workspace, setWorkspace] = useState<Workspace | null | undefined>(undefined);
+    const [session, setSession] = useState<Session | null | undefined>(undefined);
 
     useInterval(async () => {
-        const workspace = await client.getCurrentWorkspace();
-        setWorkspace(workspace);
+        const session = await client.getCurrentSession();
+        setSession(session);
 
         // Periodically extend duration of running workspaces
-        if (workspace) {
-            const { state, maxDuration } = workspace;
-            if (state.tag == 'Running') {
-                const remaining = maxDuration - (state.startTime || 0) / 60; // In minutes
+        if (session) {
+            const { pod, maxDuration } = session;
+            if (pod.phase == 'Running') {
+                const remaining = maxDuration - (pod.startTime || 0) / 60; // In minutes
                 const maxConfDuration = conf.workspace.maxDuration;
                 // Increase workspace duration
                 if (remaining < 10 && maxDuration < maxConfDuration) {
                     const newDuration = Math.min(maxConfDuration, maxDuration + 10);
-                    await client.updateCurrentWorkspace({duration: newDuration});
+                    await client.updateCurrentSession({duration: newDuration});
                 }
             }
         }
     }, 5000);
 
-    if (workspace) {
-        const { state, maxDuration } = workspace;
-        if (state.tag == 'Running') {
-            const remaining = maxDuration * 60 - (state.startTime || 0);
+    if (session) {
+        const { pod, maxDuration } = session;
+        if (pod.phase == 'Running') {
+            const remaining = maxDuration * 60 - (pod.startTime || 0);
             if (remaining < 300) { // 5 minutes
                 return (
                     <Typography variant="h6">
-                        Your workspace is about to end. Make sure your changes have been exported.
+                        Your session is about to end. Make sure your changes have been exported.
                     </Typography>
                 );
             }
-        } else if (state.tag == 'Failed') {
+        } else if (pod.phase == 'Failed') {
             return (
                 <Typography variant="h6">
-                    Your workspace is over. <Button onClick={restartAction}>Restart it</Button>
+                    Your session is over. <Button onClick={restartAction}>Restart it</Button>
                 </Typography>
             );
         }
