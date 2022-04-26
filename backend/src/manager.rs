@@ -7,7 +7,7 @@ use crate::{
         RepositoryUpdateConfiguration, RepositoryVersion, RepositoryVersionConfiguration, Session,
         SessionConfiguration, SessionUpdateConfiguration, Template, User, UserConfiguration,
         UserUpdateConfiguration, Workspace, WorkspaceConfiguration, WorkspaceState,
-        WorkspaceUpdateConfiguration,
+        WorkspaceUpdateConfiguration, Phase,
     },
 };
 use log::{error, info, warn};
@@ -38,14 +38,14 @@ impl Manager {
     pub async fn new() -> Result<Self> {
         let metrics = Metrics::new().map_err(|err| Error::Failure(err.into()))?;
         let engine = Engine::new().await?;
-        // Go through all existing workspaces and update the ingress
-        // TODO remove once migrated to per workspace nginx
-        match engine.clone().list_workspaces().await {
-            Ok(workspaces) => {
-                let running = workspaces
+        // Go through all existing sessions and update the ingress
+        // TODO remove once migrated to per session nginx
+        match engine.clone().list_sessions().await {
+            Ok(sessions) => {
+                let running = sessions
                     .iter()
-                    .flat_map(|i| match &i.state {
-                        WorkspaceState::Running { .. } => {
+                    .flat_map(|i| match &i.pod.phase {
+                        Phase::Running { .. } => {
                             Some((i.id.clone(), vec![]))
                         }
                         _ => None,
@@ -53,7 +53,7 @@ impl Manager {
                     .collect();
                 if let  Err(err) = engine.clone().patch_ingress(&running).await {
                     error!(
-                        "Failed to patch ingress: {}. Existing workspaces won't be accessible",
+                        "Failed to patch ingress: {}. Existing sessions won't be accessible",
                         err
                     )
                 } else {
@@ -65,7 +65,7 @@ impl Manager {
                 }
             }
             Err(err) => error!(
-                "Failed to list workspaces: {}. Existing workspaces won't be accessible",
+                "Failed to list sessions: {}. Existing sessions won't be accessible",
                 err
             ),
         }

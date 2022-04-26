@@ -44,6 +44,7 @@ pub fn clone(path: String, url: String) -> Result<()> {
     Ok(())
 }
 
+// TODO add support for multiple devcontainer files (.devcontainer/FOLDER1/devcontainer.json)
 pub fn read_and_parse_devcontainer(path: String) -> Result<Configuration> {
     fs::read_to_string(format!("{}/.devcontainer/devcontainer.json", path))
         .map_err(|err| Error::Failure(err.into()))

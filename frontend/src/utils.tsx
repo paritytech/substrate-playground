@@ -53,16 +53,16 @@ export function hasAdminEditRights(user: LoggedUser): boolean {
 }
 
 export function sessionDomain(session: Session): string {
-    return `${session.userId}.`;
+    return `${session.userId}.${document.location.hostname}`;
 }
 
 export function sessionUrl(session: Session): string | null {
     switch (session.pod.phase) {
         // TODO retrieve RepoVersion, extract ports
         case 'Running': {
-            const ports = session.template.runtime?.ports;
-            const port = ports?.find(port => port.name == 'web')?.port || 80;
-            return `//${sessionDomain(session)}:${port}`;
+            //TODO const ports = session.template.runtime?.ports;
+            //const port = ports?.find(port => port.name == 'web')?.port || 80;
+            return `//${sessionDomain(session)}`;
         }
         default: return null;
     }
@@ -77,7 +77,7 @@ export function workspaceUrl(workspace: Workspace): string | null {
         // TODO retrieve RepoVersion, extract ports
         case 'Running': {
             const ports = workspace.state.runtime.ports;
-            const port = ports?.find(port => port.name == 'web')?.port || 80;
+            const port = 80;// TODO ports?.find(port => port.name == 'web')?.port || 80;
             return `//${workspaceDomain(workspace)}:${port}`;
         }
         default: return null;

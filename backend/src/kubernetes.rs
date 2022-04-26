@@ -71,8 +71,8 @@ pub fn pod_workspace_name(user: &str) -> String {
     format!("{}-{}", COMPONENT_WORKSPACE_VALUE, user)
 }
 
-pub fn service_name(workspace_id: &str) -> String {
-    format!("{}-service-{}", COMPONENT_VALUE, workspace_id)
+pub fn service_name(session_id: &str) -> String {
+    format!("{}-service-{}", COMPONENT_VALUE, session_id)
 }
 
 pub fn service_workspace_name(workspace_id: &str) -> String {
@@ -422,13 +422,13 @@ fn create_pod(
     })
 }
 
-fn create_service(workspace_id: &str, runtime: &RepositoryRuntimeConfiguration) -> Service {
+fn create_service(session_id: &str, runtime: &RepositoryRuntimeConfiguration) -> Service {
     let mut labels = BTreeMap::new();
     labels.insert(APP_LABEL.to_string(), APP_VALUE.to_string());
     labels.insert(COMPONENT_LABEL.to_string(), COMPONENT_VALUE.to_string());
-    labels.insert(OWNER_LABEL.to_string(), workspace_id.to_string());
+    labels.insert(OWNER_LABEL.to_string(), session_id.to_string());
     let mut selector = BTreeMap::new();
-    selector.insert(OWNER_LABEL.to_string(), workspace_id.to_string());
+    selector.insert(OWNER_LABEL.to_string(), session_id.to_string());
 
     // The theia port itself is mandatory
     let mut ports = vec![ServicePort {
@@ -454,7 +454,7 @@ fn create_service(workspace_id: &str, runtime: &RepositoryRuntimeConfiguration) 
 
     Service {
         metadata: ObjectMeta {
-            name: Some(service_name(workspace_id)),
+            name: Some(service_name(session_id)),
             labels: Some(labels),
             ..Default::default()
         },
@@ -530,8 +530,8 @@ fn ingress_paths(service_name: String, ports: &[Port]) -> Vec<HTTPIngressPath> {
     all_paths
 }
 
-fn subdomain(host: &str, workspace_id: &str) -> String {
-    format!("{}.{}", workspace_id, host)
+fn subdomain(host: &str, id: &str) -> String {
+    format!("{}.{}", id, host)
 }
 
 async fn get_templates(client: Client, namespace: &str) -> Result<BTreeMap<String, String>> {
@@ -920,12 +920,47 @@ impl Engine {
             .spec
             .ok_or(Error::MissingData("ingress#spec"))?;
         let mut rules: Vec<IngressRule> = spec.rules.unwrap_or_default();
+        for (id, ports) in runtimes {
+            let subdomain = subdomain(&self.env.host, id);
+            println!("Adding domain {}", subdomain);
+            rules.push(IngressRule {
+                host: Some(subdomain.clone()),
+                http: Some(HTTPIngressRuleValue {
+                    paths: ingress_paths(service_name(id), ports),
+                }),
+            });
+        }
+        spec.rules = Some(rules);
+        ingress.spec.replace(spec);
+
+        ingress_api
+            .replace(INGRESS_NAME, &PostParams::default(), &ingress)
+            .await
+            .map_err(|err| Error::Failure(err.into()))?;
+        println!("Patched ingress");
+
+        Ok(())
+    }
+
+    pub async fn patch_ingress_workspace(&self, runtimes: &BTreeMap<String, Vec<Port>>) -> Result<()> {
+        let client = client().await?;
+        let ingress_api: Api<Ingress> = Api::namespaced(client, &self.env.namespace);
+        let mut ingress: Ingress = ingress_api
+            .get(INGRESS_NAME)
+            .await
+            .map_err(|err| Error::Failure(err.into()))?
+            .clone();
+        let mut spec = ingress
+            .clone()
+            .spec
+            .ok_or(Error::MissingData("ingress#spec"))?;
+        let mut rules: Vec<IngressRule> = spec.rules.unwrap_or_default();
         for (workspace_id, ports) in runtimes {
             let subdomain = subdomain(&self.env.host, workspace_id);
             rules.push(IngressRule {
                 host: Some(subdomain.clone()),
                 http: Some(HTTPIngressRuleValue {
-                    paths: ingress_paths(service_name(workspace_id), ports),
+                    paths: ingress_paths(service_workspace_name(workspace_id), ports),
                 }),
             });
         }
@@ -1003,7 +1038,7 @@ impl Engine {
             user_id.to_string(),
             runtime.ports.clone().unwrap_or_default(),
         );
-        self.patch_ingress(&workspaces).await?;
+        self.patch_ingress_workspace(&workspaces).await?;
 
         let duration = conf
             .duration
