@@ -3,11 +3,11 @@ use crate::{
     kubernetes::Engine,
     metrics::Metrics,
     types::{
-        LoggedUser, Playground, Pool, Repository, RepositoryConfiguration,
+        LoggedUser, Phase, Playground, Pool, Repository, RepositoryConfiguration,
         RepositoryUpdateConfiguration, RepositoryVersion, RepositoryVersionConfiguration, Session,
         SessionConfiguration, SessionUpdateConfiguration, Template, User, UserConfiguration,
         UserUpdateConfiguration, Workspace, WorkspaceConfiguration, WorkspaceState,
-        WorkspaceUpdateConfiguration, Phase,
+        WorkspaceUpdateConfiguration,
     },
 };
 use log::{error, info, warn};
@@ -45,13 +45,11 @@ impl Manager {
                 let running = sessions
                     .iter()
                     .flat_map(|i| match &i.pod.phase {
-                        Phase::Running { .. } => {
-                            Some((i.id.clone(), vec![]))
-                        }
+                        Phase::Running { .. } => Some((i.id.clone(), vec![])),
                         _ => None,
                     })
                     .collect();
-                if let  Err(err) = engine.clone().patch_ingress(&running).await {
+                if let Err(err) = engine.clone().patch_ingress(&running).await {
                     error!(
                         "Failed to patch ingress: {}. Existing sessions won't be accessible",
                         err

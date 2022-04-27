@@ -395,16 +395,9 @@ fn query_segment(origin: &Origin) -> String {
 
 // Gets called from UI. Then redirects to the GitHub `auth_uri` which itself redirects to `/auth/github`
 #[get("/login/github")]
-pub fn github_login(
-    oauth2: OAuth2<GitHubUser>,
-    mut cookies: Cookies<'_>,
-) -> Redirect {
+pub fn github_login(oauth2: OAuth2<GitHubUser>, mut cookies: Cookies<'_>) -> Redirect {
     oauth2
-        .get_redirect_extras(
-            &mut cookies,
-            &["user:read"],
-            &[],
-        )
+        .get_redirect_extras(&mut cookies, &["user:read"], &[])
         .unwrap()
 }
 

@@ -942,7 +942,10 @@ impl Engine {
         Ok(())
     }
 
-    pub async fn patch_ingress_workspace(&self, runtimes: &BTreeMap<String, Vec<Port>>) -> Result<()> {
+    pub async fn patch_ingress_workspace(
+        &self,
+        runtimes: &BTreeMap<String, Vec<Port>>,
+    ) -> Result<()> {
         let client = client().await?;
         let ingress_api: Api<Ingress> = Api::namespaced(client, &self.env.namespace);
         let mut ingress: Ingress = ingress_api
@@ -1381,7 +1384,11 @@ impl Engine {
         let client = client().await?;
         let node_api: Api<Node> = Api::all(client);
 
-        let nodes = list_by_selector(&node_api, format!("{}={}", NODE_POOL_TYPE_LABEL, &"user").to_string()).await?;
+        let nodes = list_by_selector(
+            &node_api,
+            format!("{}={}", NODE_POOL_TYPE_LABEL, &"user").to_string(),
+        )
+        .await?;
 
         let missing = "<missing>".to_string();
         let nodes_by_pool: BTreeMap<String, Vec<Node>> =
