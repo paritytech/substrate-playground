@@ -54,12 +54,10 @@ impl Manager {
                         "Failed to patch ingress: {}. Existing sessions won't be accessible",
                         err
                     )
+                } else if running.is_empty() {
+                    info!("No sesssions restored");
                 } else {
-                    if running.is_empty() {
-                        info!("No sesssions restored");
-                    } else {
-                        info!("Restored sesssions for {:?}", running.keys());
-                    }
+                    info!("Restored sesssions for {:?}", running.keys());
                 }
             }
             Err(err) => error!(
