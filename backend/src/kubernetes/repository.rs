@@ -91,13 +91,13 @@ pub async fn get_repository(id: &str) -> Result<Option<Repository>> {
 pub async fn list_repositories() -> Result<Vec<Repository>> {
     let client = client().await?;
 
-    Ok(get_config_map(&client, REPOSITORIES_CONFIG_MAP)
+    get_config_map(&client, REPOSITORIES_CONFIG_MAP)
         .await?
         .into_iter()
         .map(|(_k, v)| {
             serde_yaml::from_str::<Repository>(&v).map_err(|err| Error::Failure(err.into()))
         })
-        .collect::<Result<Vec<Repository>>>()?)
+        .collect::<Result<Vec<Repository>>>()
 }
 
 pub async fn create_repository(id: &str, conf: RepositoryConfiguration) -> Result<()> {
@@ -201,8 +201,8 @@ pub async fn create_repository_version(
         metadata: ObjectMeta {
             name: Some(format!(
                 "builder-{}-{}",
-                repository_id.to_string(),
-                id.to_string()
+                repository_id,
+                id
             )),
             ..Default::default()
         },

@@ -653,7 +653,7 @@ pub async fn update_workspace(
             Patch::Json(json_patch::Patch(vec![PatchOperation::Add(AddOperation {
                 path: format!(
                     "/metadata/annotations/{}",
-                    WORKSPACE_DURATION_ANNOTATION.replace("/", "~1")
+                    WORKSPACE_DURATION_ANNOTATION.replace('/', "~1")
                 ),
                 value: json!(workspace_duration_annotation(duration)),
             })]));

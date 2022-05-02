@@ -283,8 +283,8 @@ fn pod_to_details(pod: &Pod) -> Result<types::Pod> {
         reason: status.clone().reason.unwrap_or_else(|| "".to_string()),
         message: status.clone().message.unwrap_or_else(|| "".to_string()),
         start_time: status.clone().start_time.map(|dt| dt.0.into()),
-        conditions: conditions.map(|v| v.iter().map(|c| condition_to_condition(c)).collect()),
-        container: container_status.map(|c| container_status_to_container_status(c)),
+        conditions: conditions.map(|v| v.iter().map(condition_to_condition).collect()),
+        container: container_status.map(container_status_to_container_status),
     })
 }
 
@@ -500,7 +500,7 @@ pub async fn update_session(
             Patch::Json(json_patch::Patch(vec![PatchOperation::Add(AddOperation {
                 path: format!(
                     "/metadata/annotations/{}",
-                    SESSION_DURATION_ANNOTATION.replace("/", "~1")
+                    SESSION_DURATION_ANNOTATION.replace('/', "~1")
                 ),
                 value: json!(session_duration_annotation(duration)),
             })]));
