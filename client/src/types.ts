@@ -6,14 +6,8 @@ export interface OwnedResource {
     userId: string
 }
 export interface Playground {
-    env: Environment,
     configuration: Configuration,
     user?: LoggedUser,
-}
-
-export interface Environment {
-    host: string,
-    namespace: string,
 }
 
 export interface Configuration {
