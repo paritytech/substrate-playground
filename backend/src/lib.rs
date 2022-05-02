@@ -4,7 +4,6 @@ pub mod api;
 pub mod error;
 pub mod github;
 pub mod kubernetes;
-pub mod kubernetes_utils;
 pub mod manager;
 pub mod metrics;
 pub mod prometheus;

@@ -7,7 +7,6 @@ use std::{
 
 #[derive(Serialize, Clone, Debug)]
 pub struct Playground {
-    pub env: Environment,
     pub configuration: Configuration,
     pub user: Option<LoggedUser>,
 }
@@ -23,6 +22,11 @@ pub struct Environment {
 pub struct Configuration {
     pub github_client_id: String,
     pub workspace: WorkspaceDefaults,
+}
+
+#[derive(Clone)]
+pub struct Secrets {
+    pub github_client_secret: String,
 }
 
 #[derive(Serialize, Debug, Clone)]
@@ -306,7 +310,6 @@ pub struct Session {
     pub id: String,
     pub user_id: String,
     pub template: Template,
-    pub url: String,
     pub pod: Pod,
     #[serde(with = "duration")]
     pub duration: Duration,

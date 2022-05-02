@@ -2,11 +2,11 @@
 use crate::{
     error::{Error, Result},
     github::{current_user, orgs, GitHubUser},
+    kubernetes,
     types::{
         LoggedUser, RepositoryConfiguration, RepositoryUpdateConfiguration,
         RepositoryVersionConfiguration, SessionConfiguration, SessionUpdateConfiguration,
-        UserConfiguration, UserUpdateConfiguration, WorkspaceConfiguration,
-        WorkspaceUpdateConfiguration,
+        UserConfiguration, UserUpdateConfiguration,
     },
     Context,
 };
@@ -36,11 +36,6 @@ impl<'a, 'r> FromRequest<'a, 'r> for LoggedUser {
     type Error = String;
 
     fn from_request(request: &'a Request<'r>) -> request::Outcome<LoggedUser, String> {
-        let engine = &request
-            .guard::<State<Context>>()
-            .map_failure(|_f| (Status::BadRequest, "Can't access state".to_string()))?
-            .manager
-            .engine;
         let mut cookies = request.cookies();
         if let Some(token) = cookies.get_private(COOKIE_TOKEN) {
             let token_value = token.value();
@@ -59,12 +54,14 @@ impl<'a, 'r> FromRequest<'a, 'r> for LoggedUser {
                 )
             })?;
             let id = gh_user.clone().login;
-            let users = runtime.block_on(engine.clone().list_users()).map_err(|_| {
-                (
-                    Status::FailedDependency,
-                    "Missing users ConfigMap".to_string(),
-                )
-            })?;
+            let users = runtime
+                .block_on(kubernetes::user::list_users())
+                .map_err(|_| {
+                    (
+                        Status::FailedDependency,
+                        "Missing users ConfigMap".to_string(),
+                    )
+                })?;
             let organizations = runtime
                 .block_on(orgs(token_value, &gh_user))
                 .unwrap_or_default()
@@ -185,7 +182,7 @@ pub fn delete_user(state: State<'_, Context>, user: LoggedUser, id: String) -> J
 
 // Current Workspace
 
-#[get("/workspace")]
+/*#[get("/workspace")]
 pub fn get_current_workspace(state: State<'_, Context>, user: LoggedUser) -> JsonValue {
     result_to_jsonrpc(state.manager.get_workspace(&user, &session_id(&user.id)))
 }
@@ -267,8 +264,7 @@ pub fn update_workspace(
 #[delete("/workspaces/<id>")]
 pub fn delete_workspace(state: State<'_, Context>, user: LoggedUser, id: String) -> JsonValue {
     result_to_jsonrpc(state.manager.delete_workspace(&user, &id))
-}
-
+}*/
 // Repositories
 
 #[get("/repositories/<id>")]

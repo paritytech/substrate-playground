@@ -4,6 +4,7 @@ extern crate playground;
 
 use ::prometheus::Registry;
 use playground::github::GitHubUser;
+use playground::kubernetes::{get_configuration, get_secrets};
 use playground::manager::Manager;
 use playground::prometheus::PrometheusMetrics;
 use playground::Context;
@@ -30,7 +31,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
     }
 
     let manager = Manager::new().await?;
-    let engine = manager.clone().engine;
     manager.clone().spawn_background_thread();
 
     log::info!("Spawned");
@@ -47,6 +47,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
     }
     .to_cors()?;
 
+    let configuration = get_configuration().await?;
+    let secrets = get_secrets().await?;
     let registry = Registry::new_custom(Some("playground".to_string()), None)?;
     manager.clone().metrics.register(registry.clone())?;
     let prometheus = PrometheusMetrics::with_registry(registry);
@@ -59,8 +61,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     auth_uri: "https://github.com/login/oauth/authorize".into(),
                     token_uri: "https://github.com/login/oauth/access_token".into(),
                 },
-                engine.configuration.github_client_id,
-                engine.secrets.github_client_secret,
+                configuration.github_client_id,
+                secrets.github_client_secret,
                 None,
             );
             Ok(rocket.attach(OAuth2::<GitHubUser>::custom(
@@ -80,10 +82,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 playground::api::update_user,
                 playground::api::delete_user,
                 // Current Workspace
-                playground::api::get_current_workspace,
+                /*playground::api::get_current_workspace,
                 playground::api::create_current_workspace,
                 playground::api::update_current_workspace,
-                playground::api::delete_current_workspace,
+                playground::api::delete_current_workspace,*/
                 // Sessions
                 playground::api::get_current_session,
                 playground::api::create_current_session,
@@ -95,11 +97,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 playground::api::update_session,
                 playground::api::delete_session,
                 // Workspaces
-                playground::api::get_workspace,
+                /*                playground::api::get_workspace,
                 playground::api::list_workspaces,
                 playground::api::create_workspace,
                 playground::api::update_workspace,
-                playground::api::delete_workspace,
+                playground::api::delete_workspace,*/
                 // Repositories
                 playground::api::get_repository,
                 playground::api::list_repositories,

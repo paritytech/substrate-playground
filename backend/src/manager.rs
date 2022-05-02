@@ -1,13 +1,27 @@
 use crate::{
     error::{Error, Parameter, Permission, Result},
-    kubernetes::Engine,
+    kubernetes::{
+        get_configuration,
+        pool::{get_pool, list_pools},
+        repository::{
+            create_repository, create_repository_version, delete_repository,
+            delete_repository_version, get_repository, get_repository_version, list_repositories,
+            list_repository_versions, update_repository,
+        },
+        session::{
+            create_session, delete_session, get_session, list_sessions, patch_ingress,
+            update_session,
+        },
+        template::list_templates,
+        user::{create_user, delete_user, get_user, list_users, update_user},
+        workspace::{delete_workspace, get_workspace, list_workspaces},
+    },
     metrics::Metrics,
     types::{
         LoggedUser, Phase, Playground, Pool, Repository, RepositoryConfiguration,
         RepositoryUpdateConfiguration, RepositoryVersion, RepositoryVersionConfiguration, Session,
         SessionConfiguration, SessionUpdateConfiguration, Template, User, UserConfiguration,
-        UserUpdateConfiguration, Workspace, WorkspaceConfiguration, WorkspaceState,
-        WorkspaceUpdateConfiguration,
+        UserUpdateConfiguration, WorkspaceState,
     },
 };
 use log::{error, info, warn};
@@ -21,7 +35,6 @@ use tokio::runtime::Runtime;
 
 #[derive(Clone)]
 pub struct Manager {
-    pub engine: Engine,
     pub metrics: Metrics,
     workspaces: Arc<Mutex<HashSet<String>>>,
     sessions: Arc<Mutex<HashSet<String>>>,
@@ -37,10 +50,9 @@ impl Manager {
 
     pub async fn new() -> Result<Self> {
         let metrics = Metrics::new().map_err(|err| Error::Failure(err.into()))?;
-        let engine = Engine::new().await?;
         // Go through all existing sessions and update the ingress
         // TODO remove once migrated to per session nginx
-        match engine.clone().list_sessions().await {
+        match list_sessions().await {
             Ok(sessions) => {
                 let running = sessions
                     .iter()
@@ -49,7 +61,7 @@ impl Manager {
                         _ => None,
                     })
                     .collect();
-                if let Err(err) = engine.clone().patch_ingress(&running).await {
+                if let Err(err) = patch_ingress(&running).await {
                     error!(
                         "Failed to patch ingress: {}. Existing sessions won't be accessible",
                         err
@@ -66,7 +78,6 @@ impl Manager {
             ),
         }
         Ok(Manager {
-            engine,
             metrics,
             workspaces: Arc::new(Mutex::new(HashSet::new())), // Temp map used to track workspaces deployment time
             sessions: Arc::new(Mutex::new(HashSet::new())), // Temp map used to track session deployment time
@@ -83,7 +94,7 @@ impl Manager {
                 if let Ok(mut workspaces2) = workspaces_thread.lock() {
                     let workspaces3 = &mut workspaces2.clone();
                     for id in workspaces3.iter() {
-                        match runtime.block_on(self.engine.get_workspace(&workspace_id(id))) {
+                        match runtime.block_on(get_workspace(&workspace_id(id))) {
                             Ok(Some(workspace)) => {
                                 // Deployed workspaces are removed from the set
                                 // Additionally the deployment time is tracked
@@ -116,7 +127,7 @@ impl Manager {
                 }
 
                 // Go through all Running pods and figure out if they have to be undeployed
-                match runtime.block_on(self.engine.list_workspaces()) {
+                match runtime.block_on(list_workspaces()) {
                     Ok(workspaces) => {
                         for workspace in workspaces {
                             if let WorkspaceState::Running { start_time, .. } = workspace.state {
@@ -128,11 +139,9 @@ impl Manager {
                                             duration.as_secs() / 60
                                         );
 
-                                        match runtime.block_on(
-                                            self.engine.delete_workspace(&workspace_id(
-                                                &workspace.user_id,
-                                            )),
-                                        ) {
+                                        match runtime.block_on(delete_workspace(&workspace_id(
+                                            &workspace.user_id,
+                                        ))) {
                                             Ok(()) => (),
                                             Err(err) => {
                                                 warn!(
@@ -168,16 +177,14 @@ impl Manager {
     pub fn get(self, user: LoggedUser) -> Result<Playground> {
         Ok(Playground {
             user: Some(user),
-            env: self.engine.env,
-            configuration: self.engine.configuration,
+            configuration: new_runtime()?.block_on(get_configuration())?,
         })
     }
 
     pub fn get_unlogged(&self) -> Result<Playground> {
         Ok(Playground {
             user: None,
-            env: self.clone().engine.env,
-            configuration: self.clone().engine.configuration,
+            configuration: new_runtime()?.block_on(get_configuration())?,
         })
     }
 
@@ -188,7 +195,7 @@ impl Manager {
             return Err(Error::Unauthorized(Permission::AdminRead));
         }
 
-        new_runtime()?.block_on(self.engine.get_user(id))
+        new_runtime()?.block_on(get_user(id))
     }
 
     pub fn list_users(&self, user: &LoggedUser) -> Result<Vec<User>> {
@@ -196,7 +203,7 @@ impl Manager {
             return Err(Error::Unauthorized(Permission::AdminRead));
         }
 
-        new_runtime()?.block_on(self.engine.list_users())
+        new_runtime()?.block_on(list_users())
     }
 
     pub fn create_user(self, user: &LoggedUser, id: String, conf: UserConfiguration) -> Result<()> {
@@ -204,7 +211,7 @@ impl Manager {
             return Err(Error::Unauthorized(Permission::AdminEdit));
         }
 
-        new_runtime()?.block_on(self.engine.create_user(&id, conf))
+        new_runtime()?.block_on(create_user(&id, conf))
     }
 
     pub fn update_user(
@@ -217,7 +224,7 @@ impl Manager {
             return Err(Error::Unauthorized(Permission::AdminEdit));
         }
 
-        new_runtime()?.block_on(self.engine.update_user(&id, conf))
+        new_runtime()?.block_on(update_user(&id, conf))
     }
 
     pub fn delete_user(self, user: &LoggedUser, id: String) -> Result<()> {
@@ -225,135 +232,135 @@ impl Manager {
             return Err(Error::Unauthorized(Permission::AdminEdit));
         }
 
-        new_runtime()?.block_on(self.engine.delete_user(id))
+        new_runtime()?.block_on(delete_user(&id))
     }
 
     // Workspaces
 
-    pub fn get_workspace(&self, user: &LoggedUser, id: &str) -> Result<Option<Workspace>> {
-        if workspace_id(&user.id) != id && !user.has_admin_read_rights() {
-            return Err(Error::Unauthorized(Permission::AdminRead));
-        }
-
-        new_runtime()?.block_on(self.engine.get_workspace(&workspace_id(id)))
-    }
-
-    pub fn list_workspaces(&self, user: &LoggedUser) -> Result<Vec<Workspace>> {
-        if !user.has_admin_read_rights() {
-            return Err(Error::Unauthorized(Permission::AdminRead));
-        }
-
-        new_runtime()?.block_on(self.engine.list_workspaces())
-    }
-
-    pub fn create_workspace(
-        &self,
-        user: &LoggedUser,
-        id: &str,
-        conf: WorkspaceConfiguration,
-    ) -> Result<()> {
-        // Id can only be customized by users with proper rights
-        if workspace_id(&user.id) != id && !user.has_admin_edit_rights() {
-            return Err(Error::Unauthorized(Permission::AdminEdit));
-        }
-
-        if conf.duration.is_some() {
-            // Duration can only customized by users with proper rights
-            if !user.can_customize_duration() {
-                return Err(Error::Unauthorized(Permission::Customize {
-                    what: Parameter::WorkflowDuration,
-                }));
+    /*     pub fn get_workspace(&self, user: &LoggedUser, id: &str) -> Result<Option<Workspace>> {
+            if workspace_id(&user.id) != id && !user.has_admin_read_rights() {
+                return Err(Error::Unauthorized(Permission::AdminRead));
             }
+
+            new_runtime()?.block_on(self.engine.get_workspace(&workspace_id(id)))
         }
-        if conf.pool_affinity.is_some() {
-            // Duration can only customized by users with proper rights
-            if !user.can_customize_pool_affinity() {
-                return Err(Error::Unauthorized(Permission::Customize {
-                    what: Parameter::WorkflowPoolAffinity,
-                }));
+
+        pub fn list_workspaces(&self, user: &LoggedUser) -> Result<Vec<Workspace>> {
+            if !user.has_admin_read_rights() {
+                return Err(Error::Unauthorized(Permission::AdminRead));
             }
+
+            new_runtime()?.block_on(self.engine.list_workspaces())
         }
 
-        let workspace_id = workspace_id(id);
-        // Ensure a workspace with the same id is not alread running
-        if new_runtime()?
-            .block_on(self.engine.get_workspace(&workspace_id))?
-            .is_some()
-        {
-            return Err(Error::WorkspaceIdAlreayUsed);
-        }
-
-        let result =
-            new_runtime()?.block_on(self.engine.create_workspace(user, &workspace_id, conf));
-        match &result {
-            Ok(()) => {
-                info!("Created workspace {}", workspace_id);
-
-                if let Ok(mut workspaces) = self.workspaces.lock() {
-                    workspaces.insert(workspace_id);
-                } else {
-                    error!("Failed to acquire workspaces lock");
-                }
-                self.metrics.inc_deploy_counter();
+        pub fn create_workspace(
+            &self,
+            user: &LoggedUser,
+            id: &str,
+            conf: WorkspaceConfiguration,
+        ) -> Result<()> {
+            // Id can only be customized by users with proper rights
+            if workspace_id(&user.id) != id && !user.has_admin_edit_rights() {
+                return Err(Error::Unauthorized(Permission::AdminEdit));
             }
-            Err(e) => {
-                self.metrics.inc_deploy_failures_counter();
-                error!("Error during deployment {}", e);
-            }
-        }
-        result
-    }
 
-    pub fn update_workspace(
-        &self,
-        id: &str,
-        user: &LoggedUser,
-        conf: WorkspaceUpdateConfiguration,
-    ) -> Result<()> {
-        if conf.duration.is_some() {
-            // Duration can only customized by users with proper rights
-            if workspace_id(&user.id) != id && !user.can_customize_duration() {
-                return Err(Error::Unauthorized(Permission::Customize {
-                    what: Parameter::WorkflowDuration,
-                }));
-            }
-        }
-
-        new_runtime()?.block_on(self.engine.update_workspace(&workspace_id(id), conf))
-    }
-
-    pub fn delete_workspace(&self, user: &LoggedUser, id: &str) -> Result<()> {
-        if workspace_id(&user.id) != id && !user.has_admin_edit_rights() {
-            return Err(Error::Unauthorized(Permission::AdminEdit));
-        }
-
-        let workspace_id = workspace_id(id);
-        let result = new_runtime()?.block_on(self.engine.delete_workspace(&workspace_id));
-        match &result {
-            Ok(_) => {
-                self.metrics.inc_undeploy_counter();
-                if let Ok(mut workspaces) = self.workspaces.lock() {
-                    workspaces.remove(workspace_id.as_str());
-                } else {
-                    error!("Failed to acquire workspaces lock");
+            if conf.duration.is_some() {
+                // Duration can only customized by users with proper rights
+                if !user.can_customize_duration() {
+                    return Err(Error::Unauthorized(Permission::Customize {
+                        what: Parameter::WorkflowDuration,
+                    }));
                 }
             }
-            Err(e) => {
-                self.metrics.inc_undeploy_failures_counter();
-                error!("Error during undeployment {}", e);
+            if conf.pool_affinity.is_some() {
+                // Duration can only customized by users with proper rights
+                if !user.can_customize_pool_affinity() {
+                    return Err(Error::Unauthorized(Permission::Customize {
+                        what: Parameter::WorkflowPoolAffinity,
+                    }));
+                }
             }
-        }
-        result
-    }
 
+            let workspace_id = workspace_id(id);
+            // Ensure a workspace with the same id is not alread running
+            if new_runtime()?
+                .block_on(self.engine.get_workspace(&workspace_id))?
+                .is_some()
+            {
+                return Err(Error::WorkspaceIdAlreayUsed);
+            }
+
+            let result =
+                new_runtime()?.block_on(self.engine.create_workspace(user, &workspace_id, conf));
+            match &result {
+                Ok(()) => {
+                    info!("Created workspace {}", workspace_id);
+
+                    if let Ok(mut workspaces) = self.workspaces.lock() {
+                        workspaces.insert(workspace_id);
+                    } else {
+                        error!("Failed to acquire workspaces lock");
+                    }
+                    self.metrics.inc_deploy_counter();
+                }
+                Err(e) => {
+                    self.metrics.inc_deploy_failures_counter();
+                    error!("Error during deployment {}", e);
+                }
+            }
+            result
+        }
+
+        pub fn update_workspace(
+            &self,
+            id: &str,
+            user: &LoggedUser,
+            conf: WorkspaceUpdateConfiguration,
+        ) -> Result<()> {
+            if conf.duration.is_some() {
+                // Duration can only customized by users with proper rights
+                if workspace_id(&user.id) != id && !user.can_customize_duration() {
+                    return Err(Error::Unauthorized(Permission::Customize {
+                        what: Parameter::WorkflowDuration,
+                    }));
+                }
+            }
+
+            new_runtime()?.block_on(self.engine.update_workspace(&workspace_id(id), conf))
+        }
+
+        pub fn delete_workspace(&self, user: &LoggedUser, id: &str) -> Result<()> {
+            if workspace_id(&user.id) != id && !user.has_admin_edit_rights() {
+                return Err(Error::Unauthorized(Permission::AdminEdit));
+            }
+
+            let workspace_id = workspace_id(id);
+            let result = new_runtime()?.block_on(self.engine.delete_workspace(&workspace_id));
+            match &result {
+                Ok(_) => {
+                    self.metrics.inc_undeploy_counter();
+                    if let Ok(mut workspaces) = self.workspaces.lock() {
+                        workspaces.remove(workspace_id.as_str());
+                    } else {
+                        error!("Failed to acquire workspaces lock");
+                    }
+                }
+                Err(e) => {
+                    self.metrics.inc_undeploy_failures_counter();
+                    error!("Error during undeployment {}", e);
+                }
+            }
+            result
+        }
+    */
     //Repositories
 
     pub fn get_repository(&self, id: &str) -> Result<Option<Repository>> {
-        new_runtime()?.block_on(self.engine.get_repository(id))
+        new_runtime()?.block_on(get_repository(id))
     }
 
     pub fn list_repositories(&self) -> Result<Vec<Repository>> {
-        new_runtime()?.block_on(self.engine.list_repositories())
+        new_runtime()?.block_on(list_repositories())
     }
 
     pub fn create_repository(
@@ -366,7 +373,7 @@ impl Manager {
             return Err(Error::Unauthorized(Permission::AdminEdit));
         }
 
-        new_runtime()?.block_on(self.engine.create_repository(id, conf))
+        new_runtime()?.block_on(create_repository(id, conf))
     }
 
     pub fn update_repository(
@@ -379,7 +386,7 @@ impl Manager {
             return Err(Error::Unauthorized(Permission::AdminEdit));
         }
 
-        new_runtime()?.block_on(self.engine.update_repository(id, conf))
+        new_runtime()?.block_on(update_repository(id, conf))
     }
 
     pub fn delete_repository(&self, user: &LoggedUser, id: &str) -> Result<()> {
@@ -387,7 +394,7 @@ impl Manager {
             return Err(Error::Unauthorized(Permission::AdminEdit));
         }
 
-        new_runtime()?.block_on(self.engine.delete_repository(id))
+        new_runtime()?.block_on(delete_repository(id))
     }
 
     //Repository versions
@@ -398,7 +405,7 @@ impl Manager {
         repository_id: &str,
         id: &str,
     ) -> Result<Option<RepositoryVersion>> {
-        new_runtime()?.block_on(self.engine.get_repository_version(repository_id, id))
+        new_runtime()?.block_on(get_repository_version(repository_id, id))
     }
 
     pub fn list_repository_versions(
@@ -406,7 +413,7 @@ impl Manager {
         _user: &LoggedUser,
         repository_id: &str,
     ) -> Result<Vec<RepositoryVersion>> {
-        new_runtime()?.block_on(self.engine.list_repository_versions(repository_id))
+        new_runtime()?.block_on(list_repository_versions(repository_id))
     }
 
     pub fn create_repository_version(
@@ -420,10 +427,7 @@ impl Manager {
             return Err(Error::Unauthorized(Permission::AdminEdit));
         }
 
-        new_runtime()?.block_on(
-            self.engine
-                .create_repository_version(repository_id, id, conf),
-        )
+        new_runtime()?.block_on(create_repository_version(repository_id, id, conf))
     }
 
     pub fn delete_repository_version(
@@ -436,7 +440,7 @@ impl Manager {
             return Err(Error::Unauthorized(Permission::AdminEdit));
         }
 
-        new_runtime()?.block_on(self.engine.delete_repository_version(repository_id, id))
+        new_runtime()?.block_on(delete_repository_version(repository_id, id))
     }
 
     // Pools
@@ -446,7 +450,7 @@ impl Manager {
             return Err(Error::Unauthorized(Permission::AdminRead));
         }
 
-        new_runtime()?.block_on(self.engine.get_pool(pool_id))
+        new_runtime()?.block_on(get_pool(pool_id))
     }
 
     pub fn list_pools(&self, user: &LoggedUser) -> Result<Vec<Pool>> {
@@ -454,10 +458,8 @@ impl Manager {
             return Err(Error::Unauthorized(Permission::AdminRead));
         }
 
-        new_runtime()?.block_on(self.clone().engine.list_pools())
+        new_runtime()?.block_on(list_pools())
     }
-
-    // TODO to remove
 
     // Sessions
 
@@ -466,7 +468,7 @@ impl Manager {
             return Err(Error::Unauthorized(Permission::AdminRead));
         }
 
-        new_runtime()?.block_on(self.engine.get_session(&session_id(id)))
+        new_runtime()?.block_on(get_session(&session_id(id)))
     }
 
     pub fn list_sessions(&self, user: &LoggedUser) -> Result<Vec<Session>> {
@@ -474,20 +476,20 @@ impl Manager {
             return Err(Error::Unauthorized(Permission::AdminRead));
         }
 
-        new_runtime()?.block_on(self.engine.list_sessions())
+        new_runtime()?.block_on(list_sessions())
     }
 
     pub fn create_session(
         &self,
         user: &LoggedUser,
         id: &str,
-        conf: SessionConfiguration,
+        session_configuration: SessionConfiguration,
     ) -> Result<()> {
         if user.id != id && !user.has_admin_edit_rights() {
             return Err(Error::Unauthorized(Permission::AdminEdit));
         }
 
-        if conf.duration.is_some() {
+        if session_configuration.duration.is_some() {
             // Duration can only customized by users with proper rights
             if !user.can_customize_duration() {
                 return Err(Error::Unauthorized(Permission::Customize {
@@ -495,7 +497,7 @@ impl Manager {
                 }));
             }
         }
-        if conf.pool_affinity.is_some() {
+        if session_configuration.pool_affinity.is_some() {
             // Duration can only customized by users with proper rights
             if !user.can_customize_pool_affinity() {
                 return Err(Error::Unauthorized(Permission::Customize {
@@ -509,8 +511,14 @@ impl Manager {
             return Err(Error::Unauthorized(Permission::AdminEdit));
         }
 
-        let template = conf.clone().template;
-        let result = new_runtime()?.block_on(self.engine.create_session(user, &session_id, conf));
+        let template = session_configuration.clone().template;
+        let configuration = new_runtime()?.block_on(get_configuration())?;
+        let result = new_runtime()?.block_on(create_session(
+            user,
+            &session_id,
+            configuration,
+            session_configuration,
+        ));
 
         info!("Created session {} with template {}", session_id, template);
 
@@ -535,16 +543,21 @@ impl Manager {
         &self,
         id: &str,
         user: &LoggedUser,
-        conf: SessionUpdateConfiguration,
+        session_update_configuration: SessionUpdateConfiguration,
     ) -> Result<()> {
-        if conf.duration.is_some() {
+        if session_update_configuration.duration.is_some() {
             // Duration can only customized by users with proper rights
             if id != user.id && !user.can_customize_duration() {
                 return Err(Error::Unauthorized(Permission::AdminEdit));
             }
         }
 
-        new_runtime()?.block_on(self.engine.update_session(&session_id(id), conf))
+        let configuration = new_runtime()?.block_on(get_configuration())?;
+        new_runtime()?.block_on(update_session(
+            &session_id(id),
+            configuration,
+            session_update_configuration,
+        ))
     }
 
     pub fn delete_session(&self, user: &LoggedUser, id: &str) -> Result<()> {
@@ -553,7 +566,7 @@ impl Manager {
         }
 
         let session_id = session_id(id);
-        let result = new_runtime()?.block_on(self.engine.delete_session(&session_id));
+        let result = new_runtime()?.block_on(delete_session(&session_id));
         match &result {
             Ok(_) => {
                 self.metrics.inc_undeploy_counter();
@@ -574,6 +587,6 @@ impl Manager {
     // Templates
 
     pub fn list_templates(&self) -> Result<Vec<Template>> {
-        new_runtime()?.block_on(self.clone().engine.list_templates())
+        new_runtime()?.block_on(list_templates())
     }
 }
