@@ -14,7 +14,7 @@ use crate::{
         },
         template::list_templates,
         user::{create_user, delete_user, get_user, list_users, update_user},
-        workspace::{delete_workspace, get_workspace, list_workspaces},
+        workspace::{delete_workspace, list_workspaces},
     },
     metrics::Metrics,
     types::{
@@ -26,8 +26,6 @@ use crate::{
 };
 use log::{error, info, warn};
 use std::{
-    collections::HashSet,
-    sync::{Arc, Mutex},
     thread::{self, JoinHandle},
     time::Duration,
 };
@@ -36,8 +34,6 @@ use tokio::runtime::Runtime;
 #[derive(Clone)]
 pub struct Manager {
     pub metrics: Metrics,
-    workspaces: Arc<Mutex<HashSet<String>>>,
-    sessions: Arc<Mutex<HashSet<String>>>,
 }
 
 fn session_id(id: &str) -> String {
@@ -77,11 +73,7 @@ impl Manager {
                 err
             ),
         }
-        Ok(Manager {
-            metrics,
-            workspaces: Arc::new(Mutex::new(HashSet::new())), // Temp map used to track workspaces deployment time
-            sessions: Arc::new(Mutex::new(HashSet::new())), // Temp map used to track session deployment time
-        })
+        Ok(Manager { metrics })
     }
 
     pub fn spawn_background_thread(self) -> JoinHandle<()> {
@@ -90,42 +82,6 @@ impl Manager {
 
             // Track some deployments metrics
             if let Ok(runtime) = new_runtime() {
-                let workspaces_thread = self.clone().workspaces.clone();
-                if let Ok(mut workspaces2) = workspaces_thread.lock() {
-                    let workspaces3 = &mut workspaces2.clone();
-                    for id in workspaces3.iter() {
-                        match runtime.block_on(get_workspace(&workspace_id(id))) {
-                            Ok(Some(workspace)) => {
-                                // Deployed workspaces are removed from the set
-                                // Additionally the deployment time is tracked
-                                match workspace.state {
-                                    WorkspaceState::Running { start_time, .. } => {
-                                        workspaces2.remove(&workspace.user_id);
-                                        if let Ok(duration) = start_time.elapsed() {
-                                            self.clone()
-                                                .metrics
-                                                .observe_deploy_duration(duration.as_secs_f64());
-                                        } else {
-                                            error!("Failed to compute this workspace lifetime");
-                                        }
-                                    }
-                                    WorkspaceState::Failed { .. } => {
-                                        workspaces2.remove(&workspace.user_id);
-                                    }
-                                    _ => {}
-                                }
-                            }
-                            Err(err) => {
-                                warn!("Failed to call get: {}", err);
-                                workspaces2.remove(id);
-                            }
-                            Ok(None) => warn!("No matching pod: {}", id),
-                        }
-                    }
-                } else {
-                    error!("Failed to acquire workspaces lock");
-                }
-
                 // Go through all Running pods and figure out if they have to be undeployed
                 match runtime.block_on(list_workspaces()) {
                     Ok(workspaces) => {
@@ -296,11 +252,6 @@ impl Manager {
                 Ok(()) => {
                     info!("Created workspace {}", workspace_id);
 
-                    if let Ok(mut workspaces) = self.workspaces.lock() {
-                        workspaces.insert(workspace_id);
-                    } else {
-                        error!("Failed to acquire workspaces lock");
-                    }
                     self.metrics.inc_deploy_counter();
                 }
                 Err(e) => {
@@ -339,11 +290,6 @@ impl Manager {
             match &result {
                 Ok(_) => {
                     self.metrics.inc_undeploy_counter();
-                    if let Ok(mut workspaces) = self.workspaces.lock() {
-                        workspaces.remove(workspace_id.as_str());
-                    } else {
-                        error!("Failed to acquire workspaces lock");
-                    }
                 }
                 Err(e) => {
                     self.metrics.inc_undeploy_failures_counter();
@@ -524,11 +470,6 @@ impl Manager {
 
         match &result {
             Ok(_session) => {
-                if let Ok(mut sessions) = self.sessions.lock() {
-                    sessions.insert(session_id);
-                } else {
-                    error!("Failed to acquire sessions lock");
-                }
                 self.metrics.inc_deploy_counter();
             }
             Err(e) => {
@@ -570,11 +511,6 @@ impl Manager {
         match &result {
             Ok(_) => {
                 self.metrics.inc_undeploy_counter();
-                if let Ok(mut sessions) = self.sessions.lock() {
-                    sessions.remove(session_id.as_str());
-                } else {
-                    error!("Failed to acquire sessions lock");
-                }
             }
             Err(e) => {
                 self.metrics.inc_undeploy_failures_counter();

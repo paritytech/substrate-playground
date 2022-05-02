@@ -1,7 +1,5 @@
 ///! The prometeus metrics exposed by the various backends.
-use prometheus::{
-    exponential_buckets, histogram_opts, opts, Error, Histogram, IntCounter, Registry,
-};
+use prometheus::{opts, Error, IntCounter, Registry};
 
 /// The struct of metrics internally manipulated. Manipulate them via associated functions.
 #[derive(Debug, Clone)]
@@ -10,7 +8,6 @@ pub struct Metrics {
     deploy_failures_counter: IntCounter,
     undeploy_counter: IntCounter,
     undeploy_failures_counter: IntCounter,
-    deploy_duration: Histogram,
 }
 
 impl Metrics {
@@ -29,11 +26,6 @@ impl Metrics {
                 "undeploy_failures_counter",
                 "Count of undeployment failures"
             ))?,
-            deploy_duration: Histogram::with_opts(histogram_opts!(
-                "deploy_duration",
-                "Deployment duration in seconds",
-                exponential_buckets(1.0, 2.0, 8)?
-            ))?,
         })
     }
 
@@ -43,7 +35,6 @@ impl Metrics {
         registry.register(Box::new(self.deploy_failures_counter))?;
         registry.register(Box::new(self.undeploy_counter))?;
         registry.register(Box::new(self.undeploy_failures_counter))?;
-        registry.register(Box::new(self.deploy_duration))?;
         Ok(())
     }
 }
@@ -64,9 +55,5 @@ impl Metrics {
 
     pub fn inc_undeploy_failures_counter(&self) {
         self.undeploy_failures_counter.inc();
-    }
-
-    pub fn observe_deploy_duration(&self, duration: f64) {
-        self.deploy_duration.observe(duration);
     }
 }
