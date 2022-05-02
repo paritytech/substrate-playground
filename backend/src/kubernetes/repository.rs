@@ -199,11 +199,7 @@ pub async fn create_repository_version(
     let job_api: Api<Job> = Api::default_namespaced(client.clone());
     let job = Job {
         metadata: ObjectMeta {
-            name: Some(format!(
-                "builder-{}-{}",
-                repository_id,
-                id
-            )),
+            name: Some(format!("builder-{}-{}", repository_id, id)),
             ..Default::default()
         },
         spec: Some(JobSpec {
