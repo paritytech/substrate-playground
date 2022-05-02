@@ -14,14 +14,13 @@ use crate::{
         },
         template::list_templates,
         user::{create_user, delete_user, get_user, list_users, update_user},
-        workspace::{delete_workspace, list_workspaces},
     },
     metrics::Metrics,
     types::{
         LoggedUser, Phase, Playground, Pool, Repository, RepositoryConfiguration,
         RepositoryUpdateConfiguration, RepositoryVersion, RepositoryVersionConfiguration, Session,
         SessionConfiguration, SessionUpdateConfiguration, Template, User, UserConfiguration,
-        UserUpdateConfiguration, WorkspaceState,
+        UserUpdateConfiguration,
     },
 };
 use log::{error, info, warn};
@@ -36,6 +35,7 @@ pub struct Manager {
     pub metrics: Metrics,
 }
 
+// TODO remove, let client handle
 fn session_id(id: &str) -> String {
     // Create a unique ID for this session. Use lowercase to make sure the result can be used as part of a DNS
     id.to_string().to_lowercase()
@@ -83,32 +83,34 @@ impl Manager {
             // Track some deployments metrics
             if let Ok(runtime) = new_runtime() {
                 // Go through all Running pods and figure out if they have to be undeployed
-                match runtime.block_on(list_workspaces()) {
-                    Ok(workspaces) => {
-                        for workspace in workspaces {
-                            if let WorkspaceState::Running { start_time, .. } = workspace.state {
-                                if let Some(duration) = &start_time.elapsed().ok() {
-                                    if duration > &workspace.max_duration {
+                match runtime.block_on(list_sessions()) {
+                    Ok(sessions) => {
+                        for session in sessions {
+                            if let Phase::Running = session.pod.phase {
+                                if let Some(duration) =
+                                    &session.pod.start_time.unwrap().elapsed().ok()
+                                {
+                                    if duration > &session.duration {
                                         info!(
                                             "Undeploying {} after {}",
-                                            workspace.user_id,
+                                            session.user_id,
                                             duration.as_secs() / 60
                                         );
 
-                                        match runtime.block_on(delete_workspace(&workspace_id(
-                                            &workspace.user_id,
-                                        ))) {
+                                        match runtime
+                                            .block_on(delete_session(&session_id(&session.user_id)))
+                                        {
                                             Ok(()) => (),
                                             Err(err) => {
                                                 warn!(
                                                     "Error while undeploying {}: {}",
-                                                    workspace.user_id, err
+                                                    session.user_id, err
                                                 )
                                             }
                                         }
                                     }
                                 } else {
-                                    error!("Failed to compute this workspace lifetime");
+                                    error!("Failed to compute this session lifetime");
                                 }
                             }
                         }
@@ -122,11 +124,6 @@ impl Manager {
 
 fn new_runtime() -> Result<Runtime> {
     Runtime::new().map_err(|err| Error::Failure(err.into()))
-}
-
-fn workspace_id(id: &str) -> String {
-    // Create a unique ID for this workspace. Use lowercase to make sure the result can be used as part of a DNS
-    id.to_string().to_lowercase()
 }
 
 impl Manager {
@@ -431,6 +428,7 @@ impl Manager {
         id: &str,
         session_configuration: SessionConfiguration,
     ) -> Result<()> {
+        // TODO fail if id is incorrect
         if user.id != id && !user.has_admin_edit_rights() {
             return Err(Error::Unauthorized(Permission::AdminEdit));
         }
