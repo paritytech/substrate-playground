@@ -23,4 +23,4 @@ k8s-openapi = { version = "0.14.0", default-features = false, features = ["v1_22
 tokio = {version = "1.16.1", features = ["macros", "rt-multi-thread"] }
 thiserror = "1.0.31"
 git2 = "0.14.2"
-clap = { version = "3.1.12", features = ["derive"] }
+clap = { version = "3.1.14", features = ["derive"] }
