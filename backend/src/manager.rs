@@ -115,7 +115,7 @@ impl Manager {
                             }
                         }
                     }
-                    Err(err) => error!("Failed to call list_all: {}", err),
+                    Err(err) => error!("Failed to call list_sessions: {}", err),
                 }
             }
         })
