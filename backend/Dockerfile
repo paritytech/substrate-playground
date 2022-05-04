@@ -3,7 +3,7 @@
 # A multi-stage docker image (https://docs.docker.com/develop/develop-images/multistage-build/)
 # Based on https://github.com/bjornmolin/rust-minimal-docker
 
-FROM clux/muslrust:nightly-2021-09-28 AS builder
+FROM clux/muslrust:nightly-2022-05-02 AS builder
 
 WORKDIR /opt
 
