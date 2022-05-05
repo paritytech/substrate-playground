@@ -345,7 +345,6 @@ export function Sessions({ client, conf, user }: { client: Client, conf: Configu
                                             <TableCell></TableCell>
                                             <TableCell>ID</TableCell>
                                             <TableCell>Template</TableCell>
-                                            <TableCell>URL</TableCell>
                                             <TableCell>Duration</TableCell>
                                             <TableCell>Phase</TableCell>
                                             <TableCell>Node</TableCell>
@@ -374,7 +373,6 @@ export function Sessions({ client, conf, user }: { client: Client, conf: Configu
                                                     <Link href={`https://github.com/${id}`} target="_blank" rel="noreferrer" onClick={stopPropagation}>{id}</Link>
                                                 </TableCell>
                                                 <TableCell>{session.template.name}</TableCell>
-                                                <TableCell><Link href={`//${session.url}`} target="_blank" rel="noreferrer" onClick={stopPropagation}>Browse {session.url}</Link></TableCell>
                                                 <TableCell>{session.duration}</TableCell>
                                                 <TableCell>{session.pod.phase}</TableCell>
                                                 <TableCell>{session.node}</TableCell>
