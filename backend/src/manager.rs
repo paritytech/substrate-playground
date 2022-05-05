@@ -11,8 +11,8 @@ use crate::{
             list_repository_versions, update_repository,
         },
         session::{
-            create_session, delete_session, get_session, list_sessions, patch_ingress,
-            update_session, create_session_execution,
+            create_session, create_session_execution, delete_session, get_session, list_sessions,
+            patch_ingress, update_session,
         },
         template::list_templates,
         user::{create_user, delete_user, get_user, list_users, update_user},
@@ -21,8 +21,8 @@ use crate::{
     types::{
         LoggedUser, Phase, Playground, Pool, Repository, RepositoryConfiguration,
         RepositoryUpdateConfiguration, RepositoryVersion, RepositoryVersionConfiguration, Session,
-        SessionConfiguration, SessionUpdateConfiguration, Template, User, UserConfiguration,
-        UserUpdateConfiguration, SessionExecutionConfiguration, SessionExecution,
+        SessionConfiguration, SessionExecution, SessionExecutionConfiguration,
+        SessionUpdateConfiguration, Template, User, UserConfiguration, UserUpdateConfiguration,
     },
 };
 use log::{error, info, warn};
@@ -536,7 +536,10 @@ impl Manager {
             return Err(Error::UnknownResource);
         }
 
-        new_runtime()?.block_on(create_session_execution(session_id, session_execution_configuration))
+        new_runtime()?.block_on(create_session_execution(
+            session_id,
+            session_execution_configuration,
+        ))
     }
 
     // Templates

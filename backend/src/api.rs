@@ -5,8 +5,8 @@ use crate::{
     kubernetes,
     types::{
         LoggedUser, RepositoryConfiguration, RepositoryUpdateConfiguration,
-        RepositoryVersionConfiguration, SessionConfiguration, SessionUpdateConfiguration,
-        UserConfiguration, UserUpdateConfiguration, SessionExecutionConfiguration,
+        RepositoryVersionConfiguration, SessionConfiguration, SessionExecutionConfiguration,
+        SessionUpdateConfiguration, UserConfiguration, UserUpdateConfiguration,
     },
     Context,
 };

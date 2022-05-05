@@ -4,11 +4,11 @@ use crate::{
     kubernetes::get_host,
     types::{
         self, ConditionType, Configuration, ContainerPhase, LoggedUser, Phase, Port,
-        RepositoryRuntimeConfiguration, Session, SessionConfiguration, SessionUpdateConfiguration,
-        Status, Template, SessionExecution, SessionExecutionConfiguration,
+        RepositoryRuntimeConfiguration, Session, SessionConfiguration, SessionExecution,
+        SessionExecutionConfiguration, SessionUpdateConfiguration, Status, Template,
     },
 };
-use futures::{StreamExt, future::join_all};
+use futures::{future::join_all, StreamExt};
 use json_patch::{AddOperation, PatchOperation};
 use k8s_openapi::api::{
     core::v1::{
@@ -22,7 +22,7 @@ use k8s_openapi::apimachinery::pkg::{
     api::resource::Quantity, apis::meta::v1::ObjectMeta, util::intstr::IntOrString,
 };
 use kube::{
-    api::{Api, DeleteParams, Patch, PatchParams, PostParams, AttachedProcess, AttachParams},
+    api::{Api, AttachParams, AttachedProcess, DeleteParams, Patch, PatchParams, PostParams},
     Client,
 };
 use serde_json::json;
@@ -659,11 +659,16 @@ pub async fn create_session_execution(
 ) -> Result<SessionExecution> {
     let client = client().await?;
     let pod_api: Api<Pod> = Api::namespaced(client, &session_namespace(session_id));
-    let attached = pod_api.exec(session_id, execution_configuration.command, &AttachParams::default())
+    let attached = pod_api
+        .exec(
+            session_id,
+            execution_configuration.command,
+            &AttachParams::default(),
+        )
         .await
         .map_err(|err| Error::Failure(err.into()))?;
 
     Ok(SessionExecution {
-        stdout: get_output(attached).await
+        stdout: get_output(attached).await,
     })
 }
