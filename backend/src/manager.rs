@@ -37,12 +37,6 @@ pub struct Manager {
     pub metrics: Metrics,
 }
 
-// TODO remove, let client handle
-fn session_id(id: &str) -> String {
-    // Create a unique ID for this session. Use lowercase to make sure the result can be used as part of a DNS
-    id.to_string().to_lowercase()
-}
-
 impl Manager {
     const SLEEP_TIME: Duration = Duration::from_secs(60);
 
@@ -100,7 +94,7 @@ impl Manager {
                                         );
 
                                         match runtime
-                                            .block_on(delete_session(&session_id(&session.user_id)))
+                                            .block_on(delete_session(&session.id))
                                         {
                                             Ok(()) => (),
                                             Err(err) => {
@@ -413,7 +407,7 @@ impl Manager {
             return Err(Error::Unauthorized(Permission::AdminRead));
         }
 
-        new_runtime()?.block_on(get_session(&session_id(id)))
+        new_runtime()?.block_on(get_session(id))
     }
 
     pub fn list_sessions(&self, user: &LoggedUser) -> Result<Vec<Session>> {
@@ -452,8 +446,7 @@ impl Manager {
             }
         }
 
-        let session_id = session_id(id);
-        if self.get_session(user, &session_id)?.is_some() {
+        if self.get_session(user, id)?.is_some() {
             return Err(Error::Unauthorized(Permission::AdminEdit));
         }
 
@@ -461,12 +454,12 @@ impl Manager {
         let configuration = new_runtime()?.block_on(get_configuration())?;
         let result = new_runtime()?.block_on(create_session(
             user,
-            &session_id,
+            id,
             configuration,
             session_configuration,
         ));
 
-        info!("Created session {} with template {}", session_id, template);
+        info!("Created session {} with template {}", id, template);
 
         match &result {
             Ok(_session) => {
@@ -495,7 +488,7 @@ impl Manager {
 
         let configuration = new_runtime()?.block_on(get_configuration())?;
         new_runtime()?.block_on(update_session(
-            &session_id(id),
+            id,
             configuration,
             session_update_configuration,
         ))
@@ -506,8 +499,7 @@ impl Manager {
             return Err(Error::Unauthorized(Permission::AdminEdit));
         }
 
-        let session_id = session_id(id);
-        let result = new_runtime()?.block_on(delete_session(&session_id));
+        let result = new_runtime()?.block_on(delete_session(id));
         match &result {
             Ok(_) => {
                 self.metrics.inc_undeploy_counter();

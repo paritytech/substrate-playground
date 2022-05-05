@@ -29,10 +29,10 @@ function MainPanel({ client, params, conf, user, panel, onRetry, onConnect, onAf
         case PanelId.Session:
           return <SessionPanel client={client} conf={conf} user={user} onRetry={onRetry}
                     onStop={async () => {
-                        await client.deleteSession(mainSessionId(user));
+                        await client.deleteSession(mainSessionId(user.id));
                     }}
                     onDeployed={async conf => {
-                        await client.createSession(mainSessionId(user), conf);
+                        await client.createSession(mainSessionId(user.id), conf);
                         onAfterDeployed();
                     }}
                     onConnect={onConnect} />;
@@ -47,7 +47,7 @@ function MainPanel({ client, params, conf, user, panel, onRetry, onConnect, onAf
 
 function ExtraTheiaNav({ client, user, conf, restartAction }: { client: Client, user: LoggedUser, conf: Configuration, restartAction: () => void }): JSX.Element {
     const [session, setSession] = useState<Session | null | undefined>(undefined);
-    const sessionId = mainSessionId(user);
+    const sessionId = mainSessionId(user.id);
 
     useInterval(async () => {
         const session = await client.getSession(sessionId);

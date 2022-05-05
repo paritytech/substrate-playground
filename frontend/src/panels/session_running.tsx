@@ -17,7 +17,7 @@ interface Loading {
 
 export function RunningSessionPanel({ client, user, autoDeploy, onMissingSession, onSessionFailing, onSessionTimeout }: { client: Client, user: LoggedUser, autoDeploy: string | null, onMissingSession: () => void, onSessionFailing: () => void, onSessionTimeout: () => void }): JSX.Element {
     const maxRetries = 5*60;
-    const sessionId = mainSessionId(user);
+    const sessionId = mainSessionId(user.id);
     const ref = useRef(null);
     const [error, setError] = useState<Error>();
     const [url, setUrl] = useState<string>();

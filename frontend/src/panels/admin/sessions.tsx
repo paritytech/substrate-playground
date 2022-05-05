@@ -13,7 +13,7 @@ import TableRow from '@mui/material/TableRow';
 import { Client, Configuration, LoggedUser, Session, SessionConfiguration, Template, Pool, User, SessionUpdateConfiguration } from '@substrate/playground-client';
 import { ErrorSnackbar } from "../../components";
 import { useInterval } from "../../hooks";
-import { canCustomizeDuration, canCustomizePoolAffinity, find, remove } from "../../utils";
+import { canCustomizeDuration, canCustomizePoolAffinity, find, mainSessionId, remove } from "../../utils";
 import { Autocomplete, Checkbox, Dialog, DialogContent, DialogTitle, IconButton, Link, TableFooter, TablePagination, TextField } from "@mui/material";
 import { FirstPage, KeyboardArrowLeft, KeyboardArrowRight, LastPage } from "@mui/icons-material";
 import { EnhancedTableToolbar, NoResourcesContainer, Resources } from ".";
@@ -124,7 +124,7 @@ export function SessionCreationDialog({ client, conf, sessions, user, template, 
                         label="Duration"
                         />}
                     <ButtonGroup style={{alignSelf: "flex-end", marginTop: 20}} size="small">
-                        <Button disabled={!valid()} onClick={() => {onCreate({template: currentTemplate || "", duration: duration, poolAffinity: poolAffinity}, currentUser); onHide();}}>CREATE</Button>
+                        <Button disabled={!valid()} onClick={() => {onCreate({template: currentTemplate || "", duration: duration, poolAffinity: poolAffinity}, mainSessionId(currentUser)); onHide();}}>CREATE</Button>
                         <Button onClick={onHide}>CLOSE</Button>
                     </ButtonGroup>
                 </Container>

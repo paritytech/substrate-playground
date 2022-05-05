@@ -13,7 +13,7 @@ use json_patch::{AddOperation, PatchOperation};
 use k8s_openapi::api::{
     core::v1::{
         Affinity, Container, ContainerStatus, EnvVar, Namespace, NodeAffinity,
-        NodeSelectorRequirement, NodeSelectorTerm, Pod, PodCondition, PodSpec,
+        NodeSelectorRequirement, NodeSelectorTerm, Pod, PodCondition, PodSpec, PodStatus,
         PreferredSchedulingTerm, ResourceRequirements, Service, ServicePort, ServiceSpec,
     },
     networking::v1::{HTTPIngressPath, HTTPIngressRuleValue, Ingress, IngressRule},
@@ -60,10 +60,10 @@ fn str_to_session_duration_minutes(str: &str) -> Result<Duration> {
 
 // Model
 
-fn pod_env_variables(conf: &RepositoryRuntimeConfiguration, workspace_id: &str) -> Vec<EnvVar> {
+fn pod_env_variables(conf: &RepositoryRuntimeConfiguration, session_id: &str) -> Vec<EnvVar> {
     let mut envs = vec![
         env_var("SUBSTRATE_PLAYGROUND", ""),
-        env_var("SUBSTRATE_PLAYGROUND_WORKSPACE", workspace_id),
+        env_var("SUBSTRATE_PLAYGROUND_SESSION", session_id),
     ];
     if let Some(mut runtime_envs) = conf.env.clone().map(|envs| {
         envs.iter()
@@ -75,11 +75,6 @@ fn pod_env_variables(conf: &RepositoryRuntimeConfiguration, workspace_id: &str) 
     envs
 }
 
-fn workspace_duration_annotation(duration: Duration) -> String {
-    let duration_min = duration.as_secs() / 60;
-    duration_min.to_string()
-}
-
 fn create_pod_annotations(
     template: &Template,
     duration: &Duration,
@@ -89,12 +84,13 @@ fn create_pod_annotations(
     annotations.insert(TEMPLATE_ANNOTATION.to_string(), s);
     annotations.insert(
         SESSION_DURATION_ANNOTATION.to_string(),
-        workspace_duration_annotation(*duration),
+        session_duration_annotation(*duration),
     );
     Ok(annotations)
 }
 
 fn create_pod(
+    user_id: &str,
     session_id: &str,
     template: &Template,
     duration: &Duration,
@@ -103,7 +99,7 @@ fn create_pod(
     let mut labels = BTreeMap::new();
     labels.insert(APP_LABEL.to_string(), APP_VALUE.to_string());
     labels.insert(COMPONENT_LABEL.to_string(), COMPONENT_VALUE.to_string());
-    labels.insert(OWNER_LABEL.to_string(), session_id.to_string());
+    labels.insert(OWNER_LABEL.to_string(), user_id.to_string());
 
     Ok(Pod {
         metadata: ObjectMeta {
@@ -296,8 +292,7 @@ fn container_status_to_container_status(status: &ContainerStatus) -> types::Cont
     }
 }
 
-fn pod_to_details(pod: &Pod) -> Result<types::Pod> {
-    let status = pod.status.as_ref().ok_or(Error::MissingData("status"))?;
+fn pod_status_to_details(status: &PodStatus) -> Result<types::Pod> {
     let conditions = status.clone().conditions;
     let container_statuses = status.clone().container_statuses;
     let container_status = container_statuses.as_ref().and_then(|v| v.first());
@@ -324,8 +319,7 @@ fn pod_to_session(pod: &Pod) -> Result<Session> {
         .labels
         .clone()
         .ok_or(Error::MissingData("pod#metadata#labels"))?;
-    let unknown = "UNKNOWN OWNER".to_string();
-    let username = labels.get(OWNER_LABEL).unwrap_or(&unknown);
+    let unknown = "<UNKNOWN NODE>".to_string();
     let annotations = &pod
         .metadata
         .annotations
@@ -342,31 +336,38 @@ fn pod_to_session(pod: &Pod) -> Result<Session> {
             .get(SESSION_DURATION_ANNOTATION)
             .ok_or(Error::MissingData("template#session_duration"))?,
     )?;
+    let status = pod.status.as_ref().ok_or(Error::MissingData("status"))?;
 
     Ok(Session {
-        id: username.clone(),
-        user_id: username.clone(),
+        id: pod
+            .metadata
+            .namespace
+            .as_ref()
+            .unwrap_or(&"".to_string())
+            .to_string(),
+        user_id: labels
+            .get(OWNER_LABEL)
+            .unwrap_or(&"".to_string())
+            .to_string(),
         template,
-        pod: pod_to_details(&pod.clone())?,
+        pod: pod_status_to_details(status)?,
         duration,
         node: pod
             .clone()
             .spec
             .ok_or(Error::MissingData("pod#spec"))?
             .node_name
-            .unwrap_or_else(|| "<Unknown>".to_string()),
+            .unwrap_or(unknown),
     })
-}
-
-pub fn session_namespace(session_id: &str) -> String {
-    format!("session-{}", session_id)
 }
 
 pub async fn get_session(session_id: &str) -> Result<Option<Session>> {
     let client = client().await?;
-    let pod_api: Api<Pod> = Api::namespaced(client, &session_namespace(session_id));
-    // TODO use get_opt?
-    let pod = pod_api.get("session").await.ok();
+    let pod_api: Api<Pod> = Api::namespaced(client, session_id);
+    let pod = pod_api
+        .get_opt(session_id)
+        .await
+        .map_err(|err| Error::Failure(err.into()))?;
 
     match pod.map(|pod| pod_to_session(&pod)) {
         Some(session) => session.map(Some),
@@ -505,7 +506,6 @@ pub async fn create_session(
 
     // Now create the session itself
     let client = client().await?;
-    let session_namespace = session_namespace(session_id);
 
     let duration = session_configuration
         .duration
@@ -513,27 +513,30 @@ pub async fn create_session(
 
     // Deploy a new namespace for this session
     let namespace_api: Api<Namespace> = Api::all(client.clone());
-    // TODO check if exists
-    namespace_api
-        .create(
-            &PostParams::default(),
-            &namespace(session_namespace.clone())?,
-        )
+    if namespace_api
+        .get_opt(session_id)
         .await
-        .map_err(|err| Error::Failure(err.into()))?;
+        .map_err(|err| Error::Failure(err.into()))?
+        .is_none()
+    {
+        namespace_api
+            .create(&PostParams::default(), &namespace(session_id.to_string())?)
+            .await
+            .map_err(|err| Error::Failure(err.into()))?;
+    }
 
     // Deploy a new pod for this image
-    let pod_api: Api<Pod> = Api::namespaced(client.clone(), &session_namespace);
+    let pod_api: Api<Pod> = Api::namespaced(client.clone(), session_id);
     pod_api
         .create(
             &PostParams::default(),
-            &create_pod(session_id, template, &duration, &pool_id)?,
+            &create_pod(&user.id, session_id, template, &duration, &pool_id)?,
         )
         .await
         .map_err(|err| Error::Failure(err.into()))?;
 
     // Deploy the associated service
-    let service_api: Api<Service> = Api::namespaced(client.clone(), &session_namespace);
+    let service_api: Api<Service> = Api::namespaced(client.clone(), session_id);
     let service = create_service(session_id, template.runtime.as_ref().unwrap());
     service_api
         .create(&PostParams::default(), &service)
@@ -545,7 +548,7 @@ pub async fn create_session(
     service_local_api
         .create(
             &PostParams::default(),
-            &create_external_service(&local_service_name, &session_namespace),
+            &create_external_service(&local_service_name, session_id),
         )
         .await
         .map_err(|err| Error::Failure(err.into()))?;
@@ -560,7 +563,7 @@ pub async fn update_session(
 ) -> Result<()> {
     let session = get_session(session_id)
         .await?
-        .ok_or(Error::MissingData("no matching session"))?;
+        .ok_or(Error::UnknownResource)?;
 
     let duration = session_configuration
         .duration
@@ -571,7 +574,7 @@ pub async fn update_session(
     }
     if duration != session.duration {
         let client = client().await?;
-        let pod_api: Api<Pod> = Api::namespaced(client.clone(), &session_namespace(session_id));
+        let pod_api: Api<Pod> = Api::namespaced(client.clone(), session_id);
         let params = PatchParams {
             ..PatchParams::default()
         };
@@ -594,13 +597,13 @@ pub async fn update_session(
 
 pub async fn delete_session(session_id: &str) -> Result<()> {
     let client = client().await?;
+    get_session(session_id)
+        .await?
+        .ok_or(Error::UnknownResource)?;
 
     let namespace_api: Api<Namespace> = Api::all(client.clone());
     namespace_api
-        .delete(
-            &session_namespace(session_id),
-            &DeleteParams::default().grace_period(0),
-        )
+        .delete(session_id, &DeleteParams::default().grace_period(0))
         .await
         .map_err(|err| Error::Failure(err.into()))?;
 
@@ -658,7 +661,7 @@ pub async fn create_session_execution(
     execution_configuration: SessionExecutionConfiguration,
 ) -> Result<SessionExecution> {
     let client = client().await?;
-    let pod_api: Api<Pod> = Api::namespaced(client, &session_namespace(session_id));
+    let pod_api: Api<Pod> = Api::namespaced(client, session_id);
     let attached = pod_api
         .exec(
             session_id,
