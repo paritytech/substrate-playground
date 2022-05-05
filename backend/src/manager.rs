@@ -295,11 +295,14 @@ impl Manager {
     // Sessions
 
     pub fn get_session(&self, user: &LoggedUser, id: &str) -> Result<Option<Session>> {
-        if user.id != id && !user.has_admin_read_rights() {
-            return Err(Error::Unauthorized(Permission::AdminRead));
+        if let Some(session) = new_runtime()?.block_on(get_session(id))? {
+            if user.id != session.user_id {
+                return Err(Error::Unauthorized(Permission::ResourceNotOwned));
+            }
+            Ok(Some(session))
+        } else {
+            return Err(Error::UnknownResource);
         }
-
-        new_runtime()?.block_on(get_session(id))
     }
 
     pub fn list_sessions(&self, user: &LoggedUser) -> Result<Vec<Session>> {
@@ -317,7 +320,7 @@ impl Manager {
         session_configuration: SessionConfiguration,
     ) -> Result<()> {
         // TODO fail if id is incorrect
-        if user.id != id && !user.has_admin_edit_rights() {
+        if user.id.to_ascii_lowercase() != id && !user.has_admin_edit_rights() {
             return Err(Error::Unauthorized(Permission::AdminEdit));
         }
 
@@ -413,6 +416,7 @@ impl Manager {
         session_execution_configuration: SessionExecutionConfiguration,
     ) -> Result<SessionExecution> {
         if let Some(session) = self.get_session(user, session_id)? {
+            println!("user {} session {}", user.id, session.user_id);
             if user.id != session.user_id {
                 return Err(Error::Unauthorized(Permission::ResourceNotOwned));
             }
