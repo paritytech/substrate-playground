@@ -365,7 +365,7 @@ pub async fn get_session(session_id: &str) -> Result<Option<Session>> {
     let client = client().await?;
     let pod_api: Api<Pod> = Api::namespaced(client, session_id);
     let pod = pod_api
-        .get_opt(session_id)
+        .get_opt("session")
         .await
         .map_err(|err| Error::Failure(err.into()))?;
 
