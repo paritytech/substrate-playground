@@ -87,6 +87,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 playground::api::create_session,
                 playground::api::update_session,
                 playground::api::delete_session,
+                playground::api::create_session_execution,
                 // Repositories
                 playground::api::get_repository,
                 playground::api::list_repositories,
