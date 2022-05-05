@@ -1944,10 +1944,10 @@
   resolved "https://registry.yarnpkg.com/@stroncium/procfs/-/procfs-1.2.1.tgz#6b9be6fd20fb0a4c20e99a8695e083c699bb2b45"
   integrity sha512-X1Iui3FUNZP18EUvysTHxt+Avu2nlVzyf90YM8OYgP6SGzTzzX/0JgObfO1AQQDzuZtNNz29bVh8h5R97JrjxA==
 
-"@substrate/playground-client@1.8.5":
-  version "1.8.5"
-  resolved "https://registry.yarnpkg.com/@substrate/playground-client/-/playground-client-1.8.5.tgz#f59c97314eb3a42155559cb5a4dbfc88a2cc8ea0"
-  integrity sha512-0jE6GxSfzF7mgTUTlkrPVVxDMx5j8bN9FRD38UxMnSAkoYt2rl2cxWU7iIOIzOfeZTY7vnpj3TkdWIMV2cRzGQ==
+"@substrate/playground-client@1.8.6":
+  version "1.8.6"
+  resolved "https://registry.yarnpkg.com/@substrate/playground-client/-/playground-client-1.8.6.tgz#23e5fd9b4f37b89649c7caa0574f0b32a17e12a9"
+  integrity sha512-fsw8ToVSLI9qCKaDqlIKo4EbEoOkuspZs8wI8Dj/9YHqwIZUz6H/PCaUCB3rh4VW+ZYwlIeFZyexWqaNo9sI9A==
   dependencies:
     uuid "8.3.2"
 
