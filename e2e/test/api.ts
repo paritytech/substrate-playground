@@ -40,25 +40,27 @@ if (accessToken) {
         }
     });
 
-    test('authenticated - should be able to get current session', async (t) => {
-        const client = newClient();
-        await client.login(accessToken);
+    if (env == EnvironmentType.staging) { // TODO Not deployed on prod yet
+        test('authenticated - should be able to get current session', async (t) => {
+            const client = newClient();
+            await client.login(accessToken);
 
-        const sessionId = (await client.get()).user?.id.toLocaleLowerCase();
-        await client.createSession(sessionId, {template: "node-template"});
-        try {
-            const { stdout } = await client.createSessionExecution(sessionId, {command: ["ls"]});
-            console.log(stdout);
-        } finally {
-            client.deleteSession(sessionId);
-        }
+            const sessionId = (await client.get()).user?.id.toLocaleLowerCase();
+            await client.createSession(sessionId, {template: "node-template"});
+            try {
+                const { stdout } = await client.createSessionExecution(sessionId, {command: ["ls"]});
+                console.log(stdout);
+            } finally {
+                client.deleteSession(sessionId);
+            }
 
-        await client.logout();
+            await client.logout();
 
-        try {
-            await client.getCurrentSession();
-        } catch {
-            t.pass();
-        }
-    });
+            try {
+                await client.getCurrentSession();
+            } catch {
+                t.pass();
+            }
+        });
+    }
 }
