@@ -90,9 +90,9 @@ export function SessionCreationDialog({ client, conf, sessions, user, template, 
                         label="Template"
                         >
                     {templates &&
-                    Object.keys(templates).map(id => (
-                        <MenuItem key={id} value={id}>
-                        {id}
+                    templates.map(template => (
+                        <MenuItem key={template.name} value={template.name}>
+                        {template.name}
                         </MenuItem>))
                     }
                     </TextField>
@@ -107,9 +107,9 @@ export function SessionCreationDialog({ client, conf, sessions, user, template, 
                         label="Pool affinity"
                         >
                     {pools &&
-                    Object.keys(pools).map(id => (
-                        <MenuItem key={id} value={id}>
-                        {id}
+                    pools.map(pool => (
+                        <MenuItem key={pool.id} value={pool.id}>
+                        {pool.id}
                         </MenuItem>))
                     }
                     </TextField>

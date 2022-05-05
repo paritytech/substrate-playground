@@ -71,9 +71,9 @@ function UserCreationDialog({ client, conf, users, show, onCreate, onHide }: { c
                         autoFocus
                         >
                     {pools &&
-                    Object.keys(pools).map(id => (
-                        <MenuItem key={id} value={id}>
-                        {id}
+                    pools.map(pool => (
+                        <MenuItem key={pool.id} value={pool.id}>
+                        {pool.id}
                         </MenuItem>))
                     }
                     </TextField>
