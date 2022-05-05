@@ -528,7 +528,7 @@ impl Manager {
         session_id: &str,
         session_execution_configuration: SessionExecutionConfiguration,
     ) -> Result<SessionExecution> {
-        if let Some(session) = self.get_session(user, &session_id)? {
+        if let Some(session) = self.get_session(user, session_id)? {
             if user.id != session.user_id {
                 return Err(Error::Unauthorized(Permission::ResourceNotOwned));
             }
