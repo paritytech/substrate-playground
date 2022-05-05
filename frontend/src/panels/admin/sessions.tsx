@@ -370,7 +370,7 @@ export function Sessions({ client, conf, user }: { client: Client, conf: Configu
                                                     />
                                                 </TableCell>
                                                 <TableCell component="th" scope="row">
-                                                    <Link href={`https://github.com/${id}`} target="_blank" rel="noreferrer" onClick={stopPropagation}>{id}</Link>
+                                                    <Link href={`https://github.com/${session.userId}`} target="_blank" rel="noreferrer" onClick={stopPropagation}>{session.userId}</Link>
                                                 </TableCell>
                                                 <TableCell>{session.template.name}</TableCell>
                                                 <TableCell>{session.duration}</TableCell>
