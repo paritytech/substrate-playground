@@ -25,6 +25,11 @@ RUN wget https://github.com/gitpod-io/openvscode-server/releases/download/openvs
 
 COPY playground-extension ${OPENVSCODE_SERVER_ROOT}/extensions/playground-extension
 
+# "rust-analyzer.server.extraEnv": {
+#  "CARGO_TARGET_DIR": "target/.rust-analyzer",
+#  "SKIP_WASM_BUILD": 1,
+#}
+
 RUN chmod g+rw /home && \
     chown -R playground:playground ${OPENVSCODE_SERVER_ROOT}
 
