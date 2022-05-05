@@ -44,7 +44,7 @@ if (accessToken) {
         const client = newClient();
         await client.login(accessToken);
 
-        const sessionId = "";
+        const sessionId = (await client.get()).user?.id.toLocaleLowerCase();
         await client.createSession(sessionId, {template: "node-template"});
         try {
             const { stdout } = await client.createSessionExecution(sessionId, {command: ["ls"]});
