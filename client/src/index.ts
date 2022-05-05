@@ -1,5 +1,5 @@
 import { fetchWithTimeout, rpc } from './rpc';
-import { Playground, Pool, Workspace, WorkspaceConfiguration, WorkspaceUpdateConfiguration, User, UserConfiguration, UserUpdateConfiguration, Repository, RepositoryConfiguration, RepositoryUpdateConfiguration, RepositoryVersion, RepositoryVersionConfiguration, SessionConfiguration, Session, SessionUpdateConfiguration, Template, } from './types';
+import { Playground, Pool, Workspace, WorkspaceConfiguration, WorkspaceUpdateConfiguration, User, UserConfiguration, UserUpdateConfiguration, Repository, RepositoryConfiguration, RepositoryUpdateConfiguration, RepositoryVersion, RepositoryVersionConfiguration, SessionConfiguration, Session, SessionUpdateConfiguration, Template, SessionExecutionConfiguration, SessionExecution, } from './types';
 
 export class Client {
 
@@ -9,6 +9,7 @@ export class Client {
     static workspacesResource = 'workspaces';
     static sessionResource = 'session';
     static sessionsResource = 'sessions';
+    static sessionExecutionResourcePath = 'execution';
     static repositoriesResource = 'repositories';
     static templatesResource = 'templates';
     static poolsResource = 'pools';
@@ -219,6 +220,16 @@ export class Client {
     async deleteSession(id: string, timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<void> {
         return rpc(this.path(Client.sessionsResource, id), {
             method: 'DELETE',
+            ...init
+        }, timeout);
+    }
+
+    // Session executions
+
+    async createSessionExecution(id: string, conf: SessionExecutionConfiguration, timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<SessionExecution> {
+        return rpc(this.path(Client.sessionsResource, id, Client.sessionExecutionResourcePath), {
+            method: 'PUT',
+            body: JSON.stringify(conf),
             ...init
         }, timeout);
     }

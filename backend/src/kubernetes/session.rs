@@ -5,10 +5,10 @@ use crate::{
     types::{
         self, ConditionType, Configuration, ContainerPhase, LoggedUser, Phase, Port,
         RepositoryRuntimeConfiguration, Session, SessionConfiguration, SessionUpdateConfiguration,
-        Status, Template,
+        Status, Template, SessionExecution, SessionExecutionConfiguration,
     },
 };
-use futures::future::join_all;
+use futures::{StreamExt, future::join_all};
 use json_patch::{AddOperation, PatchOperation};
 use k8s_openapi::api::{
     core::v1::{
@@ -22,7 +22,7 @@ use k8s_openapi::apimachinery::pkg::{
     api::resource::Quantity, apis::meta::v1::ObjectMeta, util::intstr::IntOrString,
 };
 use kube::{
-    api::{Api, DeleteParams, Patch, PatchParams, PostParams},
+    api::{Api, DeleteParams, Patch, PatchParams, PostParams, AttachedProcess, AttachParams},
     Client,
 };
 use serde_json::json;
@@ -358,7 +358,7 @@ fn pod_to_session(pod: &Pod) -> Result<Session> {
     })
 }
 
-fn session_namespace(session_id: &str) -> String {
+pub fn session_namespace(session_id: &str) -> String {
     format!("session-{}", session_id)
 }
 
@@ -640,4 +640,30 @@ pub async fn delete_session(session_id: &str) -> Result<()> {
         .map_err(|err| Error::Failure(err.into()))?;
 
     Ok(())
+}
+
+async fn get_output(mut attached: AttachedProcess) -> String {
+    let stdout = tokio_util::io::ReaderStream::new(attached.stdout().unwrap());
+    let out = stdout
+        .filter_map(|r| async { r.ok().and_then(|v| String::from_utf8(v.to_vec()).ok()) })
+        .collect::<Vec<_>>()
+        .await
+        .join("");
+    attached.join().await.unwrap();
+    out
+}
+
+pub async fn create_session_execution(
+    session_id: &str,
+    execution_configuration: SessionExecutionConfiguration,
+) -> Result<SessionExecution> {
+    let client = client().await?;
+    let pod_api: Api<Pod> = Api::namespaced(client, &session_namespace(session_id));
+    let attached = pod_api.exec(session_id, execution_configuration.command, &AttachParams::default())
+        .await
+        .map_err(|err| Error::Failure(err.into()))?;
+
+    Ok(SessionExecution {
+        stdout: get_output(attached).await
+    })
 }

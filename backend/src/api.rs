@@ -6,7 +6,7 @@ use crate::{
     types::{
         LoggedUser, RepositoryConfiguration, RepositoryUpdateConfiguration,
         RepositoryVersionConfiguration, SessionConfiguration, SessionUpdateConfiguration,
-        UserConfiguration, UserUpdateConfiguration,
+        UserConfiguration, UserUpdateConfiguration, SessionExecutionConfiguration,
     },
     Context,
 };
@@ -515,6 +515,18 @@ pub fn update_session(
 #[delete("/sessions/<id>")]
 pub fn delete_session(state: State<'_, Context>, user: LoggedUser, id: String) -> JsonValue {
     result_to_jsonrpc(state.manager.delete_session(&user, &id))
+}
+
+// Session executions
+
+#[put("/sessions/<id>/execution", data = "<conf>")]
+pub fn create_session_execution(
+    state: State<'_, Context>,
+    user: LoggedUser,
+    id: String,
+    conf: Json<SessionExecutionConfiguration>,
+) -> JsonValue {
+    result_to_jsonrpc(state.manager.create_session_execution(&user, &id, conf.0))
 }
 
 // Templates

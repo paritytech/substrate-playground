@@ -177,6 +177,14 @@ export interface SessionUpdateConfiguration {
     duration?: number,
 }
 
+export interface SessionExecution {
+    stdout: string,
+}
+
+export interface SessionExecutionConfiguration {
+    command: Array<string>,
+}
+
 export interface ContainerStatus {
     phase: ContainerPhase,
     reason?: string,

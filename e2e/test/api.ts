@@ -39,4 +39,26 @@ if (accessToken) {
             t.pass();
         }
     });
+
+    test('authenticated - should be able to get current session', async (t) => {
+        const client = newClient();
+        await client.login(accessToken);
+
+        const sessionId = "";
+        await client.createSession(sessionId, {template: "node-template"});
+        try {
+            const { stdout } = await client.createSessionExecution(sessionId, {command: ["ls"]});
+            console.log(stdout);
+        } finally {
+            client.deleteSession(sessionId);
+        }
+
+        await client.logout();
+
+        try {
+            await client.getCurrentSession();
+        } catch {
+            t.pass();
+        }
+    });
 }

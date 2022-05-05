@@ -14,6 +14,7 @@ pub enum Parameter {
 
 #[derive(Debug)]
 pub enum Permission {
+    ResourceNotOwned,
     AdminRead,
     AdminEdit,
     Customize { what: Parameter },

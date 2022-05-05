@@ -1,3 +1,5 @@
+/// Abstratcs k8s interaction by handling permissions, logging, etc..
+///
 use crate::{
     error::{Error, Parameter, Permission, Result},
     kubernetes::{
@@ -10,7 +12,7 @@ use crate::{
         },
         session::{
             create_session, delete_session, get_session, list_sessions, patch_ingress,
-            update_session,
+            update_session, create_session_execution,
         },
         template::list_templates,
         user::{create_user, delete_user, get_user, list_users, update_user},
@@ -20,7 +22,7 @@ use crate::{
         LoggedUser, Phase, Playground, Pool, Repository, RepositoryConfiguration,
         RepositoryUpdateConfiguration, RepositoryVersion, RepositoryVersionConfiguration, Session,
         SessionConfiguration, SessionUpdateConfiguration, Template, User, UserConfiguration,
-        UserUpdateConfiguration,
+        UserUpdateConfiguration, SessionExecutionConfiguration, SessionExecution,
     },
 };
 use log::{error, info, warn};
@@ -516,6 +518,25 @@ impl Manager {
             }
         }
         result
+    }
+
+    // Session executions
+
+    pub fn create_session_execution(
+        &self,
+        user: &LoggedUser,
+        session_id: &str,
+        session_execution_configuration: SessionExecutionConfiguration,
+    ) -> Result<SessionExecution> {
+        if let Some(session) = self.get_session(user, &session_id)? {
+            if user.id != session.user_id {
+                return Err(Error::Unauthorized(Permission::ResourceNotOwned));
+            }
+        } else {
+            return Err(Error::UnknownResource);
+        }
+
+        new_runtime()?.block_on(create_session_execution(session_id, session_execution_configuration))
     }
 
     // Templates

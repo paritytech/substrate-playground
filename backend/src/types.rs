@@ -357,6 +357,18 @@ pub struct SessionDefaults {
 }
 
 #[derive(Serialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct SessionExecution {
+    pub stdout: String,
+}
+
+#[derive(Deserialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct SessionExecutionConfiguration {
+    pub command: Vec<String>,
+}
+
+#[derive(Serialize, Clone, Debug)]
 pub struct ContainerStatus {
     pub phase: ContainerPhase,
     pub reason: Option<String>,
