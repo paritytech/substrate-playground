@@ -1,4 +1,4 @@
-import { IdentifiedResource, LoggedUser, Session, Workspace } from "@substrate/playground-client";
+import { IdentifiedResource, LoggedUser, Session } from "@substrate/playground-client";
 
 function timeout<T>(promise: Promise<T>, ms: number): Promise<T> {
     return new Promise(function(resolve, reject) {
@@ -63,22 +63,6 @@ export function sessionUrl(session: Session): string | null {
             //TODO const ports = session.template.runtime?.ports;
             //const port = ports?.find(port => port.name == 'web')?.port || 80;
             return `//${sessionDomain(session)}`;
-        }
-        default: return null;
-    }
-}
-
-export function workspaceDomain(workspace: Workspace): string {
-    return `${workspace.id}.`;
-}
-
-export function workspaceUrl(workspace: Workspace): string | null {
-    switch (workspace.state.tag) {
-        // TODO retrieve RepoVersion, extract ports
-        case 'Running': {
-            const ports = workspace.state.runtime.ports;
-            const port = 80;// TODO ports?.find(port => port.name == 'web')?.port || 80;
-            return `//${workspaceDomain(workspace)}:${port}`;
         }
         default: return null;
     }

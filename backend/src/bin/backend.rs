@@ -81,11 +81,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 playground::api::create_user,
                 playground::api::update_user,
                 playground::api::delete_user,
-                // Current Workspace
-                /*playground::api::get_current_workspace,
-                playground::api::create_current_workspace,
-                playground::api::update_current_workspace,
-                playground::api::delete_current_workspace,*/
                 // Sessions
                 playground::api::get_current_session,
                 playground::api::create_current_session,
@@ -96,12 +91,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 playground::api::create_session,
                 playground::api::update_session,
                 playground::api::delete_session,
-                // Workspaces
-                /*                playground::api::get_workspace,
-                playground::api::list_workspaces,
-                playground::api::create_workspace,
-                playground::api::update_workspace,
-                playground::api::delete_workspace,*/
                 // Repositories
                 playground::api::get_repository,
                 playground::api::list_repositories,

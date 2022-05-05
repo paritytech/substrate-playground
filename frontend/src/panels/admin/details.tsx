@@ -13,11 +13,11 @@ import { useStyles } from '.';
 
 export function Details({ conf }: { conf: Configuration }): JSX.Element {
     const classes = useStyles();
-    const { duration, maxWorkspacesPerPod, poolAffinity } = conf.workspace;
+    const { duration, maxSessionsPerPod, poolAffinity } = conf.session;
     return (
         <Container>
             <Typography variant="h6" id="tableTitle" component="div">
-            Workspace defaults
+            Session defaults
             </Typography>
             <TableContainer component={Paper}>
                 <Table className={classes.table} aria-label="simple table">
@@ -32,9 +32,9 @@ export function Details({ conf }: { conf: Configuration }): JSX.Element {
                             <TableCell>Duration</TableCell>
                             <TableCell>{duration}</TableCell>
                         </TableRow>
-                        <TableRow key="maxWorkspacesPerPod">
-                            <TableCell>Max workspaces per Pod</TableCell>
-                            <TableCell>{maxWorkspacesPerPod}</TableCell>
+                        <TableRow key="maxSessionsPerPod">
+                            <TableCell>Max sessions per Pod</TableCell>
+                            <TableCell>{maxSessionsPerPod}</TableCell>
                         </TableRow>
                         <TableRow key="poolAffinity">
                             <TableCell>Pool affinity</TableCell>

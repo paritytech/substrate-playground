@@ -257,7 +257,7 @@ fn create_workspace_pod(
                     runtime
                         .clone()
                         .base_image
-                        .unwrap_or_else(|| conf.workspace.base_image.clone()),
+                        .unwrap_or_else(|| conf.session.base_image.clone()),
                 ),
                 env: Some(pod_env_variables(runtime, workspace_id)),
                 volume_mounts: Some(vec![VolumeMount {
@@ -551,12 +551,12 @@ pub async fn create_workspace(
         .unwrap_or_else(|| {
             user.clone()
                 .pool_affinity
-                .unwrap_or(configuration.clone().workspace.pool_affinity)
+                .unwrap_or(configuration.clone().session.pool_affinity)
         });
     let pool = get_pool(&pool_id.clone())
         .await?
         .ok_or_else(|| Error::UnknownPool(pool_id.clone()))?;
-    let max_workspaces_allowed = pool.nodes.len() * configuration.workspace.max_workspaces_per_pod;
+    let max_workspaces_allowed = pool.nodes.len() * configuration.session.max_sessions_per_pod;
     let workspaces = list_workspaces().await?;
     let concurrent_workspaces = running_or_pending_workspaces(workspaces).len();
     if concurrent_workspaces >= max_workspaces_allowed {
@@ -597,7 +597,7 @@ pub async fn create_workspace(
 
     let duration = workspace_configuration
         .duration
-        .unwrap_or(configuration.workspace.duration);
+        .unwrap_or(configuration.session.duration);
 
     // Deploy a new pod for this image
     let pod_api: Api<Pod> = Api::default_namespaced(client.clone());
@@ -638,8 +638,8 @@ pub async fn update_workspace(
 
     let duration = workspace_configuration
         .duration
-        .unwrap_or(configuration.workspace.duration);
-    let max_duration = configuration.workspace.max_duration;
+        .unwrap_or(configuration.session.duration);
+    let max_duration = configuration.session.max_duration;
     if duration >= max_duration {
         return Err(Error::DurationLimitBreached(max_duration.as_millis()));
     }

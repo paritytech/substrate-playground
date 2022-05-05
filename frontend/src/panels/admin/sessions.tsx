@@ -22,8 +22,8 @@ import { useTheme } from "@mui/styles";
 export function SessionCreationDialog({ client, conf, sessions, user, template, templates, show, onCreate, onHide, allowUserSelection = false }: { client: Client, conf: Configuration, sessions?: Session[], user: LoggedUser, template?: string, templates: Template[] | null, show: boolean, onCreate: (conf: SessionConfiguration, id?: string, ) => void, onHide: () => void , allowUserSelection?: boolean}): JSX.Element {
     const [selectedUser, setUser] = React.useState<string | null>(user.id);
     const [selectedTemplate, setTemplate] = React.useState<string | null>(null);
-    const [duration, setDuration] = React.useState(conf.workspace.duration);
-    const [poolAffinity, setPoolAffinity] = React.useState(conf.workspace.poolAffinity);
+    const [duration, setDuration] = React.useState(conf.session.duration);
+    const [poolAffinity, setPoolAffinity] = React.useState(conf.session.poolAffinity);
     const [pools, setPools] = useState<Pool[] | null>(null);
     const [users, setUsers] = useState<User[] | null>(null);
 

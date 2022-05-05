@@ -7,7 +7,7 @@ pub mod workspace;
 
 use crate::{
     error::{Error, Result},
-    types::{Configuration, Secrets, WorkspaceDefaults},
+    types::{Configuration, Secrets, SessionDefaults},
 };
 use json_patch::{AddOperation, PatchOperation, RemoveOperation};
 use k8s_openapi::api::{
@@ -56,12 +56,12 @@ fn var(name: &'static str) -> Result<String> {
 pub async fn get_configuration() -> Result<Configuration> {
     Ok(Configuration {
         github_client_id: var("GITHUB_CLIENT_ID")?,
-        workspace: WorkspaceDefaults {
+        session: SessionDefaults {
             base_image: var("WORKSPACE_BASE_IMAGE")?,
             duration: str_minutes_to_duration(&var("WORKSPACE_DEFAULT_DURATION")?)?,
             max_duration: str_minutes_to_duration(&var("WORKSPACE_MAX_DURATION")?)?,
             pool_affinity: var("WORKSPACE_DEFAULT_POOL_AFFINITY")?,
-            max_workspaces_per_pod: var("WORKSPACE_DEFAULT_MAX_PER_NODE")?
+            max_sessions_per_pod: var("WORKSPACE_DEFAULT_MAX_PER_NODE")?
                 .parse()
                 .map_err(|err: ParseIntError| Error::Failure(err.into()))?,
         },

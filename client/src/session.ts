@@ -21,7 +21,7 @@ export enum Type {
 }
 
 // A client allowing to send command to a local workspace
-export class WorkspaceClient {
+export class SessionClient {
 
     private readonly el: Window;
     private readonly defaultParams: Params;

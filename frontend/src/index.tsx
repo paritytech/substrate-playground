@@ -26,7 +26,7 @@ declare module '@mui/styles/defaultTheme' {
 
 function MainPanel({ client, params, conf, user, panel, onRetry, onConnect, onAfterDeployed }: { client: Client, params: Params, conf: Configuration, user?: LoggedUser, panel: PanelId, onRetry: () => void, onConnect: () => void, onAfterDeployed: () => void }): JSX.Element {
     switch(panel) {
-        case PanelId.Workspace:
+        case PanelId.Session:
           return <SessionPanel client={client} conf={conf} user={user} onRetry={onRetry}
                     onStop={async () => {
                         await client.deleteCurrentSession();
@@ -52,13 +52,13 @@ function ExtraTheiaNav({ client, conf, restartAction }: { client: Client, conf: 
         const session = await client.getCurrentSession();
         setSession(session);
 
-        // Periodically extend duration of running workspaces
+        // Periodically extend duration of running sessions
         if (session) {
             const { pod, maxDuration } = session;
             if (pod.phase == 'Running') {
                 const remaining = maxDuration - (pod.startTime || 0) / 60; // In minutes
-                const maxConfDuration = conf.workspace.maxDuration;
-                // Increase workspace duration
+                const maxConfDuration = conf.session.maxDuration;
+                // Increase duration
                 if (remaining < 10 && maxDuration < maxConfDuration) {
                     const newDuration = Math.min(maxConfDuration, maxDuration + 10);
                     await client.updateCurrentSession({duration: newDuration});
@@ -96,7 +96,7 @@ function selectPanel(send: (event: Events, payload: Record<string, unknown>) => 
 
 function CustomLoggedNav({ client, send, conf, user, panel }: { client: Client, send: (event: Events) => void, conf: Configuration, user: LoggedUser, panel: PanelId }): JSX.Element  {
     return (
-        <Nav onPlayground={() => selectPanel(send, PanelId.Workspace)}>
+        <Nav onPlayground={() => selectPanel(send, PanelId.Session)}>
             <>
               {(panel == PanelId.Theia) &&
                 <ExtraTheiaNav client={client} conf={conf} restartAction={() => restart(send)} />}
@@ -112,7 +112,7 @@ function CustomLoggedNav({ client, send, conf, user, panel }: { client: Client, 
 
 function CustomNav({ send }: { send: (event: Events) => void }): JSX.Element  {
     return (
-        <Nav onPlayground={() => selectPanel(send, PanelId.Workspace)}>
+        <Nav onPlayground={() => selectPanel(send, PanelId.Session)}>
             <NavMenuUnlogged />
         </Nav>
     );
@@ -123,7 +123,7 @@ const theme = createTheme(adaptV4Theme(SubstrateLight));
 function App({ params }: { params: Params }): JSX.Element {
     const client = new Client(params.base, 30000, {credentials: "include"});
     const { deploy } = params;
-    const [state, send] = useMachine(newMachine(client, deploy? PanelId.Theia: PanelId.Workspace), { devTools: true });
+    const [state, send] = useMachine(newMachine(client, deploy? PanelId.Theia: PanelId.Session), { devTools: true });
     const { panel, error } = state.context;
     const logged = state.matches(States.LOGGED);
 

@@ -21,7 +21,7 @@ pub struct Environment {
 #[serde(rename_all = "camelCase")]
 pub struct Configuration {
     pub github_client_id: String,
-    pub workspace: WorkspaceDefaults,
+    pub session: SessionDefaults,
 }
 
 #[derive(Clone)]
@@ -31,14 +31,14 @@ pub struct Secrets {
 
 #[derive(Serialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct WorkspaceDefaults {
+pub struct SessionDefaults {
     pub base_image: String,
     #[serde(with = "duration")]
     pub duration: Duration,
     #[serde(with = "duration")]
     pub max_duration: Duration,
     pub pool_affinity: String,
-    pub max_workspaces_per_pod: usize,
+    pub max_sessions_per_pod: usize,
 }
 
 #[derive(Serialize, Clone, Debug)]
@@ -343,17 +343,6 @@ pub struct SessionUpdateConfiguration {
     #[serde(default)]
     #[serde(with = "option_duration")]
     pub duration: Option<Duration>,
-}
-
-#[derive(Serialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct SessionDefaults {
-    #[serde(with = "duration")]
-    pub duration: Duration,
-    #[serde(with = "duration")]
-    pub max_duration: Duration,
-    pub pool_affinity: String,
-    pub max_sessions_per_pod: usize,
 }
 
 #[derive(Serialize, Clone, Debug)]

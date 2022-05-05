@@ -465,12 +465,12 @@ pub async fn create_session(
         .unwrap_or_else(|| {
             user.clone()
                 .pool_affinity
-                .unwrap_or(configuration.clone().workspace.pool_affinity)
+                .unwrap_or(configuration.clone().session.pool_affinity)
         });
     let pool = get_pool(&pool_id)
         .await?
         .ok_or(Error::MissingData("no matching pool"))?;
-    let max_sessions_allowed = pool.nodes.len() * configuration.workspace.max_workspaces_per_pod;
+    let max_sessions_allowed = pool.nodes.len() * configuration.session.max_sessions_per_pod;
     let sessions = list_sessions().await?;
     if sessions.len() >= max_sessions_allowed {
         // TODO Should trigger pool dynamic scalability. Right now this will only consider the pool lower bound.
@@ -509,7 +509,7 @@ pub async fn create_session(
 
     let duration = session_configuration
         .duration
-        .unwrap_or(configuration.workspace.duration);
+        .unwrap_or(configuration.session.duration);
 
     // Deploy a new namespace for this session
     let namespace_api: Api<Namespace> = Api::all(client.clone());
@@ -564,8 +564,8 @@ pub async fn update_session(
 
     let duration = session_configuration
         .duration
-        .unwrap_or(configuration.workspace.duration);
-    let max_duration = configuration.workspace.max_duration;
+        .unwrap_or(configuration.session.duration);
+    let max_duration = configuration.session.max_duration;
     if duration >= max_duration {
         return Err(Error::DurationLimitBreached(max_duration.as_millis()));
     }

@@ -31,7 +31,6 @@ import { Details } from './details';
 import { Pools } from './pools';
 import { Users } from './users';
 import { Repositories } from './repositories';
-import { Workspaces } from './workspaces';
 import { Sessions } from './sessions';
 import { Templates } from "./templates";
 
@@ -248,7 +247,6 @@ const panels = {
     Details: (_client: Client, conf: Configuration, _user?: LoggedUser) => <Details conf={conf} /> ,
     Repositories: (client: Client, _conf: Configuration, user?: LoggedUser) => <Repositories client={client} user={user} />,
     Users: (client: Client, conf: Configuration, user?: LoggedUser) => <Users client={client} user={user} conf={conf} />,
-    Workspaces: (client: Client, conf: Configuration, user?: LoggedUser) => <Workspaces client={client} conf={conf} user={user} />,
     Pools: (client: Client, _conf: Configuration, user?: LoggedUser) => <Pools client={client} user={user} />,
     Templates: (client: Client, _conf: Configuration, user?: LoggedUser) => <Templates client={client} user={user} />,
     Sessions: (client: Client, conf: Configuration, user?: LoggedUser) => <Sessions client={client} conf={conf} user={user} />

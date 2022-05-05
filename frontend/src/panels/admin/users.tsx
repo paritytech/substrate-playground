@@ -25,7 +25,7 @@ import { find } from "../../utils";
 function UserCreationDialog({ client, conf, users, show, onCreate, onHide }: { client: Client, conf: Configuration, users: User[], show: boolean, onCreate: (id: string, conf: UserConfiguration) => void, onHide: () => void }): JSX.Element {
     const [id, setID] = React.useState('');
     const [adminChecked, setAdminChecked] = React.useState(false);
-    const [poolAffinity, setPoolAffinity] = React.useState<string>(conf.workspace.poolAffinity);
+    const [poolAffinity, setPoolAffinity] = React.useState<string>(conf.session.poolAffinity);
     const [customizeDurationChecked, setCustomizeDurationChecked] = React.useState(false);
     const [customizePoolAffinityChecked, setCustomizePoolAffinityChecked] = React.useState(false);
     const [pools, setPools] = useState<Pool[] | null>(null);

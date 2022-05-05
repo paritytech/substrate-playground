@@ -12,44 +12,19 @@ export interface Playground {
 
 export interface Configuration {
     githubClientId: string,
-    workspace: WorkspaceDefaults,
+    session: SessionDefaults,
 }
 
-export interface WorkspaceDefaults {
+export interface SessionDefaults {
     baseImage: string,
-    /* The default number of minutes workspace can last */
+    /* The default number of minutes sessions can last */
     duration: number,
     maxDuration: number,
     poolAffinity: string,
-    maxWorkspacesPerPod: string,
+    maxSessionsPerPod: string,
 }
-
-export interface Workspace extends IdentifiedResource, OwnedResource {
-    repositoryDetails: RepositoryDetails,
-    state: WorkspaceState,
-    maxDuration: number,
-}
-
 export interface RepositoryDetails extends IdentifiedResource {
     reference: string,
-}
-
-export type WorkspaceState =
-    | {tag: "Deploying" }
-    | {tag: "Running", startTime: number, node: Node, runtime: RepositoryRuntimeConfiguration }
-    | {tag: "Paused", }
-    | {tag: "Failed", message: string, reason: string };
-
-export interface WorkspaceConfiguration {
-    repositoryDetails: RepositoryDetails,
-    /* The number of minutes this workspace will be able to last */
-    duration?: number,
-    poolAffinity?: string,
-}
-
-export interface WorkspaceUpdateConfiguration {
-    /* The number of minutes this workspace will be able to last */
-    duration?: number,
 }
 
 export interface User extends IdentifiedResource {

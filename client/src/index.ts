@@ -1,12 +1,10 @@
 import { fetchWithTimeout, rpc } from './rpc';
-import { Playground, Pool, Workspace, WorkspaceConfiguration, WorkspaceUpdateConfiguration, User, UserConfiguration, UserUpdateConfiguration, Repository, RepositoryConfiguration, RepositoryUpdateConfiguration, RepositoryVersion, RepositoryVersionConfiguration, SessionConfiguration, Session, SessionUpdateConfiguration, Template, SessionExecutionConfiguration, SessionExecution, } from './types';
+import { Playground, Pool, User, UserConfiguration, UserUpdateConfiguration, Repository, RepositoryConfiguration, RepositoryUpdateConfiguration, RepositoryVersion, RepositoryVersionConfiguration, SessionConfiguration, Session, SessionUpdateConfiguration, Template, SessionExecutionConfiguration, SessionExecution, } from './types';
 
 export class Client {
 
     static userResource = 'user';
     static usersResource = 'users';
-    static workspaceResource = 'workspace';
-    static workspacesResource = 'workspaces';
     static sessionResource = 'session';
     static sessionsResource = 'sessions';
     static sessionExecutionResourcePath = 'execution';
@@ -95,68 +93,6 @@ export class Client {
 
     async deleteUser(id: User['id'], timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<void> {
         return rpc(this.path(Client.usersResource, id), {
-            method: 'DELETE',
-            ...init
-        }, timeout);
-    }
-
-    // Current Workspace
-
-    async getCurrentWorkspace(timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<Workspace | null> {
-        return rpc(this.path(Client.workspaceResource), init, timeout);
-    }
-
-    async createCurrentWorkspace(conf: WorkspaceConfiguration, timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<void> {
-        return rpc(this.path(Client.workspaceResource), {
-            method: 'PUT',
-            body: JSON.stringify(conf),
-            ...init
-        }, timeout);
-    }
-
-    async updateCurrentWorkspace(conf: WorkspaceUpdateConfiguration, timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<void> {
-        return rpc(this.path(Client.workspaceResource), {
-            method: 'PATCH',
-            body: JSON.stringify(conf),
-            ...init
-        }, timeout);
-    }
-
-    async deleteCurrentWorkspace(timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<void> {
-        return rpc(this.path(Client.workspaceResource), {
-            method: 'DELETE',
-            ...init
-        }, timeout);
-    }
-
-    // Workspaces
-
-    async getWorkspace(id: Workspace['id'], timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<Workspace | null> {
-        return rpc(this.path(Client.workspacesResource, id), init, timeout);
-    }
-
-    async listWorkspaces(timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<Workspace[]> {
-        return rpc(this.path(Client.workspacesResource), init, timeout);
-    }
-
-    async createWorkspace(id: Workspace['id'], conf: WorkspaceConfiguration, timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<void> {
-        return rpc(this.path(Client.workspacesResource, id), {
-            method: 'PUT',
-            body: JSON.stringify(conf),
-            ...init
-        }, timeout);
-    }
-
-    async updateWorkspace(id: Workspace['id'], conf: WorkspaceUpdateConfiguration, timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<void> {
-        return rpc(this.path(Client.workspacesResource, id), {
-            method: 'PATCH',
-            body: JSON.stringify(conf),
-            ...init
-        }, timeout);
-    }
-
-    async deleteWorkspace(id: Workspace['id'], timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<void> {
-        return rpc(this.path(Client.workspacesResource, id), {
             method: 'DELETE',
             ...init
         }, timeout);
@@ -310,6 +246,6 @@ export class Client {
 
 export * from "./auth";
 export * from "./rpc";
-export * from "./workspace";
+export * from "./session";
 export * from "./types";
 export * from "./utils";
