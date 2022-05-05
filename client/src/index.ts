@@ -3,9 +3,7 @@ import { Playground, Pool, User, UserConfiguration, UserUpdateConfiguration, Rep
 
 export class Client {
 
-    static userResource = 'user';
     static usersResource = 'users';
-    static sessionResource = 'session';
     static sessionsResource = 'sessions';
     static sessionExecutionResourcePath = 'execution';
     static repositoriesResource = 'repositories';
@@ -57,14 +55,6 @@ export class Client {
         return rpc(this.path(""), init, timeout);
     }
 
-    // Current User
-
-    async getCurrentUser(timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<User> {
-        return rpc(this.path(Client.userResource), {
-            ...init
-        }, timeout);
-    }
-
     // Users
 
     async getUser(id: User['id'], timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<User | null> {
@@ -93,35 +83,6 @@ export class Client {
 
     async deleteUser(id: User['id'], timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<void> {
         return rpc(this.path(Client.usersResource, id), {
-            method: 'DELETE',
-            ...init
-        }, timeout);
-    }
-
-    // Current Session
-
-    async getCurrentSession(timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<Session | null> {
-        return rpc(this.path(Client.sessionResource), init, timeout);
-    }
-
-    async createCurrentSession(conf: SessionConfiguration, timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<void> {
-        return rpc(this.path(Client.sessionResource), {
-            method: 'PUT',
-            body: JSON.stringify(conf),
-            ...init
-        }, timeout);
-    }
-
-    async updateCurrentSession(conf: SessionUpdateConfiguration, timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<void> {
-        return rpc(this.path(Client.sessionResource), {
-            method: 'PATCH',
-            body: JSON.stringify(conf),
-            ...init
-        }, timeout);
-    }
-
-    async deleteCurrentSession(timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<void> {
-        return rpc(this.path(Client.sessionResource), {
             method: 'DELETE',
             ...init
         }, timeout);
