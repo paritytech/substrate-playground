@@ -15,10 +15,12 @@ if (env == EnvironmentType.dev) {
     process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 }
 
-test('unauthenticated - should not be able to create a new workspace', async (t) => {
+test('unauthenticated - should not be able to create a new session', async (t) => {
     try {
-        await newClient().createCurrentWorkspace({repositoryDetails: {id: 'node-template', reference: ''}});
-        t.fail('Can create a workspace w/o login');
+        const client = newClient();
+        const sessionId = (await client.get()).user?.id.toLocaleLowerCase();
+        await client.createSession(sessionId, {template: 'node-template'});
+        t.fail('Can create a session w/o login');
     } catch {
         t.pass();
     }
@@ -29,19 +31,21 @@ if (accessToken) {
         const client = newClient();
         await client.login(accessToken);
 
-        await client.getCurrentSession();
+        const sessionId = (await client.get()).user?.id.toLocaleLowerCase();
+
+        await client.getSession(sessionId);
 
         await client.logout();
 
         try {
-            await client.getCurrentSession();
+            await client.getSession(sessionId);
         } catch {
             t.pass();
         }
     });
 
     if (env == EnvironmentType.staging) { // TODO Not deployed on prod yet
-        test('authenticated - should be able to get current session', async (t) => {
+        test('authenticated - should be able to execute in session', async (t) => {
             const client = newClient();
             await client.login(accessToken);
 
@@ -52,14 +56,7 @@ if (accessToken) {
                 console.log(stdout);
             } finally {
                 client.deleteSession(sessionId);
-            }
-
-            await client.logout();
-
-            try {
-                await client.getCurrentSession();
-            } catch {
-                t.pass();
+                await client.logout();
             }
         });
     }

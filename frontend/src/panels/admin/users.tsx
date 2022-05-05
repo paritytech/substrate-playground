@@ -105,11 +105,11 @@ function UserCreationDialog({ client, conf, users, show, onCreate, onHide }: { c
     );
 }
 
-function UserUpdateDialog({ client, id, user, show, onUpdate, onHide }: { client: Client, id: string, user: User | undefined, show: boolean, onUpdate: (id: string, conf: UserUpdateConfiguration) => void, onHide: () => void }): JSX.Element {
-    const [adminChecked, setAdminChecked] = React.useState(user?.admin || false);
-    const [poolAffinity, setPoolAffinity] = React.useState(user?.poolAffinity || "");
-    const [customizeDurationChecked, setCustomizeDurationChecked] = React.useState(user?.canCustomizeDuration || false);
-    const [customizePoolAffinityChecked, setCustomizePoolAffinityChecked] = React.useState(user?.canCustomizePoolAffinity || false);
+function UserUpdateDialog({ client, id, user, show, onUpdate, onHide }: { client: Client, id: string, user: User, show: boolean, onUpdate: (id: string, conf: UserUpdateConfiguration) => void, onHide: () => void }): JSX.Element {
+    const [adminChecked, setAdminChecked] = React.useState(user.admin || false);
+    const [poolAffinity, setPoolAffinity] = React.useState(user.poolAffinity || "");
+    const [customizeDurationChecked, setCustomizeDurationChecked] = React.useState(user.canCustomizeDuration || false);
+    const [customizePoolAffinityChecked, setCustomizePoolAffinityChecked] = React.useState(user.canCustomizePoolAffinity || false);
     const [pools, setPools] = useState<Pool[] | null>(null);
 
     useInterval(async () => {
@@ -169,7 +169,7 @@ function UserUpdateDialog({ client, id, user, show, onUpdate, onHide }: { client
                         label="Can Customize pool affinity"
                     />
                     <ButtonGroup style={{alignSelf: "flex-end", marginTop: 20}} size="small">
-                        <Button disabled={ adminChecked == user?.admin && poolAffinity == user?.poolAffinity && customizeDurationChecked == user?.canCustomizeDuration && customizePoolAffinityChecked == user?.canCustomizePoolAffinity } onClick={() => {onUpdate(id.toLowerCase(), {admin: adminChecked, poolAffinity: poolAffinity, canCustomizeDuration: customizeDurationChecked, canCustomizePoolAffinity: customizePoolAffinityChecked}); onHide();}}>UPDATE</Button>
+                        <Button disabled={ adminChecked == user.admin && poolAffinity == user.poolAffinity && customizeDurationChecked == user.canCustomizeDuration && customizePoolAffinityChecked == user.canCustomizePoolAffinity } onClick={() => {onUpdate(id.toLowerCase(), {admin: adminChecked, poolAffinity: poolAffinity, canCustomizeDuration: customizeDurationChecked, canCustomizePoolAffinity: customizePoolAffinityChecked}); onHide();}}>UPDATE</Button>
                         <Button onClick={onHide}>CLOSE</Button>
                     </ButtonGroup>
                 </Container>
@@ -178,7 +178,7 @@ function UserUpdateDialog({ client, id, user, show, onUpdate, onHide }: { client
     );
 }
 
-export function Users({ client, user, conf }: { client: Client, user?: LoggedUser, conf: Configuration }): JSX.Element {
+export function Users({ client, user, conf }: { client: Client, user: LoggedUser, conf: Configuration }): JSX.Element {
     const classes = useStyles();
     const [selected, setSelected] = useState<string | null>(null);
     const [showCreationDialog, setShowCreationDialog] = useState(false);
@@ -202,8 +202,8 @@ export function Users({ client, user, conf }: { client: Client, user?: LoggedUse
         }
     }
 
-    function updatedUserMock(conf: UserUpdateConfiguration, user?: User): User {
-        return {id: user?.id || "", admin: conf.admin, poolAffinity: user?.poolAffinity || "", canCustomizeDuration: conf.canCustomizeDuration, canCustomizePoolAffinity: user?.canCustomizePoolAffinity || false};
+    function updatedUserMock(conf: UserUpdateConfiguration, user: User): User {
+        return {id: user.id || "", admin: conf.admin, poolAffinity: user.poolAffinity || "", canCustomizeDuration: conf.canCustomizeDuration, canCustomizePoolAffinity: user.canCustomizePoolAffinity || false};
     }
 
     async function onUpdate(id: string, conf: UserUpdateConfiguration, setUsers: Dispatch<SetStateAction<User[] | null>>): Promise<void> {
@@ -216,7 +216,7 @@ export function Users({ client, user, conf }: { client: Client, user?: LoggedUse
     }
 
     async function onDelete(setUsers: Dispatch<SetStateAction<User[] | null>>): Promise<void> {
-        if (selected && selected != user?.id) {
+        if (selected && selected != user.id) {
             try {
                 await client.deleteUser(selected);
                 setSelected(null);

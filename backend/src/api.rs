@@ -357,44 +357,6 @@ pub fn bad_request_catcher(_req: &Request<'_>) {
     clear(_req.cookies())
 }
 
-/// Backport, TODO delete
-
-// Current Session
-
-#[get("/session")]
-pub fn get_current_session(state: State<'_, Context>, user: LoggedUser) -> JsonValue {
-    result_to_jsonrpc(state.manager.get_session(&user, &user.id))
-}
-
-///
-/// Create a new session for `LoggedUser`. A single session can exist at a time.
-///
-/// There is a short time window where multiple concurrent calls can succeed.
-/// As this call is idempotent this won't lead to multiple session creation.
-///
-#[put("/session", data = "<conf>")]
-pub fn create_current_session(
-    state: State<'_, Context>,
-    user: LoggedUser,
-    conf: Json<SessionConfiguration>,
-) -> JsonValue {
-    result_to_jsonrpc(state.manager.create_session(&user, &user.id, conf.0))
-}
-
-#[patch("/session", data = "<conf>")]
-pub fn update_current_session(
-    state: State<'_, Context>,
-    user: LoggedUser,
-    conf: Json<SessionUpdateConfiguration>,
-) -> JsonValue {
-    result_to_jsonrpc(state.manager.update_session(&user.id, &user, conf.0))
-}
-
-#[delete("/session")]
-pub fn delete_current_session(state: State<'_, Context>, user: LoggedUser) -> JsonValue {
-    result_to_jsonrpc(state.manager.delete_session(&user, &user.id))
-}
-
 // Sessions
 
 #[get("/sessions/<id>")]

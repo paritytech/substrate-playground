@@ -82,10 +82,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 playground::api::update_user,
                 playground::api::delete_user,
                 // Sessions
-                playground::api::get_current_session,
-                playground::api::create_current_session,
-                playground::api::update_current_session,
-                playground::api::delete_current_session,
                 playground::api::get_session,
                 playground::api::list_sessions,
                 playground::api::create_session,

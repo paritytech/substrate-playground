@@ -129,7 +129,7 @@ function RepositoryRow({ client, repository }: { client: Client, repository: Rep
     );
 }
 
-export function Repositories({ client, user }: { client: Client, user?: LoggedUser }): JSX.Element {
+export function Repositories({ client, user }: { client: Client, user: LoggedUser }): JSX.Element {
     const classes = useStyles();
     const [showCreationDialog, setShowCreationDialog] = useState(false);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);

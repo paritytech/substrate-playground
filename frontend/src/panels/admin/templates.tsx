@@ -9,7 +9,7 @@ import TableRow from '@mui/material/TableRow';
 import { Client, LoggedUser, Template } from '@substrate/playground-client';
 import { useStyles, EnhancedTableToolbar, Resources } from '.';
 
-export function Templates({ client, user }: { client: Client, user?: LoggedUser }): JSX.Element {
+export function Templates({ client, user }: { client: Client, user: LoggedUser }): JSX.Element {
     const classes = useStyles();
 
     return (

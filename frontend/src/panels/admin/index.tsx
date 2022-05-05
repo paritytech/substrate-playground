@@ -46,12 +46,12 @@ export const useStyles = makeStyles((theme: Theme) =>
   }),
 );
 
-export function NoResourcesContainer({ user, label, action }: { user?: LoggedUser, label: string, action?: () => void }): JSX.Element {
+export function NoResourcesContainer({ user, label, action }: { user: LoggedUser, label: string, action?: () => void }): JSX.Element {
   return (
     <Container>
       <Typography variant="h6">
         {label}
-        {(action && user && hasAdminEditRights(user)) &&
+        {(action && hasAdminEditRights(user)) &&
           <Tooltip title="Create">
             <IconButton aria-label="create" onClick={action} size="large">
               <AddIcon />
@@ -227,7 +227,7 @@ function EditToolbar({ selected, onCreate, onUpdate, onDelete }: { selected?: st
   }
 }
 
-export function EnhancedTableToolbar({ user, label, selected = null, onCreate, onUpdate, onDelete }: { user?: LoggedUser, label: string, selected?: string | null, onCreate?: () => void, onUpdate?: () => void, onDelete?: () => void }): JSX.Element {
+export function EnhancedTableToolbar({ user, label, selected = null, onCreate, onUpdate, onDelete }: { user: LoggedUser, label: string, selected?: string | null, onCreate?: () => void, onUpdate?: () => void, onDelete?: () => void }): JSX.Element {
   const classes = useToolbarStyles();
   return (
     <>
@@ -236,7 +236,7 @@ export function EnhancedTableToolbar({ user, label, selected = null, onCreate, o
         <Typography className={classes.title} variant="h6" id="tableTitle" component="div">
           {label}
         </Typography>
-        {user && hasAdminEditRights(user) &&
+        {hasAdminEditRights(user) &&
           <EditToolbar selected={selected} onCreate={onCreate} onUpdate={onUpdate} onDelete={onDelete} />}
       </Toolbar>
     </>
@@ -244,15 +244,15 @@ export function EnhancedTableToolbar({ user, label, selected = null, onCreate, o
 }
 
 const panels = {
-    Details: (_client: Client, conf: Configuration, _user?: LoggedUser) => <Details conf={conf} /> ,
-    Repositories: (client: Client, _conf: Configuration, user?: LoggedUser) => <Repositories client={client} user={user} />,
-    Users: (client: Client, conf: Configuration, user?: LoggedUser) => <Users client={client} user={user} conf={conf} />,
-    Pools: (client: Client, _conf: Configuration, user?: LoggedUser) => <Pools client={client} user={user} />,
-    Templates: (client: Client, _conf: Configuration, user?: LoggedUser) => <Templates client={client} user={user} />,
-    Sessions: (client: Client, conf: Configuration, user?: LoggedUser) => <Sessions client={client} conf={conf} user={user} />
+    Details: (_client: Client, conf: Configuration, _user: LoggedUser) => <Details conf={conf} /> ,
+    Repositories: (client: Client, _conf: Configuration, user: LoggedUser) => <Repositories client={client} user={user} />,
+    Users: (client: Client, conf: Configuration, user: LoggedUser) => <Users client={client} user={user} conf={conf} />,
+    Pools: (client: Client, _conf: Configuration, user: LoggedUser) => <Pools client={client} user={user} />,
+    Templates: (client: Client, _conf: Configuration, user: LoggedUser) => <Templates client={client} user={user} />,
+    Sessions: (client: Client, conf: Configuration, user: LoggedUser) => <Sessions client={client} conf={conf} user={user} />
 };
 
-export function AdminPanel({ client, conf, user }: { client: Client, conf: Configuration, user?: LoggedUser }): JSX.Element {
+export function AdminPanel({ client, conf, user }: { client: Client, conf: Configuration, user: LoggedUser }): JSX.Element {
   const [value, setValue] = React.useState(0);
 
   const handleChange = (_: React.ChangeEvent<unknown>, newValue: number) => {

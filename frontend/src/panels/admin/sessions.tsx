@@ -19,7 +19,7 @@ import { FirstPage, KeyboardArrowLeft, KeyboardArrowRight, LastPage } from "@mui
 import { EnhancedTableToolbar, NoResourcesContainer, Resources } from ".";
 import { useTheme } from "@mui/styles";
 
-export function SessionCreationDialog({ client, conf, sessions, user, template, templates, show, onCreate, onHide, allowUserSelection = false }: { client: Client, conf: Configuration, sessions?: Session[], user: LoggedUser, template?: string, templates: Template[] | null, show: boolean, onCreate: (conf: SessionConfiguration, id?: string, ) => void, onHide: () => void , allowUserSelection?: boolean}): JSX.Element {
+export function SessionCreationDialog({ client, conf, sessions, user, template, templates, show, onCreate, onHide, allowUserSelection = false }: { client: Client, conf: Configuration, sessions?: Session[], user: LoggedUser, template?: string, templates: Template[] | null, show: boolean, onCreate: (conf: SessionConfiguration, id: string, ) => void, onHide: () => void , allowUserSelection?: boolean}): JSX.Element {
     const [selectedUser, setUser] = React.useState<string | null>(user.id);
     const [selectedTemplate, setTemplate] = React.useState<string | null>(null);
     const [duration, setDuration] = React.useState(conf.session.duration);
@@ -227,7 +227,7 @@ interface TablePaginationActionsProps {
     );
   }
 
-export function Sessions({ client, conf, user }: { client: Client, conf: Configuration, user?: LoggedUser }): JSX.Element {
+export function Sessions({ client, conf, user }: { client: Client, conf: Configuration, user: LoggedUser }): JSX.Element {
     const [selected, setSelected] = useState<Session | null>(null);
     const [showCreationDialog, setShowCreationDialog] = useState(false);
     const [showUpdateDialog, setShowUpdateDialog] = useState(false);
@@ -260,19 +260,15 @@ export function Sessions({ client, conf, user }: { client: Client, conf: Configu
         };
     }
 
-    async function onCreate(conf: SessionConfiguration, id: string | null | undefined, setSessions: Dispatch<SetStateAction<Session[] | null>>): Promise<void> {
+    async function onCreate(conf: SessionConfiguration, sessionId: string, setSessions: Dispatch<SetStateAction<Session[] | null>>): Promise<void> {
         try {
-            if (id) {
-                await client.createSession(id, conf);
-                setSessions((sessions: Session[] | null) => {
-                    if (sessions) {
-                        sessions.concat(sessionMock(conf));
-                    }
-                    return sessions;
-                });
-            } else {
-                await client.createCurrentSession(conf);
-            }
+            await client.createSession(sessionId, conf);
+            setSessions((sessions: Session[] | null) => {
+                if (sessions) {
+                    sessions.concat(sessionMock(conf));
+                }
+                return sessions;
+            });
         } catch (e: any) {
             setErrorMessage(`Failed to create session: ${e.toString()}`);
         }
@@ -409,7 +405,7 @@ export function Sessions({ client, conf, user }: { client: Client, conf: Configu
                         : <NoResourcesContainer user={user} label="No sessions" action={() => setShowCreationDialog(true)} />}
                         {errorMessage &&
                         <ErrorSnackbar open={true} message={errorMessage} onClose={() => setErrorMessage(null)} />}
-                        {user && showCreationDialog &&
+                        {showCreationDialog &&
                         <SessionCreationDialog allowUserSelection={true} client={client} conf={conf} sessions={resources} user={user} templates={templates} show={showCreationDialog} onCreate={(conf, id) => onCreate(conf, id, setSessions)} onHide={() => setShowCreationDialog(false)} />}
                         {(selected && showUpdateDialog) &&
                         <SessionUpdateDialog id={selected.id} duration={selected.duration} show={showUpdateDialog} onUpdate={(id, conf) => onUpdate(id, conf, setSessions)} onHide={() => setShowUpdateDialog(false)} />}

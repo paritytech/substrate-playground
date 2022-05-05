@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
 import Paper from '@mui/material/Paper';
-import { Client } from '@substrate/playground-client';
+import { Client, LoggedUser } from '@substrate/playground-client';
 import { CenteredContainer, ErrorMessage, Loading } from '../components';
-import { fetchWithTimeout, sessionUrl } from '../utils';
+import { fetchWithTimeout, mainSessionId, sessionUrl } from '../utils';
 
 interface Error {
     reason: string,
@@ -15,8 +15,9 @@ interface Loading {
     retry: number,
 }
 
-export function RunningSessionPanel({ client, autoDeploy, onMissingSession, onSessionFailing, onSessionTimeout }: { client: Client, autoDeploy: string | null, onMissingSession: () => void, onSessionFailing: () => void, onSessionTimeout: () => void }): JSX.Element {
+export function RunningSessionPanel({ client, user, autoDeploy, onMissingSession, onSessionFailing, onSessionTimeout }: { client: Client, user: LoggedUser, autoDeploy: string | null, onMissingSession: () => void, onSessionFailing: () => void, onSessionTimeout: () => void }): JSX.Element {
     const maxRetries = 5*60;
+    const sessionId = mainSessionId(user);
     const ref = useRef(null);
     const [error, setError] = useState<Error>();
     const [url, setUrl] = useState<string>();
@@ -24,11 +25,11 @@ export function RunningSessionPanel({ client, autoDeploy, onMissingSession, onSe
 
     useEffect(() => {
         function createSession(id: string): void {
-            client.createCurrentSession({template: id}).then(fetchData);
+            client.createSession(sessionId, {template: id}).then(fetchData);
         }
 
         async function fetchData() {
-            const session = await client.getCurrentSession();
+            const session = await client.getSession(sessionId);
             const phase = session?.pod.phase;
             if (session) {
                 if (phase == 'Running') {
@@ -77,16 +78,16 @@ export function RunningSessionPanel({ client, autoDeploy, onMissingSession, onSe
                 }
 
                 try {
-                    client.getCurrentSession().then(session => {
+                    client.getSession(sessionId).then(session => {
                         if (session) {
                             setError({reason: "You can only have one active substrate playground session open at a time. \n Please close all other sessions to open a new one",
                                       action: () => {
                                           // Trigger current session deletion, wait for deletion then re-create a new one
-                                          return client.deleteCurrentSession()
+                                          return client.deleteSession(sessionId)
                                             .then(function() {
                                                 return new Promise<void>(function(resolve) {
                                                     const id = setInterval(async function() {
-                                                        const session = await client.getCurrentSession();
+                                                        const session = await client.getSession(sessionId);
                                                         if (!session) {
                                                             clearInterval(id);
                                                             resolve();

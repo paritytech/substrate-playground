@@ -28,7 +28,7 @@ import Typography from '@mui/material/Typography';
 import { Client, Configuration, NameValuePair, LoggedUser, Port, Session, SessionConfiguration, Template } from '@substrate/playground-client';
 import { CenteredContainer, ErrorMessage, ErrorSnackbar, LoadingPanel } from "../components";
 import { useInterval } from "../hooks";
-import { canCustomize, formatDuration } from "../utils";
+import { canCustomize, formatDuration, mainSessionId } from "../utils";
 import { SessionCreationDialog } from "./admin/sessions";
 
 const options = [{id: 'create', label: 'Create'}, {id: 'custom', label: 'Customize and Create'}];
@@ -113,7 +113,7 @@ export default function SplitButton({ template, disabled, onCreate, onCreateCust
   );
 }
 
-function TemplateSelector({client, conf, user, onDeployed, onRetry}: {client: Client, conf: Configuration, user?: LoggedUser, onDeployed: (conf: SessionConfiguration) => Promise<void>, onRetry: () => void}): JSX.Element {
+function TemplateSelector({client, conf, user, onDeployed, onRetry}: {client: Client, conf: Configuration, user: LoggedUser, onDeployed: (conf: SessionConfiguration) => Promise<void>, onRetry: () => void}): JSX.Element {
     const [templates, setTemplates] = useState<Template[]>();
     const [deploying, setDeploying] = useState(false);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -176,7 +176,7 @@ function TemplateSelector({client, conf, user, onDeployed, onRetry}: {client: Cl
                 </Container>
                 <Divider orientation="horizontal" />
                 <Container style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", paddingTop: 10, paddingBottom: 10 }}>
-                    {user && canCustomize(user)
+                    {canCustomize(user)
                     ? <SplitButton template={selection.name} onCreate={() => onCreateClick({template: selection.name})} onCreateCustom={() => setOpenCustom(true)} disabled={!createEnabled()} />
                     : <Button onClick={() => onCreateClick({template: selection.name})} color="primary" variant="contained" disableElevation disabled={!createEnabled()}>
                           Create
@@ -184,7 +184,7 @@ function TemplateSelector({client, conf, user, onDeployed, onRetry}: {client: Cl
                 </Container>
                 {errorMessage &&
                 <ErrorSnackbar open={true} message={errorMessage} onClose={() => setErrorMessage(null)} />}
-                {user && openCustom &&
+                {openCustom &&
                 <SessionCreationDialog client={client} user={user} template={selection.name} conf={conf} templates={templates} show={openCustom} onCreate={onCreateClick} onHide={() => setOpenCustom(false)} />}
             </>
         );
@@ -339,10 +339,11 @@ function ExistingSession({session, onStop, onConnect}: {session: Session, onStop
     );
 }
 
-export function SessionPanel({ client, conf, user, onDeployed, onConnect, onRetry, onStop }: {client: Client, conf: Configuration, user?: LoggedUser, onStop: () => Promise<void>, onConnect: (session: Session) => void, onDeployed: (conf: SessionConfiguration) => Promise<void>, onRetry: () => void}): JSX.Element {
+export function SessionPanel({ client, conf, user, onDeployed, onConnect, onRetry, onStop }: {client: Client, conf: Configuration, user: LoggedUser, onStop: () => Promise<void>, onConnect: (session: Session) => void, onDeployed: (conf: SessionConfiguration) => Promise<void>, onRetry: () => void}): JSX.Element {
     const [session, setSession] = useState<Session | null | undefined>(undefined);
+    const sessionId = mainSessionId(user);
 
-    useInterval(async () => setSession(await client.getCurrentSession()), 5000);
+    useInterval(async () => setSession(await client.getSession(sessionId)), 5000);
 
     return (
         <Container style={{ display: "flex", flex: 1, justifyContent: "center", alignItems: "center" }}>

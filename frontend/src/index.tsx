@@ -15,7 +15,7 @@ import { TermsPanel } from './panels/terms';
 import { RunningSessionPanel } from './panels/session_running';
 import { SessionPanel } from './panels/session';
 import { terms } from "./terms";
-import { hasAdminReadRights } from "./utils";
+import { hasAdminReadRights, mainSessionId } from "./utils";
 import { SubstrateLight } from './themes';
 import { CssBaseline } from "@mui/material";
 
@@ -24,15 +24,15 @@ declare module '@mui/styles/defaultTheme' {
   interface DefaultTheme extends Theme {}
 }
 
-function MainPanel({ client, params, conf, user, panel, onRetry, onConnect, onAfterDeployed }: { client: Client, params: Params, conf: Configuration, user?: LoggedUser, panel: PanelId, onRetry: () => void, onConnect: () => void, onAfterDeployed: () => void }): JSX.Element {
+function MainPanel({ client, params, conf, user, panel, onRetry, onConnect, onAfterDeployed }: { client: Client, params: Params, conf: Configuration, user: LoggedUser, panel: PanelId, onRetry: () => void, onConnect: () => void, onAfterDeployed: () => void }): JSX.Element {
     switch(panel) {
         case PanelId.Session:
           return <SessionPanel client={client} conf={conf} user={user} onRetry={onRetry}
                     onStop={async () => {
-                        await client.deleteCurrentSession();
+                        await client.deleteSession(mainSessionId(user));
                     }}
                     onDeployed={async conf => {
-                        await client.createCurrentSession(conf);
+                        await client.createSession(mainSessionId(user), conf);
                         onAfterDeployed();
                     }}
                     onConnect={onConnect} />;
@@ -41,15 +41,16 @@ function MainPanel({ client, params, conf, user, panel, onRetry, onConnect, onAf
         case PanelId.Admin:
           return <AdminPanel client={client} conf={conf} user={user} />;
         case PanelId.Theia:
-          return <RunningSessionPanel client={client} autoDeploy={params.deploy} onMissingSession={onRetry} onSessionFailing={onRetry} onSessionTimeout={onRetry} />;
+          return <RunningSessionPanel client={client} user={user} autoDeploy={params.deploy} onMissingSession={onRetry} onSessionFailing={onRetry} onSessionTimeout={onRetry} />;
     }
 }
 
-function ExtraTheiaNav({ client, conf, restartAction }: { client: Client, conf: Configuration, restartAction: () => void }): JSX.Element {
+function ExtraTheiaNav({ client, user, conf, restartAction }: { client: Client, user: LoggedUser, conf: Configuration, restartAction: () => void }): JSX.Element {
     const [session, setSession] = useState<Session | null | undefined>(undefined);
+    const sessionId = mainSessionId(user);
 
     useInterval(async () => {
-        const session = await client.getCurrentSession();
+        const session = await client.getSession(sessionId);
         setSession(session);
 
         // Periodically extend duration of running sessions
@@ -61,7 +62,7 @@ function ExtraTheiaNav({ client, conf, restartAction }: { client: Client, conf: 
                 // Increase duration
                 if (remaining < 10 && maxDuration < maxConfDuration) {
                     const newDuration = Math.min(maxConfDuration, maxDuration + 10);
-                    await client.updateCurrentSession({duration: newDuration});
+                    await client.updateSession(sessionId, {duration: newDuration});
                 }
             }
         }
@@ -99,7 +100,7 @@ function CustomLoggedNav({ client, send, conf, user, panel }: { client: Client, 
         <Nav onPlayground={() => selectPanel(send, PanelId.Session)}>
             <>
               {(panel == PanelId.Theia) &&
-                <ExtraTheiaNav client={client} conf={conf} restartAction={() => restart(send)} />}
+                <ExtraTheiaNav client={client} user={user} conf={conf} restartAction={() => restart(send)} />}
               <div style={{display: "flex", alignItems: "center"}}>
                   {hasAdminReadRights(user) &&
                   <NavSecondMenuAdmin onAdminClick={() => selectPanel(send, PanelId.Admin)} onStatsClick={() => selectPanel(send, PanelId.Stats)} />}

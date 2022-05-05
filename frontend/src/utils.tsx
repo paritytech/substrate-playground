@@ -68,6 +68,10 @@ export function sessionUrl(session: Session): string | null {
     }
 }
 
+export function mainSessionId(user: LoggedUser): string {
+    return user.id.toLocaleLowerCase();
+}
+
 export function find<T extends IdentifiedResource>(resources: T[], id: string): T | undefined {
     return resources.find(resource => resource.id == id);
 }
