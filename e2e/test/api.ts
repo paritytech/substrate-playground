@@ -35,6 +35,7 @@ if (accessToken) {
         await client.login(accessToken);
         try {
             await client.getSession(await mainSessionId(client));
+            t.pass();
         } catch {
             await client.logout();
         }
@@ -67,6 +68,7 @@ if (accessToken) {
             try {
                 const { stdout } = await client.createSessionExecution(sessionId, {command: ["ls"]});
                 console.log(stdout);
+                t.pass();
             } finally {
                 client.deleteSession(sessionId);
                 await client.logout();
