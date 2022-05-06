@@ -93,9 +93,7 @@ impl Manager {
                                             duration.as_secs() / 60
                                         );
 
-                                        match runtime
-                                            .block_on(delete_session(&session.id))
-                                        {
+                                        match runtime.block_on(delete_session(&session.id)) {
                                             Ok(()) => (),
                                             Err(err) => {
                                                 warn!(
@@ -301,7 +299,7 @@ impl Manager {
             }
             Ok(Some(session))
         } else {
-            return Err(Error::UnknownResource);
+            Err(Error::UnknownResource)
         }
     }
 
