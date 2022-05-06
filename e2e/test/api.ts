@@ -15,11 +15,14 @@ if (env == EnvironmentType.dev) {
     process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 }
 
+async function mainSessionId(client: Client): Promise<string> {
+    return (await client.get()).user?.id.toLocaleLowerCase();
+}
+
 test('unauthenticated - should not be able to create a new session', async (t) => {
     try {
         const client = newClient();
-        const sessionId = (await client.get()).user?.id.toLocaleLowerCase();
-        await client.createSession(sessionId, {template: 'node-template'});
+        await client.createSession(await mainSessionId(client), {template: 'node-template'});
         t.fail('Can create a session w/o login');
     } catch {
         t.pass();
@@ -30,8 +33,18 @@ if (accessToken) {
     test('authenticated - should be able to get current session', async (t) => {
         const client = newClient();
         await client.login(accessToken);
+        try {
+            await client.getSession(await mainSessionId(client));
+        } catch {
+            await client.logout();
+        }
+    });
 
-        const sessionId = (await client.get()).user?.id.toLocaleLowerCase();
+    test('authenticated - should not be able to get current session when unlogged', async (t) => {
+        const client = newClient();
+        await client.login(accessToken);
+
+        const sessionId = await mainSessionId(client);
 
         await client.getSession(sessionId);
 
@@ -49,7 +62,7 @@ if (accessToken) {
             const client = newClient();
             await client.login(accessToken);
 
-            const sessionId = (await client.get()).user?.id.toLocaleLowerCase();
+            const sessionId = await mainSessionId(client);
             await client.createSession(sessionId, {template: "node-template"});
             try {
                 const { stdout } = await client.createSessionExecution(sessionId, {command: ["ls"]});
