@@ -19,10 +19,12 @@ async function mainSessionId(client: Client): Promise<string> {
     return (await client.get()).user?.id.toLocaleLowerCase();
 }
 
+const template = 'Node template';
+
 test('unauthenticated - should not be able to create a new session', async (t) => {
     try {
         const client = newClient();
-        await client.createSession(await mainSessionId(client), {template: 'node-template'});
+        await client.createSession(await mainSessionId(client), {template: template});
         t.fail('Can create a session w/o login');
     } catch {
         t.pass();
@@ -64,7 +66,7 @@ if (accessToken) {
             await client.login(accessToken);
 
             const sessionId = await mainSessionId(client);
-            await client.createSession(sessionId, {template: "node-template"});
+            await client.createSession(sessionId, {template: template});
             try {
                 const { stdout } = await client.createSessionExecution(sessionId, {command: ["ls"]});
                 console.log(stdout);
