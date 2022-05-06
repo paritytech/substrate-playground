@@ -103,7 +103,7 @@ jobs:
       - name: Install redirection
         run: echo "127.0.0.1 playground-dev.substrate.test" | sudo tee -a /etc/hosts
 
-      - uses: docker/setup-buildx-action@v1
+      - uses: docker/setup-buildx-action@v2
         with:
           install: true
 
