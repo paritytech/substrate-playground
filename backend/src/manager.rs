@@ -299,7 +299,7 @@ impl Manager {
             }
             Ok(Some(session))
         } else {
-            Err(Error::UnknownResource)
+            Ok(None)
         }
     }
 
