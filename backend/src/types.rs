@@ -211,6 +211,7 @@ pub enum RepositoryVersionState {
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Template {
+    pub id: String,
     pub name: String,
     pub image: String,
     pub description: String,

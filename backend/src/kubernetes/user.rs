@@ -1,7 +1,7 @@
 //! Helper methods for ConfigMap based User
 use super::{add_config_map_value, client, delete_config_map_value, get_config_map, serialize};
 use crate::{
-    error::{Error, Result},
+    error::{Error, Result, ResourceType},
     types::{User, UserConfiguration, UserUpdateConfiguration},
 };
 use kube::Client;
@@ -66,7 +66,7 @@ pub async fn create_user(id: &str, conf: UserConfiguration) -> Result<()> {
 
 pub async fn update_user(id: &str, conf: UserUpdateConfiguration) -> Result<()> {
     let client = client().await?;
-    let mut user = user(&client, id).await?.ok_or(Error::UnknownResource)?;
+    let mut user = user(&client, id).await?.ok_or(Error::UnknownResource(ResourceType::User, id.to_string()))?;
     user.admin = conf.admin;
     user.can_customize_duration = conf.can_customize_duration;
     user.can_customize_pool_affinity = conf.can_customize_pool_affinity;

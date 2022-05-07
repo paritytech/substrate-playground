@@ -1,6 +1,6 @@
 //! Helper methods ton interact with k8s
 use crate::{
-    error::{Error, Result},
+    error::{Error, Result, ResourceType},
     kubernetes::get_host,
     types::{
         self, ConditionType, Configuration, ContainerPhase, LoggedUser, Phase, Port,
@@ -44,6 +44,7 @@ const INGRESS_NAME: &str = "ingress";
 const TEMPLATE_ANNOTATION: &str = "playground.substrate.io/template";
 const SESSION_DURATION_ANNOTATION: &str = "playground.substrate.io/session_duration";
 const THEIA_WEB_PORT: i32 = 3000;
+const SESSION_NAME: &str = "session";
 
 fn session_duration_annotation(duration: Duration) -> String {
     let duration_min = duration.as_secs() / 60;
@@ -103,7 +104,7 @@ fn create_pod(
 
     Ok(Pod {
         metadata: ObjectMeta {
-            name: Some("session".to_string()),
+            name: Some(SESSION_NAME.to_string()),
             labels: Some(labels),
             annotations: Some(create_pod_annotations(template, duration)?),
             ..Default::default()
@@ -365,7 +366,7 @@ pub async fn get_session(session_id: &str) -> Result<Option<Session>> {
     let client = client().await?;
     let pod_api: Api<Pod> = Api::namespaced(client, session_id);
     let pod = pod_api
-        .get_opt("session")
+        .get_opt(SESSION_NAME)
         .await
         .map_err(|err| Error::Failure(err.into()))?;
 
@@ -378,7 +379,7 @@ pub async fn get_session(session_id: &str) -> Result<Option<Session>> {
 async fn get_pod(client: &Client, name: &str) -> Session {
     let pod_api: Api<Pod> = Api::namespaced(client.clone(), name);
     // TODO remove unwrap
-    let pod = pod_api.get("session").await.unwrap();
+    let pod = pod_api.get(SESSION_NAME).await.unwrap();
     pod_to_session(&pod).unwrap()
 }
 
@@ -451,7 +452,7 @@ fn local_service_name(session_id: &str) -> String {
 
 pub async fn create_session(
     user: &LoggedUser,
-    session_id: &str,
+    id: &str,
     configuration: Configuration,
     session_configuration: SessionConfiguration,
 ) -> Result<()> {
@@ -470,21 +471,21 @@ pub async fn create_session(
         });
     let pool = get_pool(&pool_id)
         .await?
-        .ok_or(Error::MissingData("no matching pool"))?;
+        .ok_or(Error::UnknownResource(ResourceType::Pool, pool_id.clone()))?;
     let max_sessions_allowed = pool.nodes.len() * configuration.session.max_sessions_per_pod;
     let sessions = list_sessions().await?;
     if sessions.len() >= max_sessions_allowed {
         // TODO Should trigger pool dynamic scalability. Right now this will only consider the pool lower bound.
         // "Reached maximum number of concurrent sessions allowed: {}"
-        return Err(Error::ConcurrentWorkspacesLimitBreached(sessions.len()));
+        return Err(Error::ConcurrentSessionsLimitBreached(sessions.len()));
     }
 
     // Access the right image id
     let templates = list_templates().await?;
     let template = templates
         .iter()
-        .find(|template| template.name == session_configuration.template)
-        .ok_or(Error::MissingData("no matching template"))?;
+        .find(|template| template.id == session_configuration.template)
+        .ok_or(Error::UnknownResource(ResourceType::Template, session_configuration.template))?;
     // TODO deploy a new ingress matching the route
     // With the proper mapping
     // Define the correct route
@@ -492,7 +493,7 @@ pub async fn create_session(
 
     let mut sessions = BTreeMap::new();
     sessions.insert(
-        session_id.to_string(),
+        id.to_string(),
         template
             .runtime
             .as_ref()
@@ -501,7 +502,7 @@ pub async fn create_session(
             .clone()
             .unwrap_or_default(),
     );
-    let local_service_name = local_service_name(session_id);
+    let local_service_name = local_service_name(id);
     patch_ingress(&sessions).await?;
 
     // Now create the session itself
@@ -514,30 +515,30 @@ pub async fn create_session(
     // Deploy a new namespace for this session
     let namespace_api: Api<Namespace> = Api::all(client.clone());
     if namespace_api
-        .get_opt(session_id)
+        .get_opt(id)
         .await
         .map_err(|err| Error::Failure(err.into()))?
         .is_none()
     {
         namespace_api
-            .create(&PostParams::default(), &namespace(session_id.to_string())?)
+            .create(&PostParams::default(), &namespace(id.to_string())?)
             .await
             .map_err(|err| Error::Failure(err.into()))?;
     }
 
     // Deploy a new pod for this image
-    let pod_api: Api<Pod> = Api::namespaced(client.clone(), session_id);
+    let pod_api: Api<Pod> = Api::namespaced(client.clone(), id);
     pod_api
         .create(
             &PostParams::default(),
-            &create_pod(&user.id, session_id, template, &duration, &pool_id)?,
+            &create_pod(&user.id, id, template, &duration, &pool_id)?,
         )
         .await
         .map_err(|err| Error::Failure(err.into()))?;
 
     // Deploy the associated service
-    let service_api: Api<Service> = Api::namespaced(client.clone(), session_id);
-    let service = create_service(session_id, template.runtime.as_ref().unwrap());
+    let service_api: Api<Service> = Api::namespaced(client.clone(), id);
+    let service = create_service(id, template.runtime.as_ref().unwrap());
     service_api
         .create(&PostParams::default(), &service)
         .await
@@ -548,7 +549,7 @@ pub async fn create_session(
     service_local_api
         .create(
             &PostParams::default(),
-            &create_external_service(&local_service_name, session_id),
+            &create_external_service(&local_service_name, id),
         )
         .await
         .map_err(|err| Error::Failure(err.into()))?;
@@ -557,13 +558,13 @@ pub async fn create_session(
 }
 
 pub async fn update_session(
-    session_id: &str,
+    id: &str,
     configuration: Configuration,
     session_configuration: SessionUpdateConfiguration,
 ) -> Result<()> {
-    let session = get_session(session_id)
+    let session = get_session(id)
         .await?
-        .ok_or(Error::UnknownResource)?;
+        .ok_or(Error::UnknownResource(ResourceType::Session, id.to_string()))?;
 
     let duration = session_configuration
         .duration
@@ -574,7 +575,7 @@ pub async fn update_session(
     }
     if duration != session.duration {
         let client = client().await?;
-        let pod_api: Api<Pod> = Api::namespaced(client.clone(), session_id);
+        let pod_api: Api<Pod> = Api::namespaced(client.clone(), id);
         let params = PatchParams {
             ..PatchParams::default()
         };
@@ -587,7 +588,7 @@ pub async fn update_session(
                 value: json!(session_duration_annotation(duration)),
             })]));
         pod_api
-            .patch("session", &params, &patch)
+            .patch(SESSION_NAME, &params, &patch)
             .await
             .map_err(|err| Error::Failure(err.into()))?;
     }
@@ -595,27 +596,27 @@ pub async fn update_session(
     Ok(())
 }
 
-pub async fn delete_session(session_id: &str) -> Result<()> {
+pub async fn delete_session(id: &str) -> Result<()> {
     let client = client().await?;
-    get_session(session_id)
+    get_session(id)
         .await?
-        .ok_or(Error::UnknownResource)?;
+        .ok_or(Error::UnknownResource(ResourceType::Session, id.to_string()))?;
 
     let namespace_api: Api<Namespace> = Api::all(client.clone());
     namespace_api
-        .delete(session_id, &DeleteParams::default().grace_period(0))
+        .delete(id, &DeleteParams::default().grace_period(0))
         .await
         .map_err(|err| Error::Failure(err.into()))?;
 
     // Undeploy the ingress local service
     let service_local_api: Api<Service> = Api::default_namespaced(client.clone());
     service_local_api
-        .delete(&local_service_name(session_id), &DeleteParams::default())
+        .delete(&local_service_name(id), &DeleteParams::default())
         .await
         .map_err(|err| Error::Failure(err.into()))?;
 
     let host = get_host().await?;
-    let subdomain = subdomain(&host, session_id);
+    let subdomain = subdomain(&host, id);
     let ingress_api: Api<Ingress> = Api::default_namespaced(client.clone());
     let mut ingress: Ingress = ingress_api
         .get(INGRESS_NAME)

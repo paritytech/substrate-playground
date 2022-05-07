@@ -1,6 +1,6 @@
 //! Helper methods ton interact with k8s
 use crate::{
-    error::{Error, Result},
+    error::{Error, Result, ResourceType},
     types::{
         self, Configuration, LoggedUser, Port, RepositoryDetails, RepositoryRuntimeConfiguration,
         RepositoryVersion, RepositoryVersionState, Workspace, WorkspaceConfiguration,
@@ -539,7 +539,7 @@ pub async fn create_workspace(
         &workspace_configuration.repository_details.reference,
     )
     .await?
-    .ok_or(Error::UnknownRepositoryVersion)?;
+    .ok_or(Error::UnknownResource(ResourceType::RepositoryVersion, workspace_configuration.repository_details.id.clone()))?;
     // Make sure some node on the right pools still have rooms
     // Find pool affinity, lookup corresponding pool and capacity based on nodes, figure out if there is room left
     // TODO: replace with custom scheduler
@@ -555,14 +555,14 @@ pub async fn create_workspace(
         });
     let pool = get_pool(&pool_id.clone())
         .await?
-        .ok_or_else(|| Error::UnknownPool(pool_id.clone()))?;
+        .ok_or_else(|| Error::UnknownResource(ResourceType::Pool, pool_id.clone()))?;
     let max_workspaces_allowed = pool.nodes.len() * configuration.session.max_sessions_per_pod;
     let workspaces = list_workspaces().await?;
     let concurrent_workspaces = running_or_pending_workspaces(workspaces).len();
     if concurrent_workspaces >= max_workspaces_allowed {
         // TODO Should trigger pool dynamic scalability. Right now this will only consider the pool lower bound.
         // "Reached maximum number of concurrent workspaces allowed: {}"
-        return Err(Error::ConcurrentWorkspacesLimitBreached(
+        return Err(Error::ConcurrentSessionsLimitBreached(
             concurrent_workspaces,
         ));
     }
@@ -628,13 +628,13 @@ pub async fn create_workspace(
 }
 
 pub async fn update_workspace(
-    workspace_id: &str,
+    id: &str,
     configuration: Configuration,
     workspace_configuration: WorkspaceUpdateConfiguration,
 ) -> Result<()> {
-    let workspace = get_workspace(workspace_id)
+    let workspace = get_workspace(id)
         .await?
-        .ok_or(Error::UnknownResource)?;
+        .ok_or(Error::UnknownResource(ResourceType::Workspace, id.to_string()))?;
 
     let duration = workspace_configuration
         .duration

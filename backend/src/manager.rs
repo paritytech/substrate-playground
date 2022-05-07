@@ -1,7 +1,7 @@
 /// Abstratcs k8s interaction by handling permissions, logging, etc..
 ///
 use crate::{
-    error::{Error, Parameter, Permission, Result},
+    error::{Error, Parameter, Permission, Result, ResourceType},
     kubernetes::{
         get_configuration,
         pool::{get_pool, list_pools},
@@ -292,14 +292,24 @@ impl Manager {
 
     // Sessions
 
-    pub fn get_session(&self, user: &LoggedUser, id: &str) -> Result<Option<Session>> {
+    fn ensure_session_ownership(&self,
+        user: &LoggedUser,
+        id: &str) -> Result<Session> {
         if let Some(session) = new_runtime()?.block_on(get_session(id))? {
             if user.id != session.user_id {
                 return Err(Error::Unauthorized(Permission::ResourceNotOwned));
             }
-            Ok(Some(session))
+            Ok(session)
         } else {
-            Ok(None)
+            return Err(Error::UnknownResource(ResourceType::Session, id.to_string()));
+        }
+    }
+
+    pub fn get_session(&self, user: &LoggedUser, id: &str) -> Result<Option<Session>> {
+        match self.ensure_session_ownership(user, id) {
+            Err(Error::Failure(from)) => Err(Error::Failure(from)),
+            Err(_) => Ok(None),
+            Ok(session) => Ok(Some(session))
         }
     }
 
@@ -317,30 +327,33 @@ impl Manager {
         id: &str,
         session_configuration: SessionConfiguration,
     ) -> Result<()> {
-        // TODO fail if id is incorrect
-        if user.id.to_ascii_lowercase() != id && !user.has_admin_edit_rights() {
-            return Err(Error::Unauthorized(Permission::AdminEdit));
+        // Non admin can only create session whose id matches their name
+        if !user.has_admin_edit_rights() {
+            if user.id.to_ascii_lowercase() != id {
+                return Err(Error::Unauthorized(Permission::InvalidSessionId));
+            }
         }
 
         if session_configuration.duration.is_some() {
             // Duration can only customized by users with proper rights
             if !user.can_customize_duration() {
                 return Err(Error::Unauthorized(Permission::Customize {
-                    what: Parameter::WorkflowDuration,
+                    what: Parameter::SessionDuration,
                 }));
             }
         }
         if session_configuration.pool_affinity.is_some() {
-            // Duration can only customized by users with proper rights
+            // Pool affinity can only customized by users with proper rights
             if !user.can_customize_pool_affinity() {
                 return Err(Error::Unauthorized(Permission::Customize {
-                    what: Parameter::WorkflowPoolAffinity,
+                    what: Parameter::SessionPoolAffinity,
                 }));
             }
         }
 
+        // Check that the session doesn't already exists
         if self.get_session(user, id)?.is_some() {
-            return Err(Error::Unauthorized(Permission::AdminEdit));
+            return Err(Error::SessionIdAlreayUsed);
         }
 
         let template = session_configuration.clone().template;
@@ -372,12 +385,7 @@ impl Manager {
         user: &LoggedUser,
         session_update_configuration: SessionUpdateConfiguration,
     ) -> Result<()> {
-        if session_update_configuration.duration.is_some() {
-            // Duration can only customized by users with proper rights
-            if id != user.id && !user.can_customize_duration() {
-                return Err(Error::Unauthorized(Permission::AdminEdit));
-            }
-        }
+        self.ensure_session_ownership(user, id)?;
 
         let configuration = new_runtime()?.block_on(get_configuration())?;
         new_runtime()?.block_on(update_session(
@@ -388,9 +396,7 @@ impl Manager {
     }
 
     pub fn delete_session(&self, user: &LoggedUser, id: &str) -> Result<()> {
-        if user.id != id && !user.has_admin_edit_rights() {
-            return Err(Error::Unauthorized(Permission::AdminEdit));
-        }
+        self.ensure_session_ownership(user, id)?;
 
         let result = new_runtime()?.block_on(delete_session(id));
         match &result {
@@ -413,14 +419,7 @@ impl Manager {
         session_id: &str,
         session_execution_configuration: SessionExecutionConfiguration,
     ) -> Result<SessionExecution> {
-        if let Some(session) = self.get_session(user, session_id)? {
-            println!("user {} session {}", user.id, session.user_id);
-            if user.id != session.user_id {
-                return Err(Error::Unauthorized(Permission::ResourceNotOwned));
-            }
-        } else {
-            return Err(Error::UnknownResource);
-        }
+        self.ensure_session_ownership(user, session_id)?;
 
         new_runtime()?.block_on(create_session_execution(
             session_id,

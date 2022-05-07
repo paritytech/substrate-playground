@@ -103,11 +103,11 @@ fn result_to_jsonrpc<T: Serialize>(res: Result<T>) -> JsonValue {
             Error::Failure(_) => create_jsonrpc_error("Failure", err.to_string()),
             Error::Unauthorized(_) => create_jsonrpc_error("Unauthorized", err.to_string()),
             Error::MissingData(_) => create_jsonrpc_error("MissingData", err.to_string()),
-            Error::UnknownResource => create_jsonrpc_error("UnknownResource", err.to_string()),
-            Error::WorkspaceIdAlreayUsed => {
+            Error::UnknownResource(_, _) => create_jsonrpc_error("UnknownResource", err.to_string()),
+            Error::SessionIdAlreayUsed => {
                 create_jsonrpc_error("WorkspaceIdAlreayUsed", err.to_string())
             }
-            Error::ConcurrentWorkspacesLimitBreached(_) => {
+            Error::ConcurrentSessionsLimitBreached(_) => {
                 create_jsonrpc_error("ConcurrentWorkspacesLimitBreached", err.to_string())
             }
             Error::DurationLimitBreached(_) => {
@@ -116,10 +116,6 @@ fn result_to_jsonrpc<T: Serialize>(res: Result<T>) -> JsonValue {
             Error::RepositoryVersionNotReady => {
                 create_jsonrpc_error("RepositoryVersionNotReady", err.to_string())
             }
-            Error::UnknownRepositoryVersion => {
-                create_jsonrpc_error("UnknownRepositoryVersion", err.to_string())
-            }
-            Error::UnknownPool(_) => create_jsonrpc_error("UnknownPool", err.to_string()),
             Error::MissingAnnotation(_) => {
                 create_jsonrpc_error("MissingAnnotation", err.to_string())
             }
