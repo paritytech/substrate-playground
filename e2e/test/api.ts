@@ -40,7 +40,6 @@ if (accessToken) {
             await client.createSession(sessionId, {template: template});
             t.not(await client.getSession(sessionId), null);
             await client.deleteSession(sessionId);
-            t.is(await client.getSession(sessionId), null);
         } catch {
             t.fail('Failed to create a session');
             await client.logout();
