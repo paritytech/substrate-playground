@@ -19,7 +19,7 @@ async function mainSessionId(client: Client): Promise<string> {
     return (await client.get()).user?.id.toLocaleLowerCase();
 }
 
-const template = 'Node template';
+const template = 'node-template';
 
 test('unauthenticated - should not be able to create a new session', async (t) => {
     try {
