@@ -39,7 +39,7 @@ if (accessToken) {
             const sessionId = await mainSessionId(client);
             await client.createSession(sessionId, {template: template});
             t.not(await client.getSession(sessionId), null);
-            client.deleteSession(sessionId);
+            await client.deleteSession(sessionId);
             t.is(await client.getSession(sessionId), null);
         } catch {
             t.fail('Failed to create a session');
@@ -63,8 +63,7 @@ if (accessToken) {
             t.pass();
 
             await client.login(accessToken);
-            client.deleteSession(sessionId);
-            t.not(await client.getSession(sessionId), null);
+            await client.deleteSession(sessionId);
         }
     });
 
