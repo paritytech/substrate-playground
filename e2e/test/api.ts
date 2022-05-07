@@ -36,9 +36,13 @@ if (accessToken) {
         const client = newClient();
         await client.login(accessToken);
         try {
-            await client.getSession(await mainSessionId(client));
-            t.pass();
+            const sessionId = await mainSessionId(client);
+            await client.createSession(sessionId, {template: template});
+            t.not(await client.getSession(sessionId), null);
+            client.deleteSession(sessionId);
+            t.is(await client.getSession(sessionId), null);
         } catch {
+            t.fail('Failed to create a session');
             await client.logout();
         }
     });
@@ -48,15 +52,19 @@ if (accessToken) {
         await client.login(accessToken);
 
         const sessionId = await mainSessionId(client);
-
-        await client.getSession(sessionId);
+        await client.createSession(sessionId, {template: template});
+        t.not(await client.getSession(sessionId), null);
 
         await client.logout();
 
         try {
-            await client.getSession(sessionId);
+            t.is(await client.getSession(sessionId), null);
         } catch {
             t.pass();
+
+            await client.login(accessToken);
+            client.deleteSession(sessionId);
+            t.not(await client.getSession(sessionId), null);
         }
     });
 
@@ -70,7 +78,7 @@ if (accessToken) {
             try {
                 const { stdout } = await client.createSessionExecution(sessionId, {command: ["ls"]});
                 console.log(stdout);
-                t.pass();
+                t.not(stdout, null);
             } finally {
                 client.deleteSession(sessionId);
                 await client.logout();
