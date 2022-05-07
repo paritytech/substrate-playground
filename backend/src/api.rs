@@ -103,7 +103,9 @@ fn result_to_jsonrpc<T: Serialize>(res: Result<T>) -> JsonValue {
             Error::Failure(_) => create_jsonrpc_error("Failure", err.to_string()),
             Error::Unauthorized(_) => create_jsonrpc_error("Unauthorized", err.to_string()),
             Error::MissingData(_) => create_jsonrpc_error("MissingData", err.to_string()),
-            Error::UnknownResource(_, _) => create_jsonrpc_error("UnknownResource", err.to_string()),
+            Error::UnknownResource(_, _) => {
+                create_jsonrpc_error("UnknownResource", err.to_string())
+            }
             Error::SessionIdAlreayUsed => {
                 create_jsonrpc_error("WorkspaceIdAlreayUsed", err.to_string())
             }

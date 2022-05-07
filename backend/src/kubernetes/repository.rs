@@ -1,6 +1,6 @@
 //! Helper methods ton interact with k8s
 use crate::{
-    error::{Error, Result, ResourceType},
+    error::{Error, ResourceType, Result},
     types::{
         NameValuePair, Port, Repository, RepositoryConfiguration, RepositoryRuntimeConfiguration,
         RepositoryUpdateConfiguration, RepositoryVersion, RepositoryVersionConfiguration,
@@ -123,7 +123,10 @@ pub async fn create_repository(id: &str, conf: RepositoryConfiguration) -> Resul
 pub async fn update_repository(id: &str, conf: RepositoryUpdateConfiguration) -> Result<()> {
     let client = client().await?;
 
-    let mut repository = get_repository(id).await?.ok_or(Error::UnknownResource(ResourceType::Repository, id.to_string()))?;
+    let mut repository = get_repository(id).await?.ok_or(Error::UnknownResource(
+        ResourceType::Repository,
+        id.to_string(),
+    ))?;
     repository.tags = conf.tags;
 
     add_config_map_value(

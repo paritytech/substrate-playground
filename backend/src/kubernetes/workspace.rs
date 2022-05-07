@@ -1,6 +1,6 @@
 //! Helper methods ton interact with k8s
 use crate::{
-    error::{Error, Result, ResourceType},
+    error::{Error, ResourceType, Result},
     types::{
         self, Configuration, LoggedUser, Port, RepositoryDetails, RepositoryRuntimeConfiguration,
         RepositoryVersion, RepositoryVersionState, Workspace, WorkspaceConfiguration,
@@ -539,7 +539,10 @@ pub async fn create_workspace(
         &workspace_configuration.repository_details.reference,
     )
     .await?
-    .ok_or(Error::UnknownResource(ResourceType::RepositoryVersion, workspace_configuration.repository_details.id.clone()))?;
+    .ok_or(Error::UnknownResource(
+        ResourceType::RepositoryVersion,
+        workspace_configuration.repository_details.id.clone(),
+    ))?;
     // Make sure some node on the right pools still have rooms
     // Find pool affinity, lookup corresponding pool and capacity based on nodes, figure out if there is room left
     // TODO: replace with custom scheduler
@@ -632,9 +635,10 @@ pub async fn update_workspace(
     configuration: Configuration,
     workspace_configuration: WorkspaceUpdateConfiguration,
 ) -> Result<()> {
-    let workspace = get_workspace(id)
-        .await?
-        .ok_or(Error::UnknownResource(ResourceType::Workspace, id.to_string()))?;
+    let workspace = get_workspace(id).await?.ok_or(Error::UnknownResource(
+        ResourceType::Workspace,
+        id.to_string(),
+    ))?;
 
     let duration = workspace_configuration
         .duration

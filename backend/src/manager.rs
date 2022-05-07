@@ -1,7 +1,7 @@
 /// Abstratcs k8s interaction by handling permissions, logging, etc..
 ///
 use crate::{
-    error::{Error, Parameter, Permission, Result, ResourceType},
+    error::{Error, Parameter, Permission, ResourceType, Result},
     kubernetes::{
         get_configuration,
         pool::{get_pool, list_pools},
@@ -292,16 +292,17 @@ impl Manager {
 
     // Sessions
 
-    fn ensure_session_ownership(&self,
-        user: &LoggedUser,
-        id: &str) -> Result<Session> {
+    fn ensure_session_ownership(&self, user: &LoggedUser, id: &str) -> Result<Session> {
         if let Some(session) = new_runtime()?.block_on(get_session(id))? {
             if user.id != session.user_id {
                 return Err(Error::Unauthorized(Permission::ResourceNotOwned));
             }
             Ok(session)
         } else {
-            return Err(Error::UnknownResource(ResourceType::Session, id.to_string()));
+            return Err(Error::UnknownResource(
+                ResourceType::Session,
+                id.to_string(),
+            ));
         }
     }
 
@@ -309,7 +310,7 @@ impl Manager {
         match self.ensure_session_ownership(user, id) {
             Err(Error::Failure(from)) => Err(Error::Failure(from)),
             Err(_) => Ok(None),
-            Ok(session) => Ok(Some(session))
+            Ok(session) => Ok(Some(session)),
         }
     }
 

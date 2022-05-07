@@ -1,6 +1,6 @@
 ///! Error type for the whole project
 ///
-use std::{result, fmt};
+use std::{fmt, result};
 use thiserror::Error;
 
 /// A specialized [`Result`] type.
@@ -14,10 +14,10 @@ pub enum Parameter {
 
 impl fmt::Display for Parameter {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-       match *self {
-        Parameter::SessionDuration => write!(f, "SessionDuration"),
-        Parameter::SessionPoolAffinity => write!(f, "SessionPoolAffinity"),
-       }
+        match *self {
+            Parameter::SessionDuration => write!(f, "SessionDuration"),
+            Parameter::SessionPoolAffinity => write!(f, "SessionPoolAffinity"),
+        }
     }
 }
 
@@ -32,13 +32,13 @@ pub enum Permission {
 
 impl fmt::Display for Permission {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-       match &*self {
-        Permission::ResourceNotOwned => write!(f, "ResourceNotOwned"),
-        Permission::InvalidSessionId => write!(f, "InvalidSessionId"),
-        Permission::AdminRead => write!(f, "AdminRead"),
-        Permission::AdminEdit => write!(f, "AdminEdit"),
-        Permission::Customize{what} => write!(f, "Customize: {}", what),
-       }
+        match &*self {
+            Permission::ResourceNotOwned => write!(f, "ResourceNotOwned"),
+            Permission::InvalidSessionId => write!(f, "InvalidSessionId"),
+            Permission::AdminRead => write!(f, "AdminRead"),
+            Permission::AdminEdit => write!(f, "AdminEdit"),
+            Permission::Customize { what } => write!(f, "Customize: {}", what),
+        }
     }
 }
 
@@ -55,15 +55,15 @@ pub enum ResourceType {
 
 impl fmt::Display for ResourceType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-       match &*self {
-        ResourceType::Pool => write!(f, "Pool"),
-        ResourceType::Repository => write!(f, "Repository"),
-        ResourceType::RepositoryVersion => write!(f, "RepositoryVersion"),
-        ResourceType::Session => write!(f, "Session"),
-        ResourceType::Template => write!(f, "Template"),
-        ResourceType::User => write!(f, "User"),
-        ResourceType::Workspace => write!(f, "Workspace"),
-       }
+        match &*self {
+            ResourceType::Pool => write!(f, "Pool"),
+            ResourceType::Repository => write!(f, "Repository"),
+            ResourceType::RepositoryVersion => write!(f, "RepositoryVersion"),
+            ResourceType::Session => write!(f, "Session"),
+            ResourceType::Template => write!(f, "Template"),
+            ResourceType::User => write!(f, "User"),
+            ResourceType::Workspace => write!(f, "Workspace"),
+        }
     }
 }
 

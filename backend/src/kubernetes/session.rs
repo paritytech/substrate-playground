@@ -1,6 +1,6 @@
 //! Helper methods ton interact with k8s
 use crate::{
-    error::{Error, Result, ResourceType},
+    error::{Error, ResourceType, Result},
     kubernetes::get_host,
     types::{
         self, ConditionType, Configuration, ContainerPhase, LoggedUser, Phase, Port,
@@ -485,7 +485,10 @@ pub async fn create_session(
     let template = templates
         .iter()
         .find(|template| template.id == session_configuration.template)
-        .ok_or(Error::UnknownResource(ResourceType::Template, session_configuration.template))?;
+        .ok_or(Error::UnknownResource(
+            ResourceType::Template,
+            session_configuration.template,
+        ))?;
     // TODO deploy a new ingress matching the route
     // With the proper mapping
     // Define the correct route
@@ -562,9 +565,10 @@ pub async fn update_session(
     configuration: Configuration,
     session_configuration: SessionUpdateConfiguration,
 ) -> Result<()> {
-    let session = get_session(id)
-        .await?
-        .ok_or(Error::UnknownResource(ResourceType::Session, id.to_string()))?;
+    let session = get_session(id).await?.ok_or(Error::UnknownResource(
+        ResourceType::Session,
+        id.to_string(),
+    ))?;
 
     let duration = session_configuration
         .duration
@@ -598,9 +602,10 @@ pub async fn update_session(
 
 pub async fn delete_session(id: &str) -> Result<()> {
     let client = client().await?;
-    get_session(id)
-        .await?
-        .ok_or(Error::UnknownResource(ResourceType::Session, id.to_string()))?;
+    get_session(id).await?.ok_or(Error::UnknownResource(
+        ResourceType::Session,
+        id.to_string(),
+    ))?;
 
     let namespace_api: Api<Namespace> = Api::all(client.clone());
     namespace_api
