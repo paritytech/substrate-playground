@@ -157,8 +157,8 @@ function TemplateSelector({client, conf, user, onDeployed, onRetry}: {client: Cl
                     <div style={{display: "flex", flex: 1, flexDirection: "row", minHeight: 0, height: "100%"}}>
                             <List style={{paddingTop: 0, paddingBottom: 0, overflowY: "auto"}}>
                                 {templates.map((template: Template, index: number) => (
-                                <ListItem button key={index} selected={selection.name === template.name} onClick={() => select(template)}>
-                                    <ListItemText primary={template.name} />
+                                <ListItem button key={index} selected={selection.id === template.id} onClick={() => select(template)}>
+                                    <ListItemText primary={template.id} />
                                 </ListItem>
                                 ))}
                             </List>
@@ -177,15 +177,15 @@ function TemplateSelector({client, conf, user, onDeployed, onRetry}: {client: Cl
                 <Divider orientation="horizontal" />
                 <Container style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", paddingTop: 10, paddingBottom: 10 }}>
                     {canCustomize(user)
-                    ? <SplitButton template={selection.name} onCreate={() => onCreateClick({template: selection.name})} onCreateCustom={() => setOpenCustom(true)} disabled={!createEnabled()} />
-                    : <Button onClick={() => onCreateClick({template: selection.name})} color="primary" variant="contained" disableElevation disabled={!createEnabled()}>
+                    ? <SplitButton template={selection.id} onCreate={() => onCreateClick({template: selection.id})} onCreateCustom={() => setOpenCustom(true)} disabled={!createEnabled()} />
+                    : <Button onClick={() => onCreateClick({template: selection.id})} color="primary" variant="contained" disableElevation disabled={!createEnabled()}>
                           Create
                       </Button>}
                 </Container>
                 {errorMessage &&
                 <ErrorSnackbar open={true} message={errorMessage} onClose={() => setErrorMessage(null)} />}
                 {openCustom &&
-                <SessionCreationDialog client={client} user={user} template={selection.name} conf={conf} templates={templates} show={openCustom} onCreate={onCreateClick} onHide={() => setOpenCustom(false)} />}
+                <SessionCreationDialog client={client} user={user} template={selection.id} conf={conf} templates={templates} show={openCustom} onCreate={onCreateClick} onHide={() => setOpenCustom(false)} />}
             </>
         );
     } else {

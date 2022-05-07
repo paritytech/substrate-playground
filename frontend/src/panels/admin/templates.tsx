@@ -30,7 +30,7 @@ export function Templates({ client, user }: { client: Client, user: LoggedUser }
                         {Object.entries(resources).map(([id, template]) => (
                         <TableRow key={id}>
                             <TableCell component="th" scope="row">
-                                {template.name}
+                                {template.id}
                             </TableCell>
                             <TableCell>{template.name}</TableCell>
                             <TableCell>{template.image}</TableCell>

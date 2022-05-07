@@ -91,8 +91,8 @@ export function SessionCreationDialog({ client, conf, sessions, user, template, 
                         >
                     {templates &&
                     templates.map(template => (
-                        <MenuItem key={template.name} value={template.name}>
-                        {template.name}
+                        <MenuItem key={template.id} value={template.id}>
+                        {template.id}
                         </MenuItem>))
                     }
                     </TextField>

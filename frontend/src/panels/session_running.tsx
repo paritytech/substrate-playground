@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import Paper from '@mui/material/Paper';
 import { Client, LoggedUser } from '@substrate/playground-client';
 import { CenteredContainer, ErrorMessage, Loading } from '../components';
-import { fetchWithTimeout, mainSessionId, sessionUrl } from '../utils';
+import { fetchWithTimeout, find, mainSessionId, sessionUrl } from '../utils';
 
 interface Error {
     reason: string,
@@ -53,7 +53,7 @@ export function RunningSessionPanel({ client, user, autoDeploy, onMissingSession
                         setError({reason: condition.message || 'Pod failed to schedule', action: onSessionFailing});
                     }
                 }
-                // The repository is being deployed, nothing to do
+                // The session is being deployed, nothing to do
             }
 
             const retry = loading?.retry ?? 0;
@@ -67,12 +67,12 @@ export function RunningSessionPanel({ client, user, autoDeploy, onMissingSession
         }
 
         // Entry point.
-        // If autoDeploy, first attempt to locate the associated repository and deploy it.
+        // If autoDeploy, first attempt to locate the associated template and deploy it.
         // In all cases, delegates to `fetchData`
         if (autoDeploy) {
-            client.getRepository(autoDeploy).then(repository => {
-                if (!repository) {
-                    setError({reason: `Unknown repository ${autoDeploy}`,
+            client.listTemplates().then(templates => {
+                if (!find(templates, autoDeploy)) {
+                    setError({reason: `Unknown template ${autoDeploy}`,
                               action: onMissingSession});
                     return;
                 }
