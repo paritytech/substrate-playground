@@ -96,7 +96,7 @@ export interface RepositoryRuntimeConfiguration {
     ports?: Port[],
 }
 
-export interface Template {
+export interface Template extends IdentifiedResource {
     name: string,
     image: string,
     description: string,
