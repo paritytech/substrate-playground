@@ -22,7 +22,7 @@
     "node": ">=16.0.0"
   },
   "dependencies": {
-    "@substrate/playground-client": "1.8.8",
+    "@substrate/playground-client": "1.8.9",
     "cross-fetch": "3.1.5"
   },
   "devDependencies": {

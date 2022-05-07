@@ -35,10 +35,10 @@
     "@nodelib/fs.scandir" "2.1.5"
     fastq "^1.6.0"
 
-"@substrate/playground-client@1.8.8":
-  version "1.8.8"
-  resolved "https://registry.yarnpkg.com/@substrate/playground-client/-/playground-client-1.8.8.tgz#32e4757f4cf86cc426ca26058b3b8cab026b4407"
-  integrity sha512-lk6dyzT5KyJgE1gvz27tiGerWeHhHMKPwplp/nbbvxig7wjr42fZKeJfZOFiVhw/Vklt34zOnRVcYY5oNfnt+g==
+"@substrate/playground-client@1.8.9":
+  version "1.8.9"
+  resolved "https://registry.yarnpkg.com/@substrate/playground-client/-/playground-client-1.8.9.tgz#efff60ffd8ca7eca2e6fa24afcab20f05c591dfb"
+  integrity sha512-oXT/+HP+7Fkp24JdcYFoLkEYZSTtV1tX2BhcEteyyrem5omAfQxE/jQWgdtqskFB7w/0ZvJlqmJzD1UCu0mCrQ==
   dependencies:
     uuid "8.3.2"
 
