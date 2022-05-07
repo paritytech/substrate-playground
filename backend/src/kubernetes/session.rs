@@ -471,7 +471,7 @@ pub async fn create_session(
         });
     let pool = get_pool(&pool_id)
         .await?
-        .ok_or(Error::UnknownResource(ResourceType::Pool, pool_id.clone()))?;
+        .ok_or_else(|| Error::UnknownResource(ResourceType::Pool, pool_id.clone()))?;
     let max_sessions_allowed = pool.nodes.len() * configuration.session.max_sessions_per_pod;
     let sessions = list_sessions().await?;
     if sessions.len() >= max_sessions_allowed {
@@ -565,10 +565,9 @@ pub async fn update_session(
     configuration: Configuration,
     session_configuration: SessionUpdateConfiguration,
 ) -> Result<()> {
-    let session = get_session(id).await?.ok_or(Error::UnknownResource(
-        ResourceType::Session,
-        id.to_string(),
-    ))?;
+    let session = get_session(id)
+        .await?
+        .ok_or_else(|| Error::UnknownResource(ResourceType::Session, id.to_string()))?;
 
     let duration = session_configuration
         .duration
@@ -602,10 +601,9 @@ pub async fn update_session(
 
 pub async fn delete_session(id: &str) -> Result<()> {
     let client = client().await?;
-    get_session(id).await?.ok_or(Error::UnknownResource(
-        ResourceType::Session,
-        id.to_string(),
-    ))?;
+    get_session(id)
+        .await?
+        .ok_or_else(|| Error::UnknownResource(ResourceType::Session, id.to_string()))?;
 
     let namespace_api: Api<Namespace> = Api::all(client.clone());
     namespace_api

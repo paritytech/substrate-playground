@@ -68,7 +68,7 @@ pub async fn update_user(id: &str, conf: UserUpdateConfiguration) -> Result<()> 
     let client = client().await?;
     let mut user = user(&client, id)
         .await?
-        .ok_or(Error::UnknownResource(ResourceType::User, id.to_string()))?;
+        .ok_or_else(|| Error::UnknownResource(ResourceType::User, id.to_string()))?;
     user.admin = conf.admin;
     user.can_customize_duration = conf.can_customize_duration;
     user.can_customize_pool_affinity = conf.can_customize_pool_affinity;

@@ -299,10 +299,10 @@ impl Manager {
             }
             Ok(session)
         } else {
-            return Err(Error::UnknownResource(
+            Err(Error::UnknownResource(
                 ResourceType::Session,
                 id.to_string(),
-            ));
+            ))
         }
     }
 
@@ -329,10 +329,8 @@ impl Manager {
         session_configuration: SessionConfiguration,
     ) -> Result<()> {
         // Non admin can only create session whose id matches their name
-        if !user.has_admin_edit_rights() {
-            if user.id.to_ascii_lowercase() != id {
-                return Err(Error::Unauthorized(Permission::InvalidSessionId));
-            }
+        if !user.has_admin_edit_rights() && user.id.to_ascii_lowercase() != id {
+            return Err(Error::Unauthorized(Permission::InvalidSessionId));
         }
 
         if session_configuration.duration.is_some() {
