@@ -107,7 +107,7 @@ fn result_to_jsonrpc<T: Serialize>(res: Result<T>) -> JsonValue {
                 create_jsonrpc_error("UnknownResource", err.to_string())
             }
             Error::SessionIdAlreayUsed => {
-                create_jsonrpc_error("WorkspaceIdAlreayUsed", err.to_string())
+                create_jsonrpc_error("SessionIdAlreayUsed", err.to_string())
             }
             Error::ConcurrentSessionsLimitBreached(_) => {
                 create_jsonrpc_error("ConcurrentWorkspacesLimitBreached", err.to_string())
