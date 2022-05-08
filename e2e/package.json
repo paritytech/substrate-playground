@@ -4,7 +4,7 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "test": "ava -s",
+    "test": "ava -s --timeout=10m",
     "clean": "rm -rf dist/ node_modules/ yarn.lock"
   },
   "ava": {
