@@ -37,11 +37,14 @@ async function waitForSessionDeletion(client: Client, sessionId: string) {
     const startTime = Date.now();
     return new Promise<void>((resolve, reject) => {
         const id = setInterval(async () => {
-            if (await client.getSession(sessionId) == null) {
+            const session = await client.getSession(sessionId);
+            console.log("session", session);
+            if (session == null) {
                 clearInterval(id);
                 resolve();
-            }
-            if (Date.now() - startTime > timeout) {
+                return;
+            } else if ((Date.now() - startTime) > timeout) {
+                clearInterval(id);
                 reject(`Session not deployed after ${timeout} ms`);
             }
         }, interval);
