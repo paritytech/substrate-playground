@@ -38,7 +38,6 @@ async function waitForSessionDeletion(client: Client, sessionId: string) {
     return new Promise<void>((resolve, reject) => {
         const id = setInterval(async () => {
             const session = await client.getSession(sessionId);
-            console.log("session", session);
             if (session == null) {
                 clearInterval(id);
                 resolve();
