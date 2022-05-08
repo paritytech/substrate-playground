@@ -31,6 +31,23 @@ test('unauthenticated - should not be able to create a new session', async (t) =
     }
 });
 
+async function waitForSessionDeletion(client: Client, sessionId: string) {
+    const timeout = 60 * 1000;
+    const interval = 1000;
+    const startTime = Date.now();
+    return new Promise<void>((resolve, reject) => {
+        const id = setInterval(async () => {
+            if (await client.getSession(sessionId) == null) {
+                clearInterval(id);
+                resolve();
+            }
+            if (Date.now() - startTime > timeout) {
+                reject(`Session not deployed after ${timeout} ms`);
+            }
+        }, interval);
+    });
+}
+
 if (accessToken) {
     test('authenticated - should be able to get current session', async (t) => {
         const client = newClient();
@@ -40,8 +57,10 @@ if (accessToken) {
             await client.createSession(sessionId, {template: template});
             t.not(await client.getSession(sessionId), null);
             await client.deleteSession(sessionId);
+            await waitForSessionDeletion(client, sessionId);
         } catch {
             t.fail('Failed to create a session');
+        } finally {
             await client.logout();
         }
     });
@@ -60,9 +79,11 @@ if (accessToken) {
             t.is(await client.getSession(sessionId), null);
         } catch {
             t.pass();
-
+        } finally {
             await client.login(accessToken);
             await client.deleteSession(sessionId);
+            await waitForSessionDeletion(client, sessionId);
+            await client.logout();
         }
     });
 
@@ -79,6 +100,7 @@ if (accessToken) {
                 t.not(stdout, null);
             } finally {
                 client.deleteSession(sessionId);
+                await waitForSessionDeletion(client, sessionId);
                 await client.logout();
             }
         });
