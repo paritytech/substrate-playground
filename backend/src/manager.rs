@@ -28,7 +28,7 @@ use crate::{
 use log::{error, info, warn};
 use std::{
     thread::{self, JoinHandle},
-    time::Duration,
+    time::{Duration, SystemTime},
 };
 use tokio::runtime::Runtime;
 
@@ -76,40 +76,34 @@ impl Manager {
         thread::spawn(move || loop {
             thread::sleep(Manager::SLEEP_TIME);
 
-            // Track some deployments metrics
             if let Ok(runtime) = new_runtime() {
                 // Go through all Running pods and figure out if they have to be undeployed
-                match runtime.block_on(list_sessions()) {
-                    Ok(sessions) => {
-                        for session in sessions {
-                            if let Phase::Running = session.pod.phase {
-                                if let Some(duration) =
-                                    &session.pod.start_time.unwrap().elapsed().ok()
-                                {
-                                    if duration > &session.duration {
-                                        info!(
-                                            "Undeploying {} after {}",
-                                            session.user_id,
-                                            duration.as_secs() / 60
-                                        );
+                if let Ok(sessions) = runtime.block_on(list_sessions()) {
+                    let sessions = sessions
+                        .into_iter()
+                        .filter(|session| Phase::Running == session.pod.phase)
+                        .collect::<Vec<Session>>();
+                    let now = SystemTime::now();
+                    sessions.iter().for_each(|session| {
+                        if let Some(duration) =
+                            &session.pod.start_time.unwrap_or(now).elapsed().ok()
+                        {
+                            if duration > &session.duration {
+                                info!(
+                                    "Undeploying {} after {} mins (target {})",
+                                    session.user_id,
+                                    duration.as_secs() / 60,
+                                    session.duration.as_secs() / 60
+                                );
 
-                                        match runtime.block_on(delete_session(&session.id)) {
-                                            Ok(()) => (),
-                                            Err(err) => {
-                                                warn!(
-                                                    "Error while undeploying {}: {}",
-                                                    session.user_id, err
-                                                )
-                                            }
-                                        }
-                                    }
-                                } else {
-                                    error!("Failed to compute this session lifetime");
+                                if let Err(err) = runtime.block_on(delete_session(&session.id)) {
+                                    warn!("Error while undeploying {}: {}", session.user_id, err)
                                 }
                             }
                         }
-                    }
-                    Err(err) => error!("Failed to call list_sessions: {}", err),
+                    });
+                } else {
+                    error!("Failed to call list_sessions")
                 }
             }
         })
