@@ -8,7 +8,7 @@ use crate::{
         SessionExecutionConfiguration, SessionUpdateConfiguration, Status, Template,
     },
 };
-use futures::{future::join_all, StreamExt};
+use futures::StreamExt;
 use json_patch::{AddOperation, PatchOperation};
 use k8s_openapi::api::{
     core::v1::{
@@ -21,10 +21,7 @@ use k8s_openapi::api::{
 use k8s_openapi::apimachinery::pkg::{
     api::resource::Quantity, apis::meta::v1::ObjectMeta, util::intstr::IntOrString,
 };
-use kube::{
-    api::{Api, AttachParams, AttachedProcess, DeleteParams, Patch, PatchParams, PostParams},
-    Client,
-};
+use kube::api::{Api, AttachParams, AttachedProcess, DeleteParams, Patch, PatchParams, PostParams};
 use serde_json::json;
 use std::{collections::BTreeMap, str::FromStr, time::Duration};
 
@@ -376,11 +373,16 @@ pub async fn get_session(session_id: &str) -> Result<Option<Session>> {
     }
 }
 
-async fn get_pod(client: &Client, name: &str) -> Session {
-    let pod_api: Api<Pod> = Api::namespaced(client.clone(), name);
-    // TODO remove unwrap
-    let pod = pod_api.get(SESSION_NAME).await.unwrap();
-    pod_to_session(&pod).unwrap()
+async fn get_pod(name: &str) -> Result<Option<Session>> {
+    let pod_api: Api<Pod> = Api::namespaced(client().await?, name);
+    let pod = pod_api
+        .get_opt(SESSION_NAME)
+        .await
+        .map_err(|err| Error::Failure(err.into()))?;
+    match pod {
+        Some(pod) => pod_to_session(&pod).map(Some),
+        None => Ok(None),
+    }
 }
 
 const NAMESPACE_TYPE: &str = "NAMESPACE_TYPE";
@@ -389,7 +391,7 @@ const NAMESPACE_SESSION: &str = "NAMESPACE_SESSION";
 /// Lists all currently running sessions
 pub async fn list_sessions() -> Result<Vec<Session>> {
     let client = client().await?;
-    let namespace_api: Api<Namespace> = Api::all(client.clone());
+    let namespace_api: Api<Namespace> = Api::all(client);
 
     let namespaces = list_by_selector(
         &namespace_api,
@@ -397,17 +399,13 @@ pub async fn list_sessions() -> Result<Vec<Session>> {
     )
     .await?;
 
-    let names: Vec<String> = namespaces
-        .iter()
-        .flat_map(|namespace| namespace.metadata.name.clone())
-        .collect();
-
-    Ok(join_all(
-        names
+    Ok(futures::stream::iter(
+        namespaces
             .iter()
-            .map(|name| get_pod(&client, name))
-            .collect::<Vec<_>>(),
+            .flat_map(|namespace| namespace.metadata.name.clone()),
     )
+    .filter_map(|name| async move { get_pod(&name).await.ok().flatten() })
+    .collect::<Vec<Session>>()
     .await)
 }
 
