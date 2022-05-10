@@ -1,4 +1,4 @@
-/// Abstratcs k8s interaction by handling permissions, logging, etc..
+/// Abstracts k8s interaction by handling permissions, logging, etc..
 ///
 use crate::{
     error::{Error, Parameter, Permission, ResourceType, Result},
@@ -19,16 +19,16 @@ use crate::{
     },
     metrics::Metrics,
     types::{
-        LoggedUser, Phase, Playground, Pool, Repository, RepositoryConfiguration,
+        LoggedUser, Playground, Pool, Repository, RepositoryConfiguration,
         RepositoryUpdateConfiguration, RepositoryVersion, RepositoryVersionConfiguration, Session,
-        SessionConfiguration, SessionExecution, SessionExecutionConfiguration,
+        SessionConfiguration, SessionExecution, SessionExecutionConfiguration, SessionState,
         SessionUpdateConfiguration, Template, User, UserConfiguration, UserUpdateConfiguration,
     },
 };
 use log::{error, info, warn};
 use std::{
     thread::{self, JoinHandle},
-    time::{Duration, SystemTime},
+    time::Duration,
 };
 use tokio::runtime::Runtime;
 
@@ -48,8 +48,8 @@ impl Manager {
             Ok(sessions) => {
                 let running = sessions
                     .iter()
-                    .flat_map(|i| match &i.pod.phase {
-                        Phase::Running { .. } => Some((i.id.clone(), vec![])),
+                    .flat_map(|i| match &i.state {
+                        SessionState::Running { .. } => Some((i.id.clone(), vec![])),
                         _ => None,
                     })
                     .collect();
@@ -72,41 +72,36 @@ impl Manager {
         Ok(Manager { metrics })
     }
 
-    pub fn spawn_background_thread(self) -> JoinHandle<()> {
-        thread::spawn(move || loop {
+    pub fn spawn_session_reaper_thread(&self) -> Result<JoinHandle<()>> {
+        let runtime = new_runtime()?;
+        Ok(thread::spawn(move || loop {
             thread::sleep(Manager::SLEEP_TIME);
 
-            if let Ok(runtime) = new_runtime() {
-                // Go through all Running pods and figure out if they have to be undeployed
-                if let Ok(sessions) = runtime.block_on(list_sessions()) {
-                    let sessions = sessions
-                        .into_iter()
-                        .filter(|session| Phase::Running == session.pod.phase)
-                        .collect::<Vec<Session>>();
-                    let now = SystemTime::now();
-                    sessions.iter().for_each(|session| {
-                        if let Some(duration) =
-                            &session.pod.start_time.unwrap_or(now).elapsed().ok()
-                        {
-                            if duration > &session.duration {
+            // Go through all Running pods and figure out if they have to be undeployed
+            if let Ok(sessions) = runtime.block_on(list_sessions()) {
+                for session in sessions {
+                    if let SessionState::Running { start_time, .. } = session.state {
+                        if let Ok(duration) = start_time.elapsed() {
+                            if duration > session.max_duration {
                                 info!(
                                     "Undeploying {} after {} mins (target {})",
                                     session.user_id,
                                     duration.as_secs() / 60,
-                                    session.duration.as_secs() / 60
+                                    session.max_duration.as_secs() / 60
                                 );
 
+                                // Finally delete the session
                                 if let Err(err) = runtime.block_on(delete_session(&session.id)) {
-                                    warn!("Error while undeploying {}: {}", session.user_id, err)
+                                    warn!("Error while undeploying {}: {}", session.id, err)
                                 }
                             }
                         }
-                    });
-                } else {
-                    error!("Failed to call list_sessions")
+                    }
                 }
+            } else {
+                error!("Failed to call list_sessions")
             }
-        })
+        }))
     }
 }
 

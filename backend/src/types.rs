@@ -310,11 +310,24 @@ fn default_as_false() -> bool {
 pub struct Session {
     pub id: String,
     pub user_id: String,
-    pub template: Template,
-    pub pod: Pod,
+    pub state: SessionState,
     #[serde(with = "duration")]
-    pub duration: Duration,
-    pub node: String,
+    pub max_duration: Duration,
+}
+
+#[derive(Serialize, Clone, Debug)]
+#[serde(tag = "type", rename_all = "camelCase")]
+pub enum SessionState {
+    Deploying,
+    Running {
+        #[serde(with = "system_time")]
+        start_time: SystemTime,
+        node: Node,
+    },
+    Failed {
+        message: String,
+        reason: String,
+    },
 }
 
 #[derive(Serialize, Clone, Debug)]

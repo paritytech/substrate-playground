@@ -23,6 +23,38 @@ export interface SessionDefaults {
     poolAffinity: string,
     maxSessionsPerPod: string,
 }
+
+export interface Session extends IdentifiedResource, OwnedResource {
+    state: SessionState;
+    /* The maximum number of minutes this session can last */
+    maxDuration: number,
+}
+
+export type SessionState =
+    | {tag: "Deploying" }
+    | {tag: "Running", startTime: number, node: Node }
+    | {tag: "Failed", message: string, reason: string };
+
+export interface SessionConfiguration {
+    template: string,
+    /* The number of minutes this session will be able to last */
+    duration?: number,
+    poolAffinity?: string,
+}
+
+export interface SessionUpdateConfiguration {
+    /* The number of minutes this session will be able to last */
+    duration?: number,
+}
+
+export interface SessionExecution {
+    stdout: string,
+}
+
+export interface SessionExecutionConfiguration {
+    command: Array<string>,
+}
+
 export interface RepositoryDetails extends IdentifiedResource {
     reference: string,
 }
@@ -125,67 +157,3 @@ export interface Pool extends IdentifiedResource {
 export interface Node {
     hostname: string,
 }
-
-
-/////
-
-
-export interface Session extends IdentifiedResource, OwnedResource {
-    url: string,
-    template: Template,
-    pod: Pod,
-    /* The number of minutes this session can last */
-    duration: number,
-    maxDuration: number,
-    node: string,
-}
-
-export interface SessionConfiguration {
-    template: string,
-    /* The number of minutes this session will be able to last */
-    duration?: number,
-    poolAffinity?: string,
-}
-
-export interface SessionUpdateConfiguration {
-    /* The number of minutes this session will be able to last */
-    duration?: number,
-}
-
-export interface SessionExecution {
-    stdout: string,
-}
-
-export interface SessionExecutionConfiguration {
-    command: Array<string>,
-}
-
-export interface ContainerStatus {
-    phase: ContainerPhase,
-    reason?: string,
-    message?: string,
-}
-
-export type Phase = 'Pending' | 'Running' | 'Succeeded' | 'Failed' | 'Unknown';
-export interface Pod {
-    phase: Phase,
-    reason: string,
-    message: string,
-    /* The number of seconds since this session started */
-    startTime?: number,
-    conditions?: PodCondition[],
-    container?: ContainerStatus,
-}
-
-export interface PodCondition {
-    type_: ConditionType,
-    status: Status,
-    reason?: string,
-    message?: string,
-}
-
-export type ConditionType = 'PodScheduled' | 'ContainersReady' | 'Initialized' | 'Ready' | 'Unknown';
-
-export type Status = 'True' | 'False' | 'Unknown';
-
-export type ContainerPhase = 'Running' | 'Terminated' | 'Waiting' | 'Unknown';

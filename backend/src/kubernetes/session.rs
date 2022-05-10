@@ -3,27 +3,32 @@ use crate::{
     error::{Error, ResourceType, Result},
     kubernetes::get_host,
     types::{
-        self, ConditionType, Configuration, ContainerPhase, LoggedUser, Phase, Port,
-        RepositoryRuntimeConfiguration, Session, SessionConfiguration, SessionExecution,
-        SessionExecutionConfiguration, SessionUpdateConfiguration, Status, Template,
+        self, Configuration, LoggedUser, Port, RepositoryRuntimeConfiguration, Session,
+        SessionConfiguration, SessionExecution, SessionExecutionConfiguration,
+        SessionUpdateConfiguration, Template,
     },
 };
 use futures::StreamExt;
 use json_patch::{AddOperation, PatchOperation};
 use k8s_openapi::api::{
     core::v1::{
-        Affinity, Container, ContainerStatus, EnvVar, Namespace, NodeAffinity,
-        NodeSelectorRequirement, NodeSelectorTerm, Pod, PodCondition, PodSpec, PodStatus,
-        PreferredSchedulingTerm, ResourceRequirements, Service, ServicePort, ServiceSpec,
+        Affinity, Container, EnvVar, Namespace, NodeAffinity, NodeSelectorRequirement,
+        NodeSelectorTerm, Pod, PodSpec, PreferredSchedulingTerm, ResourceRequirements, Service,
+        ServicePort, ServiceSpec,
     },
     networking::v1::{HTTPIngressPath, HTTPIngressRuleValue, Ingress, IngressRule},
 };
 use k8s_openapi::apimachinery::pkg::{
     api::resource::Quantity, apis::meta::v1::ObjectMeta, util::intstr::IntOrString,
 };
-use kube::api::{Api, AttachParams, AttachedProcess, DeleteParams, Patch, PatchParams, PostParams};
+use kube::api::{
+    Api, AttachParams, AttachedProcess, DeleteParams, Patch, PatchParams, PostParams, ResourceExt,
+};
 use serde_json::json;
-use std::{collections::BTreeMap, str::FromStr, time::Duration};
+use std::{
+    collections::BTreeMap,
+    time::{Duration, SystemTime},
+};
 
 use super::{
     client, env_var, ingress_path, list_by_selector, pool::get_pool, template::list_templates,
@@ -38,22 +43,16 @@ const COMPONENT_VALUE: &str = "session";
 
 const OWNER_LABEL: &str = "app.kubernetes.io/owner";
 const INGRESS_NAME: &str = "ingress";
-const TEMPLATE_ANNOTATION: &str = "playground.substrate.io/template";
 const SESSION_DURATION_ANNOTATION: &str = "playground.substrate.io/session_duration";
 const THEIA_WEB_PORT: i32 = 3000;
 const SESSION_NAME: &str = "session";
 
-fn session_duration_annotation(duration: Duration) -> String {
-    let duration_min = duration.as_secs() / 60;
-    duration_min.to_string()
+fn duration_to_string(duration: Duration) -> String {
+    duration.as_secs().to_string()
 }
 
-fn str_to_session_duration_minutes(str: &str) -> Result<Duration> {
-    Ok(Duration::from_secs(
-        str.parse::<u64>()
-            .map_err(|err| Error::Failure(err.into()))?
-            * 60,
-    ))
+fn string_to_duration(str: &str) -> Duration {
+    Duration::from_secs(str.parse::<u64>().unwrap_or(0))
 }
 
 // Model
@@ -73,37 +72,32 @@ fn pod_env_variables(conf: &RepositoryRuntimeConfiguration, session_id: &str) ->
     envs
 }
 
-fn create_pod_annotations(
-    template: &Template,
-    duration: &Duration,
-) -> Result<BTreeMap<String, String>> {
+fn pod_annotations(duration: &Duration) -> BTreeMap<String, String> {
     let mut annotations = BTreeMap::new();
-    let s = serde_yaml::to_string(template).map_err(|err| Error::Failure(err.into()))?;
-    annotations.insert(TEMPLATE_ANNOTATION.to_string(), s);
     annotations.insert(
         SESSION_DURATION_ANNOTATION.to_string(),
-        session_duration_annotation(*duration),
+        duration_to_string(*duration),
     );
-    Ok(annotations)
+    annotations
 }
 
-fn create_pod(
+fn pod(
     user_id: &str,
     session_id: &str,
     template: &Template,
     duration: &Duration,
     pool_id: &str,
-) -> Result<Pod> {
+) -> Pod {
     let mut labels = BTreeMap::new();
     labels.insert(APP_LABEL.to_string(), APP_VALUE.to_string());
     labels.insert(COMPONENT_LABEL.to_string(), COMPONENT_VALUE.to_string());
     labels.insert(OWNER_LABEL.to_string(), user_id.to_string());
 
-    Ok(Pod {
+    Pod {
         metadata: ObjectMeta {
             name: Some(SESSION_NAME.to_string()),
             labels: Some(labels),
-            annotations: Some(create_pod_annotations(template, duration)?),
+            annotations: Some(pod_annotations(duration)),
             ..Default::default()
         },
         spec: Some(PodSpec {
@@ -157,7 +151,7 @@ fn create_pod(
             ..Default::default()
         }),
         ..Default::default()
-    })
+    }
 }
 
 fn namespace(name: String) -> Result<Namespace> {
@@ -175,7 +169,7 @@ fn namespace(name: String) -> Result<Namespace> {
 
 const SESSION_SERVICE_NAME: &str = "service";
 
-fn create_service(session_id: &str, runtime: &RepositoryRuntimeConfiguration) -> Service {
+fn service(session_id: &str, runtime: &RepositoryRuntimeConfiguration) -> Service {
     let mut labels = BTreeMap::new();
     labels.insert(APP_LABEL.to_string(), APP_VALUE.to_string());
     labels.insert(COMPONENT_LABEL.to_string(), COMPONENT_VALUE.to_string());
@@ -221,7 +215,7 @@ fn create_service(session_id: &str, runtime: &RepositoryRuntimeConfiguration) ->
     }
 }
 
-fn create_external_service(local_service_name: &str, session_namespace: &str) -> Service {
+fn external_service(local_service_name: &str, session_namespace: &str) -> Service {
     Service {
         metadata: ObjectMeta {
             name: Some(local_service_name.to_string()),
@@ -253,110 +247,55 @@ fn subdomain(host: &str, id: &str) -> String {
     format!("{}.{}", id, host)
 }
 
-fn condition_to_condition(condition: &PodCondition) -> types::PodCondition {
-    types::PodCondition {
-        type_: ConditionType::from_str(condition.type_.as_str()).unwrap_or(ConditionType::Unknown),
-        status: Status::from_str(condition.status.as_str()).unwrap_or(Status::Unknown),
-        reason: condition.clone().reason,
-        message: condition.clone().message,
+fn pod_to_state(pod: &Pod) -> types::SessionState {
+    let status = pod.status.clone().unwrap_or_default();
+    let container_statuses = status.container_statuses.unwrap_or_default();
+    if let Some(container_status) = container_statuses.get(0) {
+        if let Some(state) = &container_status.state {
+            if let Some(running) = &state.running {
+                return types::SessionState::Running {
+                    start_time: running
+                        .started_at
+                        .as_ref()
+                        .map(|dt| dt.0.into())
+                        .unwrap_or(SystemTime::UNIX_EPOCH),
+                    node: types::Node {
+                        hostname: pod
+                            .spec
+                            .clone()
+                            .unwrap_or_default()
+                            .node_name
+                            .unwrap_or_default(),
+                    },
+                };
+            } else if let Some(terminated) = &state.terminated {
+                return types::SessionState::Failed {
+                    message: terminated.message.clone().unwrap_or_default(),
+                    reason: terminated.reason.clone().unwrap_or_default(),
+                };
+            }
+        }
     }
-}
-fn container_status_to_container_status(status: &ContainerStatus) -> types::ContainerStatus {
-    let state = status.state.as_ref();
-    types::ContainerStatus {
-        phase: state
-            .map(|s| {
-                if s.running.is_some() {
-                    ContainerPhase::Running
-                } else if s.waiting.is_some() {
-                    ContainerPhase::Waiting
-                } else {
-                    ContainerPhase::Terminated
-                }
-            })
-            .unwrap_or(ContainerPhase::Unknown),
-        reason: state.and_then(|s| {
-            s.waiting
-                .as_ref()
-                .and_then(|s| s.reason.clone())
-                .or_else(|| s.terminated.as_ref().and_then(|s| s.reason.clone()))
-        }),
-        message: state.and_then(|s| {
-            s.waiting
-                .as_ref()
-                .and_then(|s| s.message.clone())
-                .or_else(|| s.terminated.as_ref().and_then(|s| s.message.clone()))
-        }),
-    }
-}
-
-fn pod_status_to_details(status: &PodStatus) -> Result<types::Pod> {
-    let conditions = status.clone().conditions;
-    let container_statuses = status.clone().container_statuses;
-    let container_status = container_statuses.as_ref().and_then(|v| v.first());
-    Ok(types::Pod {
-        phase: Phase::from_str(
-            &status
-                .clone()
-                .phase
-                .unwrap_or_else(|| "Unknown".to_string()),
-        )
-        .map_err(|err| Error::Failure(err.into()))?,
-        reason: status.clone().reason.unwrap_or_else(|| "".to_string()),
-        message: status.clone().message.unwrap_or_else(|| "".to_string()),
-        start_time: status.clone().start_time.map(|dt| dt.0.into()),
-        conditions: conditions.map(|v| v.iter().map(condition_to_condition).collect()),
-        container: container_status.map(container_status_to_container_status),
-    })
+    types::SessionState::Deploying
 }
 
 // Creates a Session from a Pod annotations
-fn pod_to_session(pod: &Pod) -> Result<Session> {
-    let labels = pod
-        .metadata
-        .labels
-        .clone()
-        .ok_or(Error::MissingData("pod#metadata#labels"))?;
-    let unknown = "<UNKNOWN NODE>".to_string();
-    let annotations = &pod
-        .metadata
-        .annotations
-        .clone()
-        .ok_or(Error::MissingData("pod#metadata#annotations"))?;
-    let template = serde_yaml::from_str(
-        annotations
-            .get(TEMPLATE_ANNOTATION)
-            .ok_or(Error::MissingData("template"))?,
-    )
-    .map_err(|err| Error::Failure(err.into()))?;
-    let duration = str_to_session_duration_minutes(
-        annotations
+fn pod_to_session(id: &str, pod: &Pod) -> Session {
+    let max_duration = string_to_duration(
+        pod.annotations()
             .get(SESSION_DURATION_ANNOTATION)
-            .ok_or(Error::MissingData("template#session_duration"))?,
-    )?;
-    let status = pod.status.as_ref().ok_or(Error::MissingData("status"))?;
-
-    Ok(Session {
-        id: pod
-            .metadata
-            .namespace
-            .as_ref()
-            .unwrap_or(&"".to_string())
-            .to_string(),
-        user_id: labels
+            .unwrap_or(&"".to_string()),
+    );
+    Session {
+        id: id.to_string(),
+        user_id: pod
+            .labels()
             .get(OWNER_LABEL)
             .unwrap_or(&"".to_string())
             .to_string(),
-        template,
-        pod: pod_status_to_details(status)?,
-        duration,
-        node: pod
-            .clone()
-            .spec
-            .ok_or(Error::MissingData("pod#spec"))?
-            .node_name
-            .unwrap_or(unknown),
-    })
+        max_duration,
+        state: pod_to_state(pod),
+    }
 }
 
 pub async fn get_session(session_id: &str) -> Result<Option<Session>> {
@@ -367,20 +306,8 @@ pub async fn get_session(session_id: &str) -> Result<Option<Session>> {
         .await
         .map_err(|err| Error::Failure(err.into()))?;
 
-    match pod.map(|pod| pod_to_session(&pod)) {
-        Some(session) => session.map(Some),
-        None => Ok(None),
-    }
-}
-
-async fn get_pod(name: &str) -> Result<Option<Session>> {
-    let pod_api: Api<Pod> = Api::namespaced(client().await?, name);
-    let pod = pod_api
-        .get_opt(SESSION_NAME)
-        .await
-        .map_err(|err| Error::Failure(err.into()))?;
-    match pod {
-        Some(pod) => pod_to_session(&pod).map(Some),
+    match pod.map(|pod| pod_to_session(session_id, &pod)) {
+        Some(session) => Ok(Some(session)),
         None => Ok(None),
     }
 }
@@ -404,7 +331,7 @@ pub async fn list_sessions() -> Result<Vec<Session>> {
             .iter()
             .flat_map(|namespace| namespace.metadata.name.clone()),
     )
-    .filter_map(|name| async move { get_pod(&name).await.ok().flatten() })
+    .filter_map(|name| async move { get_session(&name).await.ok().flatten() })
     .collect::<Vec<Session>>()
     .await)
 }
@@ -532,14 +459,14 @@ pub async fn create_session(
     pod_api
         .create(
             &PostParams::default(),
-            &create_pod(&user.id, id, template, &duration, &pool_id)?,
+            &pod(&user.id, id, template, &duration, &pool_id),
         )
         .await
         .map_err(|err| Error::Failure(err.into()))?;
 
     // Deploy the associated service
     let service_api: Api<Service> = Api::namespaced(client.clone(), id);
-    let service = create_service(id, template.runtime.as_ref().unwrap());
+    let service = service(id, template.runtime.as_ref().unwrap());
     service_api
         .create(&PostParams::default(), &service)
         .await
@@ -550,7 +477,7 @@ pub async fn create_session(
     service_local_api
         .create(
             &PostParams::default(),
-            &create_external_service(&local_service_name, id),
+            &external_service(&local_service_name, id),
         )
         .await
         .map_err(|err| Error::Failure(err.into()))?;
@@ -574,7 +501,7 @@ pub async fn update_session(
     if duration >= max_duration {
         return Err(Error::DurationLimitBreached(max_duration.as_millis()));
     }
-    if duration != session.duration {
+    if duration != session.max_duration {
         let client = client().await?;
         let pod_api: Api<Pod> = Api::namespaced(client.clone(), id);
         let params = PatchParams {
@@ -586,7 +513,7 @@ pub async fn update_session(
                     "/metadata/annotations/{}",
                     SESSION_DURATION_ANNOTATION.replace('/', "~1")
                 ),
-                value: json!(session_duration_annotation(duration)),
+                value: json!(duration_to_string(duration)),
             })]));
         pod_api
             .patch(SESSION_NAME, &params, &patch)

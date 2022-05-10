@@ -31,7 +31,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     }
 
     let manager = Manager::new().await?;
-    manager.clone().spawn_background_thread();
+    manager.spawn_session_reaper_thread()?;
 
     log::info!("Spawned");
 
