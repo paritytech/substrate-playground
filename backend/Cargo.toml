@@ -24,5 +24,5 @@ tokio = {version = "1.18.2", features = ["macros", "rt-multi-thread"] }
 tokio-util = "0.7.1"
 thiserror = "1.0.31"
 git2 = "0.14.2"
-clap = { version = "3.1.17", features = ["derive"] }
+clap = { version = "3.1.18", features = ["derive"] }
 futures = "0.3"
