@@ -440,7 +440,7 @@ pub async fn create_session(
         .duration
         .unwrap_or(configuration.session.duration);
 
-    // Deploy a new namespace for this session
+    // Deploy a new namespace for this session, if needed
     let namespace_api: Api<Namespace> = Api::all(client.clone());
     if namespace_api
         .get_opt(id)
@@ -530,19 +530,34 @@ pub async fn delete_session(id: &str) -> Result<()> {
         .await?
         .ok_or_else(|| Error::UnknownResource(ResourceType::Session, id.to_string()))?;
 
-    let namespace_api: Api<Namespace> = Api::all(client.clone());
-    namespace_api
-        .delete(id, &DeleteParams::default().grace_period(0))
-        .await
-        .map_err(|err| Error::Failure(err.into()))?;
-
     // Undeploy the ingress local service
     let service_local_api: Api<Service> = Api::default_namespaced(client.clone());
     service_local_api
-        .delete(&local_service_name(id), &DeleteParams::default())
+        .delete(
+            &local_service_name(id),
+            &DeleteParams::default().grace_period(0),
+        )
         .await
         .map_err(|err| Error::Failure(err.into()))?;
 
+    // Undeploy the ingress service
+    let service_api: Api<Service> = Api::namespaced(client.clone(), id);
+    service_api
+        .delete(
+            SESSION_SERVICE_NAME,
+            &DeleteParams::default().grace_period(0),
+        )
+        .await
+        .map_err(|err| Error::Failure(err.into()))?;
+
+    // Undeploy the pod
+    let pod_api: Api<Pod> = Api::namespaced(client.clone(), id);
+    pod_api
+        .delete(SESSION_NAME, &DeleteParams::default().grace_period(0))
+        .await
+        .map_err(|err| Error::Failure(err.into()))?;
+
+    // Remove the ingress route
     let host = get_host().await?;
     let subdomain = subdomain(&host, id);
     let ingress_api: Api<Ingress> = Api::default_namespaced(client.clone());
