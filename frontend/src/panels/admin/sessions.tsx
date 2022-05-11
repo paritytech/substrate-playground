@@ -250,13 +250,9 @@ export function Sessions({ client, conf, user }: { client: Client, conf: Configu
     function sessionMock(conf: SessionConfiguration): Session {
         return {
             id: "",
-            duration: conf.duration || 0,
-            maxDuration: 0,
-            template: {name: "", image: "", description: ""},
+            maxDuration: conf.duration || 0,
             userId: "",
-            url: "",
-            pod: {phase: 'Pending', reason: "", message: ""},
-            node: ""
+            state: {tag: 'Deploying'}
         };
     }
 
@@ -281,7 +277,7 @@ export function Sessions({ client, conf, user }: { client: Client, conf: Configu
                 if (sessions && conf.duration) {
                     const session = find(sessions, id);
                     if (session) {
-                        session.duration = conf.duration;
+                        session.maxDuration = conf.duration;
                     }
                 }
                 return sessions;
@@ -344,10 +340,8 @@ export function Sessions({ client, conf, user }: { client: Client, conf: Configu
                                         <TableRow>
                                             <TableCell></TableCell>
                                             <TableCell>ID</TableCell>
-                                            <TableCell>Template</TableCell>
                                             <TableCell>Duration</TableCell>
                                             <TableCell>Phase</TableCell>
-                                            <TableCell>Node</TableCell>
                                         </TableRow>
                                     </TableHead>
                                     <TableBody>
@@ -372,10 +366,8 @@ export function Sessions({ client, conf, user }: { client: Client, conf: Configu
                                                 <TableCell component="th" scope="row">
                                                     <Link href={`https://github.com/${session.userId}`} target="_blank" rel="noreferrer" onClick={stopPropagation}>{session.userId}</Link>
                                                 </TableCell>
-                                                <TableCell>{session.template.name}</TableCell>
-                                                <TableCell>{session.duration}</TableCell>
-                                                <TableCell>{session.pod.phase}</TableCell>
-                                                <TableCell>{session.node}</TableCell>
+                                                <TableCell>{session.maxDuration}</TableCell>
+                                                <TableCell>{JSON.stringify(session.state)}</TableCell>
                                             </TableRow>
                                         )})}
                                     </TableBody>
@@ -406,7 +398,7 @@ export function Sessions({ client, conf, user }: { client: Client, conf: Configu
                         {showCreationDialog &&
                         <SessionCreationDialog allowUserSelection={true} client={client} conf={conf} sessions={resources} user={user} templates={templates} show={showCreationDialog} onCreate={(conf, id) => onCreate(conf, id, setSessions)} onHide={() => setShowCreationDialog(false)} />}
                         {(selected && showUpdateDialog) &&
-                        <SessionUpdateDialog id={selected.id} duration={selected.duration} show={showUpdateDialog} onUpdate={(id, conf) => onUpdate(id, conf, setSessions)} onHide={() => setShowUpdateDialog(false)} />}
+                        <SessionUpdateDialog id={selected.id} duration={selected.maxDuration} show={showUpdateDialog} onUpdate={(id, conf) => onUpdate(id, conf, setSessions)} onHide={() => setShowUpdateDialog(false)} />}
                     </>
                 );
             }}

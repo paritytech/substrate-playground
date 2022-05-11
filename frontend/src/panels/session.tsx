@@ -254,38 +254,28 @@ function PortsTable({ ports }: {ports?: Port[]}): JSX.Element {
 }
 
 export function SessionDetails({ session }: {session: Session}): JSX.Element {
-    const { pod, template, duration } = session;
-    const { name, runtime } = template;
-    const { container, phase, startTime } = pod;
+    const { id, state, maxDuration } = session;
     return (
         <Card style={{ margin: 20 }} variant="outlined">
             <CardContent>
                 <Typography>
-                    {name}
+                    {id}
                 </Typography>
-                {startTime &&
+                {state.tag == 'Running' &&
                 <Typography color="textSecondary" gutterBottom>
-                Started {formatDuration(startTime)} ago ({formatDuration(duration*60-startTime)} left)
+                Started {formatDuration(state.startTime)} ago ({formatDuration(maxDuration*60-state.startTime)} left)
                 </Typography>
                 }
+                {state.tag == 'Deploying' &&
                 <Typography color="textSecondary" gutterBottom>
-                Phase: <em>{phase}</em> {container?.reason && `(${container.reason})`}
+                Deploying
                 </Typography>
-                {runtime &&
-                    <div style={{display: "flex", paddingTop: 20}}>
-                        <div style={{flex: 1, paddingRight: 10}}>
-                            <Typography variant="h6" id="tableTitle" component="div">
-                            Environment
-                            </Typography>
-                            <EnvTable env={runtime.env} />
-                        </div>
-                        <div style={{ flex: 1 }}>
-                            <Typography variant="h6" id="tableTitle" component="div">
-                                Ports
-                            </Typography>
-                            <PortsTable ports={runtime.ports} />
-                        </div>
-                    </div>
+                }
+                {state.tag == 'Failed' &&
+                <Typography color="textSecondary" gutterBottom>
+                Failed
+                {state.message && `(${state.reason})`}
+                </Typography>
                 }
             </CardContent>
         </Card>
@@ -328,7 +318,7 @@ function ExistingSession({session, onStop, onConnect}: {session: Session, onStop
                     <Button onClick={onStopClick} disabled={stopping} color="secondary" disableElevation>
                         Stop
                     </Button>
-                    <Button onClick={() => onConnectClick(session)} disabled={stopping || session.pod.phase !== 'Running'} disableElevation>
+                    <Button onClick={() => onConnectClick(session)} disabled={stopping || session.state.tag !== 'Running'} disableElevation>
                         Connect
                     </Button>
                 </ButtonGroup>

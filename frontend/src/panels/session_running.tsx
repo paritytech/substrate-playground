@@ -30,9 +30,9 @@ export function RunningSessionPanel({ client, user, autoDeploy, onMissingSession
 
         async function fetchData() {
             const session = await client.getSession(sessionId);
-            const phase = session?.pod.phase;
             if (session) {
-                if (phase == 'Running') {
+                const { tag }  = session.state;
+                if (tag == 'Running') {
                     // Check URL is fine
                     const url = sessionUrl(session);
                     if (url) {
@@ -41,24 +41,15 @@ export function RunningSessionPanel({ client, user, autoDeploy, onMissingSession
                             return;
                         }
                     }
-                } else if (phase == 'Failed') {
-                    setError({reason: session.pod.reason || 'Pod crashed', action: onSessionFailing});
-                } else if (phase == 'Pending') {
-                    const condition = session?.pod.conditions?.find(condition => {
-                        if (condition.reason == "Unschedulable") {
-                            return condition;
-                        }
-                    });
-                    if (condition) {
-                        setError({reason: condition.message || 'Pod failed to schedule', action: onSessionFailing});
-                    }
+                } else if (tag == 'Failed') {
+                    setError({reason: session.state.reason || 'Session failed', action: onSessionFailing});
                 }
                 // The session is being deployed, nothing to do
             }
 
             const retry = loading?.retry ?? 0;
             if (retry < maxRetries) {
-                setLoading({phase: phase || 'Unknown', retry: retry + 1});
+                setLoading({phase: session?.state.tag || 'Unknown', retry: retry + 1});
                 setTimeout(fetchData, 1000);
             } else if (retry == maxRetries) {
                 setError({reason: "Couldn't access the session in time",
