@@ -17,7 +17,7 @@ spec:
         prometheus.io/scrape: "true"
         prometheus.io/port: "8080"
     spec:
-      serviceAccountName: default-service-account
+      serviceAccountName: backend-service-account
       containers:
       - name: backend-api
         image: paritytech/substrate-playground-backend-api
@@ -111,3 +111,21 @@ spec:
     targetPort: 8080
   selector:
     app.kubernetes.io/component: backend-api
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: backend-service-account
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: backend-role
+subjects:
+- kind: ServiceAccount
+  name: backend-service-account
+  namespace: default
+roleRef:
+  kind: ClusterRole
+  name: cluster-admin
+  apiGroup: rbac.authorization.k8s.io

@@ -148,6 +148,7 @@ fn pod(
                 ..Default::default()
             }],
             termination_grace_period_seconds: Some(1),
+            automount_service_account_token: Some(false),
             ..Default::default()
         }),
         ..Default::default()
