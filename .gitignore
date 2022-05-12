@@ -11,3 +11,4 @@ templates/**/out/
 templates/**/lerna-debug.log
 templates/theia-playground/plugins
 templates/theia-playground/gen-webpack.config.js
+TODO.md
