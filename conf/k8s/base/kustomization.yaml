@@ -13,4 +13,3 @@ resources:
     - backend-ui.yaml
     - ingress.yaml
     - node-conf-daemon-set.yaml
-    - session-service-account.yaml

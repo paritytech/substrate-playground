@@ -14,7 +14,7 @@ use k8s_openapi::api::{
     core::v1::{
         Affinity, Container, EnvVar, Namespace, NodeAffinity, NodeSelectorRequirement,
         NodeSelectorTerm, Pod, PodSpec, PreferredSchedulingTerm, ResourceRequirements,
-        SecurityContext, Service, ServicePort, ServiceSpec,
+        SecurityContext, Service, ServicePort, ServiceSpec, ServiceAccount,
     },
     networking::v1::{HTTPIngressPath, HTTPIngressRuleValue, Ingress, IngressRule},
 };
@@ -46,6 +46,7 @@ const INGRESS_NAME: &str = "ingress";
 const SESSION_DURATION_ANNOTATION: &str = "playground.substrate.io/session_duration";
 const THEIA_WEB_PORT: i32 = 3000;
 const SESSION_NAME: &str = "session";
+const SERVICE_SESSION_NAME: &str = "session-service-account";
 
 fn duration_to_string(duration: Duration) -> String {
     duration.as_secs().to_string()
@@ -101,7 +102,7 @@ fn pod(
             ..Default::default()
         },
         spec: Some(PodSpec {
-            service_account: Some("session-service-account".to_string()),
+            service_account: Some(SERVICE_SESSION_NAME.to_string()),
             affinity: Some(Affinity {
                 node_affinity: Some(NodeAffinity {
                     preferred_during_scheduling_ignored_during_execution: Some(vec![
@@ -459,8 +460,19 @@ pub async fn create_session(
             .create(&PostParams::default(), &namespace(id.to_string())?)
             .await
             .map_err(|err| Error::Failure(err.into()))?;
-    }
 
+        let service_account_api: Api<ServiceAccount> = Api::namespaced(client.clone(), id);
+        service_account_api
+            .create(&PostParams::default(), &ServiceAccount {
+                metadata: ObjectMeta {
+                    name: Some(SERVICE_SESSION_NAME.to_string()),
+                    ..Default::default()
+                },
+                ..Default::default()
+            })
+            .await
+            .map_err(|err| Error::Failure(err.into()))?;
+    }
     // Deploy a new pod for this image
     let pod_api: Api<Pod> = Api::namespaced(client.clone(), id);
     pod_api
