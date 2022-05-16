@@ -75,7 +75,7 @@ async fn create_volume_template(
 }
 
 pub async fn get_repository(id: &str) -> Result<Option<Repository>> {
-    let client = client().await?;
+    let client = client()?;
 
     let repositories = get_config_map(&client, REPOSITORIES_CONFIG_MAP).await?;
     let repository = repositories.get(id);
@@ -89,7 +89,7 @@ pub async fn get_repository(id: &str) -> Result<Option<Repository>> {
 }
 
 pub async fn list_repositories() -> Result<Vec<Repository>> {
-    let client = client().await?;
+    let client = client()?;
 
     get_config_map(&client, REPOSITORIES_CONFIG_MAP)
         .await?
@@ -101,7 +101,7 @@ pub async fn list_repositories() -> Result<Vec<Repository>> {
 }
 
 pub async fn create_repository(id: &str, conf: RepositoryConfiguration) -> Result<()> {
-    let client = client().await?;
+    let client = client()?;
 
     let repository = Repository {
         id: id.to_string(),
@@ -121,7 +121,7 @@ pub async fn create_repository(id: &str, conf: RepositoryConfiguration) -> Resul
 }
 
 pub async fn update_repository(id: &str, conf: RepositoryUpdateConfiguration) -> Result<()> {
-    let client = client().await?;
+    let client = client()?;
 
     let mut repository = get_repository(id)
         .await?
@@ -140,7 +140,7 @@ pub async fn update_repository(id: &str, conf: RepositoryUpdateConfiguration) ->
 }
 
 pub async fn delete_repository(id: &str) -> Result<()> {
-    let client = client().await?;
+    let client = client()?;
     delete_config_map_value(&client, REPOSITORIES_CONFIG_MAP, id).await
 }
 
@@ -192,7 +192,7 @@ pub async fn create_repository_version(
     id: &str,
     conf: RepositoryVersionConfiguration,
 ) -> Result<()> {
-    let client = client().await?;
+    let client = client()?;
 
     // Create volume
     let volume_api: Api<PersistentVolumeClaim> = Api::default_namespaced(client.clone());

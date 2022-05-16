@@ -395,7 +395,7 @@ fn pod_to_workspace(pod: &Pod) -> Result<Workspace> {
 }
 
 pub async fn get_workspace(id: &str) -> Result<Option<Workspace>> {
-    let client = client().await?;
+    let client = client()?;
     let pod_api: Api<Pod> = Api::default_namespaced(client);
     // TODO use get_opt?
     let pod = pod_api.get(&pod_workspace_name(id)).await.ok();
@@ -429,7 +429,7 @@ pub async fn get_workspace(id: &str) -> Result<Option<Workspace>> {
 
 /// Lists all currently running workspaces
 pub async fn list_workspaces() -> Result<Vec<Workspace>> {
-    let client = client().await?;
+    let client = client()?;
     let pod_api: Api<Pod> = Api::default_namespaced(client);
     let pods = list_by_selector(
         &pod_api,
@@ -444,7 +444,7 @@ pub async fn list_workspaces() -> Result<Vec<Workspace>> {
 }
 
 pub async fn patch_ingress(_runtimes: &BTreeMap<String, Vec<Port>>) -> Result<()> {
-    let client = client().await?;
+    let client = client()?;
     let ingress_api: Api<Ingress> = Api::default_namespaced(client);
     let mut ingress: Ingress = ingress_api
         .get(INGRESS_NAME)
@@ -479,7 +479,7 @@ pub async fn patch_ingress(_runtimes: &BTreeMap<String, Vec<Port>>) -> Result<()
 }
 
 pub async fn patch_ingress_workspace(_runtimes: &BTreeMap<String, Vec<Port>>) -> Result<()> {
-    let client = client().await?;
+    let client = client()?;
     let ingress_api: Api<Ingress> = Api::default_namespaced(client);
     let mut ingress: Ingress = ingress_api
         .get(INGRESS_NAME)
@@ -571,7 +571,7 @@ pub async fn create_workspace(
             concurrent_workspaces,
         ));
     }
-    let client = client().await?;
+    let client = client()?;
 
     //TODO deploy a new ingress matching the route
     // With the proper mapping
@@ -649,7 +649,7 @@ pub async fn update_workspace(
         return Err(Error::DurationLimitBreached(max_duration.as_millis()));
     }
     if duration != workspace.max_duration {
-        let client = client().await?;
+        let client = client()?;
         let pod_api: Api<Pod> = Api::default_namespaced(client);
         let params = PatchParams {
             ..PatchParams::default()
@@ -673,7 +673,7 @@ pub async fn update_workspace(
 
 pub async fn delete_workspace(id: &str) -> Result<()> {
     // Undeploy the service by its id
-    let client = client().await?;
+    let client = client()?;
     let service_api: Api<Service> = Api::default_namespaced(client.clone());
     service_api
         .delete(&service_workspace_name(id), &DeleteParams::default())

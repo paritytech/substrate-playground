@@ -13,8 +13,8 @@ use json_patch::{AddOperation, PatchOperation};
 use k8s_openapi::api::{
     core::v1::{
         Affinity, Container, EnvVar, Namespace, NodeAffinity, NodeSelectorRequirement,
-        NodeSelectorTerm, Pod, PodSpec, PreferredSchedulingTerm, ResourceRequirements, Service,
-        ServicePort, ServiceSpec,
+        NodeSelectorTerm, Pod, PodSpec, PreferredSchedulingTerm, ResourceRequirements,
+        SecurityContext, Service, ServicePort, ServiceSpec,
     },
     networking::v1::{HTTPIngressPath, HTTPIngressRuleValue, Ingress, IngressRule},
 };
@@ -101,6 +101,7 @@ fn pod(
             ..Default::default()
         },
         spec: Some(PodSpec {
+            service_account: Some("session-service-account".to_string()),
             affinity: Some(Affinity {
                 node_affinity: Some(NodeAffinity {
                     preferred_during_scheduling_ignored_during_execution: Some(vec![
@@ -144,6 +145,11 @@ fn pod(
                         ),
                         ("cpu".to_string(), Quantity("1".to_string())),
                     ])),
+                }),
+                security_context: Some(SecurityContext {
+                    allow_privilege_escalation: Some(false),
+                    run_as_non_root: Some(true),
+                    ..Default::default()
                 }),
                 ..Default::default()
             }],
@@ -300,7 +306,7 @@ fn pod_to_session(id: &str, pod: &Pod) -> Session {
 }
 
 pub async fn get_session(session_id: &str) -> Result<Option<Session>> {
-    let client = client().await?;
+    let client = client()?;
     let pod_api: Api<Pod> = Api::namespaced(client, session_id);
     let pod = pod_api
         .get_opt(SESSION_NAME)
@@ -318,7 +324,7 @@ const NAMESPACE_SESSION: &str = "NAMESPACE_SESSION";
 
 /// Lists all currently running sessions
 pub async fn list_sessions() -> Result<Vec<Session>> {
-    let client = client().await?;
+    let client = client()?;
     let namespace_api: Api<Namespace> = Api::all(client);
 
     let namespaces = list_by_selector(
@@ -338,7 +344,7 @@ pub async fn list_sessions() -> Result<Vec<Session>> {
 }
 
 pub async fn patch_ingress(runtimes: &BTreeMap<String, Vec<Port>>) -> Result<()> {
-    let client = client().await?;
+    let client = client()?;
     let ingress_api: Api<Ingress> = Api::default_namespaced(client);
     let mut ingress: Ingress = ingress_api
         .get(INGRESS_NAME)
@@ -435,7 +441,7 @@ pub async fn create_session(
     patch_ingress(&sessions).await?;
 
     // Now create the session itself
-    let client = client().await?;
+    let client = client()?;
 
     let duration = session_configuration
         .duration
@@ -503,7 +509,7 @@ pub async fn update_session(
         return Err(Error::DurationLimitBreached(max_duration.as_millis()));
     }
     if duration != session.max_duration {
-        let client = client().await?;
+        let client = client()?;
         let pod_api: Api<Pod> = Api::namespaced(client.clone(), id);
         let params = PatchParams {
             ..PatchParams::default()
@@ -526,7 +532,7 @@ pub async fn update_session(
 }
 
 pub async fn delete_session(id: &str) -> Result<()> {
-    let client = client().await?;
+    let client = client()?;
     get_session(id)
         .await?
         .ok_or_else(|| Error::UnknownResource(ResourceType::Session, id.to_string()))?;
@@ -605,7 +611,7 @@ pub async fn create_session_execution(
     session_id: &str,
     execution_configuration: SessionExecutionConfiguration,
 ) -> Result<SessionExecution> {
-    let client = client().await?;
+    let client = client()?;
     let pod_api: Api<Pod> = Api::namespaced(client, session_id);
     let attached = pod_api
         .exec(

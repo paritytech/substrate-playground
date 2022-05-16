@@ -6,7 +6,7 @@ use log::error;
 const TEMPLATES_CONFIG_MAP: &str = "playground-templates";
 
 pub async fn list_templates() -> Result<Vec<Template>> {
-    let client = client().await?;
+    let client = client()?;
 
     Ok(get_config_map(&client, TEMPLATES_CONFIG_MAP)
         .await?

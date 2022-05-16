@@ -11,7 +11,6 @@ resources:
     - namespaces.yaml
     - backend-api.yaml
     - backend-ui.yaml
-    - cluster-role-binding.yaml
     - ingress.yaml
-    - service-account.yaml
     - node-conf-daemon-set.yaml
+    - session-service-account.yaml

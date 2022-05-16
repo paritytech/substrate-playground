@@ -38,12 +38,12 @@ async fn store_user(client: &Client, user: User) -> Result<()> {
 }
 
 pub async fn get_user(id: &str) -> Result<Option<User>> {
-    let client = client().await?;
+    let client = client()?;
     user(&client, id).await
 }
 
 pub async fn list_users() -> Result<Vec<User>> {
-    let client = client().await?;
+    let client = client()?;
     Ok(all_users(&client)
         .await?
         .into_iter()
@@ -52,7 +52,7 @@ pub async fn list_users() -> Result<Vec<User>> {
 }
 
 pub async fn create_user(id: &str, conf: UserConfiguration) -> Result<()> {
-    let client = client().await?;
+    let client = client()?;
     let user = User {
         id: id.to_string(),
         admin: conf.admin,
@@ -65,7 +65,7 @@ pub async fn create_user(id: &str, conf: UserConfiguration) -> Result<()> {
 }
 
 pub async fn update_user(id: &str, conf: UserUpdateConfiguration) -> Result<()> {
-    let client = client().await?;
+    let client = client()?;
     let mut user = user(&client, id)
         .await?
         .ok_or_else(|| Error::UnknownResource(ResourceType::User, id.to_string()))?;
@@ -78,6 +78,6 @@ pub async fn update_user(id: &str, conf: UserUpdateConfiguration) -> Result<()> 
 }
 
 pub async fn delete_user(id: &str) -> Result<()> {
-    let client = client().await?;
+    let client = client()?;
     delete_config_map_value(&client, USERS_CONFIG_MAP, id).await
 }

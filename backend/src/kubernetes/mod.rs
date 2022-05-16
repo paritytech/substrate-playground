@@ -7,7 +7,7 @@ pub mod workspace;
 
 use crate::{
     error::{Error, Result},
-    types::{Configuration, Secrets, SessionDefaults},
+    types::{Configuration, Pod, Secrets, SessionDefaults},
 };
 use json_patch::{AddOperation, PatchOperation, RemoveOperation};
 use k8s_openapi::api::{
@@ -18,7 +18,6 @@ use k8s_openapi::api::{
 };
 use kube::{
     api::{ListParams, Patch, PatchParams},
-    config::KubeConfigOptions,
     Api, Client, Config,
 };
 use serde::{de::DeserializeOwned, Serialize};
@@ -30,7 +29,7 @@ use std::{
 const INGRESS_NAME: &str = "ingress";
 
 pub async fn get_host() -> Result<String> {
-    let client = client().await?;
+    let client = client()?;
     let ingress_api: Api<Ingress> = Api::default_namespaced(client.clone());
     let ingress = ingress_api
         .get(INGRESS_NAME)
@@ -110,15 +109,12 @@ pub fn str_minutes_to_duration(str: &str) -> Result<Duration> {
 
 // Client utilities
 
-async fn config() -> Result<Config> {
-    Config::from_kubeconfig(&KubeConfigOptions::default())
-        .await
-        .or_else(|_| Config::from_cluster_env())
-        .map_err(|err| Error::Failure(err.into()))
+fn config() -> Result<Config> {
+    Config::from_cluster_env().map_err(|err| Error::Failure(err.into()))
 }
 
-pub async fn client() -> Result<Client> {
-    let config = config().await?;
+pub fn client() -> Result<Client> {
+    let config = config()?;
     Client::try_from(config).map_err(|err| Error::Failure(err.into()))
 }
 
@@ -206,4 +202,9 @@ pub async fn list_by_selector<K: Clone + DeserializeOwned + Debug>(
         .await
         .map(|l| l.items)
         .map_err(|err| Error::Failure(err.into()))
+}
+
+pub async fn current_pod_api() -> Result<Api<Pod>> {
+    // GET name / namespace from en variable
+    Err(Error::SessionIdAlreayUsed)
 }

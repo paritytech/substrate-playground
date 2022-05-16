@@ -44,7 +44,7 @@ fn nodes_to_pool(id: String, nodes: Vec<Node>) -> Result<Pool> {
 }
 
 pub async fn get_pool(id: &str) -> Result<Option<Pool>> {
-    let client = client().await?;
+    let client = client()?;
     let node_api: Api<Node> = Api::all(client);
     let nodes =
         list_by_selector(&node_api, format!("{}={}", NODE_POOL_LABEL, id).to_string()).await?;
@@ -56,7 +56,7 @@ pub async fn get_pool(id: &str) -> Result<Option<Pool>> {
 }
 
 pub async fn list_pools() -> Result<Vec<Pool>> {
-    let client = client().await?;
+    let client = client()?;
     let node_api: Api<Node> = Api::all(client);
 
     let nodes = list_by_selector(
