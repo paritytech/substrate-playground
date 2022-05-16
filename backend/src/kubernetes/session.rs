@@ -14,7 +14,7 @@ use k8s_openapi::api::{
     core::v1::{
         Affinity, Container, EnvVar, Namespace, NodeAffinity, NodeSelectorRequirement,
         NodeSelectorTerm, Pod, PodSpec, PreferredSchedulingTerm, ResourceRequirements,
-        SecurityContext, Service, ServicePort, ServiceSpec, ServiceAccount,
+        SecurityContext, Service, ServiceAccount, ServicePort, ServiceSpec,
     },
     networking::v1::{HTTPIngressPath, HTTPIngressRuleValue, Ingress, IngressRule},
 };
@@ -463,13 +463,16 @@ pub async fn create_session(
 
         let service_account_api: Api<ServiceAccount> = Api::namespaced(client.clone(), id);
         service_account_api
-            .create(&PostParams::default(), &ServiceAccount {
-                metadata: ObjectMeta {
-                    name: Some(SERVICE_SESSION_NAME.to_string()),
+            .create(
+                &PostParams::default(),
+                &ServiceAccount {
+                    metadata: ObjectMeta {
+                        name: Some(SERVICE_SESSION_NAME.to_string()),
+                        ..Default::default()
+                    },
                     ..Default::default()
                 },
-                ..Default::default()
-            })
+            )
             .await
             .map_err(|err| Error::Failure(err.into()))?;
     }

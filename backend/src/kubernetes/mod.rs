@@ -7,7 +7,8 @@ pub mod workspace;
 
 use crate::{
     error::{Error, Result},
-    types::{Configuration, Pod, Secrets, SessionDefaults}, utils::var,
+    types::{Configuration, Pod, Secrets, SessionDefaults},
+    utils::var,
 };
 use json_patch::{AddOperation, PatchOperation, RemoveOperation};
 use k8s_openapi::api::{
