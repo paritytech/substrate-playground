@@ -7,7 +7,7 @@ pub mod workspace;
 
 use crate::{
     error::{Error, Result},
-    types::{Configuration, Pod, Secrets, SessionDefaults},
+    types::{Configuration, Pod, Secrets, SessionDefaults}, utils::var,
 };
 use json_patch::{AddOperation, PatchOperation, RemoveOperation};
 use k8s_openapi::api::{
@@ -23,7 +23,7 @@ use kube::{
 use serde::{de::DeserializeOwned, Serialize};
 use serde_json::json;
 use std::{
-    collections::BTreeMap, convert::TryFrom, env, fmt::Debug, num::ParseIntError, time::Duration,
+    collections::BTreeMap, convert::TryFrom, fmt::Debug, num::ParseIntError, time::Duration,
 };
 
 const INGRESS_NAME: &str = "ingress";
@@ -46,10 +46,6 @@ pub async fn get_host() -> Result<String> {
         .as_ref()
         .ok_or(Error::MissingData("spec#rules[0]#host"))?
         .clone())
-}
-
-fn var(name: &'static str) -> Result<String> {
-    env::var(name).map_err(|_| Error::MissingEnvironmentVariable(name))
 }
 
 pub async fn get_configuration() -> Result<Configuration> {
