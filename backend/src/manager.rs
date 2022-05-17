@@ -281,22 +281,22 @@ impl Manager {
 
     // Sessions
 
-    fn ensure_session_ownership(&self, user: &LoggedUser, id: &str) -> Result<Session> {
-        if let Some(session) = new_runtime()?.block_on(get_session(id))? {
-            if user.id != session.user_id {
+    fn ensure_session_ownership(&self, user_id: &str, session_id: &str) -> Result<Session> {
+        if let Some(session) = new_runtime()?.block_on(get_session(session_id))? {
+            if user_id != session.user_id {
                 return Err(Error::Unauthorized(Permission::ResourceNotOwned));
             }
             Ok(session)
         } else {
             Err(Error::UnknownResource(
                 ResourceType::Session,
-                id.to_string(),
+                session_id.to_string(),
             ))
         }
     }
 
     pub fn get_session(&self, user: &LoggedUser, id: &str) -> Result<Option<Session>> {
-        match self.ensure_session_ownership(user, id) {
+        match self.ensure_session_ownership(&user.id, id) {
             Err(Error::Failure(from)) => Err(Error::Failure(from)),
             Err(_) => Ok(None),
             Ok(session) => Ok(Some(session)),
@@ -373,7 +373,7 @@ impl Manager {
         user: &LoggedUser,
         session_update_configuration: SessionUpdateConfiguration,
     ) -> Result<()> {
-        self.ensure_session_ownership(user, id)?;
+        self.ensure_session_ownership(&user.id, id)?;
 
         let configuration = new_runtime()?.block_on(get_configuration())?;
         new_runtime()?.block_on(update_session(
@@ -384,7 +384,7 @@ impl Manager {
     }
 
     pub fn delete_session(&self, user: &LoggedUser, id: &str) -> Result<()> {
-        self.ensure_session_ownership(user, id)?;
+        self.ensure_session_ownership(&user.id, id)?;
 
         let result = new_runtime()?.block_on(delete_session(id));
         match &result {
@@ -407,7 +407,7 @@ impl Manager {
         session_id: &str,
         session_execution_configuration: SessionExecutionConfiguration,
     ) -> Result<SessionExecution> {
-        self.ensure_session_ownership(user, session_id)?;
+        self.ensure_session_ownership(&user.id, session_id)?;
 
         new_runtime()?.block_on(create_session_execution(
             session_id,
