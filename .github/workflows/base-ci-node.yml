@@ -29,6 +29,12 @@ jobs:
       - name: Install
         run: yarn install --check-files
 
+      - name: Check
+        run: |
+          if ./jq -e '.scripts | has("check")' package.json > /dev/null; then
+              yarn check
+          fi
+
       - name: Build
         run: |
           if ./jq -e '.scripts | has("build")' package.json > /dev/null; then
