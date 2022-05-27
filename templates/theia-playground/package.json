@@ -22,7 +22,7 @@
         "@theia/messages": "1.25.0",
         "@theia/metrics": "1.25.0",
         "@theia/mini-browser": "1.25.0",
-        "@theia/monaco": "1.25.0",
+        "@theia/monaco": "1.26.0",
         "@theia/navigator": "1.25.0",
         "@theia/outline-view": "1.25.0",
         "@theia/output": "1.25.0",
