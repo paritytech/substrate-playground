@@ -35,7 +35,7 @@
         "@theia/process": "1.25.0",
         "@theia/search-in-workspace": "1.25.0",
         "@theia/task": "1.25.0",
-        "@theia/terminal": "1.25.0",
+        "@theia/terminal": "1.26.0",
         "@theia/typehierarchy": "1.25.0",
         "@theia/userstorage": "1.25.0",
         "@theia/variable-resolver": "1.25.0",
