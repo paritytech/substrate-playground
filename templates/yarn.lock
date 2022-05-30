@@ -2075,17 +2075,17 @@
   dependencies:
     defer-to-connect "^2.0.0"
 
-"@theia/application-manager@1.25.0":
-  version "1.25.0"
-  resolved "https://registry.yarnpkg.com/@theia/application-manager/-/application-manager-1.25.0.tgz#8d6fb5db8184b36027c8145df74e4297b6261267"
-  integrity sha512-2O9QcoaXICDFHIzviWbfuPMHVOdV7fh6RUKo6/tIdPeoc8Q6gqmDzvLpTpVVTnNTy2o72s5F62HhSSFpZxjNvg==
+"@theia/application-manager@1.26.0":
+  version "1.26.0"
+  resolved "https://registry.yarnpkg.com/@theia/application-manager/-/application-manager-1.26.0.tgz#33ba439e2b920133cfac3b89252f908f89198e63"
+  integrity sha512-vxfk93x082QWoqBl6iXh3Mr/uP6ZlgWU9Hhs3FzMcMtBWlcXs9v7345k2SHqUh2F1+XmDdVDZaJyd852xkyO4A==
   dependencies:
     "@babel/core" "^7.10.0"
     "@babel/plugin-transform-classes" "^7.10.0"
     "@babel/plugin-transform-runtime" "^7.10.0"
     "@babel/preset-env" "^7.10.0"
-    "@theia/application-package" "1.25.0"
-    "@theia/ffmpeg" "1.25.0"
+    "@theia/application-package" "1.26.0"
+    "@theia/ffmpeg" "1.26.0"
     "@types/fs-extra" "^4.0.2"
     "@types/semver" "^7.3.8"
     babel-loader "^8.2.2"
@@ -2129,6 +2129,23 @@
     semver "^5.4.1"
     write-json-file "^2.2.0"
 
+"@theia/application-package@1.26.0":
+  version "1.26.0"
+  resolved "https://registry.yarnpkg.com/@theia/application-package/-/application-package-1.26.0.tgz#847bc4ac56c9e77adfc9a35973cd729d5138fa34"
+  integrity sha512-X/m9f5dqXhVcUa9z6wyCbPp0nctvNTlRbUe27laRrB4xlju8EpBfRtBE2KIYgdmthYu8zX/pZzYLwic3J8Om3w==
+  dependencies:
+    "@types/fs-extra" "^4.0.2"
+    "@types/request" "^2.0.3"
+    "@types/semver" "^5.4.0"
+    "@types/write-json-file" "^2.2.1"
+    deepmerge "^4.2.2"
+    fs-extra "^4.0.2"
+    is-electron "^2.1.0"
+    nano "^9.0.5"
+    request "^2.82.0"
+    semver "^5.4.1"
+    write-json-file "^2.2.0"
+
 "@theia/bulk-edit@1.25.0":
   version "1.25.0"
   resolved "https://registry.yarnpkg.com/@theia/bulk-edit/-/bulk-edit-1.25.0.tgz#3b00f8675580613daff708d02516b8a3bb5ab1b8"
@@ -2150,16 +2167,17 @@
     "@theia/editor" "1.25.0"
     ts-md5 "^1.2.2"
 
-"@theia/cli@1.25.0":
-  version "1.25.0"
-  resolved "https://registry.yarnpkg.com/@theia/cli/-/cli-1.25.0.tgz#2feb993ce387133235bda5176752fd73862f9c34"
-  integrity sha512-zpOMiFBFSWXBi9wJ+r0pJ6lmyB5EjHxHORBbojm7WNa6lqlNeETvlISp6/+VO5Y9oDhWAFms4O8Uq4DHZQzGOw==
+"@theia/cli@1.26.0":
+  version "1.26.0"
+  resolved "https://registry.yarnpkg.com/@theia/cli/-/cli-1.26.0.tgz#ffaebcecf6033b98dee6303224c5ee1f5c595872"
+  integrity sha512-DHcNQ9EEaQj9o3p+f6OGjyAuk5quEUa2zmxWddcIKl/lE87DH2Dot4CInNUn1PC7roCPfmtN3DJRvzKU0lnw2g==
   dependencies:
-    "@theia/application-manager" "1.25.0"
-    "@theia/application-package" "1.25.0"
-    "@theia/ffmpeg" "1.25.0"
-    "@theia/localization-manager" "1.25.0"
-    "@theia/ovsx-client" "1.25.0"
+    "@theia/application-manager" "1.26.0"
+    "@theia/application-package" "1.26.0"
+    "@theia/ffmpeg" "1.26.0"
+    "@theia/localization-manager" "1.26.0"
+    "@theia/ovsx-client" "1.26.0"
+    "@theia/request" "1.26.0"
     "@types/chai" "^4.2.7"
     "@types/mocha" "^5.2.7"
     "@types/node-fetch" "^2.5.7"
@@ -2167,10 +2185,7 @@
     chai "^4.2.0"
     chalk "4.0.0"
     decompress "^4.2.1"
-    https-proxy-agent "^5.0.0"
     mocha "^7.0.0"
-    node-fetch "^2.6.7"
-    proxy-from-env "^1.1.0"
     puppeteer "^2.0.0"
     puppeteer-to-istanbul "^1.2.2"
     temp "^0.9.1"
@@ -2301,10 +2316,10 @@
     "@theia/core" "1.25.0"
     "@theia/variable-resolver" "1.25.0"
 
-"@theia/ffmpeg@1.25.0":
-  version "1.25.0"
-  resolved "https://registry.yarnpkg.com/@theia/ffmpeg/-/ffmpeg-1.25.0.tgz#0b1b229184d445ef3af8a6fe5d3d20f643217df4"
-  integrity sha512-UkY9eEoVC3oPZOXDi8UKkOnGqGDD16u+vhdzRonNcUmsTFGkVmFkf2goBZIfOHtRJgCidfK3rx9/yISeHQp4AQ==
+"@theia/ffmpeg@1.26.0":
+  version "1.26.0"
+  resolved "https://registry.yarnpkg.com/@theia/ffmpeg/-/ffmpeg-1.26.0.tgz#a6c240c50d618eeafc2e8e109a2645a63536b821"
+  integrity sha512-4wz6DT0ziyf2fvPzepGr6F2Rrm8I48qoPFp3ir/+s63TPD02KkykkeioKdEJK0eJ+RVr00s6Jdy2Jm44uQNGTQ==
   dependencies:
     "@electron/get" "^1.12.4"
     unzipper "^0.9.11"
@@ -2355,10 +2370,10 @@
     "@theia/userstorage" "1.25.0"
     jsonc-parser "^2.2.0"
 
-"@theia/localization-manager@1.25.0":
-  version "1.25.0"
-  resolved "https://registry.yarnpkg.com/@theia/localization-manager/-/localization-manager-1.25.0.tgz#faa90dccb6dd865292caca866be51606a4fe68ab"
-  integrity sha512-BYR6tsvv2aH5tVMkiA2iWmH9uGYRb2/LaXQuzgVG26kGUAjtcHdaHU0RwFBklAoeWFU7tguw8NbSoEvvKBhlaA==
+"@theia/localization-manager@1.26.0":
+  version "1.26.0"
+  resolved "https://registry.yarnpkg.com/@theia/localization-manager/-/localization-manager-1.26.0.tgz#eabe883bbfa207e9afa07cacaf33c506bc5901e2"
+  integrity sha512-Y9otMwV2/CLGaIj1SO24s1k5UKxoxkcgHrirCqTww3r4YpbJayKhZftblEAPFiE3gR+MMjsGRTBzxKF60bOGNw==
   dependencies:
     "@types/bent" "^7.0.1"
     "@types/fs-extra" "^4.0.2"
@@ -2459,13 +2474,12 @@
     "@types/p-queue" "^2.3.1"
     p-queue "^2.4.2"
 
-"@theia/ovsx-client@1.25.0":
-  version "1.25.0"
-  resolved "https://registry.yarnpkg.com/@theia/ovsx-client/-/ovsx-client-1.25.0.tgz#41aa49d2954152750fe6c37e9652f6c8b0407fa0"
-  integrity sha512-GciPBkJafEghoXK9ehoDMcnI/f8+D1z0DPGUkKB648tSvV5lAzH+jp1fFBoOo/Jl35doGjcwiM3qKARucEJSMA==
+"@theia/ovsx-client@1.26.0":
+  version "1.26.0"
+  resolved "https://registry.yarnpkg.com/@theia/ovsx-client/-/ovsx-client-1.26.0.tgz#4aced5551d6911b8eb3f3ead643f4f51af849d40"
+  integrity sha512-PF4o8sBH5+3EtaMnPUhrql7Q0SjjBGplibWfdrrxhHaPmUMHGwb54rhvQ29nI/nGSoelTnVTHFvzRTOCS8YkQQ==
   dependencies:
-    "@types/bent" "^7.0.1"
-    bent "^7.1.0"
+    "@theia/request" "1.26.0"
     semver "^5.4.1"
 
 "@theia/plugin-dev@1.25.0":
@@ -2590,6 +2604,14 @@
     "@theia/core" "1.25.0"
     node-pty "0.11.0-beta17"
     string-argv "^0.1.1"
+
+"@theia/request@1.26.0":
+  version "1.26.0"
+  resolved "https://registry.yarnpkg.com/@theia/request/-/request-1.26.0.tgz#dd11ca8ca51c0f5eacced5b057515e1263ce51c9"
+  integrity sha512-tUsBdtkf2ST9348laz2vS6gInO+crffBqx+qE2pERYgraOdIvahtd/lGzyCGfopbDTzWouCwCFnxnIawIk3HdA==
+  dependencies:
+    http-proxy-agent "^5.0.0"
+    https-proxy-agent "^5.0.0"
 
 "@theia/scm@1.25.0":
   version "1.25.0"
