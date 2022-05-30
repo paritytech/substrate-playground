@@ -30,7 +30,7 @@
         "@theia/plugin-dev": "1.25.0",
         "@theia/plugin-ext": "1.25.0",
         "@theia/plugin-ext-vscode": "1.25.0",
-        "@theia/preview": "1.25.0",
+        "@theia/preview": "1.26.0",
         "@theia/preferences": "1.25.0",
         "@theia/process": "1.25.0",
         "@theia/search-in-workspace": "1.25.0",
