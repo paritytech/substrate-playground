@@ -955,6 +955,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "k8s-openapi"
+version = "0.15.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d2ae2c04fcee6b01b04e3aadd56bb418932c8e0a9d8a93f48bc68c6bdcdb559d"
+dependencies = [
+ "base64 0.13.0",
+ "bytes",
+ "chrono",
+ "serde",
+ "serde-value",
+ "serde_json",
+]
+
+[[package]]
 name = "kernel32-sys"
 version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -970,7 +984,7 @@ version = "0.72.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "977951a1d7dbce4c6f9c2cbed0711f568df9944010fafa88161a20f7e5163bd3"
 dependencies = [
- "k8s-openapi",
+ "k8s-openapi 0.14.0",
  "kube-client",
  "kube-core",
 ]
@@ -993,7 +1007,7 @@ dependencies = [
  "hyper-openssl",
  "hyper-timeout",
  "jsonpath_lib",
- "k8s-openapi",
+ "k8s-openapi 0.14.0",
  "kube-core",
  "openssl",
  "pem",
@@ -1022,7 +1036,7 @@ dependencies = [
  "form_urlencoded",
  "http",
  "json-patch",
- "k8s-openapi",
+ "k8s-openapi 0.14.0",
  "once_cell",
  "serde",
  "serde_json",
@@ -1495,7 +1509,7 @@ dependencies = [
  "hyper 0.14.19",
  "hyper-tls",
  "json-patch",
- "k8s-openapi",
+ "k8s-openapi 0.15.0",
  "kube",
  "log 0.4.17",
  "prometheus",
