@@ -40,14 +40,14 @@ pub fn clone(path: String, url: String) -> Result<()> {
         .fetch_options(fo)
         .with_checkout(co)
         .clone(&url, Path::new(&path))
-        .map_err(|err| Error::Failure(err.into()))?;
+        .map_err(|err| Error::Failure(err.to_string()))?;
     Ok(())
 }
 
 // TODO add support for multiple devcontainer files (.devcontainer/FOLDER1/devcontainer.json)
 pub fn read_and_parse_devcontainer(path: String) -> Result<Configuration> {
     fs::read_to_string(format!("{}/.devcontainer/devcontainer.json", path))
-        .map_err(|err| Error::Failure(err.into()))
+        .map_err(|err| Error::Failure(err.to_string()))
         .and_then(|data| parse_devcontainer(&data))
 }
 
@@ -80,7 +80,7 @@ pub fn exec(path: String, command: Vec<String>) -> Vec<Result<Output>> {
             .arg("-c")
             .args(command[0].split_whitespace().collect::<Vec<_>>())
             .output()
-            .map_err(|err| Error::Failure(err.into()))]
+            .map_err(|err| Error::Failure(err.to_string()))]
     } else {
         command
             .iter()
@@ -91,7 +91,7 @@ pub fn exec(path: String, command: Vec<String>) -> Vec<Result<Output>> {
                     .current_dir(path.clone())
                     .args(members)
                     .output()
-                    .map_err(|err| Error::Failure(err.into()))
+                    .map_err(|err| Error::Failure(err.to_string()))
             })
             .collect()
     }
@@ -110,7 +110,7 @@ fn parse_devcontainer(data: &str) -> Result<Configuration> {
     // See https://code.visualstudio.com/docs/languages/json#_json-with-comments
     let data_sanitized = strip_jsonc_comments(data, true);
     let v: Value =
-        serde_json::from_str(&data_sanitized).map_err(|err| Error::Failure(err.into()))?;
+        serde_json::from_str(&data_sanitized).map_err(|err| Error::Failure(err.to_string()))?;
     Ok(Configuration {
         on_create_command: parse_value(&v, "onCreateCommand")?,
         post_create_command: parse_value(&v, "postCreateCommand")?,

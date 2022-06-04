@@ -16,7 +16,7 @@ import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import TextField from '@mui/material/TextField';
-import { Client, Configuration, LoggedUser, Pool, User, UserConfiguration, UserUpdateConfiguration } from '@substrate/playground-client';
+import { Client, Configuration, Pool, User, UserConfiguration, UserUpdateConfiguration } from '@substrate/playground-client';
 import { ErrorSnackbar } from '../../components';
 import { useInterval } from '../../hooks';
 import { useStyles, EnhancedTableToolbar, Resources } from '.';
@@ -105,7 +105,7 @@ function UserCreationDialog({ client, conf, users, show, onCreate, onHide }: { c
     );
 }
 
-function UserUpdateDialog({ client, id, user, show, onUpdate, onHide }: { client: Client, id: string, user: User, show: boolean, onUpdate: (id: string, conf: UserUpdateConfiguration) => void, onHide: () => void }): JSX.Element {
+function UserUpdateDialog({ client, user, show, onUpdate, onHide }: { client: Client, user: User, show: boolean, onUpdate: (id: string, conf: UserUpdateConfiguration) => void, onHide: () => void }): JSX.Element {
     const [adminChecked, setAdminChecked] = React.useState(user.admin || false);
     const [poolAffinity, setPoolAffinity] = React.useState(user.poolAffinity || "");
     const [customizeDurationChecked, setCustomizeDurationChecked] = React.useState(user.canCustomizeDuration || false);
@@ -169,7 +169,7 @@ function UserUpdateDialog({ client, id, user, show, onUpdate, onHide }: { client
                         label="Can Customize pool affinity"
                     />
                     <ButtonGroup style={{alignSelf: "flex-end", marginTop: 20}} size="small">
-                        <Button disabled={ adminChecked == user.admin && poolAffinity == user.poolAffinity && customizeDurationChecked == user.canCustomizeDuration && customizePoolAffinityChecked == user.canCustomizePoolAffinity } onClick={() => {onUpdate(id.toLowerCase(), {admin: adminChecked, poolAffinity: poolAffinity, canCustomizeDuration: customizeDurationChecked, canCustomizePoolAffinity: customizePoolAffinityChecked}); onHide();}}>UPDATE</Button>
+                        <Button disabled={ adminChecked == user.admin && poolAffinity == user.poolAffinity && customizeDurationChecked == user.canCustomizeDuration && customizePoolAffinityChecked == user.canCustomizePoolAffinity } onClick={() => {onUpdate(user.id.toLowerCase(), {admin: adminChecked, poolAffinity: poolAffinity, canCustomizeDuration: customizeDurationChecked, canCustomizePoolAffinity: customizePoolAffinityChecked}); onHide();}}>UPDATE</Button>
                         <Button onClick={onHide}>CLOSE</Button>
                     </ButtonGroup>
                 </Container>
@@ -178,18 +178,18 @@ function UserUpdateDialog({ client, id, user, show, onUpdate, onHide }: { client
     );
 }
 
-export function Users({ client, user, conf }: { client: Client, user: LoggedUser, conf: Configuration }): JSX.Element {
+export function Users({ client, user, conf }: { client: Client, user: User, conf: Configuration }): JSX.Element {
     const classes = useStyles();
-    const [selected, setSelected] = useState<string | null>(null);
+    const [selected, setSelected] = useState<User | null>(null);
     const [showCreationDialog, setShowCreationDialog] = useState(false);
     const [showUpdateDialog, setShowUpdateDialog] = useState(false);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
-    const isSelected = (name: string) => selected == name;
-    const handleClick = (_event: React.MouseEvent<unknown>, name: string) => {
-        if (selected == name) {
+    const isSelected = (user: User) => selected?.id == user.id;
+    const handleClick = (_event: React.MouseEvent<unknown>, user: User) => {
+        if (isSelected(user)) {
             setSelected(null);
         } else {
-            setSelected(name);
+            setSelected(user);
         }
    };
 
@@ -216,9 +216,9 @@ export function Users({ client, user, conf }: { client: Client, user: LoggedUser
     }
 
     async function onDelete(setUsers: Dispatch<SetStateAction<User[] | null>>): Promise<void> {
-        if (selected && selected != user.id) {
+        if (selected && selected.id != user.id) {
             try {
-                await client.deleteUser(selected);
+                await client.deleteUser(selected.id);
                 setSelected(null);
             } catch (e) {
                 console.error(e);
@@ -233,7 +233,7 @@ export function Users({ client, user, conf }: { client: Client, user: LoggedUser
         <Resources<User> callback={async () => await client.listUsers()}>
         {(resources: User[], setUsers: Dispatch<SetStateAction<User[] | null>>) => (
             <>
-                <EnhancedTableToolbar user={user} label="Users" selected={selected} onCreate={() => setShowCreationDialog(true)} onUpdate={() => setShowUpdateDialog(true)} onDelete={() => onDelete(setUsers)} />
+                <EnhancedTableToolbar user={user} label="Users" selected={selected?.id} onCreate={() => setShowCreationDialog(true)} onUpdate={() => setShowUpdateDialog(true)} onDelete={() => onDelete(setUsers)} />
                 <TableContainer component={Paper}>
                     <Table className={classes.table} aria-label="simple table">
                         <TableHead>
@@ -248,13 +248,13 @@ export function Users({ client, user, conf }: { client: Client, user: LoggedUser
                         </TableHead>
                         <TableBody>
                             {resources.map((user, index) => {
-                                    const isItemSelected = isSelected(user.id);
+                                    const isItemSelected = isSelected(user);
                                     const labelId = `enhanced-table-checkbox-${index}`;
                                     return (
                                 <TableRow
                                     key={user.id}
                                     hover
-                                    onClick={(event) => handleClick(event, user.id)}
+                                    onClick={(event) => handleClick(event, user)}
                                     role="checkbox"
                                     aria-checked={isItemSelected}
                                     tabIndex={-1}
@@ -282,7 +282,7 @@ export function Users({ client, user, conf }: { client: Client, user: LoggedUser
                 {showCreationDialog &&
                 <UserCreationDialog client={client} conf={conf} users={resources} show={showCreationDialog} onCreate={(id, conf) => onCreate(id, conf, setUsers)} onHide={() => setShowCreationDialog(false)} />}
                 {(selected && showUpdateDialog) &&
-                <UserUpdateDialog client={client} id={selected} user={find(resources, selected)} show={showUpdateDialog} onUpdate={(id, conf) => onUpdate(id, conf, setUsers)} onHide={() => setShowUpdateDialog(false)} />}
+                <UserUpdateDialog client={client} user={selected} show={showUpdateDialog} onUpdate={(id, conf) => onUpdate(id, conf, setUsers)} onHide={() => setShowUpdateDialog(false)} />}
             </>
         )}
         </Resources>

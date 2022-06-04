@@ -17,7 +17,7 @@ import MoreVertIcon from '@mui/icons-material/MoreVert';
 import Snackbar from "@mui/material/Snackbar";
 import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
-import { Configuration, LoggedUser } from "@substrate/playground-client";
+import { Configuration, User } from "@substrate/playground-client";
 import { useInterval } from './hooks';
 import { Params } from "./index";
 import { LogoSubstrate } from "./LogoSubstrate";
@@ -177,7 +177,7 @@ export function NavMenuUnlogged(): JSX.Element {
     );
 }
 
-export function NavMenuLogged({ conf, user, onLogout }: { conf: Configuration, user: LoggedUser, onLogout: () => void}): JSX.Element {
+export function NavMenuLogged({ conf, user, onLogout }: { conf: Configuration, user: User, onLogout: () => void}): JSX.Element {
     const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
     const open = Boolean(anchorEl);
     const handleMenu = (event: React.MouseEvent<HTMLElement>) => setAnchorEl(event.currentTarget);

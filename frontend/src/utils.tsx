@@ -1,4 +1,4 @@
-import { IdentifiedResource, LoggedUser, Session } from "@substrate/playground-client";
+import { IdentifiedResource, User, Session } from "@substrate/playground-client";
 
 function timeout<T>(promise: Promise<T>, ms: number): Promise<T> {
     return new Promise(function(resolve, reject) {
@@ -28,27 +28,23 @@ export function formatDuration(s: number): string {
 
 // User helpers
 
-export function isParitytechMember(user: LoggedUser): boolean {
-    return user.organizations.indexOf('paritytech') != -1;
-}
-
-export function canCustomize(user: LoggedUser): boolean {
+export function canCustomize(user: User): boolean {
     return canCustomizeDuration(user) || canCustomizePoolAffinity(user);
 }
 
-export function canCustomizeDuration(user: LoggedUser): boolean {
-    return user.admin || user.canCustomizeDuration || isParitytechMember(user);
+export function canCustomizeDuration(user: User): boolean {
+    return user.admin || user.canCustomizeDuration;
 }
 
-export function canCustomizePoolAffinity(user: LoggedUser): boolean {
-    return user.admin || user.canCustomizePoolAffinity || isParitytechMember(user);
+export function canCustomizePoolAffinity(user: User): boolean {
+    return user.admin || user.canCustomizePoolAffinity;
 }
 
-export function hasAdminReadRights(user: LoggedUser): boolean {
-    return user.admin || isParitytechMember(user);
+export function hasAdminReadRights(user: User): boolean {
+    return user.admin;
 }
 
-export function hasAdminEditRights(user: LoggedUser): boolean {
+export function hasAdminEditRights(user: User): boolean {
     return user.admin;
 }
 
@@ -57,7 +53,7 @@ export function sessionDomain(session: Session): string {
 }
 
 export function sessionUrl(session: Session): string | null {
-    switch (session.pod.phase) {
+    switch (session.state.tag) {
         // TODO retrieve RepoVersion, extract ports
         case 'Running': {
             //TODO const ports = session.template.runtime?.ports;

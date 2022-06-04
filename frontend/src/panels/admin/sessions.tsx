@@ -10,7 +10,7 @@ import TableCell from '@mui/material/TableCell';
 import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
-import { Client, Configuration, LoggedUser, Session, SessionConfiguration, Template, Pool, User, SessionUpdateConfiguration } from '@substrate/playground-client';
+import { Client, Configuration, Session, SessionConfiguration, Template, Pool, User, SessionUpdateConfiguration } from '@substrate/playground-client';
 import { ErrorSnackbar } from "../../components";
 import { useInterval } from "../../hooks";
 import { canCustomizeDuration, canCustomizePoolAffinity, find, mainSessionId, remove } from "../../utils";
@@ -19,7 +19,7 @@ import { FirstPage, KeyboardArrowLeft, KeyboardArrowRight, LastPage } from "@mui
 import { EnhancedTableToolbar, NoResourcesContainer, Resources } from ".";
 import { useTheme } from "@mui/styles";
 
-export function SessionCreationDialog({ client, conf, sessions, user, template, templates, show, onCreate, onHide, allowUserSelection = false }: { client: Client, conf: Configuration, sessions?: Session[], user: LoggedUser, template?: string, templates: Template[] | null, show: boolean, onCreate: (conf: SessionConfiguration, id: string, ) => void, onHide: () => void , allowUserSelection?: boolean}): JSX.Element {
+export function SessionCreationDialog({ client, conf, sessions, user, template, templates, show, onCreate, onHide, allowUserSelection = false }: { client: Client, conf: Configuration, sessions?: Session[], user: User, template?: string, templates: Template[] | null, show: boolean, onCreate: (conf: SessionConfiguration, id: string, ) => void, onHide: () => void , allowUserSelection?: boolean}): JSX.Element {
     const [selectedUser, setUser] = React.useState<string | null>(user.id);
     const [selectedTemplate, setTemplate] = React.useState<string | null>(null);
     const [duration, setDuration] = React.useState(conf.session.duration);
@@ -227,7 +227,7 @@ interface TablePaginationActionsProps {
     );
   }
 
-export function Sessions({ client, conf, user }: { client: Client, conf: Configuration, user: LoggedUser }): JSX.Element {
+export function Sessions({ client, conf, user }: { client: Client, conf: Configuration, user: User }): JSX.Element {
     const [selected, setSelected] = useState<Session | null>(null);
     const [showCreationDialog, setShowCreationDialog] = useState(false);
     const [showUpdateDialog, setShowUpdateDialog] = useState(false);

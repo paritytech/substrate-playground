@@ -1,10 +1,10 @@
 //! Helper methods ton interact with k8s
 use crate::{
-    error::{Error, ResourceType, Result},
+    error::{Error, Result},
     types::{
         NameValuePair, Port, Repository, RepositoryConfiguration, RepositoryRuntimeConfiguration,
         RepositoryUpdateConfiguration, RepositoryVersion, RepositoryVersionConfiguration,
-        RepositoryVersionState,
+        RepositoryVersionState, ResourceType,
     },
 };
 use k8s_openapi::api::{
@@ -22,7 +22,10 @@ use kube::{
 };
 use std::collections::BTreeMap;
 
-use super::{add_config_map_value, client, delete_config_map_value, get_config_map, serialize};
+use super::{
+    client, delete_config_map_value, get_resource_from_config_map, list_resources_from_config_map,
+    store_resource_as_config_map,
+};
 
 const APP_LABEL: &str = "app.kubernetes.io/part-of";
 const APP_VALUE: &str = "playground";
@@ -30,7 +33,7 @@ const COMPONENT_LABEL: &str = "app.kubernetes.io/component";
 
 const COMPONENT_WORKSPACE_VALUE: &str = "workspace";
 
-const REPOSITORIES_CONFIG_MAP: &str = "playground-repositories";
+const CONFIG_MAP: &str = "playground-repositories";
 
 fn volume_template(repository_id: &str) -> PersistentVolumeClaim {
     let mut labels = BTreeMap::new();
@@ -71,33 +74,17 @@ async fn create_volume_template(
 ) -> Result<PersistentVolumeClaim> {
     api.create(&PostParams::default(), &volume_template(repository_id))
         .await
-        .map_err(|err| Error::Failure(err.into()))
+        .map_err(|err| Error::K8sCommunicationFailure(err))
 }
 
 pub async fn get_repository(id: &str) -> Result<Option<Repository>> {
     let client = client()?;
-
-    let repositories = get_config_map(&client, REPOSITORIES_CONFIG_MAP).await?;
-    let repository = repositories.get(id);
-
-    match repository.map(|repository| {
-        serde_yaml::from_str::<Repository>(repository).map_err(|err| Error::Failure(err.into()))
-    }) {
-        Some(repository) => repository.map(Some),
-        None => Ok(None),
-    }
+    get_resource_from_config_map(&client, id, CONFIG_MAP).await
 }
 
 pub async fn list_repositories() -> Result<Vec<Repository>> {
     let client = client()?;
-
-    get_config_map(&client, REPOSITORIES_CONFIG_MAP)
-        .await?
-        .into_iter()
-        .map(|(_k, v)| {
-            serde_yaml::from_str::<Repository>(&v).map_err(|err| Error::Failure(err.into()))
-        })
-        .collect::<Result<Vec<Repository>>>()
+    list_resources_from_config_map(&client, CONFIG_MAP).await
 }
 
 pub async fn create_repository(id: &str, conf: RepositoryConfiguration) -> Result<()> {
@@ -109,39 +96,23 @@ pub async fn create_repository(id: &str, conf: RepositoryConfiguration) -> Resul
         url: conf.url,
     };
 
-    add_config_map_value(
-        &client,
-        REPOSITORIES_CONFIG_MAP,
-        id,
-        serialize(&repository)?.as_str(),
-    )
-    .await?;
-
-    Ok(())
+    store_resource_as_config_map(&client, &repository.id, &repository, CONFIG_MAP).await
 }
 
 pub async fn update_repository(id: &str, conf: RepositoryUpdateConfiguration) -> Result<()> {
     let client = client()?;
 
-    let mut repository = get_repository(id)
+    let mut repository: Repository = get_resource_from_config_map(&client, id, CONFIG_MAP)
         .await?
         .ok_or_else(|| Error::UnknownResource(ResourceType::Repository, id.to_string()))?;
     repository.tags = conf.tags;
 
-    add_config_map_value(
-        &client,
-        REPOSITORIES_CONFIG_MAP,
-        id,
-        serialize(&repository)?.as_str(),
-    )
-    .await?;
-
-    Ok(())
+    store_resource_as_config_map(&client, &repository.id, &repository, CONFIG_MAP).await
 }
 
 pub async fn delete_repository(id: &str) -> Result<()> {
     let client = client()?;
-    delete_config_map_value(&client, REPOSITORIES_CONFIG_MAP, id).await
+    delete_config_map_value(&client, CONFIG_MAP, id).await
 }
 
 // Repository versions
@@ -248,7 +219,7 @@ pub async fn create_repository_version(
     job_api
         .create(&PostParams::default(), &job)
         .await
-        .map_err(|err| Error::Failure(err.into()))?;
+        .map_err(|err| Error::K8sCommunicationFailure(err))?;
 
     Ok(())
 }

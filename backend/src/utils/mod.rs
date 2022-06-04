@@ -1,6 +1,7 @@
 use crate::error::{Error, Result};
 use std::env;
 
+pub mod http;
 pub mod jsonc;
 
 /// Access an environment variable by its name

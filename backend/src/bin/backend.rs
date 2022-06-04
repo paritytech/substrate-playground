@@ -3,73 +3,38 @@
 extern crate playground;
 
 use ::prometheus::Registry;
-use playground::github::GitHubUser;
 use playground::kubernetes::{get_configuration, get_secrets};
 use playground::manager::Manager;
 use playground::prometheus::PrometheusMetrics;
 use playground::Context;
-use rocket::fairing::AdHoc;
-use rocket::{catchers, config::Environment, http::Method, routes};
-use rocket_cors::{AllowedOrigins, CorsOptions};
-use rocket_oauth2::{HyperSyncRustlsAdapter, OAuth2, OAuthConfig, StaticProvider};
-use std::{env, error::Error};
+use rocket::{catchers, routes};
+use std::env;
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn Error>> {
+#[rocket::main]
+async fn main() {
     // Initialize log configuration. Reads `RUST_LOG` if any, otherwise fallsback to `default`
     if env::var("RUST_LOG").is_err() {
         env::set_var("RUST_LOG", "info");
     }
     env_logger::init();
 
-    // Prints basic details
-    log::info!("Running ROCKET in {:?} mode", Environment::active()?);
-
     match env::var("GITHUB_SHA") {
         Ok(version) => log::info!("Version {}", version),
         Err(_) => log::warn!("Unknown version"),
     }
 
-    let manager = Manager::new().await?;
-    manager.spawn_session_reaper_thread()?;
+    let manager = Manager::new().await.unwrap();
+    manager.spawn_session_reaper_thread().await.unwrap();
 
-    log::info!("Spawned");
+    log::info!("Spawned session reaper thread");
 
-    // Configure CORS
-    let cors = CorsOptions {
-        allowed_origins: AllowedOrigins::all(),
-        allowed_methods: vec![Method::Get, Method::Post, Method::Put, Method::Delete]
-            .into_iter()
-            .map(From::from)
-            .collect(),
-        allow_credentials: true,
-        ..Default::default()
-    }
-    .to_cors()?;
-
-    let configuration = get_configuration().await?;
-    let secrets = get_secrets().await?;
-    let registry = Registry::new_custom(Some("playground".to_string()), None)?;
-    manager.clone().metrics.register(registry.clone())?;
+    let configuration = get_configuration().await.unwrap();
+    let secrets = get_secrets().await.unwrap();
+    let registry = Registry::new_custom(Some("playground".to_string()), None).unwrap();
+    manager.clone().metrics.register(registry.clone()).unwrap();
     let prometheus = PrometheusMetrics::with_registry(registry);
-    let error = rocket::ignite()
-        .register(catchers![playground::api::bad_request_catcher])
-        .attach(cors)
-        .attach(AdHoc::on_attach("github", |rocket| {
-            let config = OAuthConfig::new(
-                StaticProvider {
-                    auth_uri: "https://github.com/login/oauth/authorize".into(),
-                    token_uri: "https://github.com/login/oauth/access_token".into(),
-                },
-                configuration.github_client_id,
-                secrets.github_client_secret,
-                None,
-            );
-            Ok(rocket.attach(OAuth2::<GitHubUser>::custom(
-                HyperSyncRustlsAdapter::default().basic_auth(false),
-                config,
-            )))
-        }))
+    let _ = rocket::build()
+        .register("/", catchers![playground::api::bad_request_catcher])
         .mount(
             "/api",
             routes![
@@ -88,6 +53,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 playground::api::update_session,
                 playground::api::delete_session,
                 playground::api::create_session_execution,
+                // Roles
+                playground::api::get_role,
+                playground::api::list_roles,
+                playground::api::create_role,
+                playground::api::update_role,
+                playground::api::delete_role,
                 // Repositories
                 playground::api::get_repository,
                 playground::api::list_repositories,
@@ -112,12 +83,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
             ],
         )
         .mount("/metrics", prometheus)
-        .manage(Context { manager })
-        .launch();
-
-    // Launch blocks unless an error is returned
-
-    log::info!("Shutting down due to error");
-
-    Err(error.into())
+        .manage(Context {
+            manager,
+            configuration,
+            secrets,
+        })
+        .launch()
+        .await
+        .unwrap();
 }

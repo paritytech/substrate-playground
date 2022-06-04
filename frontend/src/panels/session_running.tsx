@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import Paper from '@mui/material/Paper';
-import { Client, LoggedUser } from '@substrate/playground-client';
+import { Client, User } from '@substrate/playground-client';
 import { CenteredContainer, ErrorMessage, Loading } from '../components';
 import { fetchWithTimeout, find, mainSessionId, sessionUrl } from '../utils';
 
@@ -15,7 +15,7 @@ interface Loading {
     retry: number,
 }
 
-export function RunningSessionPanel({ client, user, autoDeploy, onMissingSession, onSessionFailing, onSessionTimeout }: { client: Client, user: LoggedUser, autoDeploy: string | null, onMissingSession: () => void, onSessionFailing: () => void, onSessionTimeout: () => void }): JSX.Element {
+export function RunningSessionPanel({ client, user, autoDeploy, onMissingSession, onSessionFailing, onSessionTimeout }: { client: Client, user: User, autoDeploy: string | null, onMissingSession: () => void, onSessionFailing: () => void, onSessionTimeout: () => void }): JSX.Element {
     const maxRetries = 5*60;
     const sessionId = mainSessionId(user.id);
     const ref = useRef(null);

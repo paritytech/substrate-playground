@@ -39,7 +39,7 @@ pub async fn get_volume(
 ) -> Result<PersistentVolumeClaim> {
     api.get(name)
         .await
-        .map_err(|err| Error::Failure(err.into()))
+        .map_err(|err| Error::K8sCommunicationFailure(err))
 }
 
 pub fn volume_template_name(repository_id: &str) -> String {
@@ -124,7 +124,7 @@ pub async fn get_or_create_volume(
         Err(_) => api
             .create(&PostParams::default(), &volume(workspace_id, repository_id))
             .await
-            .map_err(|err| Error::Failure(err.into())),
+            .map_err(|err| Error::K8sCommunicationFailure(err)),
     }
 }
 

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom";
-import { Client, Configuration, LoggedUser, Session } from '@substrate/playground-client';
+import { Client, Configuration, User, Session } from '@substrate/playground-client';
 import { createTheme, ThemeProvider, Theme, StyledEngineProvider, adaptV4Theme } from '@mui/material/styles';
 import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
@@ -24,7 +24,7 @@ declare module '@mui/styles/defaultTheme' {
   interface DefaultTheme extends Theme {}
 }
 
-function MainPanel({ client, params, conf, user, panel, onRetry, onConnect, onAfterDeployed }: { client: Client, params: Params, conf: Configuration, user: LoggedUser, panel: PanelId, onRetry: () => void, onConnect: () => void, onAfterDeployed: () => void }): JSX.Element {
+function MainPanel({ client, params, conf, user, panel, onRetry, onConnect, onAfterDeployed }: { client: Client, params: Params, conf: Configuration, user: User, panel: PanelId, onRetry: () => void, onConnect: () => void, onAfterDeployed: () => void }): JSX.Element {
     switch(panel) {
         case PanelId.Session:
           return <SessionPanel client={client} conf={conf} user={user} onRetry={onRetry}
@@ -45,7 +45,7 @@ function MainPanel({ client, params, conf, user, panel, onRetry, onConnect, onAf
     }
 }
 
-function ExtraTheiaNav({ client, user, conf, restartAction }: { client: Client, user: LoggedUser, conf: Configuration, restartAction: () => void }): JSX.Element {
+function ExtraTheiaNav({ client, user, conf, restartAction }: { client: Client, user: User, conf: Configuration, restartAction: () => void }): JSX.Element {
     const [session, setSession] = useState<Session | null | undefined>(undefined);
     const sessionId = mainSessionId(user.id);
 
@@ -55,9 +55,9 @@ function ExtraTheiaNav({ client, user, conf, restartAction }: { client: Client, 
 
         // Periodically extend duration of running sessions
         if (session) {
-            const { pod, maxDuration } = session;
-            if (pod.phase == 'Running') {
-                const remaining = maxDuration - (pod.startTime || 0) / 60; // In minutes
+            const { state, maxDuration } = session;
+            if (state.tag == 'Running') {
+                const remaining = maxDuration - (state.startTime || 0) / 60; // In minutes
                 const maxConfDuration = conf.session.maxDuration;
                 // Increase duration
                 if (remaining < 10 && maxDuration < maxConfDuration) {
@@ -69,9 +69,9 @@ function ExtraTheiaNav({ client, user, conf, restartAction }: { client: Client, 
     }, 5000);
 
     if (session) {
-        const { pod, maxDuration } = session;
-        if (pod.phase == 'Running') {
-            const remaining = maxDuration * 60 - (pod.startTime || 0);
+        const { state, maxDuration } = session;
+        if (state.tag == 'Running') {
+            const remaining = maxDuration * 60 - (state.startTime || 0);
             if (remaining < 300) { // 5 minutes
                 return (
                     <Typography variant="h6">
@@ -79,7 +79,7 @@ function ExtraTheiaNav({ client, user, conf, restartAction }: { client: Client, 
                     </Typography>
                 );
             }
-        } else if (pod.phase == 'Failed') {
+        } else if (state.tag == 'Failed') {
             return (
                 <Typography variant="h6">
                     Your session is over. <Button onClick={restartAction}>Restart it</Button>
@@ -95,7 +95,7 @@ function restart(send: (event: Events) => void) { send(Events.RESTART)}
 
 function selectPanel(send: (event: Events, payload: Record<string, unknown>) => void, id: PanelId) { send(Events.SELECT, {panel: id})}
 
-function CustomLoggedNav({ client, send, conf, user, panel }: { client: Client, send: (event: Events) => void, conf: Configuration, user: LoggedUser, panel: PanelId }): JSX.Element  {
+function CustomLoggedNav({ client, send, conf, user, panel }: { client: Client, send: (event: Events) => void, conf: Configuration, user: User, panel: PanelId }): JSX.Element  {
     return (
         <Nav onPlayground={() => selectPanel(send, PanelId.Session)}>
             <>

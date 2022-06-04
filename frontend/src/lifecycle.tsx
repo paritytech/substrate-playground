@@ -1,5 +1,5 @@
 import { assign, createMachine, StateMachine, StateSchema } from 'xstate';
-import { Client, Configuration, LoggedUser } from '@substrate/playground-client';
+import { Client, Configuration, User } from '@substrate/playground-client';
 import { approve, approved } from './terms';
 
 export enum PanelId {Session, Admin, Stats, Theia}
@@ -25,7 +25,7 @@ export enum Actions {
 
 export type Event =
   | { type: Events.TERMS_APPROVAL; id: string }
-  | { type: Events.LOGIN; user: LoggedUser; conf: Configuration }
+  | { type: Events.LOGIN; user: User; conf: Configuration }
   | { type: Events.SELECT; panel: PanelId }
   | { type: Events.RESTART; }
   | { type: Events.UNLOGIN; conf?: Configuration; error?: string }
@@ -50,7 +50,7 @@ export type Typestate =
     }
   | {
       value: States.LOGGED;
-      context: Context & {  user: LoggedUser, conf: Configuration };
+      context: Context & {  user: User, conf: Configuration };
     }
   | {
       value: States.UNLOGGED;

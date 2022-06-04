@@ -11,8 +11,12 @@ pub mod repository;
 pub mod types;
 pub mod utils;
 
+use types::{Configuration, Secrets};
+
 use crate::manager::Manager;
 
 pub struct Context {
     pub manager: Manager,
+    pub configuration: Configuration,
+    pub secrets: Secrets,
 }

@@ -1,88 +1,103 @@
 //! HTTP endpoints exposed in /api context
+use std::{collections::BTreeMap, io::Cursor};
+
 use crate::{
     error::{Error, Result},
-    github::{current_user, orgs, GitHubUser},
-    kubernetes,
+    github::{authorization_uri, current_user, exchange_code, orgs, GitHubUser},
+    kubernetes::user,
     types::{
-        LoggedUser, RepositoryConfiguration, RepositoryUpdateConfiguration,
-        RepositoryVersionConfiguration, SessionConfiguration, SessionExecutionConfiguration,
-        SessionUpdateConfiguration, UserConfiguration, UserUpdateConfiguration,
+        Playground, Pool, Repository, RepositoryConfiguration, RepositoryUpdateConfiguration,
+        RepositoryVersion, RepositoryVersionConfiguration, Role, RoleConfiguration,
+        RoleUpdateConfiguration, Session, SessionConfiguration, SessionExecutionConfiguration,
+        SessionUpdateConfiguration, Template, User, UserConfiguration, UserUpdateConfiguration,
     },
     Context,
 };
-use request::FormItems;
-use rocket::response::Redirect;
 use rocket::{
     catch, delete, get,
-    http::{Cookie, Cookies, SameSite, Status},
-    patch, put, Outcome, State,
+    http::{
+        uri::{fmt::Query, Origin, Segments},
+        ContentType, Cookie, CookieJar, SameSite, Status,
+    },
+    patch, put,
+    request::{FromRequest, Outcome, Request},
+    response::{Redirect, Responder},
+    serde::json::{json, Json, Value},
+    Response, State,
 };
-use rocket::{
-    http::uri::Origin,
-    request::{self, FromRequest, Request},
-};
-use rocket_contrib::{
-    json,
-    json::{Json, JsonValue},
-};
-use rocket_oauth2::{OAuth2, TokenResponse};
 use serde::Serialize;
-use tokio::runtime::Runtime;
 
 const COOKIE_TOKEN: &str = "token";
 
-// Extract a User from cookies
-impl<'a, 'r> FromRequest<'a, 'r> for LoggedUser {
-    type Error = String;
+async fn is_paritytech_member(token: &str, user: &GitHubUser) -> bool {
+    orgs(token, user)
+        .await
+        .unwrap_or_default()
+        .iter()
+        .map(|org| org.clone().login)
+        .any(|organization| organization == *"paritytech".to_string())
+}
 
-    fn from_request(request: &'a Request<'r>) -> request::Outcome<LoggedUser, String> {
-        let mut cookies = request.cookies();
+// Extract a User from cookies
+#[rocket::async_trait]
+impl<'r> FromRequest<'r> for User {
+    type Error = Error;
+
+    async fn from_request(request: &'r Request<'_>) -> Outcome<Self, Self::Error> {
+        let cookies = request.cookies();
         if let Some(token) = cookies.get_private(COOKIE_TOKEN) {
             let token_value = token.value();
-            let runtime = Runtime::new().map_err(|_| {
-                (
-                    Status::ExpectationFailed,
-                    "Failed to execute async fn".to_string(),
-                )
-            })?;
-            let gh_user = runtime.block_on(current_user(token_value)).map_err(|err| {
-                // A token is present, but can't be used to access user details
-                log::warn!("Error while accessing user details: {}", err);
-                (
-                    Status::Unauthorized,
-                    format!("Can't access user details {}", err),
-                )
-            })?;
-            let id = gh_user.clone().login;
-            let users = runtime
-                .block_on(kubernetes::user::list_users())
-                .map_err(|_| {
-                    (
-                        Status::FailedDependency,
-                        "Missing users ConfigMap".to_string(),
-                    )
-                })?;
-            let organizations = runtime
-                .block_on(orgs(token_value, &gh_user))
-                .unwrap_or_default()
-                .iter()
-                .map(|org| org.clone().login)
-                .collect();
-            let user = users.iter().find(|user| user.id == id);
-            // If at least one non-admin user is defined, then users are only allowed if whitelisted
-            let filtered = users.iter().any(|user| !user.admin);
-            if !filtered || user.is_some() {
-                Outcome::Success(LoggedUser {
-                    id: id.clone(),
-                    admin: user.map_or(false, |user| user.admin),
-                    pool_affinity: user.and_then(|user| user.pool_affinity.clone()),
-                    can_customize_duration: user.map_or(false, |user| user.can_customize_duration),
-                    can_customize_pool_affinity: user
-                        .map_or(false, |user| user.can_customize_pool_affinity),
-                    organizations,
-                })
-            } else {
-                Outcome::Failure((Status::Forbidden, "User is not whitelisted".to_string()))
+            let user = current_user(token_value).await;
+            match user {
+                Ok(gh_user) => {
+                    // User is a valid GitHub user
+                    // Lookup associated User if exists, or create it
+                    let user_id = &gh_user.login;
+                    let user = user::get_user(user_id).await;
+                    match user {
+                        Ok(Some(user)) => {
+                            return Outcome::Success(user);
+                        }
+                        Ok(None) => {
+                            // Create a new User
+                            let user = User {
+                                id: user_id.to_string(),
+                                roles: if is_paritytech_member(token_value, &gh_user).await {
+                                    vec![]
+                                } else {
+                                    vec!["paritytech_member".to_string()]
+                                },
+                                preferences: BTreeMap::new(),
+                            };
+                            let user_configuration = UserConfiguration {
+                                roles: user.clone().roles,
+                                preferences: user.clone().preferences,
+                            };
+                            if let Err(err) = user::create_user(user_id, user_configuration).await {
+                                log::warn!("Error while creating user {} : {}", user_id, err);
+                            };
+                            return Outcome::Success(user);
+                        }
+                        Err(err) => {
+                            // Failed to access user details
+                            log::error!("Error while accessing user details: {}", err);
+
+                            return Outcome::Failure((
+                                Status::Unauthorized,
+                                Error::Failure(err.to_string()),
+                            ));
+                        }
+                    }
+                }
+                Err(err) => {
+                    // A token is present, but can't be used to access user details
+                    log::error!("Error while accessing GH user details: {}", err);
+
+                    return Outcome::Failure((
+                        Status::Unauthorized,
+                        Error::Failure(err.to_string()),
+                    ));
+                }
             }
         } else {
             // No token in cookies, anonymous call
@@ -91,20 +106,23 @@ impl<'a, 'r> FromRequest<'a, 'r> for LoggedUser {
     }
 }
 
-fn create_jsonrpc_error(_type: &str, message: String) -> JsonValue {
+fn create_jsonrpc_error(_type: &str, message: String) -> Value {
     json!({ "error": { "type": _type, "message": message } })
 }
 
 // Translates a Result into a properly formatted JSON-RPC object
-fn result_to_jsonrpc<T: Serialize>(res: Result<T>) -> JsonValue {
+/*fn result_to_jsonrpc<T: Serialize>(res: Result<T>) -> Value {
     match res {
         Ok(val) => json!({ "result": val }),
         Err(err) => match err {
             Error::Failure(_) => create_jsonrpc_error("Failure", err.to_string()),
-            Error::Unauthorized(_) => create_jsonrpc_error("Unauthorized", err.to_string()),
+            Error::Unauthorized(_, _) => create_jsonrpc_error("Unauthorized", err.to_string()),
             Error::MissingData(_) => create_jsonrpc_error("MissingData", err.to_string()),
             Error::UnknownResource(_, _) => {
                 create_jsonrpc_error("UnknownResource", err.to_string())
+            }
+            Error::ResourceNotOwned(_, _) => {
+                create_jsonrpc_error("ResourceNotOwned", err.to_string())
             }
             Error::SessionIdAlreayUsed => {
                 create_jsonrpc_error("SessionIdAlreayUsed", err.to_string())
@@ -127,171 +145,372 @@ fn result_to_jsonrpc<T: Serialize>(res: Result<T>) -> JsonValue {
             Error::IncorrectDevContainerValue(_) => {
                 create_jsonrpc_error("IncorrectDevContainerValue", err.to_string())
             }
+            Error::K8sCommunicationFailure(_) => {
+                create_jsonrpc_error("K8sCommunicationFailure", err.to_string())
+            }
         },
+    }
+}*/
+
+// Responder implementations dealing with `Result` type
+
+fn respond_to(value: &Value) -> rocket::response::Result<'static> {
+    let str = String::from(value.as_str().unwrap_or(""));
+    Response::build()
+        .header(ContentType::JSON)
+        .sized_body(str.len(), Cursor::new(str))
+        .ok()
+}
+
+impl<'r> Responder<'r, 'static> for Error {
+    fn respond_to(self, _: &'r Request<'_>) -> rocket::response::Result<'static> {
+        // TODO make generic for all errors
+        respond_to(&create_jsonrpc_error(
+            "RepositoryVersionNotReady",
+            self.to_string(),
+        ))
     }
 }
 
+impl<'r, T: Serialize> Responder<'r, 'static> for JsonRPC<T> {
+    fn respond_to(self, _: &'r Request<'_>) -> rocket::response::Result<'static> {
+        respond_to(&json!({ "result": self.0 }))
+    }
+}
+
+impl<'r> Responder<'r, 'static> for EmptyJsonRPC {
+    fn respond_to(self, _: &'r Request<'_>) -> rocket::response::Result<'static> {
+        respond_to(&json!({ "result": "" }))
+    }
+}
+
+pub struct EmptyJsonRPC();
+pub struct JsonRPC<T>(pub T);
+
+/// Endpoints
+
 #[get("/")]
-pub fn get(state: State<'_, Context>, user: LoggedUser) -> JsonValue {
-    result_to_jsonrpc(state.manager.clone().get(user))
+pub async fn get(state: &State<Context>, caller: User) -> Result<JsonRPC<Playground>> {
+    state.manager.clone().get(caller).await.map(JsonRPC)
 }
 
 #[get("/", rank = 2)]
-pub fn get_unlogged(state: State<'_, Context>) -> JsonValue {
-    result_to_jsonrpc(state.manager.get_unlogged())
+pub async fn get_unlogged(state: &State<Context>) -> Result<JsonRPC<Playground>> {
+    state.manager.get_unlogged().await.map(JsonRPC)
 }
 
-// User resources. Only accessible to Admins.
+// Users
 
 #[get("/users/<id>")]
-pub fn get_user(state: State<'_, Context>, user: LoggedUser, id: String) -> JsonValue {
-    result_to_jsonrpc(state.manager.get_user(&user, &id))
+pub async fn get_user(
+    state: &State<Context>,
+    caller: User,
+    id: String,
+) -> Result<JsonRPC<Option<User>>> {
+    state.manager.get_user(&caller, &id).await.map(JsonRPC)
 }
 
 #[get("/users")]
-pub fn list_users(state: State<'_, Context>, user: LoggedUser) -> JsonValue {
-    result_to_jsonrpc(state.manager.list_users(&user))
+pub async fn list_users(state: &State<Context>, caller: User) -> Result<JsonRPC<Vec<User>>> {
+    state.manager.list_users(&caller).await.map(JsonRPC)
 }
 
 #[put("/users/<id>", data = "<conf>")]
-pub fn create_user(
-    state: State<'_, Context>,
-    user: LoggedUser,
+pub async fn create_user(
+    state: &State<Context>,
+    caller: User,
     id: String,
     conf: Json<UserConfiguration>,
-) -> JsonValue {
-    result_to_jsonrpc(state.manager.clone().create_user(&user, id, conf.0))
+) -> Result<EmptyJsonRPC> {
+    state
+        .manager
+        .clone()
+        .create_user(&caller, id, conf.0)
+        .await?;
+    Ok(EmptyJsonRPC())
 }
 
 #[patch("/users/<id>", data = "<conf>")]
-pub fn update_user(
-    state: State<'_, Context>,
-    user: LoggedUser,
+pub async fn update_user(
+    state: &State<Context>,
+    caller: User,
     id: String,
     conf: Json<UserUpdateConfiguration>,
-) -> JsonValue {
-    result_to_jsonrpc(state.manager.clone().update_user(user, id, conf.0))
+) -> Result<EmptyJsonRPC> {
+    state
+        .manager
+        .clone()
+        .update_user(&caller, id, conf.0)
+        .await?;
+    Ok(EmptyJsonRPC())
 }
 
 #[delete("/users/<id>")]
-pub fn delete_user(state: State<'_, Context>, user: LoggedUser, id: String) -> JsonValue {
-    result_to_jsonrpc(state.manager.clone().delete_user(&user, id))
+pub async fn delete_user(state: &State<Context>, caller: User, id: String) -> Result<EmptyJsonRPC> {
+    state.manager.clone().delete_user(&caller, id).await?;
+    Ok(EmptyJsonRPC())
+}
+
+// Roles
+
+#[get("/roles/<id>")]
+pub async fn get_role(
+    state: &State<Context>,
+    caller: User,
+    id: String,
+) -> Result<JsonRPC<Option<Role>>> {
+    state.manager.get_role(&caller, &id).await.map(JsonRPC)
+}
+
+#[get("/roles")]
+pub async fn list_roles(state: &State<Context>, caller: User) -> Result<JsonRPC<Vec<Role>>> {
+    state.manager.list_roles(&caller).await.map(JsonRPC)
+}
+
+#[put("/roles/<id>", data = "<conf>")]
+pub async fn create_role(
+    state: &State<Context>,
+    caller: User,
+    id: String,
+    conf: Json<RoleConfiguration>,
+) -> Result<EmptyJsonRPC> {
+    state.manager.create_role(&caller, &id, conf.0).await?;
+    Ok(EmptyJsonRPC())
+}
+
+#[patch("/roles/<id>", data = "<conf>")]
+pub async fn update_role(
+    state: &State<Context>,
+    caller: User,
+    id: String,
+    conf: Json<RoleUpdateConfiguration>,
+) -> Result<EmptyJsonRPC> {
+    state.manager.update_role(&caller, &id, conf.0).await?;
+    Ok(EmptyJsonRPC())
+}
+
+#[delete("/roles/<id>")]
+pub async fn delete_role(state: &State<Context>, caller: User, id: String) -> Result<EmptyJsonRPC> {
+    state.manager.delete_role(&caller, &id).await?;
+    Ok(EmptyJsonRPC())
 }
 
 // Repositories
 
 #[get("/repositories/<id>")]
-pub fn get_repository(state: State<'_, Context>, id: String) -> JsonValue {
-    result_to_jsonrpc(state.manager.get_repository(&id))
+pub async fn get_repository(
+    state: &State<Context>,
+    caller: User,
+    id: String,
+) -> Result<JsonRPC<Option<Repository>>> {
+    state
+        .manager
+        .get_repository(&caller, &id)
+        .await
+        .map(JsonRPC)
 }
 
 #[get("/repositories")]
-pub fn list_repositories(state: State<'_, Context>) -> JsonValue {
-    result_to_jsonrpc(state.manager.list_repositories())
+pub async fn list_repositories(
+    state: &State<Context>,
+    caller: User,
+) -> Result<JsonRPC<Vec<Repository>>> {
+    state.manager.list_repositories(&caller).await.map(JsonRPC)
 }
 
 #[put("/repositories/<id>", data = "<conf>")]
-pub fn create_repository(
-    state: State<'_, Context>,
-    user: LoggedUser,
+pub async fn create_repository(
+    state: &State<Context>,
+    caller: User,
     id: String,
     conf: Json<RepositoryConfiguration>,
-) -> JsonValue {
-    result_to_jsonrpc(state.manager.create_repository(&user, &id, conf.0))
+) -> Result<EmptyJsonRPC> {
+    state
+        .manager
+        .create_repository(&caller, &id, conf.0)
+        .await?;
+    Ok(EmptyJsonRPC())
 }
 
 #[patch("/repositories/<id>", data = "<conf>")]
-pub fn update_repository(
-    state: State<'_, Context>,
-    user: LoggedUser,
+pub async fn update_repository(
+    state: &State<Context>,
+    caller: User,
     id: String,
     conf: Json<RepositoryUpdateConfiguration>,
-) -> JsonValue {
-    result_to_jsonrpc(state.manager.update_repository(&id, &user, conf.0))
+) -> Result<EmptyJsonRPC> {
+    state
+        .manager
+        .update_repository(&caller, &id, conf.0)
+        .await?;
+    Ok(EmptyJsonRPC())
 }
 
 #[delete("/repositories/<id>")]
-pub fn delete_repository(state: State<'_, Context>, user: LoggedUser, id: String) -> JsonValue {
-    result_to_jsonrpc(state.manager.delete_repository(&user, &id))
+pub async fn delete_repository(
+    state: &State<Context>,
+    caller: User,
+    id: String,
+) -> Result<EmptyJsonRPC> {
+    state.manager.delete_repository(&caller, &id).await?;
+    Ok(EmptyJsonRPC())
 }
 
 // Repository versions
 
 #[get("/repositories/<repository_id>/versions/<id>")]
-pub fn get_repository_version(
-    state: State<'_, Context>,
-    user: LoggedUser,
+pub async fn get_repository_version(
+    state: &State<Context>,
+    caller: User,
     repository_id: String,
     id: String,
-) -> JsonValue {
-    result_to_jsonrpc(
-        state
-            .manager
-            .get_repository_version(&user, &repository_id, &id),
-    )
+) -> Result<JsonRPC<Option<RepositoryVersion>>> {
+    state
+        .manager
+        .get_repository_version(&caller, &repository_id, &id)
+        .await
+        .map(JsonRPC)
 }
 
 #[get("/repositories/<repository_id>/versions")]
-pub fn list_repository_versions(
-    state: State<'_, Context>,
-    user: LoggedUser,
+pub async fn list_repository_versions(
+    state: &State<Context>,
+    caller: User,
     repository_id: String,
-) -> JsonValue {
-    result_to_jsonrpc(
-        state
-            .manager
-            .list_repository_versions(&user, &repository_id),
-    )
+) -> Result<JsonRPC<Vec<RepositoryVersion>>> {
+    state
+        .manager
+        .list_repository_versions(&caller, &repository_id)
+        .await
+        .map(JsonRPC)
 }
 
 #[put("/repositories/<repository_id>/versions/<id>", data = "<conf>")]
-pub fn create_repository_version(
-    state: State<'_, Context>,
-    user: LoggedUser,
+pub async fn create_repository_version(
+    state: &State<Context>,
+    caller: User,
     repository_id: String,
     id: String,
     conf: Json<RepositoryVersionConfiguration>,
-) -> JsonValue {
-    result_to_jsonrpc(
-        state
-            .manager
-            .create_repository_version(&user, &repository_id, &id, conf.0),
-    )
+) -> Result<EmptyJsonRPC> {
+    state
+        .manager
+        .create_repository_version(&caller, &repository_id, &id, conf.0)
+        .await?;
+    Ok(EmptyJsonRPC())
 }
 
 #[delete("/repositories/<repository_id>/versions/<id>")]
-pub fn delete_repository_version(
-    state: State<'_, Context>,
-    user: LoggedUser,
+pub async fn delete_repository_version(
+    state: &State<Context>,
+    caller: User,
     repository_id: String,
     id: String,
-) -> JsonValue {
-    result_to_jsonrpc(
-        state
-            .manager
-            .delete_repository_version(&user, &repository_id, &id),
-    )
+) -> Result<EmptyJsonRPC> {
+    state
+        .manager
+        .delete_repository_version(&caller, &repository_id, &id)
+        .await?;
+    Ok(EmptyJsonRPC())
 }
 
 // Pools
 
 #[get("/pools/<id>")]
-pub fn get_pool(state: State<'_, Context>, user: LoggedUser, id: String) -> JsonValue {
-    result_to_jsonrpc(state.manager.get_pool(&user, &id))
+pub async fn get_pool(
+    state: &State<Context>,
+    caller: User,
+    id: String,
+) -> Result<JsonRPC<Option<Pool>>> {
+    state.manager.get_pool(&caller, &id).await.map(JsonRPC)
 }
 
 #[get("/pools")]
-pub fn list_pools(state: State<'_, Context>, user: LoggedUser) -> JsonValue {
-    result_to_jsonrpc(state.manager.list_pools(&user))
+pub async fn list_pools(state: &State<Context>, caller: User) -> Result<JsonRPC<Vec<Pool>>> {
+    state.manager.list_pools(&caller).await.map(JsonRPC)
+}
+
+// Sessions
+
+#[get("/sessions/<id>")]
+pub async fn get_session(
+    state: &State<Context>,
+    caller: User,
+    id: String,
+) -> Result<JsonRPC<Option<Session>>> {
+    state.manager.get_session(&caller, &id).await.map(JsonRPC)
+}
+
+#[get("/sessions")]
+pub async fn list_sessions(state: &State<Context>, caller: User) -> Result<JsonRPC<Vec<Session>>> {
+    state.manager.list_sessions(&caller).await.map(JsonRPC)
+}
+
+#[put("/sessions/<id>", data = "<conf>")]
+pub async fn create_session(
+    state: &State<Context>,
+    caller: User,
+    id: String,
+    conf: Json<SessionConfiguration>,
+) -> Result<EmptyJsonRPC> {
+    state.manager.create_session(&caller, &id, &conf.0).await?;
+    Ok(EmptyJsonRPC())
+}
+
+#[patch("/sessions/<id>", data = "<conf>")]
+pub async fn update_session(
+    state: &State<Context>,
+    caller: User,
+    id: String,
+    conf: Json<SessionUpdateConfiguration>,
+) -> Result<EmptyJsonRPC> {
+    state.manager.update_session(&caller, &id, conf.0).await?;
+    Ok(EmptyJsonRPC())
+}
+
+#[delete("/sessions/<id>")]
+pub async fn delete_session(
+    state: &State<Context>,
+    caller: User,
+    id: String,
+) -> Result<EmptyJsonRPC> {
+    state.manager.delete_session(&caller, &id).await?;
+    Ok(EmptyJsonRPC())
+}
+
+// Session executions
+
+#[put("/sessions/<id>/execution", data = "<conf>")]
+pub async fn create_session_execution(
+    state: &State<Context>,
+    caller: User,
+    id: String,
+    conf: Json<SessionExecutionConfiguration>,
+) -> Result<EmptyJsonRPC> {
+    state
+        .manager
+        .create_session_execution(&caller, &id, conf.0)
+        .await?;
+    Ok(EmptyJsonRPC())
+}
+
+// Templates
+
+#[get("/templates")]
+pub async fn list_templates(
+    state: &State<Context>,
+    caller: User,
+) -> Result<JsonRPC<Vec<Template>>> {
+    state.manager.list_templates(&caller).await.map(JsonRPC)
 }
 
 // GitHub login logic
 
 fn query_segment(origin: &Origin) -> String {
     origin.query().map_or("".to_string(), |query| {
-        let v: Vec<String> = FormItems::from(query)
-            .map(|i| i.key_value_decoded())
-            .filter(|(k, _)| k != "code" && k != "state")
+        let v: Vec<String> = query
+            .segments()
+            .filter(|(k, _)| *k != "code" && *k != "state")
             .map(|(k, v)| format!("{}={}", k, v))
             .collect();
         if v.is_empty() {
@@ -302,46 +521,98 @@ fn query_segment(origin: &Origin) -> String {
     })
 }
 
+const STATE_COOKIE_NAME: &str = "rocket_oauth2_state";
+
+// Random generation of state for defense against CSRF.
+// See RFC 6749 §10.12 for more details.
+fn generate_state(rng: &mut impl rand::RngCore) -> Result<String> {
+    let mut buf = [0; 16]; // 128 bits
+    rng.try_fill_bytes(&mut buf)
+        .map_err(|_| Error::Failure("Failed to generate random data".to_string()))?;
+    Ok(base64::encode_config(&buf, base64::URL_SAFE_NO_PAD))
+}
+
 // Gets called from UI. Then redirects to the GitHub `auth_uri` which itself redirects to `/auth/github`
 #[get("/login/github")]
-pub fn github_login(oauth2: OAuth2<GitHubUser>, mut cookies: Cookies<'_>) -> Redirect {
-    oauth2
-        .get_redirect_extras(&mut cookies, &["user:read"], &[])
-        .unwrap()
+pub fn github_login(context: &State<Context>, cookies: &CookieJar<'_>) -> Result<Redirect> {
+    let client_id = context.configuration.github_client_id.clone();
+    let state = generate_state(&mut rand::thread_rng())?;
+    let uri = authorization_uri(&client_id, &state);
+    cookies.add_private(
+        Cookie::build(STATE_COOKIE_NAME, state)
+            .same_site(SameSite::Lax)
+            .finish(),
+    );
+    Ok(Redirect::to(uri))
+}
+
+fn get_segment<'a>(segments: &mut Segments<'a, Query>, name: &str) -> Option<(&'a str, &'a str)> {
+    segments.find(|(key, _value)| *key == name)
 }
 
 /// Callback to handle the authenticated token received from GitHub
 /// and store it as a cookie
 #[get("/auth/github")]
-pub fn post_install_callback(
-    origin: &Origin,
-    token: TokenResponse<GitHubUser>,
-    mut cookies: Cookies<'_>,
-) -> Redirect {
-    cookies.add_private(
-        Cookie::build(COOKIE_TOKEN, token.access_token().to_string())
-            .same_site(SameSite::Lax)
-            .finish(),
-    );
+pub async fn post_install_callback(
+    origin: &Origin<'_>,
+    context: &State<Context>,
+    cookies: &CookieJar<'_>,
+) -> Result<Redirect> {
+    let query = match origin.query() {
+        Some(q) => q,
+        None => return Err(Error::Failure("Failed to access query".to_string())),
+    };
+    let mut segments = query.segments();
 
-    Redirect::to(format!("/{}", query_segment(origin)))
+    // Make sure that the 'state' value provided matches the generated one
+    if let Some(state) = get_segment(&mut segments, "state") {
+        if let Some(cookie) = cookies.get_private(STATE_COOKIE_NAME) {
+            if cookie.value() == state.1 {
+                if let Some(code) = get_segment(&mut segments, "code") {
+                    add_access_token(
+                        cookies,
+                        exchange_code(
+                            &context.configuration.github_client_id,
+                            &context.secrets.github_client_secret,
+                            code.1,
+                        )
+                        .await?,
+                    );
+
+                    Ok(Redirect::to(format!("/{}", query_segment(origin))))
+                } else {
+                    Err(Error::Failure("Missing code".to_string()))
+                }
+            } else {
+                Err(Error::Failure("No matching state".to_string()))
+            }
+        } else {
+            Err(Error::Failure("No state cookie".to_string()))
+        }
+    } else {
+        Err(Error::Failure("Missing state".to_string()))
+    }
 }
 
-#[get("/login?<bearer>")]
-pub fn login(mut cookies: Cookies<'_>, bearer: String) {
+fn add_access_token(cookies: &CookieJar<'_>, access_token: String) {
     cookies.add_private(
-        Cookie::build(COOKIE_TOKEN, bearer)
+        Cookie::build(COOKIE_TOKEN, access_token)
             .same_site(SameSite::Lax)
             .finish(),
     )
 }
 
+#[get("/login?<bearer>")]
+pub fn login(cookies: &CookieJar<'_>, bearer: String) {
+    add_access_token(cookies, bearer)
+}
+
 #[get("/logout")]
-pub fn logout(cookies: Cookies<'_>) {
+pub fn logout(cookies: &CookieJar<'_>) {
     clear(cookies)
 }
 
-fn clear(mut cookies: Cookies<'_>) {
+fn clear(cookies: &CookieJar<'_>) {
     cookies.remove_private(
         Cookie::build(COOKIE_TOKEN, "")
             .same_site(SameSite::Lax)
@@ -353,60 +624,4 @@ fn clear(mut cookies: Cookies<'_>) {
 #[catch(401)]
 pub fn bad_request_catcher(_req: &Request<'_>) {
     clear(_req.cookies())
-}
-
-// Sessions
-
-#[get("/sessions/<id>")]
-pub fn get_session(state: State<'_, Context>, user: LoggedUser, id: String) -> JsonValue {
-    result_to_jsonrpc(state.manager.get_session(&user, &id))
-}
-
-#[get("/sessions")]
-pub fn list_sessions(state: State<'_, Context>, user: LoggedUser) -> JsonValue {
-    result_to_jsonrpc(state.manager.list_sessions(&user))
-}
-
-#[put("/sessions/<id>", data = "<conf>")]
-pub fn create_session(
-    state: State<'_, Context>,
-    user: LoggedUser,
-    id: String,
-    conf: Json<SessionConfiguration>,
-) -> JsonValue {
-    result_to_jsonrpc(state.manager.create_session(&user, &id, conf.0))
-}
-
-#[patch("/sessions/<id>", data = "<conf>")]
-pub fn update_session(
-    state: State<'_, Context>,
-    user: LoggedUser,
-    id: String,
-    conf: Json<SessionUpdateConfiguration>,
-) -> JsonValue {
-    result_to_jsonrpc(state.manager.update_session(&id, &user, conf.0))
-}
-
-#[delete("/sessions/<id>")]
-pub fn delete_session(state: State<'_, Context>, user: LoggedUser, id: String) -> JsonValue {
-    result_to_jsonrpc(state.manager.delete_session(&user, &id))
-}
-
-// Session executions
-
-#[put("/sessions/<id>/execution", data = "<conf>")]
-pub fn create_session_execution(
-    state: State<'_, Context>,
-    user: LoggedUser,
-    id: String,
-    conf: Json<SessionExecutionConfiguration>,
-) -> JsonValue {
-    result_to_jsonrpc(state.manager.create_session_execution(&user, &id, conf.0))
-}
-
-// Templates
-
-#[get("/templates")]
-pub fn list_templates(state: State<'_, Context>) -> JsonValue {
-    result_to_jsonrpc(state.manager.list_templates())
 }

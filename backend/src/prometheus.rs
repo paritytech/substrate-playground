@@ -1,11 +1,10 @@
-//! Adapted from https://github.com/sd2k/rocket_prometheus/blob/master/src/lib.rs
+//! Adapted from https://github.com/sd2k/rocket_prometheus/
 
 use prometheus::{Encoder, Registry, TextEncoder};
 use rocket::{
-    handler::Outcome,
     http::{ContentType, Method},
-    response::Content,
-    Data, Handler, Request, Route,
+    route::{Handler, Outcome, Route},
+    Data, Request,
 };
 
 #[derive(Clone)]
@@ -20,8 +19,9 @@ impl PrometheusMetrics {
     }
 }
 
+#[rocket::async_trait]
 impl Handler for PrometheusMetrics {
-    fn handle<'r>(&self, req: &'r Request, _: Data) -> Outcome<'r> {
+    async fn handle<'r>(&self, req: &'r Request<'_>, _: Data<'r>) -> Outcome<'r> {
         // Gather the metrics.
         let mut buffer = vec![];
         let encoder = TextEncoder::new();
@@ -31,12 +31,9 @@ impl Handler for PrometheusMetrics {
         let body = String::from_utf8(buffer).unwrap();
         Outcome::from(
             req,
-            Content(
-                ContentType::with_params(
-                    "text",
-                    "plain",
-                    &[("version", "0.0.4"), ("charset", "utf-8")],
-                ),
+            (
+                ContentType::new("text", "plain")
+                    .with_params([("version", "0.0.4"), ("charset", "utf-8")]),
                 body,
             ),
         )

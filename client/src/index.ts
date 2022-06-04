@@ -1,5 +1,5 @@
 import { fetchWithTimeout, rpc } from './rpc';
-import { Playground, Pool, User, UserConfiguration, UserUpdateConfiguration, Repository, RepositoryConfiguration, RepositoryUpdateConfiguration, RepositoryVersion, RepositoryVersionConfiguration, SessionConfiguration, Session, SessionUpdateConfiguration, Template, SessionExecutionConfiguration, SessionExecution, } from './types';
+import { Playground, Pool, User, UserConfiguration, UserUpdateConfiguration, Repository, RepositoryConfiguration, RepositoryUpdateConfiguration, RepositoryVersion, RepositoryVersionConfiguration, SessionConfiguration, Session, SessionUpdateConfiguration, Template, SessionExecutionConfiguration, SessionExecution, Role, RoleConfiguration, RoleUpdateConfiguration, } from './types';
 
 export class Client {
 
@@ -7,6 +7,7 @@ export class Client {
     static sessionsResource = 'sessions';
     static sessionExecutionResourcePath = 'execution';
     static repositoriesResource = 'repositories';
+    static rolesResource = 'roles';
     static templatesResource = 'templates';
     static poolsResource = 'pools';
 
@@ -127,6 +128,39 @@ export class Client {
         return rpc(this.path(Client.sessionsResource, id, Client.sessionExecutionResourcePath), {
             method: 'PUT',
             body: JSON.stringify(conf),
+            ...init
+        }, timeout);
+    }
+
+    // Roles
+
+    async getRole(id: Role['id'], timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<Role | null> {
+        return rpc(this.path(Client.rolesResource, id), init, timeout);
+    }
+
+    async listRoles(timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<Role[]> {
+        return rpc(this.path(Client.rolesResource), init, timeout);
+    }
+
+    async createRole(id: Role['id'], conf: RoleConfiguration, timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<void> {
+        return rpc(this.path(Client.rolesResource, id), {
+            method: 'PUT',
+            body: JSON.stringify(conf),
+            ...init
+        }, timeout);
+    }
+
+    async updateRole(id: Role['id'], conf: RoleUpdateConfiguration, timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<void> {
+        return rpc(this.path(Client.rolesResource, id), {
+            method: 'PATCH',
+            body: JSON.stringify(conf),
+            ...init
+        }, timeout);
+    }
+
+    async deleteRole(id: Role['id'], timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<void> {
+        return rpc(this.path(Client.rolesResource, id), {
+            method: 'DELETE',
             ...init
         }, timeout);
     }

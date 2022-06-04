@@ -1,6 +1,9 @@
+use crate::kubernetes::role::get_role;
+use futures::StreamExt;
 use serde::{Deserialize, Serialize};
 use std::{
     collections::BTreeMap,
+    fmt,
     str::FromStr,
     time::{Duration, SystemTime},
 };
@@ -8,13 +11,7 @@ use std::{
 #[derive(Serialize, Clone, Debug)]
 pub struct Playground {
     pub configuration: Configuration,
-    pub user: Option<LoggedUser>,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct Environment {
-    pub host: String,
-    pub namespace: String,
+    pub user: Option<User>,
 }
 
 #[derive(Serialize, Debug, Clone)]
@@ -41,17 +38,6 @@ pub struct SessionDefaults {
     pub max_sessions_per_pod: usize,
 }
 
-#[derive(Serialize, Clone, Debug)]
-#[serde(rename_all = "camelCase")]
-pub struct Workspace {
-    pub id: String,
-    pub user_id: String,
-    pub repository_details: RepositoryDetails,
-    pub state: WorkspaceState,
-    #[serde(with = "duration")]
-    pub max_duration: Duration,
-}
-
 #[derive(Deserialize, Serialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct RepositoryDetails {
@@ -59,119 +45,176 @@ pub struct RepositoryDetails {
     pub reference: String,
 }
 
-#[derive(Serialize, Clone, Debug)]
-#[serde(tag = "type", rename_all = "camelCase")]
-pub enum WorkspaceState {
-    Deploying,
-    Running {
-        #[serde(with = "system_time")]
-        start_time: SystemTime,
-        node: Node,
-        runtime: RepositoryRuntimeConfiguration,
-    },
-    Paused,
-    Failed {
-        message: String,
-        reason: String,
-    },
+#[derive(PartialOrd, Ord, PartialEq, Eq, Serialize, Deserialize, Clone, Debug)]
+pub enum ResourceType {
+    Pool,
+    Repository,
+    RepositoryVersion,
+    Role,
+    Session,
+    SessionExecution,
+    Template,
+    User,
+    Workspace,
 }
 
-#[derive(Deserialize, Clone, Debug)]
+impl fmt::Display for ResourceType {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match &*self {
+            ResourceType::Pool => write!(f, "Pool"),
+            ResourceType::Repository => write!(f, "Repository"),
+            ResourceType::RepositoryVersion => write!(f, "RepositoryVersion"),
+            ResourceType::Role => write!(f, "Role"),
+            ResourceType::Session => write!(f, "Session"),
+            ResourceType::SessionExecution => write!(f, "SessionExecution"),
+            ResourceType::Template => write!(f, "Template"),
+            ResourceType::User => write!(f, "User"),
+            ResourceType::Workspace => write!(f, "Workspace"),
+        }
+    }
+}
+
+#[derive(PartialOrd, Ord, PartialEq, Eq, Serialize, Deserialize, Clone, Debug)]
+#[serde(tag = "type")]
+pub enum ResourcePermission {
+    Create,
+    Read,
+    Update,
+    Delete,
+    Custom { name: String },
+}
+
+impl fmt::Display for ResourcePermission {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match &*self {
+            ResourcePermission::Create => write!(f, "Create"),
+            ResourcePermission::Read => write!(f, "Read"),
+            ResourcePermission::Update => write!(f, "Update"),
+            ResourcePermission::Delete => write!(f, "Delete"),
+            ResourcePermission::Custom { .. } => write!(f, "Custom"),
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
-pub struct WorkspaceConfiguration {
-    pub repository_details: RepositoryDetails,
-    #[serde(default, with = "option_duration")]
-    pub duration: Option<Duration>,
-    pub pool_affinity: Option<String>,
+pub struct Role {
+    pub id: String,
+    pub permissions: BTreeMap<ResourceType, Vec<ResourcePermission>>,
 }
 
-#[derive(Deserialize, Clone, Debug)]
-pub struct WorkspaceUpdateConfiguration {
-    #[serde(default, with = "option_duration")]
-    pub duration: Option<Duration>,
+#[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct RoleConfiguration {
+    pub permissions: BTreeMap<ResourceType, Vec<ResourcePermission>>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct RoleUpdateConfiguration {
+    pub permissions: BTreeMap<ResourceType, Vec<ResourcePermission>>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct User {
     pub id: String,
-    pub admin: bool,
-    #[serde(default = "default_as_false")]
-    pub can_customize_duration: bool,
-    #[serde(default = "default_as_false")]
-    pub can_customize_pool_affinity: bool,
-    pub pool_affinity: Option<String>,
+    pub roles: Vec<String>,
+    pub preferences: BTreeMap<String, String>,
+}
+
+fn merge_permissions(
+    mut permissions1: BTreeMap<ResourceType, Vec<ResourcePermission>>,
+    permissions2: &BTreeMap<ResourceType, Vec<ResourcePermission>>,
+) -> BTreeMap<ResourceType, Vec<ResourcePermission>> {
+    for (key, mut value) in permissions2.clone().into_iter() {
+        let mut old_value = permissions1.get(&key).cloned().unwrap_or_default();
+        old_value.append(&mut value);
+        old_value.dedup();
+        permissions1.insert(key.clone(), old_value);
+    }
+    permissions1
+}
+
+#[test]
+fn it_merges_permissions() {
+    let mut permissions1 = BTreeMap::new();
+    permissions1.insert(
+        ResourceType::Pool,
+        vec![ResourcePermission::Read, ResourcePermission::Create],
+    );
+    permissions1.insert(ResourceType::Repository, vec![ResourcePermission::Read]);
+    let mut permissions2 = BTreeMap::new();
+    permissions2.insert(ResourceType::Repository, vec![ResourcePermission::Create]);
+    let permissions = merge_permissions(permissions1, &permissions2);
+    assert_eq!(permissions.len(), 2);
+    assert_eq!(
+        permissions.get(&ResourceType::Repository).unwrap(),
+        &vec![ResourcePermission::Read, ResourcePermission::Create]
+    );
+}
+
+impl User {
+    // For now assume Roles are static
+    pub async fn all_permissions(&self) -> BTreeMap<ResourceType, Vec<ResourcePermission>> {
+        let all_permissions: Vec<BTreeMap<ResourceType, Vec<ResourcePermission>>> =
+            futures::stream::iter(self.roles.clone())
+                .filter_map(|role| async move {
+                    let role = get_role(&role).await.ok().flatten();
+                    Some(role.map(|role| role.permissions).unwrap_or_default())
+                })
+                .collect()
+                .await;
+        all_permissions.iter().fold(BTreeMap::new(), |accum, item| {
+            merge_permissions(accum, item)
+        })
+    }
+
+    pub async fn has_permission(
+        &self,
+        resource_type: &ResourceType,
+        resource_permission: &ResourcePermission,
+    ) -> bool {
+        let permissions = self
+            .all_permissions()
+            .await
+            .get(resource_type)
+            .cloned()
+            .unwrap_or_default();
+        permissions.contains(resource_permission)
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct UserConfiguration {
-    pub admin: bool,
-    #[serde(default = "default_as_false")]
-    pub can_customize_duration: bool,
-    #[serde(default = "default_as_false")]
-    pub can_customize_pool_affinity: bool,
-    pub pool_affinity: Option<String>,
+    pub roles: Vec<String>,
+    pub preferences: BTreeMap<String, String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct UserUpdateConfiguration {
-    pub admin: bool,
-    #[serde(default = "default_as_false")]
-    pub can_customize_duration: bool,
-    #[serde(default = "default_as_false")]
-    pub can_customize_pool_affinity: bool,
-    pub pool_affinity: Option<String>,
-}
-#[derive(Serialize, Deserialize, Clone, Debug)]
-#[serde(rename_all = "camelCase")]
-pub struct LoggedUser {
-    pub id: String,
-    pub admin: bool,
-    pub organizations: Vec<String>,
-    pub pool_affinity: Option<String>,
-    pub can_customize_duration: bool,
-    pub can_customize_pool_affinity: bool,
-}
-
-impl LoggedUser {
-    pub fn is_paritytech_member(&self) -> bool {
-        self.organizations.contains(&"paritytech".to_string())
-    }
-    pub fn can_customize_duration(&self) -> bool {
-        self.admin || self.can_customize_duration || self.is_paritytech_member()
-    }
-
-    pub fn can_customize_pool_affinity(&self) -> bool {
-        self.admin || self.can_customize_pool_affinity || self.is_paritytech_member()
-    }
-
-    pub fn has_admin_read_rights(&self) -> bool {
-        self.admin || self.is_paritytech_member()
-    }
-
-    pub fn has_admin_edit_rights(&self) -> bool {
-        self.admin
-    }
+    pub roles: Vec<String>,
+    pub preferences: BTreeMap<String, String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Repository {
     pub id: String,
-    pub tags: Option<BTreeMap<String, String>>,
+    pub tags: BTreeMap<String, String>,
     pub url: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct RepositoryConfiguration {
-    pub tags: Option<BTreeMap<String, String>>,
+    pub tags: BTreeMap<String, String>,
     pub url: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct RepositoryUpdateConfiguration {
-    pub tags: Option<BTreeMap<String, String>>,
+    pub tags: BTreeMap<String, String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -298,12 +341,6 @@ mod duration {
         serializer.serialize_u64(date.as_secs() / 60)
     }
 }
-
-fn default_as_false() -> bool {
-    false
-}
-
-// TODO to remove
 
 #[derive(Serialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]

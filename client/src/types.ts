@@ -7,7 +7,7 @@ export interface OwnedResource {
 }
 export interface Playground {
     configuration: Configuration,
-    user?: LoggedUser,
+    user?: string,
 }
 
 export interface Configuration {
@@ -60,46 +60,63 @@ export interface RepositoryDetails extends IdentifiedResource {
 }
 
 export interface User extends IdentifiedResource {
-    admin: boolean,
-    poolAffinity: string,
-    canCustomizeDuration: boolean,
-    canCustomizePoolAffinity: boolean,
+    roles: Array<string>,
+    preferences: Record<string, string>,
 }
 
 export interface UserConfiguration {
-    admin: boolean,
-    poolAffinity?: string,
-    canCustomizeDuration: boolean,
-    canCustomizePoolAffinity: boolean,
+    roles: Array<string>,
+    preferences: Record<string, string>,
 }
 
 export interface UserUpdateConfiguration {
-    admin: boolean,
-    poolAffinity?: string,
-    canCustomizeDuration: boolean,
-    canCustomizePoolAffinity: boolean,
+    roles: Array<string>,
+    preferences: Record<string, string>,
 }
 
-export interface LoggedUser extends IdentifiedResource {
-    admin: boolean,
-    organizations: string[],
-    poolAffinity: string,
-    canCustomizeDuration: boolean,
-    canCustomizePoolAffinity: boolean,
+export enum ResourceType {
+    Pool,
+    Repository,
+    RepositoryVersion,
+    Role,
+    Session,
+    SessionExecution,
+    Template,
+    User,
+    Workspace,
+}
+
+export type ResourcePermission =
+    | {tag: "Create" }
+    | {tag: "Read" }
+    | {tag: "Update" }
+    | {tag: "Delete" }
+    | {tag: "Custom", name: string };
+
+export interface Role extends IdentifiedResource {
+    permissions: Record<ResourceType, Array<ResourcePermission>>,
+}
+
+export interface RoleConfiguration {
+    permissions: Record<ResourceType, Array<ResourcePermission>>,
+}
+
+export interface RoleUpdateConfiguration {
+    permissions: Record<ResourceType, Array<ResourcePermission>>,
 }
 
 export interface Repository extends IdentifiedResource {
-    tags?: Record<string, string>,
+    tags: Record<string, string>,
     url: string,
 }
 
 export interface RepositoryConfiguration {
-    tags?: Record<string, string>,
+    tags: Record<string, string>,
     url: string,
 }
 
 export interface RepositoryUpdateConfiguration {
-    tags?: Record<string, string>,
+    tags: Record<string, string>,
 }
 
 export interface RepositoryVersion {

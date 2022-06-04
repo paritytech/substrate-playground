@@ -19,7 +19,7 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
-import { Client, LoggedUser, Repository, RepositoryConfiguration, RepositoryVersion } from "@substrate/playground-client";
+import { Client, User, Repository, RepositoryConfiguration, RepositoryVersion } from "@substrate/playground-client";
 import { useStyles, EnhancedTableToolbar, Resources } from '.';
 import { ErrorSnackbar } from '../../components';
 import { find } from "../../utils";
@@ -129,7 +129,7 @@ function RepositoryRow({ client, repository }: { client: Client, repository: Rep
     );
 }
 
-export function Repositories({ client, user }: { client: Client, user: LoggedUser }): JSX.Element {
+export function Repositories({ client, user }: { client: Client, user: User }): JSX.Element {
     const classes = useStyles();
     const [showCreationDialog, setShowCreationDialog] = useState(false);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);

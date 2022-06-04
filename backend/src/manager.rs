@@ -1,7 +1,7 @@
 /// Abstracts k8s interaction by handling permissions, logging, etc..
 ///
 use crate::{
-    error::{Error, Parameter, Permission, ResourceType, Result},
+    error::{Error, Result},
     kubernetes::{
         get_configuration,
         pool::{get_pool, list_pools},
@@ -10,6 +10,7 @@ use crate::{
             delete_repository_version, get_repository, get_repository_version, list_repositories,
             list_repository_versions, update_repository,
         },
+        role::{create_role, delete_role, get_role, list_roles, update_role},
         session::{
             create_session, create_session_execution, delete_session, get_session, list_sessions,
             patch_ingress, update_session,
@@ -19,10 +20,11 @@ use crate::{
     },
     metrics::Metrics,
     types::{
-        LoggedUser, Playground, Pool, Repository, RepositoryConfiguration,
-        RepositoryUpdateConfiguration, RepositoryVersion, RepositoryVersionConfiguration, Session,
-        SessionConfiguration, SessionExecution, SessionExecutionConfiguration, SessionState,
-        SessionUpdateConfiguration, Template, User, UserConfiguration, UserUpdateConfiguration,
+        Playground, Pool, Repository, RepositoryConfiguration, RepositoryUpdateConfiguration,
+        RepositoryVersion, RepositoryVersionConfiguration, ResourcePermission, ResourceType, Role,
+        RoleConfiguration, Session, SessionConfiguration, SessionExecution,
+        SessionExecutionConfiguration, SessionState, SessionUpdateConfiguration, Template, User,
+        UserConfiguration, UserUpdateConfiguration,
     },
 };
 use log::{error, info, warn};
@@ -30,7 +32,6 @@ use std::{
     thread::{self, JoinHandle},
     time::Duration,
 };
-use tokio::runtime::Runtime;
 
 #[derive(Clone)]
 pub struct Manager {
@@ -41,7 +42,7 @@ impl Manager {
     const SLEEP_TIME: Duration = Duration::from_secs(60);
 
     pub async fn new() -> Result<Self> {
-        let metrics = Metrics::new().map_err(|err| Error::Failure(err.into()))?;
+        let metrics = Metrics::new()?;
         // Go through all existing sessions and update the ingress
         // TODO remove once migrated to per session nginx
         match list_sessions().await {
@@ -72,13 +73,14 @@ impl Manager {
         Ok(Manager { metrics })
     }
 
-    pub fn spawn_session_reaper_thread(&self) -> Result<JoinHandle<()>> {
-        let runtime = new_runtime()?;
-        Ok(thread::spawn(move || loop {
+    pub async fn spawn_session_reaper_thread(
+        &self,
+    ) -> Result<JoinHandle<impl std::future::Future>> {
+        Ok(thread::spawn(async move || loop {
             thread::sleep(Manager::SLEEP_TIME);
 
             // Go through all Running pods and figure out if they have to be undeployed
-            if let Ok(sessions) = runtime.block_on(list_sessions()) {
+            if let Ok(sessions) = list_sessions().await {
                 for session in sessions {
                     if let SessionState::Running { start_time, .. } = session.state {
                         if let Ok(duration) = start_time.elapsed() {
@@ -91,8 +93,11 @@ impl Manager {
                                 );
 
                                 // Finally delete the session
-                                if let Err(err) = runtime.block_on(delete_session(&session.id)) {
-                                    warn!("Error while undeploying {}: {}", session.id, err)
+                                let session = session.clone();
+                                let sid = session.id;
+                                let id = sid.as_str();
+                                if let Err(err) = delete_session(id).await {
+                                    warn!("Error while undeploying {}: {}", id, err)
                                 }
                             }
                         }
@@ -105,186 +110,269 @@ impl Manager {
     }
 }
 
-fn new_runtime() -> Result<Runtime> {
-    Runtime::new().map_err(|err| Error::Failure(err.into()))
+async fn ensure_permission(
+    caller: &User,
+    resource_type: ResourceType,
+    resource_permission: ResourcePermission,
+) -> Result<()> {
+    if !caller
+        .has_permission(&resource_type, &resource_permission)
+        .await
+    {
+        return Err(Error::Unauthorized(resource_type, resource_permission));
+    }
+
+    Ok(())
 }
 
 impl Manager {
-    pub fn get(self, user: LoggedUser) -> Result<Playground> {
+    pub async fn get(self, user: User) -> Result<Playground> {
         Ok(Playground {
             user: Some(user),
-            configuration: new_runtime()?.block_on(get_configuration())?,
+            configuration: get_configuration().await?,
         })
     }
 
-    pub fn get_unlogged(&self) -> Result<Playground> {
+    pub async fn get_unlogged(&self) -> Result<Playground> {
         Ok(Playground {
             user: None,
-            configuration: new_runtime()?.block_on(get_configuration())?,
+            configuration: get_configuration().await?,
         })
     }
 
     // Users
 
-    pub fn get_user(&self, user: &LoggedUser, id: &str) -> Result<Option<User>> {
-        if user.id != id && !user.has_admin_read_rights() {
-            return Err(Error::Unauthorized(Permission::AdminRead));
+    pub async fn get_user(&self, caller: &User, id: &str) -> Result<Option<User>> {
+        // Users can get details about themselves
+        if caller.id != id {
+            ensure_permission(caller, ResourceType::User, ResourcePermission::Read).await?;
         }
 
-        new_runtime()?.block_on(get_user(id))
+        get_user(id).await
     }
 
-    pub fn list_users(&self, user: &LoggedUser) -> Result<Vec<User>> {
-        if !user.has_admin_read_rights() {
-            return Err(Error::Unauthorized(Permission::AdminRead));
-        }
+    pub async fn list_users(&self, caller: &User) -> Result<Vec<User>> {
+        ensure_permission(caller, ResourceType::User, ResourcePermission::Read).await?;
 
-        new_runtime()?.block_on(list_users())
+        list_users().await
     }
 
-    pub fn create_user(self, user: &LoggedUser, id: String, conf: UserConfiguration) -> Result<()> {
-        if !user.has_admin_edit_rights() {
-            return Err(Error::Unauthorized(Permission::AdminEdit));
-        }
-
-        new_runtime()?.block_on(create_user(&id, conf))
-    }
-
-    pub fn update_user(
+    pub async fn create_user(
         self,
-        user: LoggedUser,
+        caller: &User,
+        id: String,
+        conf: UserConfiguration,
+    ) -> Result<()> {
+        ensure_permission(caller, ResourceType::User, ResourcePermission::Create).await?;
+
+        create_user(&id, conf).await
+    }
+
+    pub async fn update_user(
+        self,
+        caller: &User,
         id: String,
         conf: UserUpdateConfiguration,
     ) -> Result<()> {
-        if user.id != id && !user.has_admin_edit_rights() {
-            return Err(Error::Unauthorized(Permission::AdminEdit));
+        // Users can edit themselves
+        if caller.id != id {
+            ensure_permission(caller, ResourceType::User, ResourcePermission::Update).await?;
         }
 
-        new_runtime()?.block_on(update_user(&id, conf))
+        update_user(&id, conf).await
     }
 
-    pub fn delete_user(self, user: &LoggedUser, id: String) -> Result<()> {
-        if user.id != id && !user.has_admin_edit_rights() {
-            return Err(Error::Unauthorized(Permission::AdminEdit));
+    pub async fn delete_user(self, caller: &User, id: String) -> Result<()> {
+        // Users can delete themselves
+        if caller.id != id {
+            ensure_permission(caller, ResourceType::User, ResourcePermission::Delete).await?;
         }
 
-        new_runtime()?.block_on(delete_user(&id))
+        delete_user(&id).await
+    }
+    // Roles
+
+    pub async fn get_role(&self, caller: &User, id: &str) -> Result<Option<Role>> {
+        ensure_permission(caller, ResourceType::Role, ResourcePermission::Read).await?;
+
+        get_role(id).await
     }
 
-    //Repositories
+    pub async fn list_roles(&self, caller: &User) -> Result<Vec<Role>> {
+        ensure_permission(
+            caller,
+            ResourceType::Role,
+            crate::types::ResourcePermission::Read,
+        )
+        .await?;
 
-    pub fn get_repository(&self, id: &str) -> Result<Option<Repository>> {
-        new_runtime()?.block_on(get_repository(id))
+        list_roles().await
     }
 
-    pub fn list_repositories(&self) -> Result<Vec<Repository>> {
-        new_runtime()?.block_on(list_repositories())
-    }
-
-    pub fn create_repository(
+    pub async fn create_role(
         &self,
-        user: &LoggedUser,
+        caller: &User,
+        id: &str,
+        conf: RoleConfiguration,
+    ) -> Result<()> {
+        ensure_permission(
+            caller,
+            ResourceType::Role,
+            crate::types::ResourcePermission::Create,
+        )
+        .await?;
+
+        create_role(id, conf).await
+    }
+
+    pub async fn update_role(
+        &self,
+        caller: &User,
+        id: &str,
+        conf: crate::types::RoleUpdateConfiguration,
+    ) -> Result<()> {
+        ensure_permission(caller, ResourceType::Role, ResourcePermission::Update).await?;
+
+        update_role(id, conf).await
+    }
+
+    pub async fn delete_role(&self, caller: &User, id: &str) -> Result<()> {
+        ensure_permission(caller, ResourceType::Role, ResourcePermission::Delete).await?;
+
+        delete_role(id).await
+    }
+
+    // Repositories
+
+    pub async fn get_repository(&self, caller: &User, id: &str) -> Result<Option<Repository>> {
+        ensure_permission(caller, ResourceType::Repository, ResourcePermission::Read).await?;
+
+        get_repository(id).await
+    }
+
+    pub async fn list_repositories(&self, caller: &User) -> Result<Vec<Repository>> {
+        ensure_permission(caller, ResourceType::Repository, ResourcePermission::Read).await?;
+
+        list_repositories().await
+    }
+
+    pub async fn create_repository(
+        &self,
+        caller: &User,
         id: &str,
         conf: RepositoryConfiguration,
     ) -> Result<()> {
-        if !user.has_admin_edit_rights() {
-            return Err(Error::Unauthorized(Permission::AdminEdit));
-        }
+        ensure_permission(caller, ResourceType::Repository, ResourcePermission::Create).await?;
 
-        new_runtime()?.block_on(create_repository(id, conf))
+        create_repository(id, conf).await
     }
 
-    pub fn update_repository(
+    pub async fn update_repository(
         &self,
+        caller: &User,
         id: &str,
-        user: &LoggedUser,
         conf: RepositoryUpdateConfiguration,
     ) -> Result<()> {
-        if !user.has_admin_edit_rights() {
-            return Err(Error::Unauthorized(Permission::AdminEdit));
-        }
+        ensure_permission(caller, ResourceType::Repository, ResourcePermission::Update).await?;
 
-        new_runtime()?.block_on(update_repository(id, conf))
+        update_repository(id, conf).await
     }
 
-    pub fn delete_repository(&self, user: &LoggedUser, id: &str) -> Result<()> {
-        if !user.has_admin_edit_rights() {
-            return Err(Error::Unauthorized(Permission::AdminEdit));
-        }
+    pub async fn delete_repository(&self, caller: &User, id: &str) -> Result<()> {
+        ensure_permission(caller, ResourceType::Repository, ResourcePermission::Delete).await?;
 
-        new_runtime()?.block_on(delete_repository(id))
+        delete_repository(id).await
     }
 
     //Repository versions
 
-    pub fn get_repository_version(
+    pub async fn get_repository_version(
         &self,
-        _user: &LoggedUser,
+        caller: &User,
         repository_id: &str,
         id: &str,
     ) -> Result<Option<RepositoryVersion>> {
-        new_runtime()?.block_on(get_repository_version(repository_id, id))
+        ensure_permission(
+            caller,
+            ResourceType::RepositoryVersion,
+            ResourcePermission::Read,
+        )
+        .await?;
+
+        get_repository_version(repository_id, id).await
     }
 
-    pub fn list_repository_versions(
+    pub async fn list_repository_versions(
         &self,
-        _user: &LoggedUser,
+        caller: &User,
         repository_id: &str,
     ) -> Result<Vec<RepositoryVersion>> {
-        new_runtime()?.block_on(list_repository_versions(repository_id))
+        ensure_permission(
+            caller,
+            ResourceType::RepositoryVersion,
+            ResourcePermission::Read,
+        )
+        .await?;
+
+        list_repository_versions(repository_id).await
     }
 
-    pub fn create_repository_version(
+    pub async fn create_repository_version(
         &self,
-        user: &LoggedUser,
+        caller: &User,
         repository_id: &str,
         id: &str,
         conf: RepositoryVersionConfiguration,
     ) -> Result<()> {
-        if !user.has_admin_edit_rights() {
-            return Err(Error::Unauthorized(Permission::AdminEdit));
-        }
+        ensure_permission(
+            caller,
+            ResourceType::RepositoryVersion,
+            ResourcePermission::Create,
+        )
+        .await?;
 
-        new_runtime()?.block_on(create_repository_version(repository_id, id, conf))
+        create_repository_version(repository_id, id, conf).await
     }
 
-    pub fn delete_repository_version(
+    pub async fn delete_repository_version(
         &self,
-        user: &LoggedUser,
+        caller: &User,
         repository_id: &str,
         id: &str,
     ) -> Result<()> {
-        if !user.has_admin_edit_rights() {
-            return Err(Error::Unauthorized(Permission::AdminEdit));
-        }
+        ensure_permission(
+            caller,
+            ResourceType::RepositoryVersion,
+            ResourcePermission::Delete,
+        )
+        .await?;
 
-        new_runtime()?.block_on(delete_repository_version(repository_id, id))
+        delete_repository_version(repository_id, id).await
     }
 
     // Pools
 
-    pub fn get_pool(&self, user: &LoggedUser, pool_id: &str) -> Result<Option<Pool>> {
-        if !user.has_admin_read_rights() {
-            return Err(Error::Unauthorized(Permission::AdminRead));
-        }
+    pub async fn get_pool(&self, caller: &User, pool_id: &str) -> Result<Option<Pool>> {
+        ensure_permission(caller, ResourceType::Pool, ResourcePermission::Read).await?;
 
-        new_runtime()?.block_on(get_pool(pool_id))
+        get_pool(pool_id).await
     }
 
-    pub fn list_pools(&self, user: &LoggedUser) -> Result<Vec<Pool>> {
-        if !user.has_admin_read_rights() {
-            return Err(Error::Unauthorized(Permission::AdminRead));
-        }
+    pub async fn list_pools(&self, caller: &User) -> Result<Vec<Pool>> {
+        ensure_permission(caller, ResourceType::Pool, ResourcePermission::Read).await?;
 
-        new_runtime()?.block_on(list_pools())
+        list_pools().await
     }
 
     // Sessions
 
-    fn ensure_session_ownership(&self, user_id: &str, session_id: &str) -> Result<Session> {
-        if let Some(session) = new_runtime()?.block_on(get_session(session_id))? {
+    async fn ensure_session_ownership(&self, user_id: &str, session_id: &str) -> Result<Session> {
+        if let Some(session) = get_session(session_id).await? {
             if user_id != session.user_id {
-                return Err(Error::Unauthorized(Permission::ResourceNotOwned));
+                return Err(Error::ResourceNotOwned(
+                    ResourceType::Session,
+                    session_id.to_string(),
+                ));
             }
             Ok(session)
         } else {
@@ -295,63 +383,73 @@ impl Manager {
         }
     }
 
-    pub fn get_session(&self, user: &LoggedUser, id: &str) -> Result<Option<Session>> {
-        match self.ensure_session_ownership(&user.id, id) {
-            Err(Error::Failure(from)) => Err(Error::Failure(from)),
+    pub async fn get_session(&self, caller: &User, id: &str) -> Result<Option<Session>> {
+        ensure_permission(caller, ResourceType::Session, ResourcePermission::Read).await?;
+
+        match self.ensure_session_ownership(&caller.id, id).await {
+            Err(failure @ Error::Failure(_)) => Err(failure),
             Err(_) => Ok(None),
             Ok(session) => Ok(Some(session)),
         }
     }
 
-    pub fn list_sessions(&self, user: &LoggedUser) -> Result<Vec<Session>> {
-        if !user.has_admin_read_rights() {
-            return Err(Error::Unauthorized(Permission::AdminRead));
-        }
+    pub async fn list_sessions(&self, caller: &User) -> Result<Vec<Session>> {
+        ensure_permission(caller, ResourceType::Session, ResourcePermission::Read).await?;
 
-        new_runtime()?.block_on(list_sessions())
+        list_sessions().await
     }
 
-    pub fn create_session(
+    pub async fn create_session(
         &self,
-        user: &LoggedUser,
+        caller: &User,
         id: &str,
-        session_configuration: SessionConfiguration,
+        session_configuration: &SessionConfiguration,
     ) -> Result<()> {
-        // Non admin can only create session whose id matches their name
-        if !user.has_admin_edit_rights() && user.id.to_ascii_lowercase() != id {
-            return Err(Error::Unauthorized(Permission::InvalidSessionId));
+        ensure_permission(caller, ResourceType::Session, ResourcePermission::Create).await?;
+
+        // Session name must match user name, unless User has a specific permission
+        if caller.id.to_ascii_lowercase() != id {
+            ensure_permission(
+                caller,
+                ResourceType::Session,
+                ResourcePermission::Custom {
+                    name: "CustomizeSessionName".to_string(),
+                },
+            )
+            .await?
         }
 
         if session_configuration.duration.is_some() {
-            // Duration can only customized by users with proper rights
-            if !user.can_customize_duration() {
-                return Err(Error::Unauthorized(Permission::Customize {
-                    what: Parameter::SessionDuration,
-                }));
-            }
+            // Duration can only be customized by users with proper permission
+            ensure_permission(
+                caller,
+                ResourceType::Session,
+                ResourcePermission::Custom {
+                    name: "CustomizeSessionDuration".to_string(),
+                },
+            )
+            .await?;
         }
         if session_configuration.pool_affinity.is_some() {
-            // Pool affinity can only customized by users with proper rights
-            if !user.can_customize_pool_affinity() {
-                return Err(Error::Unauthorized(Permission::Customize {
-                    what: Parameter::SessionPoolAffinity,
-                }));
-            }
+            // Pool affinity can only be customized by users with proper permission
+            ensure_permission(
+                caller,
+                ResourceType::Session,
+                ResourcePermission::Custom {
+                    name: "CustomizeSessionPoolAffinity".to_string(),
+                },
+            )
+            .await?;
         }
 
         // Check that the session doesn't already exists
-        if self.get_session(user, id)?.is_some() {
+        if self.get_session(caller, id).await?.is_some() {
             return Err(Error::SessionIdAlreayUsed);
         }
 
         let template = session_configuration.clone().template;
-        let configuration = new_runtime()?.block_on(get_configuration())?;
-        let result = new_runtime()?.block_on(create_session(
-            user,
-            id,
-            configuration,
-            session_configuration,
-        ));
+        let configuration = get_configuration().await?;
+        let result = create_session(caller, id, &configuration, session_configuration).await;
 
         info!("Created session {} with template {}", id, template);
 
@@ -367,26 +465,26 @@ impl Manager {
         result
     }
 
-    pub fn update_session(
+    pub async fn update_session(
         &self,
+        caller: &User,
         id: &str,
-        user: &LoggedUser,
         session_update_configuration: SessionUpdateConfiguration,
     ) -> Result<()> {
-        self.ensure_session_ownership(&user.id, id)?;
+        ensure_permission(caller, ResourceType::Session, ResourcePermission::Update).await?;
 
-        let configuration = new_runtime()?.block_on(get_configuration())?;
-        new_runtime()?.block_on(update_session(
-            id,
-            configuration,
-            session_update_configuration,
-        ))
+        self.ensure_session_ownership(&caller.id, id).await?;
+
+        let configuration = get_configuration().await?;
+        update_session(id, configuration, session_update_configuration).await
     }
 
-    pub fn delete_session(&self, user: &LoggedUser, id: &str) -> Result<()> {
-        self.ensure_session_ownership(&user.id, id)?;
+    pub async fn delete_session(&self, caller: &User, id: &str) -> Result<()> {
+        ensure_permission(caller, ResourceType::Session, ResourcePermission::Delete).await?;
 
-        let result = new_runtime()?.block_on(delete_session(id));
+        self.ensure_session_ownership(&caller.id, id).await?;
+
+        let result = delete_session(id).await;
         match &result {
             Ok(_) => {
                 self.metrics.inc_undeploy_counter();
@@ -401,23 +499,30 @@ impl Manager {
 
     // Session executions
 
-    pub fn create_session_execution(
+    pub async fn create_session_execution(
         &self,
-        user: &LoggedUser,
+        caller: &User,
         session_id: &str,
         session_execution_configuration: SessionExecutionConfiguration,
     ) -> Result<SessionExecution> {
-        self.ensure_session_ownership(&user.id, session_id)?;
+        ensure_permission(
+            caller,
+            ResourceType::SessionExecution,
+            ResourcePermission::Create,
+        )
+        .await?;
 
-        new_runtime()?.block_on(create_session_execution(
-            session_id,
-            session_execution_configuration,
-        ))
+        self.ensure_session_ownership(&caller.id, session_id)
+            .await?;
+
+        create_session_execution(session_id, session_execution_configuration).await
     }
 
     // Templates
 
-    pub fn list_templates(&self) -> Result<Vec<Template>> {
-        new_runtime()?.block_on(list_templates())
+    pub async fn list_templates(&self, caller: &User) -> Result<Vec<Template>> {
+        ensure_permission(caller, ResourceType::Template, ResourcePermission::Read).await?;
+
+        list_templates().await
     }
 }

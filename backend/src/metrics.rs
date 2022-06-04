@@ -1,5 +1,6 @@
 ///! The prometeus metrics exposed by the various backends.
-use prometheus::{opts, Error, IntCounter, Registry};
+use crate::error::{Error, Result};
+use prometheus::{opts, IntCounter, Registry};
 
 /// The struct of metrics internally manipulated. Manipulate them via associated functions.
 #[derive(Debug, Clone)]
@@ -10,31 +11,38 @@ pub struct Metrics {
     undeploy_failures_counter: IntCounter,
 }
 
+fn new_int_counter(name: &str, description: &str) -> Result<IntCounter> {
+    IntCounter::with_opts(opts!(name, description)).map_err(|err| Error::Failure(err.to_string()))
+}
+
+fn register(registry: &Registry, counter: IntCounter) -> Result<()> {
+    registry
+        .register(Box::new(counter))
+        .map_err(|err| Error::Failure(err.to_string()))
+}
+
 impl Metrics {
-    pub fn new() -> Result<Self, Error> {
+    pub fn new() -> Result<Self> {
         Ok(Metrics {
-            deploy_counter: IntCounter::with_opts(opts!("deploy_counter", "Count of deployments"))?,
-            deploy_failures_counter: IntCounter::with_opts(opts!(
+            deploy_counter: new_int_counter("deploy_counter", "Count of deployments")?,
+            deploy_failures_counter: new_int_counter(
                 "deploy_failures_counter",
-                "Count of deployment failures"
-            ))?,
-            undeploy_counter: IntCounter::with_opts(opts!(
-                "undeploy_counter",
-                "Count of undeployment"
-            ))?,
-            undeploy_failures_counter: IntCounter::with_opts(opts!(
+                "Count of deployment failures",
+            )?,
+            undeploy_counter: new_int_counter("undeploy_counter", "Count of undeployment")?,
+            undeploy_failures_counter: new_int_counter(
                 "undeploy_failures_counter",
-                "Count of undeployment failures"
-            ))?,
+                "Count of undeployment failures",
+            )?,
         })
     }
 
     /// Register all metrics in provided `Registry`
-    pub fn register(self, registry: Registry) -> Result<(), Error> {
-        registry.register(Box::new(self.deploy_counter))?;
-        registry.register(Box::new(self.deploy_failures_counter))?;
-        registry.register(Box::new(self.undeploy_counter))?;
-        registry.register(Box::new(self.undeploy_failures_counter))?;
+    pub fn register(self, registry: Registry) -> Result<()> {
+        register(&registry, self.deploy_counter)?;
+        register(&registry, self.deploy_failures_counter)?;
+        register(&registry, self.undeploy_counter)?;
+        register(&registry, self.undeploy_failures_counter)?;
         Ok(())
     }
 }
