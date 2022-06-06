@@ -34,7 +34,7 @@ pub async fn get_host() -> Result<String> {
     let ingress = ingress_api
         .get(INGRESS_NAME)
         .await
-        .map_err(|err| Error::K8sCommunicationFailure(err))?;
+        .map_err(Error::K8sCommunicationFailure)?;
     Ok(ingress
         .spec
         .ok_or(Error::MissingData("spec"))?
@@ -112,7 +112,7 @@ fn config() -> Result<Config> {
 
 pub fn client() -> Result<Client> {
     let config = config()?;
-    Client::try_from(config).map_err(|err| Error::K8sCommunicationFailure(err))
+    Client::try_from(config).map_err(Error::K8sCommunicationFailure)
 }
 
 pub async fn list_by_selector<K: Clone + DeserializeOwned + Debug>(
@@ -126,7 +126,7 @@ pub async fn list_by_selector<K: Clone + DeserializeOwned + Debug>(
     api.list(&params)
         .await
         .map(|l| l.items)
-        .map_err(|err| Error::K8sCommunicationFailure(err))
+        .map_err(Error::K8sCommunicationFailure)
 }
 
 pub async fn current_pod_api() -> Result<Api<Pod>> {
@@ -145,7 +145,7 @@ pub async fn get_config_map(client: &Client, name: &str) -> Result<BTreeMap<Stri
     config_map_api
         .get(name)
         .await
-        .map_err(|err| Error::K8sCommunicationFailure(err)) // No config map
+        .map_err(Error::K8sCommunicationFailure) // No config map
         .map(|o| o.data.unwrap_or_default()) // No data, return empty map
 }
 
@@ -172,7 +172,7 @@ pub async fn add_config_map_value(
     config_map_api
         .patch(name, &params, &patch)
         .await
-        .map_err(|err| Error::K8sCommunicationFailure(err))?;
+        .map_err(Error::K8sCommunicationFailure)?;
     Ok(())
 }
 
@@ -195,7 +195,7 @@ pub async fn delete_config_map_value(client: &Client, name: &str, key: &str) -> 
     config_map_api
         .patch(name, &params, &patch)
         .await
-        .map_err(|err| Error::K8sCommunicationFailure(err))?;
+        .map_err(Error::K8sCommunicationFailure)?;
     Ok(())
 }
 

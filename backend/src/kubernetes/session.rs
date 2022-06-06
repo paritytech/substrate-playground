@@ -311,7 +311,7 @@ pub async fn get_session(session_id: &str) -> Result<Option<Session>> {
     let pod = pod_api
         .get_opt(SESSION_NAME)
         .await
-        .map_err(|err| Error::K8sCommunicationFailure(err))?;
+        .map_err(Error::K8sCommunicationFailure)?;
 
     match pod.map(|pod| pod_to_session(session_id, &pod)) {
         Some(session) => Ok(Some(session)),
@@ -349,7 +349,7 @@ pub async fn patch_ingress(runtimes: &BTreeMap<String, Vec<Port>>) -> Result<()>
     let mut ingress: Ingress = ingress_api
         .get(INGRESS_NAME)
         .await
-        .map_err(|err| Error::K8sCommunicationFailure(err))?
+        .map_err(Error::K8sCommunicationFailure)?
         .clone();
     let mut spec = ingress
         .clone()
@@ -373,7 +373,7 @@ pub async fn patch_ingress(runtimes: &BTreeMap<String, Vec<Port>>) -> Result<()>
     ingress_api
         .replace(INGRESS_NAME, &PostParams::default(), &ingress)
         .await
-        .map_err(|err| Error::K8sCommunicationFailure(err))?;
+        .map_err(Error::K8sCommunicationFailure)?;
 
     Ok(())
 }
@@ -455,14 +455,14 @@ pub async fn create_session(
     if namespace_api
         .get_opt(id)
         .await
-        .map_err(|err| Error::K8sCommunicationFailure(err))?
+        .map_err(Error::K8sCommunicationFailure)?
         .is_none()
     {
         let namespace = namespace(id.to_string())?;
         namespace_api
             .create(&PostParams::default(), &namespace)
             .await
-            .map_err(|err| Error::K8sCommunicationFailure(err))?;
+            .map_err(Error::K8sCommunicationFailure)?;
 
         let service_account_api: Api<ServiceAccount> = Api::namespaced(client.clone(), id);
         service_account_api
@@ -477,7 +477,7 @@ pub async fn create_session(
                 },
             )
             .await
-            .map_err(|err| Error::K8sCommunicationFailure(err))?;
+            .map_err(Error::K8sCommunicationFailure)?;
     }
     // Deploy a new pod for this image
     let pod_api: Api<Pod> = Api::namespaced(client.clone(), id);
@@ -487,7 +487,7 @@ pub async fn create_session(
             &pod(&user.id, id, template, &duration, &pool_id),
         )
         .await
-        .map_err(|err| Error::K8sCommunicationFailure(err))?;
+        .map_err(Error::K8sCommunicationFailure)?;
 
     // Deploy the associated service
     let service_api: Api<Service> = Api::namespaced(client.clone(), id);
@@ -495,7 +495,7 @@ pub async fn create_session(
     service_api
         .create(&PostParams::default(), &service)
         .await
-        .map_err(|err| Error::K8sCommunicationFailure(err))?;
+        .map_err(Error::K8sCommunicationFailure)?;
 
     // Deploy the ingress local service
     let service_local_api: Api<Service> = Api::default_namespaced(client.clone());
@@ -505,7 +505,7 @@ pub async fn create_session(
             &external_service(&local_service_name, id),
         )
         .await
-        .map_err(|err| Error::K8sCommunicationFailure(err))?;
+        .map_err(Error::K8sCommunicationFailure)?;
 
     Ok(())
 }
@@ -543,7 +543,7 @@ pub async fn update_session(
         pod_api
             .patch(SESSION_NAME, &params, &patch)
             .await
-            .map_err(|err| Error::K8sCommunicationFailure(err))?;
+            .map_err(Error::K8sCommunicationFailure)?;
     }
 
     Ok(())
@@ -563,7 +563,7 @@ pub async fn delete_session(id: &str) -> Result<()> {
             &DeleteParams::default().grace_period(0),
         )
         .await
-        .map_err(|err| Error::K8sCommunicationFailure(err))?;
+        .map_err(Error::K8sCommunicationFailure)?;
 
     // Undeploy the ingress service
     let service_api: Api<Service> = Api::namespaced(client.clone(), id);
@@ -573,14 +573,14 @@ pub async fn delete_session(id: &str) -> Result<()> {
             &DeleteParams::default().grace_period(0),
         )
         .await
-        .map_err(|err| Error::K8sCommunicationFailure(err))?;
+        .map_err(Error::K8sCommunicationFailure)?;
 
     // Undeploy the pod
     let pod_api: Api<Pod> = Api::namespaced(client.clone(), id);
     pod_api
         .delete(SESSION_NAME, &DeleteParams::default().grace_period(0))
         .await
-        .map_err(|err| Error::K8sCommunicationFailure(err))?;
+        .map_err(Error::K8sCommunicationFailure)?;
 
     // Remove the ingress route
     let host = get_host().await?;
@@ -589,7 +589,7 @@ pub async fn delete_session(id: &str) -> Result<()> {
     let mut ingress: Ingress = ingress_api
         .get(INGRESS_NAME)
         .await
-        .map_err(|err| Error::K8sCommunicationFailure(err))?
+        .map_err(Error::K8sCommunicationFailure)?
         .clone();
     let mut spec = ingress
         .clone()
@@ -609,7 +609,7 @@ pub async fn delete_session(id: &str) -> Result<()> {
     ingress_api
         .replace(INGRESS_NAME, &PostParams::default(), &ingress)
         .await
-        .map_err(|err| Error::K8sCommunicationFailure(err))?;
+        .map_err(Error::K8sCommunicationFailure)?;
 
     Ok(())
 }
@@ -638,7 +638,7 @@ pub async fn create_session_execution(
             &AttachParams::default(),
         )
         .await
-        .map_err(|err| Error::K8sCommunicationFailure(err))?;
+        .map_err(Error::K8sCommunicationFailure)?;
 
     Ok(SessionExecution {
         stdout: get_output(attached).await,

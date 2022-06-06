@@ -74,7 +74,7 @@ async fn create_volume_template(
 ) -> Result<PersistentVolumeClaim> {
     api.create(&PostParams::default(), &volume_template(repository_id))
         .await
-        .map_err(|err| Error::K8sCommunicationFailure(err))
+        .map_err(Error::K8sCommunicationFailure)
 }
 
 pub async fn get_repository(id: &str) -> Result<Option<Repository>> {
@@ -219,7 +219,7 @@ pub async fn create_repository_version(
     job_api
         .create(&PostParams::default(), &job)
         .await
-        .map_err(|err| Error::K8sCommunicationFailure(err))?;
+        .map_err(Error::K8sCommunicationFailure)?;
 
     Ok(())
 }

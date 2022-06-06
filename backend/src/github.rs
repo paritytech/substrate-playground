@@ -89,5 +89,5 @@ pub async fn exchange_code(client_id: &str, client_secret: &str, code: &str) -> 
         .get("access_token")
         .and_then(Value::as_str)
         .map(String::from)
-        .ok_or(Error::Failure("No access_token provided".to_string()))
+        .ok_or_else(|| Error::Failure("No access_token provided".to_string()))
 }
