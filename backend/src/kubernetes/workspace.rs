@@ -37,9 +37,7 @@ pub async fn get_volume(
     api: &Api<PersistentVolumeClaim>,
     name: &str,
 ) -> Result<PersistentVolumeClaim> {
-    api.get(name)
-        .await
-        .map_err(Error::K8sCommunicationFailure)
+    api.get(name).await.map_err(Error::K8sCommunicationFailure)
 }
 
 pub fn volume_template_name(repository_id: &str) -> String {
