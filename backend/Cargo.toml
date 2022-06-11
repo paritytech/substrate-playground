@@ -22,6 +22,6 @@ thiserror = "1.0.31"
 git2 = "0.14.4"
 clap = { version = "3.1.18", features = ["derive"] }
 futures = "0.3"
-base64 = "0.12"
+base64 = "0.13"
 rand = { version = "0.8", default-features = false, features = ["std"] }
 url = "2.0"
