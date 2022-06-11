@@ -23,5 +23,5 @@ git2 = "0.14.4"
 clap = { version = "3.1.18", features = ["derive"] }
 futures = "0.3"
 base64 = "0.12"
-rand = { version = "0.7", default-features = false, features = ["std"] }
+rand = { version = "0.8", default-features = false, features = ["std"] }
 url = "2.0"
