@@ -12,7 +12,7 @@ on:
     - '.github/workflows/ct-playground.yml'
     - 'e2e/**'
   schedule:
-    - cron:  '*/30 * * * *' # Every 30 minutes
+    - cron:  '0 * * * *' # Every hour
 
 jobs:
   test:
