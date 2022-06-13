@@ -2451,6 +2451,28 @@
     uuid "^8.0.0"
     vscode-languageserver-textdocument "^1.0.1"
 
+"@theia/filesystem@1.26.0":
+  version "1.26.0"
+  resolved "https://registry.yarnpkg.com/@theia/filesystem/-/filesystem-1.26.0.tgz#be9144b87f46b28bd133026e48818d3da9209d1a"
+  integrity sha512-jmoHhmq4v2UR7HarqM4OmEOY6YL2dK2GMqTn2dlDBlxWvm1QD+zzvEKyNJZehNXWDyvVVZiRjckBZKOR5wtMig==
+  dependencies:
+    "@theia/core" "1.26.0"
+    "@types/body-parser" "^1.17.0"
+    "@types/multer" "^1.4.7"
+    "@types/rimraf" "^2.0.2"
+    "@types/tar-fs" "^1.16.1"
+    "@types/uuid" "^7.0.3"
+    async-mutex "^0.3.1"
+    body-parser "^1.18.3"
+    http-status-codes "^1.3.0"
+    minimatch "^3.0.4"
+    multer "^1.4.2"
+    rimraf "^2.6.2"
+    tar-fs "^1.16.2"
+    trash "^6.1.1"
+    uuid "^8.0.0"
+    vscode-languageserver-textdocument "^1.0.1"
+
 "@theia/keymaps@1.25.0":
   version "1.25.0"
   resolved "https://registry.yarnpkg.com/@theia/keymaps/-/keymaps-1.25.0.tgz#0adfb6f088a532aa3c2f05448ac5697e6a16f5ad"
@@ -2485,6 +2507,15 @@
     "@theia/core" "1.25.0"
     "@theia/filesystem" "1.25.0"
     "@theia/workspace" "1.25.0"
+
+"@theia/markers@1.26.0":
+  version "1.26.0"
+  resolved "https://registry.yarnpkg.com/@theia/markers/-/markers-1.26.0.tgz#8e1aa4bece27b9f67c414a49169a722fb7ad1762"
+  integrity sha512-0dAnWnwV89gSP8KtS+NP0zrEIdbsFVYGhmI50V6yMs4sVIjEH+99OZfIheOa/LrYhbcUXAf3fzakA6N0H0L9ug==
+  dependencies:
+    "@theia/core" "1.26.0"
+    "@theia/filesystem" "1.26.0"
+    "@theia/workspace" "1.26.0"
 
 "@theia/messages@1.25.0":
   version "1.25.0"
@@ -2538,6 +2569,23 @@
     onigasm "^2.2.0"
     vscode-textmate "^4.4.0"
 
+"@theia/monaco@1.26.0":
+  version "1.26.0"
+  resolved "https://registry.yarnpkg.com/@theia/monaco/-/monaco-1.26.0.tgz#9dc066f74490756c3b6b2118729310b54125407a"
+  integrity sha512-8Jpq+d2J0+RL8KzDrGDCmlRx2XzVTN66NARlal3RkC0XELbbCkyPIgY1X2QsWGnVn2KFV1p7lAN1Oc18iRn+Ww==
+  dependencies:
+    "@theia/core" "1.26.0"
+    "@theia/editor" "1.26.0"
+    "@theia/filesystem" "1.26.0"
+    "@theia/markers" "1.26.0"
+    "@theia/monaco-editor-core" "1.65.2"
+    "@theia/outline-view" "1.26.0"
+    fast-plist "^0.1.2"
+    idb "^4.0.5"
+    jsonc-parser "^2.2.0"
+    onigasm "^2.2.0"
+    vscode-textmate "^4.4.0"
+
 "@theia/navigator@1.25.0":
   version "1.25.0"
   resolved "https://registry.yarnpkg.com/@theia/navigator/-/navigator-1.25.0.tgz#ca3d357b5b4d1c46e90fa913eb9d115b68e013df"
@@ -2554,6 +2602,13 @@
   integrity sha512-P7hYD5LgbMjqxs0rEXD5Dp6mSRX+DhIXkuB25GztJSVyfv1ZTI6d67Ay1oKc7/eF7lx+t5GgqyGvRD/adCqmnA==
   dependencies:
     "@theia/core" "1.25.0"
+
+"@theia/outline-view@1.26.0":
+  version "1.26.0"
+  resolved "https://registry.yarnpkg.com/@theia/outline-view/-/outline-view-1.26.0.tgz#eadd2035eeefd9c4542499eda88ddeafb9fe3acd"
+  integrity sha512-dX+Y8PrGJdMMiyX8halJ/Dwy2XWTV/dw8Jh7g6N+HjQSLZyrueLsSsc6I9MaJK+IKC4q5dxFHWci0CUJfQj88Q==
+  dependencies:
+    "@theia/core" "1.26.0"
 
 "@theia/output@1.25.0":
   version "1.25.0"
@@ -2699,6 +2754,15 @@
     node-pty "0.11.0-beta17"
     string-argv "^0.1.1"
 
+"@theia/process@1.26.0":
+  version "1.26.0"
+  resolved "https://registry.yarnpkg.com/@theia/process/-/process-1.26.0.tgz#448bdc791495dbfaad411f46e324ab1e397edf25"
+  integrity sha512-W819IEkCkNsqvlxpfjF2ciMNk9EDi1rpO+G0c8qBYCSsmxA3wukLqr+CfKJaATy95qZqrFQVmp51FWoEBEKYAA==
+  dependencies:
+    "@theia/core" "1.26.0"
+    node-pty "0.11.0-beta17"
+    string-argv "^0.1.1"
+
 "@theia/request@1.26.0":
   version "1.26.0"
   resolved "https://registry.yarnpkg.com/@theia/request/-/request-1.26.0.tgz#dd11ca8ca51c0f5eacced5b057515e1263ce51c9"
@@ -2755,6 +2819,26 @@
     jsonc-parser "^2.2.0"
     p-debounce "^2.1.0"
 
+"@theia/task@1.26.0":
+  version "1.26.0"
+  resolved "https://registry.yarnpkg.com/@theia/task/-/task-1.26.0.tgz#0063127307eaa758bcb4fd4116b09e98aef14ed6"
+  integrity sha512-uqMnpswAadObzr58utFZSgXCgKLa3c1Z9nYLHhUWBQLC9rbKXQCx2skzdQIKx9iSBdcTp98XbHextAXPiOQ9uw==
+  dependencies:
+    "@theia/core" "1.26.0"
+    "@theia/editor" "1.26.0"
+    "@theia/filesystem" "1.26.0"
+    "@theia/markers" "1.26.0"
+    "@theia/monaco" "1.26.0"
+    "@theia/monaco-editor-core" "1.65.2"
+    "@theia/process" "1.26.0"
+    "@theia/terminal" "1.26.0"
+    "@theia/userstorage" "1.26.0"
+    "@theia/variable-resolver" "1.26.0"
+    "@theia/workspace" "1.26.0"
+    async-mutex "^0.3.1"
+    jsonc-parser "^2.2.0"
+    p-debounce "^2.1.0"
+
 "@theia/terminal@1.25.0":
   version "1.25.0"
   resolved "https://registry.yarnpkg.com/@theia/terminal/-/terminal-1.25.0.tgz#3459fa777d8b661d19c12be78174de2d27fac5cb"
@@ -2765,6 +2849,20 @@
     "@theia/filesystem" "1.25.0"
     "@theia/process" "1.25.0"
     "@theia/workspace" "1.25.0"
+    xterm "^4.16.0"
+    xterm-addon-fit "^0.5.0"
+    xterm-addon-search "^0.8.2"
+
+"@theia/terminal@1.26.0":
+  version "1.26.0"
+  resolved "https://registry.yarnpkg.com/@theia/terminal/-/terminal-1.26.0.tgz#5f795e26da7c3b083536f8805f37122631694f13"
+  integrity sha512-V48sECM06ZOKHM2VaiZQLUB3NQQfWhXVWU51FTptH2pCoElyU+5wPRW3GXwYGAGvy7K6ZuhxTpuJMAXr4YTXyQ==
+  dependencies:
+    "@theia/core" "1.26.0"
+    "@theia/editor" "1.26.0"
+    "@theia/filesystem" "1.26.0"
+    "@theia/process" "1.26.0"
+    "@theia/workspace" "1.26.0"
     xterm "^4.16.0"
     xterm-addon-fit "^0.5.0"
     xterm-addon-search "^0.8.2"
@@ -2795,6 +2893,14 @@
     "@theia/core" "1.25.0"
     "@theia/filesystem" "1.25.0"
 
+"@theia/userstorage@1.26.0":
+  version "1.26.0"
+  resolved "https://registry.yarnpkg.com/@theia/userstorage/-/userstorage-1.26.0.tgz#3295e916d60a81a6db666ce33cf7a59adf098fcb"
+  integrity sha512-Ll98mQtyM7XaS9qlkjH2VommBXTA1aiGX9Zd1zn4+i2O5+ngPrDse3LYJvmN6TjG/vUeW5Od6inW5PlWY0ucNg==
+  dependencies:
+    "@theia/core" "1.26.0"
+    "@theia/filesystem" "1.26.0"
+
 "@theia/variable-resolver@1.25.0":
   version "1.25.0"
   resolved "https://registry.yarnpkg.com/@theia/variable-resolver/-/variable-resolver-1.25.0.tgz#2e04b3256dac71b8a0b86984783f544ea3ebc8d4"
@@ -2817,6 +2923,17 @@
     "@theia/core" "1.25.0"
     "@theia/filesystem" "1.25.0"
     "@theia/variable-resolver" "1.25.0"
+    jsonc-parser "^2.2.0"
+    valid-filename "^2.0.1"
+
+"@theia/workspace@1.26.0":
+  version "1.26.0"
+  resolved "https://registry.yarnpkg.com/@theia/workspace/-/workspace-1.26.0.tgz#e64fea9d6b1df175f174b405eb341022b917ad94"
+  integrity sha512-1eQoJA7zOCBvBMXGUlrA8iXnI6KwFyZPa+4bTuqSYvFx7/bJqjjT2wAPwl69JPi82rA8QDv7ZNCYkGVdn7fMEw==
+  dependencies:
+    "@theia/core" "1.26.0"
+    "@theia/filesystem" "1.26.0"
+    "@theia/variable-resolver" "1.26.0"
     jsonc-parser "^2.2.0"
     valid-filename "^2.0.1"
 
