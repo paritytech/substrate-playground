@@ -7,11 +7,12 @@ ENV DEBIAN_FRONTEND=noninteractive
 # Install required dependencies
 RUN apt update && \
     apt upgrade -y && \
-    DEBIAN_FRONTEND=noninteractive apt install -yq make gcc g++ curl wget dumb-init python vim git cmake pkg-config libssl-dev git gcc build-essential git clang libclang-dev pkg-config xsel htop nodejs jq unzip binaryen npm
+    DEBIAN_FRONTEND=noninteractive apt install -yq make gcc g++ curl wget dumb-init python vim git cmake pkg-config libssl-dev git gcc build-essential git clang libclang-dev xsel htop nodejs jq unzip binaryen npm jupyter-notebook && \
+    apt clean
 
 # Install rust as required by substrate env
 # Pick up the version from https://rust-lang.github.io/rustup-components-history/index.html (rls is required)
-ARG RUST_VERSION=nightly-2021-09-10
+ARG RUST_VERSION=nightly-2022-06-12
 ARG USER=playground
 ARG HOME=/home/$USER
 ARG WORKSPACE=$HOME/workspace
@@ -40,3 +41,6 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --de
     && rustup install $RUST_VERSION \
     && rustup component add rls rust-analysis rust-src clippy rustfmt llvm-tools-preview \
     && rustup target add wasm32-unknown-unknown --toolchain $RUST_VERSION
+
+RUN cargo install evcxr_jupyter \
+    && evcxr_jupyter --install

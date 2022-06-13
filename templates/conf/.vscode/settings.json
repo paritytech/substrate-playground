@@ -1,1 +1,5 @@
-{"rust-analyzer.updates.askBeforeDownload": false}
+{"rust-analyzer.updates.askBeforeDownload": false,
+ "rust-analyzer.server.extraEnv": {
+    "CARGO_TARGET_DIR": "target/.rust-analyzer",
+    "SKIP_WASM_BUILD": 1,
+}}

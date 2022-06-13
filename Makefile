@@ -43,7 +43,6 @@ endif
 PLAYGROUND_BACKEND_API_DOCKER_IMAGE_NAME=${DOCKER_ORG}/substrate-playground-backend-api
 PLAYGROUND_BACKEND_UI_DOCKER_IMAGE_NAME=${DOCKER_ORG}/substrate-playground-backend-ui
 TEMPLATE_BASE=${DOCKER_ORG}/substrate-playground-template-base
-TEMPLATE_THEIA_BASE=${DOCKER_ORG}/substrate-playground-template-theia-base
 PLAYGROUND_ID=playground-${ENV}
 GKE_CLUSTER=substrate-${PLAYGROUND_ID}
 
@@ -86,40 +85,13 @@ clean: clean-frontend clean-backend ## Clean all generated files
 
 ##@ Docker images
 
-build-template-base: ## Build theia docker images
-	$(eval THEIA_DOCKER_IMAGE_VERSION=$(shell git rev-parse --short HEAD))
-	@cd templates; docker buildx build --load --force-rm -f Dockerfile.base --label org.opencontainers.image.version=${THEIA_DOCKER_IMAGE_VERSION} -t ${TEMPLATE_BASE}:sha-${THEIA_DOCKER_IMAGE_VERSION} .
+build-template-base:
+	$(eval DOCKER_IMAGE_VERSION=$(shell git rev-parse --short HEAD))
+	@cd templates; docker buildx build --load --force-rm -f Dockerfile.base --label org.opencontainers.image.version=${DOCKER_IMAGE_VERSION} -t ${TEMPLATE_BASE}:sha-${DOCKER_IMAGE_VERSION} .
 	docker image prune -f --filter label=stage=builder
 
-push-template-base: build-template-base ## Push a newly built theia image on docker.io
-	docker push ${TEMPLATE_BASE}:sha-${THEIA_DOCKER_IMAGE_VERSION}
-
-build-template-theia-base:
-	$(eval THEIA_DOCKER_IMAGE_VERSION=$(shell git rev-parse --short HEAD))
-	@cd templates; docker buildx build --load --force-rm -f Dockerfile.theia-base --label org.opencontainers.image.version=${THEIA_DOCKER_IMAGE_VERSION} -t ${TEMPLATE_THEIA_BASE}:sha-${THEIA_DOCKER_IMAGE_VERSION} .
-	docker image prune -f --filter label=stage=builder
-
-push-template-theia-base: build-template-theia-base ## Push a newly built theia image on docker.io
-	docker push ${TEMPLATE_THEIA_BASE}:sha-${THEIA_DOCKER_IMAGE_VERSION}
-
-build-template:
-	@if test "$(TEMPLATE)" = "" ; then \
-		echo "Environment variable TEMPLATE not set"; \
-		exit 1; \
-	fi
-	$(eval BASE_TEMPLATE_VERSION=$(shell grep BASE_TEMPLATE_VERSION conf/templates/.env | cut -d '=' -f2))
-	$(eval REPOSITORY=$(shell cat conf/templates/${TEMPLATE} | yq -r .repository))
-	$(eval REF=$(shell cat conf/templates/${TEMPLATE} | yq -r .ref))
-	$(eval REPOSITORY_CLONE=.clone)
-	@mkdir -p templates/${REPOSITORY_CLONE}; cd templates/${REPOSITORY_CLONE}; git init; git remote add origin https://github.com/${REPOSITORY}.git; git fetch --all \
-    && git checkout ${REF} \
-    $(eval REV = $(shell git rev-parse --short HEAD))
-
-	$(eval TAG=paritytech/substrate-playground-template-${TEMPLATE}:sha-${REV})
-	$(eval TAG_THEIA=paritytech/substrate-playground-template-${TEMPLATE}-theia:sha-${REV})
-	@cd templates; docker buildx build --load --force-rm --build-arg BASE_TEMPLATE_VERSION=${BASE_TEMPLATE_VERSION} -t ${TAG} -f Dockerfile.template ${REPOSITORY_CLONE} \
-	&& docker buildx build --load --force-rm --build-arg BASE_TEMPLATE_VERSION=${BASE_TEMPLATE_VERSION} --build-arg TEMPLATE_IMAGE=${TAG} -t ${TAG_THEIA} -f Dockerfile.theia-template .
-	@rm -rf templates/${REPOSITORY_CLONE}
+push-template-base: build-template-base ## Push a newly built image on docker.io
+	docker push ${TEMPLATE_BASE}:sha-${DOCKER_IMAGE_VERSION}
 
 build-openvscode-template:
 	@if test "$(TEMPLATE)" = "" ; then \
@@ -140,11 +112,7 @@ build-openvscode-template:
 	&& docker buildx build --load --force-rm --build-arg TEMPLATE_IMAGE=${TAG} -t ${TAG_OPENVSCODE} -f Dockerfile.openvscode-template .
 	@rm -rf templates/${REPOSITORY_CLONE}
 
-push-template: build-template
-	docker push ${TAG}
-	docker push ${TAG_THEIA}
-
-push-openvscode-template: build-openvscode-template
+push-template: build-openvscode-template
 	docker push ${TAG}
 	docker push ${TAG_OPENVSCODE}
 
@@ -210,9 +178,6 @@ k8s-deploy-playground: requires-k8s ## Deploy playground on kubernetes
 k8s-undeploy-playground: requires-k8s ## Undeploy playground from kubernetes
 	@read -p $$'All configuration (including GitHub secrets) will be lost. Ok to proceed? [yN]' answer; if [ "$${answer}" != "Y" ] ;then exit 1; fi
 	kustomize build --enable-helm conf/k8s/overlays/${ENV}/ | kubectl delete -f -
-
-k8s-undeploy-theia: requires-k8s ## Undeploy all theia pods and services from kubernetes
-	kubectl delete pods,services -l app.kubernetes.io/component=theia
 
 ##@ DNS certificates
 

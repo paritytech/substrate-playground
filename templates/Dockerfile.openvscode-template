@@ -7,9 +7,13 @@ ARG TEMPLATE_IMAGE
 
 FROM $TEMPLATE_IMAGE
 
+# Ensure that needed env variables have been set by inherited image
+RUN [ ! -z "${USER}" ] || { echo "USER env variable must be set in inherited image"; exit 1; } && \
+    [ ! -z "${HOME}" ] || { echo "HOME env variable must be set in inherited image"; exit 1; } && \
+    [ ! -z "${WORKSPACE}" ] || { echo "WORKSPACE env variable must be set in inherited image"; exit 1; }
+
 ARG OPENVSCODE_PLAYGROUND_HOME=$OPENVSCODE_HOME/openvscode-playground
 ARG OPENVSCODE_SERVER_ROOT="/home/.openvscode-server"
-ARG WORKSPACE="/home/playground/workspace"
 
 WORKDIR /home/
 
@@ -21,26 +25,26 @@ ENV OPENVSCODE_VERSION=1.68.0
 RUN wget https://github.com/gitpod-io/openvscode-server/releases/download/openvscode-server-v$OPENVSCODE_VERSION/openvscode-server-v$OPENVSCODE_VERSION-linux-x64.tar.gz \
     && tar -xzf openvscode-server-v$OPENVSCODE_VERSION-linux-x64.tar.gz \
     && mv openvscode-server-v$OPENVSCODE_VERSION-linux-x64 ${OPENVSCODE_SERVER_ROOT} \
+    && cp ${OPENVSCODE_SERVER_ROOT}/bin/remote-cli/openvscode-server ${OPENVSCODE_SERVER_ROOT}/bin/remote-cli/code && \
     && rm -rf openvscode-server-v$OPENVSCODE_VERSION-linux-x64.tar.gz
 
 COPY playground-extension ${OPENVSCODE_SERVER_ROOT}/extensions/playground-extension
-
-# "rust-analyzer.server.extraEnv": {
-#  "CARGO_TARGET_DIR": "target/.rust-analyzer",
-#  "SKIP_WASM_BUILD": 1,
-#}
+# https://code.visualstudio.com/docs/getstarted/settings#_settings-file-locations
+COPY conf ${HOME}/.config/Code/User/settings.json
 
 RUN chmod g+rw /home && \
-    chown -R playground:playground ${OPENVSCODE_SERVER_ROOT}
+    chown -R $USER:$USER ${OPENVSCODE_SERVER_ROOT}
 
-USER playground
+USER $USER
 
 ## Install default extensions
 # https://marketplace.visualstudio.com/items?itemName=Zerotaskx.rust-extension-pack
 RUN ${OPENVSCODE_SERVER_ROOT}/bin/openvscode-server
     --install-extension matklad.rust-analyzer \
     --install-extension vsls-contrib.codetour \
-    --install-extension redhat.vscode-yaml
+    --install-extension redhat.vscode-yaml \
+    --install-extension ms-python.python \
+    --install-extension ms-toolsai.jupyter
 
 WORKDIR $WORKSPACE
 
