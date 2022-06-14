@@ -144,8 +144,7 @@ pub fn create_workspace_pod(
                 image: Some(
                     runtime
                         .clone()
-                        .base_image
-                        .unwrap_or_else(|| conf.session.base_image.clone()),
+                        .base_image,
                 ),
                 volume_mounts: Some(vec![VolumeMount {
                     name: volume_name.clone(),

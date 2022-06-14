@@ -55,11 +55,6 @@ spec:
               secretKeyRef:
                 name: playground-secrets
                 key: github.clientSecret
-          - name: WORKSPACE_BASE_IMAGE
-            valueFrom:
-              configMapKeyRef:
-                name: playground-config
-                key: workspace.baseImage
           - name: WORKSPACE_DEFAULT_DURATION
             valueFrom:
               configMapKeyRef:

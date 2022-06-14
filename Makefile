@@ -150,7 +150,7 @@ endif
 k8s-setup-env: requires-k8s
 	@read -p "GH client ID?" CLIENT_ID; \
 	read -p "GH client secret?" CLIENT_SECRET; \
-	kubectl create configmap playground-config --from-literal=github.clientId="$${CLIENT_ID}" --from-literal=workspace.baseImage="paritytech/base-ci:latest" --from-literal=workspace.defaultDuration="45" --from-literal=workspace.maxDuration="1440" --from-literal=workspace.defaultMaxPerNode="6" --from-literal=workspace.defaultPoolAffinity="default" --dry-run=client -o yaml | kubectl apply -f - && \
+	kubectl create configmap playground-config --from-literal=github.clientId="$${CLIENT_ID}" --from-literal=workspace.defaultDuration="45" --from-literal=workspace.maxDuration="1440" --from-literal=workspace.defaultMaxPerNode="6" --from-literal=workspace.defaultPoolAffinity="default" --dry-run=client -o yaml | kubectl apply -f - && \
 	kubectl create secret generic playground-secrets --from-literal=github.clientSecret="$${CLIENT_SECRET}" --from-literal=rocket.secretKey=`openssl rand -base64 32` --dry-run=client -o yaml | kubectl apply -f -
 
 k8s-update-templates-config: requires-k8s ## Creates or replaces the `templates` config map from `conf/k8s/overlays/ENV/templates`

@@ -16,7 +16,6 @@ export interface Configuration {
 }
 
 export interface SessionDefaults {
-    baseImage: string,
     /* The default number of minutes sessions can last */
     duration: number,
     maxDuration: number,

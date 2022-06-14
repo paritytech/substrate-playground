@@ -52,7 +52,6 @@ pub async fn get_configuration() -> Result<Configuration> {
     Ok(Configuration {
         github_client_id: var("GITHUB_CLIENT_ID")?,
         session: SessionDefaults {
-            base_image: var("WORKSPACE_BASE_IMAGE")?,
             duration: str_minutes_to_duration(&var("WORKSPACE_DEFAULT_DURATION")?)?,
             max_duration: str_minutes_to_duration(&var("WORKSPACE_MAX_DURATION")?)?,
             pool_affinity: var("WORKSPACE_DEFAULT_POOL_AFFINITY")?,
