@@ -159,23 +159,10 @@ k8s-update-templates-config: requires-k8s ## Creates or replaces the `templates`
 k8s-update-users-config: requires-k8s ## Creates or replaces the `users` config map from `conf/k8s/overlays/ENV/users`
 	kubectl create configmap playground-users --from-file=conf/k8s/overlays/${ENV}/users/ --dry-run=client -o yaml | kubectl apply -f -
 
-k8s-cluster-status: requires-k8s
-	@kubectl get configmap playground-config &> /dev/null && [ $$? -eq 0 ] || (echo "Missing config 'playground-config'"; exit 1)
-	@#TODO check proper content: @kubectl get configmap playground-config -o json | jq -r '.data'
-	@kubectl get configmap playground-templates &> /dev/null && [ $$? -eq 0 ] || (echo "Missing config 'playground-templates'"; exit 1)
-	@kubectl get configmap playground-users &> /dev/null && [ $$? -eq 0 ] || (echo "Missing config 'playground-users'"; exit 1)
-	@kubectl get secrets playground-secrets &> /dev/null && [ $$? -eq 0 ] || (echo "Missing secrets 'playground-secrets'"; exit 1)
-	$(eval CURRENT_IP=$(shell kubectl get services ingress-nginx -o json | jq -r .status.loadBalancer.ingress[0].ip))
-	$(eval EXPECTED_IP=$(shell yq .patchesStrategicMerge[0] conf/k8s/overlays/${ENV}/kustomization.yaml | sed 's/.*loadBalancerIP: \([^"]*\).*/\1/'))
-	@if [[ "${CURRENT_IP}" != "${EXPECTED_IP}" ]] ;then \
-	  echo Incorrect IP \
-	  exit 1; \
-	fi
-
-k8s-deploy-playground: requires-k8s ## Deploy playground on kubernetes
+k8s-deploy: requires-k8s ## Deploy playground on kubernetes
 	kustomize build --enable-helm conf/k8s/overlays/${ENV}/ | kubectl apply -f -
 
-k8s-undeploy-playground: requires-k8s ## Undeploy playground from kubernetes
+k8s-undeploy: requires-k8s ## Undeploy playground from kubernetes
 	@read -p $$'All configuration (including GitHub secrets) will be lost. Ok to proceed? [yN]' answer; if [ "$${answer}" != "Y" ] ;then exit 1; fi
 	kustomize build --enable-helm conf/k8s/overlays/${ENV}/ | kubectl delete -f -
 
