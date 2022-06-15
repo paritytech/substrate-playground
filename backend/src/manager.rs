@@ -21,10 +21,9 @@ use crate::{
     metrics::Metrics,
     types::{
         Playground, Pool, Repository, RepositoryConfiguration, RepositoryUpdateConfiguration,
-        RepositoryVersion, RepositoryVersionConfiguration, ResourcePermission, ResourceType, Role,
-        RoleConfiguration, Session, SessionConfiguration, SessionExecution,
-        SessionExecutionConfiguration, SessionState, SessionUpdateConfiguration, Template, User,
-        UserConfiguration, UserUpdateConfiguration,
+        RepositoryVersion, ResourcePermission, ResourceType, Role, RoleConfiguration, Session,
+        SessionConfiguration, SessionExecution, SessionExecutionConfiguration, SessionState,
+        SessionUpdateConfiguration, Template, User, UserConfiguration, UserUpdateConfiguration,
     },
 };
 use log::{error, info, warn};
@@ -322,7 +321,6 @@ impl Manager {
         caller: &User,
         repository_id: &str,
         id: &str,
-        conf: RepositoryVersionConfiguration,
     ) -> Result<()> {
         ensure_permission(
             caller,
@@ -331,7 +329,7 @@ impl Manager {
         )
         .await?;
 
-        create_repository_version(repository_id, id, conf).await
+        create_repository_version(repository_id, id).await
     }
 
     pub async fn delete_repository_version(
@@ -447,11 +445,14 @@ impl Manager {
             return Err(Error::SessionIdAlreayUsed);
         }
 
-        let template = session_configuration.clone().template;
+        let repository_identifier = session_configuration.clone().repository_identifier;
         let configuration = get_configuration().await?;
         let result = create_session(caller, id, &configuration, session_configuration).await;
 
-        info!("Created session {} with template {}", id, template);
+        info!(
+            "Created session {} with repository_identifier {}:{}",
+            id, repository_identifier.repository_id, repository_identifier.repository_version_id
+        );
 
         match &result {
             Ok(_session) => {

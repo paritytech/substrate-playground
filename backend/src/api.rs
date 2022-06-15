@@ -7,9 +7,9 @@ use crate::{
     kubernetes::user,
     types::{
         Playground, Pool, Repository, RepositoryConfiguration, RepositoryUpdateConfiguration,
-        RepositoryVersion, RepositoryVersionConfiguration, Role, RoleConfiguration,
-        RoleUpdateConfiguration, Session, SessionConfiguration, SessionExecutionConfiguration,
-        SessionUpdateConfiguration, Template, User, UserConfiguration, UserUpdateConfiguration,
+        RepositoryVersion, Role, RoleConfiguration, RoleUpdateConfiguration, Session,
+        SessionConfiguration, SessionExecutionConfiguration, SessionUpdateConfiguration, Template,
+        User, UserConfiguration, UserUpdateConfiguration,
     },
     Context,
 };
@@ -385,17 +385,16 @@ pub async fn list_repository_versions(
         .map(JsonRPC)
 }
 
-#[put("/repositories/<repository_id>/versions/<id>", data = "<conf>")]
+#[put("/repositories/<repository_id>/versions/<id>")]
 pub async fn create_repository_version(
     state: &State<Context>,
     caller: User,
     repository_id: String,
     id: String,
-    conf: Json<RepositoryVersionConfiguration>,
 ) -> Result<EmptyJsonRPC> {
     state
         .manager
-        .create_repository_version(&caller, &repository_id, &id, conf.0)
+        .create_repository_version(&caller, &repository_id, &id)
         .await?;
     Ok(EmptyJsonRPC())
 }

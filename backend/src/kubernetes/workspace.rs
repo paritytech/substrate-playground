@@ -1,9 +1,7 @@
 //! Helper methods ton interact with k8s
 use crate::{
     error::{Error, Result},
-    types::{
-        Configuration, RepositoryRuntimeConfiguration, RepositoryVersion, RepositoryVersionState,
-    },
+    types::{Configuration, RepositoryRuntimeConfiguration},
 };
 use k8s_openapi::api::core::v1::{
     Container, PersistentVolumeClaim, PersistentVolumeClaimSpec, PersistentVolumeClaimVolumeSource,
@@ -127,9 +125,9 @@ pub async fn get_or_create_volume(
 }
 
 pub fn create_workspace_pod(
-    conf: &Configuration,
+    _conf: &Configuration,
     workspace_id: &str,
-    runtime: &RepositoryRuntimeConfiguration,
+    _runtime: &RepositoryRuntimeConfiguration,
     volume: &PersistentVolumeClaim,
 ) -> Result<Pod> {
     let volume_name = "repo".to_string();
@@ -141,11 +139,8 @@ pub fn create_workspace_pod(
         spec: Some(PodSpec {
             containers: vec![Container {
                 name: format!("{}-container", COMPONENT_WORKSPACE_VALUE),
-                image: Some(
-                    runtime
-                        .clone()
-                        .base_image,
-                ),
+                // TODO image
+                image: Some("".to_string()),
                 volume_mounts: Some(vec![VolumeMount {
                     name: volume_name.clone(),
                     mount_path: "/workspace".to_string(),
@@ -170,21 +165,4 @@ pub fn create_workspace_pod(
         }),
         ..Default::default()
     })
-}
-
-pub async fn get_repository_version(
-    _repository_id: &str,
-    _id: &str,
-) -> Result<Option<RepositoryVersion>> {
-    // TODO
-    Ok(Some(RepositoryVersion {
-        reference: "".to_string(),
-        state: RepositoryVersionState::Ready {
-            runtime: RepositoryRuntimeConfiguration {
-                base_image: None,
-                env: None,
-                ports: None,
-            },
-        },
-    }))
 }

@@ -21,7 +21,6 @@ fn report_progress(progress: RepositoryBuildProgress) {
 #[derive(Parser, Debug)]
 #[clap(about, version, author)]
 struct Args {
-    /// Name of the person to greet
     #[clap(short, long)]
     url: String,
 
@@ -50,9 +49,13 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let conf = read_and_parse_devcontainer(args.path.clone())?;
 
+    // TODO Attach conf to volume
+
     // Trigger eventual build based on Configuration
     if let Some(on_create_command) = conf.on_create_command {
         report_progress(RepositoryBuildProgress::Building);
+
+        // TODO starts new job doing build if needed
 
         // Fail if at least a build command failed
         let results = exec(args.path, on_create_command);

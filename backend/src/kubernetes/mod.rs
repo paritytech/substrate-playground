@@ -8,12 +8,12 @@ pub mod workspace;
 
 use crate::{
     error::{Error, Result},
-    types::{Configuration, Pod, Secrets, SessionDefaults},
+    types::{Configuration, Secrets, SessionDefaults},
     utils::var,
 };
 use json_patch::{AddOperation, PatchOperation, RemoveOperation};
 use k8s_openapi::api::{
-    core::v1::{ConfigMap, EnvVar},
+    core::v1::{ConfigMap, EnvVar, Pod},
     networking::v1::{
         HTTPIngressPath, Ingress, IngressBackend, IngressServiceBackend, ServiceBackendPort,
     },

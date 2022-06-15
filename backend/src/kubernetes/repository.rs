@@ -2,8 +2,7 @@
 use crate::{
     error::{Error, Result},
     types::{
-        NameValuePair, Port, Repository, RepositoryConfiguration, RepositoryRuntimeConfiguration,
-        RepositoryUpdateConfiguration, RepositoryVersion, RepositoryVersionConfiguration,
+        Repository, RepositoryConfiguration, RepositoryUpdateConfiguration, RepositoryVersion,
         RepositoryVersionState, ResourceType,
     },
 };
@@ -35,7 +34,7 @@ const COMPONENT_WORKSPACE_VALUE: &str = "workspace";
 
 const CONFIG_MAP: &str = "playground-repositories";
 
-fn volume_template(repository_id: &str) -> PersistentVolumeClaim {
+fn volume_template(volume_template_name: &str, _repository_id: &str) -> PersistentVolumeClaim {
     let mut labels = BTreeMap::new();
     labels.insert(APP_LABEL.to_string(), APP_VALUE.to_string());
     labels.insert(
@@ -48,7 +47,7 @@ fn volume_template(repository_id: &str) -> PersistentVolumeClaim {
 
     PersistentVolumeClaim {
         metadata: ObjectMeta {
-            name: Some(volume_template_name(repository_id)),
+            name: Some(volume_template_name.to_string()),
             labels: Some(labels),
             ..Default::default()
         },
@@ -70,11 +69,15 @@ fn volume_template_name(repository_id: &str) -> String {
 
 async fn create_volume_template(
     api: &Api<PersistentVolumeClaim>,
+    volume_template_name: &str,
     repository_id: &str,
 ) -> Result<PersistentVolumeClaim> {
-    api.create(&PostParams::default(), &volume_template(repository_id))
-        .await
-        .map_err(Error::K8sCommunicationFailure)
+    api.create(
+        &PostParams::default(),
+        &volume_template(volume_template_name, repository_id),
+    )
+    .await
+    .map_err(Error::K8sCommunicationFailure)
 }
 
 pub async fn get_repository(id: &str) -> Result<Option<Repository>> {
@@ -92,7 +95,6 @@ pub async fn create_repository(id: &str, conf: RepositoryConfiguration) -> Resul
 
     let repository = Repository {
         id: id.to_string(),
-        tags: conf.tags,
         url: conf.url,
     };
 
@@ -105,7 +107,7 @@ pub async fn update_repository(id: &str, conf: RepositoryUpdateConfiguration) ->
     let mut repository: Repository = get_resource_from_config_map(&client, id, CONFIG_MAP)
         .await?
         .ok_or_else(|| Error::UnknownResource(ResourceType::Repository, id.to_string()))?;
-    repository.tags = conf.tags;
+    repository.url = conf.url;
 
     store_resource_as_config_map(&client, &repository.id, &repository, CONFIG_MAP).await
 }
@@ -123,51 +125,26 @@ pub async fn get_repository_version(
 ) -> Result<Option<RepositoryVersion>> {
     // TODO
     Ok(Some(RepositoryVersion {
-        reference: "".to_string(),
-        state: RepositoryVersionState::Ready {
-            runtime: RepositoryRuntimeConfiguration {
-                base_image: None,
-                env: None,
-                ports: None,
-            },
-        },
+        id: "".to_string(),
+        state: RepositoryVersionState::Cloning { progress: 50 },
     }))
 }
 
 pub async fn list_repository_versions(_repository_id: &str) -> Result<Vec<RepositoryVersion>> {
     // TODO list volume template
     Ok(vec![RepositoryVersion {
-        reference: "yo".to_string(),
-        state: RepositoryVersionState::Building {
-            runtime: RepositoryRuntimeConfiguration {
-                base_image: Some("base".to_string()),
-                env: Some(vec![NameValuePair {
-                    name: "name".to_string(),
-                    value: "value".to_string(),
-                }]),
-                ports: Some(vec![Port {
-                    name: "name".to_string(),
-                    path: "path".to_string(),
-                    port: 55,
-                    protocol: Some("TCP".to_string()),
-                    target: Some(55),
-                }]),
-            },
-            progress: 50,
-        },
+        id: "yo".to_string(),
+        state: RepositoryVersionState::Cloning { progress: 50 },
     }])
 }
 
-pub async fn create_repository_version(
-    repository_id: &str,
-    id: &str,
-    conf: RepositoryVersionConfiguration,
-) -> Result<()> {
+pub async fn create_repository_version(repository_id: &str, id: &str) -> Result<()> {
     let client = client()?;
 
     // Create volume
     let volume_api: Api<PersistentVolumeClaim> = Api::default_namespaced(client.clone());
-    let volume = create_volume_template(&volume_api, repository_id).await?;
+    let volume_template_name = volume_template_name(repository_id);
+    let volume = create_volume_template(&volume_api, &volume_template_name, repository_id).await?;
 
     let job_api: Api<Job> = Api::default_namespaced(client.clone());
     let job = Job {
@@ -181,7 +158,7 @@ pub async fn create_repository_version(
             template: PodTemplateSpec {
                 spec: Some(PodSpec {
                     volumes: Some(vec![Volume {
-                        name: volume_template_name(repository_id),
+                        name: volume_template_name.clone(),
                         persistent_volume_claim: Some(PersistentVolumeClaimVolumeSource {
                             claim_name: volume
                                 .meta()
@@ -200,9 +177,9 @@ pub async fn create_repository_version(
                             "paritytech/substrate-playground-backend-api:latest".to_string(),
                         ),
                         command: Some(vec!["builder".to_string()]),
-                        args: Some(vec![conf.reference]),
+                        args: Some(vec![repository_id.to_string()]),
                         volume_mounts: Some(vec![VolumeMount {
-                            name: volume_template_name(repository_id),
+                            name: volume_template_name,
                             mount_path: "/".to_string(),
                             ..Default::default()
                         }]),

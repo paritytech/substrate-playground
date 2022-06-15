@@ -201,39 +201,24 @@ pub struct UserUpdateConfiguration {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Repository {
     pub id: String,
-    pub tags: BTreeMap<String, String>,
     pub url: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct RepositoryConfiguration {
-    pub tags: BTreeMap<String, String>,
     pub url: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct RepositoryUpdateConfiguration {
-    pub tags: BTreeMap<String, String>,
+    pub url: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct RepositoryVersion {
-    pub reference: String,
-    //   pub image_source: Option<PrebuildSource>,
+    pub id: String,
     pub state: RepositoryVersionState,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-#[serde(tag = "type")]
-pub enum PrebuildSource {
-    DockerFile { location: String },
-    Image { value: String },
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct RepositoryVersionConfiguration {
-    pub reference: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -243,11 +228,11 @@ pub enum RepositoryVersionState {
         progress: i32,
     },
     Building {
-        runtime: RepositoryRuntimeConfiguration,
         progress: i32,
+        devcontainer_json: String,
     },
     Ready {
-        runtime: RepositoryRuntimeConfiguration,
+        devcontainer_json: String,
     },
 }
 
@@ -264,7 +249,6 @@ pub struct Template {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct RepositoryRuntimeConfiguration {
-    pub base_image: String,
     pub env: Option<Vec<NameValuePair>>,
     pub ports: Option<Vec<Port>>,
 }
@@ -359,6 +343,7 @@ pub enum SessionState {
         #[serde(with = "system_time")]
         start_time: SystemTime,
         node: Node,
+        /* TODO env, ports, etc */
     },
     Failed {
         message: String,
@@ -366,22 +351,17 @@ pub enum SessionState {
     },
 }
 
-#[derive(Serialize, Clone, Debug)]
+#[derive(Deserialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
-pub struct Pod {
-    pub phase: Phase,
-    pub reason: String,
-    pub message: String,
-    #[serde(with = "system_time2")]
-    pub start_time: Option<SystemTime>,
-    pub conditions: Option<Vec<PodCondition>>,
-    pub container: Option<ContainerStatus>,
+pub struct RepositoryIdentifier {
+    pub repository_id: String,
+    pub repository_version_id: String,
 }
 
 #[derive(Deserialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct SessionConfiguration {
-    pub template: String,
+    pub repository_identifier: RepositoryIdentifier,
     #[serde(default)]
     #[serde(with = "option_duration")]
     pub duration: Option<Duration>,
@@ -393,6 +373,7 @@ pub struct SessionUpdateConfiguration {
     #[serde(default)]
     #[serde(with = "option_duration")]
     pub duration: Option<Duration>,
+    /* TODO env, ports, etc */
 }
 
 #[derive(Serialize, Clone, Debug)]
@@ -418,23 +399,6 @@ pub struct ContainerStatus {
 pub enum Status {
     True,
     False,
-    Unknown,
-}
-
-#[derive(Serialize, Clone, Debug)]
-pub struct PodCondition {
-    pub type_: ConditionType,
-    pub status: Status,
-    pub reason: Option<String>,
-    pub message: Option<String>,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
-pub enum ConditionType {
-    PodScheduled,
-    ContainersReady,
-    Initialized,
-    Ready,
     Unknown,
 }
 
@@ -468,20 +432,6 @@ impl FromStr for Status {
     }
 }
 
-impl FromStr for ConditionType {
-    type Err = String;
-
-    fn from_str(s: &str) -> Result<ConditionType, Self::Err> {
-        match s {
-            "PodScheduled" => Ok(ConditionType::PodScheduled),
-            "ContainersReady" => Ok(ConditionType::ContainersReady),
-            "Initialized" => Ok(ConditionType::Initialized),
-            "Ready" => Ok(ConditionType::Ready),
-            _ => Err(format!("'{}' is not a valid value for ConditionType", s)),
-        }
-    }
-}
-
 impl FromStr for Phase {
     type Err = String;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -492,21 +442,6 @@ impl FromStr for Phase {
             "Failed" => Ok(Phase::Failed),
             "Unknown" => Ok(Phase::Unknown),
             _ => Err(format!("'{}' is not a valid value for Phase", s)),
-        }
-    }
-}
-
-mod system_time2 {
-    use serde::{self, Serializer};
-    use std::time::SystemTime;
-
-    pub fn serialize<S>(date: &Option<SystemTime>, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        match date.and_then(|v| v.elapsed().ok()) {
-            Some(value) => serializer.serialize_some(&value.as_secs()),
-            None => serializer.serialize_none(),
         }
     }
 }

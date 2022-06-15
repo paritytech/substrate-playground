@@ -34,8 +34,13 @@ export type SessionState =
     | {tag: "Running", startTime: number, node: Node }
     | {tag: "Failed", message: string, reason: string };
 
+export interface RepositoryIdentifier {
+    repositoryId: Repository['id'],
+    repositoryVersionId: RepositoryVersion['id'],
+}
+
 export interface SessionConfiguration {
-    template: string,
+    repositoryIdentifier: RepositoryIdentifier,
     /* The number of minutes this session will be able to last */
     duration?: number,
     poolAffinity?: string,
@@ -105,38 +110,28 @@ export interface RoleUpdateConfiguration {
 }
 
 export interface Repository extends IdentifiedResource {
-    tags: Record<string, string>,
     url: string,
 }
 
 export interface RepositoryConfiguration {
-    tags: Record<string, string>,
     url: string,
 }
 
 export interface RepositoryUpdateConfiguration {
-    tags: Record<string, string>,
+    url: string,
 }
 
-export interface RepositoryVersion {
-    reference: string,
-    imageSource?: PrebuildSource,
+export interface RepositoryVersion extends IdentifiedResource {
     state: RepositoryVersionState,
 }
 
-export type PrebuildSource =
-    | {tag: "DockerFile", location: string }
-    | {tag: "Image", value: string };
-
-
 export interface RepositoryVersionConfiguration {
-    reference: string,
 }
 
 export type RepositoryVersionState =
     | {tag: "Cloning", progress: number }
-    | {tag: "Building", progress: number, runtime: RepositoryRuntimeConfiguration }
-    | {tag: "Ready", runtime: RepositoryRuntimeConfiguration };
+    | {tag: "Building", progress: number, devcontainerJson: string }
+    | {tag: "Ready", devcontainerJson: string };
 
 export interface RepositoryRuntimeConfiguration {
     baseImage?: string,

@@ -91,7 +91,7 @@ export class Client {
 
     // Sessions
 
-    async getSession(id: string, timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<Session | null> {
+    async getSession(id: Session['id'], timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<Session | null> {
         return rpc(this.path(Client.sessionsResource, id), init, timeout);
     }
 
@@ -99,7 +99,7 @@ export class Client {
         return rpc(this.path(Client.sessionsResource), init, timeout);
     }
 
-    async createSession(id: string, conf: SessionConfiguration, timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<void> {
+    async createSession(id: Session['id'], conf: SessionConfiguration, timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<void> {
         return rpc(this.path(Client.sessionsResource, id), {
             method: 'PUT',
             body: JSON.stringify(conf),
@@ -107,7 +107,7 @@ export class Client {
         }, timeout);
     }
 
-    async updateSession(id: string, conf: SessionUpdateConfiguration, timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<void> {
+    async updateSession(id: Session['id'], conf: SessionUpdateConfiguration, timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<void> {
         return rpc(this.path(Client.sessionsResource, id), {
             method: 'PATCH',
             body: JSON.stringify(conf),
@@ -115,7 +115,7 @@ export class Client {
         }, timeout);
     }
 
-    async deleteSession(id: string, timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<void> {
+    async deleteSession(id: Session['id'], timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<void> {
         return rpc(this.path(Client.sessionsResource, id), {
             method: 'DELETE',
             ...init
@@ -124,7 +124,7 @@ export class Client {
 
     // Session executions
 
-    async createSessionExecution(id: string, conf: SessionExecutionConfiguration, timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<SessionExecution> {
+    async createSessionExecution(id: Session['id'], conf: SessionExecutionConfiguration, timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<SessionExecution> {
         return rpc(this.path(Client.sessionsResource, id, Client.sessionExecutionResourcePath), {
             method: 'PUT',
             body: JSON.stringify(conf),
@@ -198,24 +198,23 @@ export class Client {
         }, timeout);
     }
 
-    async getRepositoryVersion(id: Repository['id'], version: string, timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<RepositoryVersion | null> {
-        return rpc(this.path(Client.repositoriesResource, id, 'versions', version), init, timeout);
+    async getRepositoryVersion(repositoryId: Repository['id'], repositoryVersionId: RepositoryVersion['id'], timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<RepositoryVersion | null> {
+        return rpc(this.path(Client.repositoriesResource, repositoryId, 'versions', repositoryVersionId), init, timeout);
     }
 
-    async listRepositoryVersions(id: Repository['id'], timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<RepositoryVersion[]> {
-        return rpc(this.path(Client.repositoriesResource, id, 'versions'), init, timeout);
+    async listRepositoryVersions(repositoryId: Repository['id'], timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<RepositoryVersion[]> {
+        return rpc(this.path(Client.repositoriesResource, repositoryId, 'versions'), init, timeout);
     }
 
-    async createRepositoryVersion(id: Repository['id'], version: string, conf: RepositoryVersionConfiguration, timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<void> {
-        return rpc(this.path(Client.repositoriesResource, id, 'versions', version), {
+    async createRepositoryVersion(repositoryId: Repository['id'], repositoryVersionId: RepositoryVersion['id'], timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<void> {
+        return rpc(this.path(Client.repositoriesResource, repositoryId, 'versions', repositoryVersionId), {
             method: 'PUT',
-            body: JSON.stringify(conf),
             ...init
         }, timeout);
     }
 
-    async deleteRepositoryVersion(id: Repository['id'], version: string, timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<void> {
-        return rpc(this.path(Client.repositoriesResource, id, 'versions', version), {
+    async deleteRepositoryVersion(repositoryId: Repository['id'], repositoryVersionId: RepositoryVersion['id'], timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<void> {
+        return rpc(this.path(Client.repositoriesResource, repositoryId, 'versions', repositoryVersionId), {
             method: 'DELETE',
             ...init
         }, timeout);
