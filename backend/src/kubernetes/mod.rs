@@ -52,10 +52,10 @@ pub async fn get_configuration() -> Result<Configuration> {
     Ok(Configuration {
         github_client_id: var("GITHUB_CLIENT_ID")?,
         session: SessionDefaults {
-            duration: str_minutes_to_duration(&var("WORKSPACE_DEFAULT_DURATION")?)?,
-            max_duration: str_minutes_to_duration(&var("WORKSPACE_MAX_DURATION")?)?,
-            pool_affinity: var("WORKSPACE_DEFAULT_POOL_AFFINITY")?,
-            max_sessions_per_pod: var("WORKSPACE_DEFAULT_MAX_PER_NODE")?
+            duration: str_minutes_to_duration(&var("SESSION_DEFAULT_DURATION")?)?,
+            max_duration: str_minutes_to_duration(&var("SESSION_MAX_DURATION")?)?,
+            pool_affinity: var("SESSION_DEFAULT_POOL_AFFINITY")?,
+            max_sessions_per_pod: var("SESSION_DEFAULT_MAX_PER_NODE")?
                 .parse()
                 .map_err(|_err| Error::Failure("Failed to parse variable".to_string()))?,
         },

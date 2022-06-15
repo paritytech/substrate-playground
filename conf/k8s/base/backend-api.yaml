@@ -55,26 +55,26 @@ spec:
               secretKeyRef:
                 name: playground-secrets
                 key: github.clientSecret
-          - name: WORKSPACE_DEFAULT_DURATION
+          - name: SESSION_DEFAULT_DURATION
             valueFrom:
               configMapKeyRef:
                 name: playground-config
-                key: workspace.defaultDuration
-          - name: WORKSPACE_MAX_DURATION
+                key: session.defaultDuration
+          - name: SESSION_MAX_DURATION
             valueFrom:
               configMapKeyRef:
                 name: playground-config
-                key: workspace.maxDuration
-          - name: WORKSPACE_DEFAULT_POOL_AFFINITY
+                key: session.maxDuration
+          - name: SESSION_DEFAULT_POOL_AFFINITY
             valueFrom:
               configMapKeyRef:
                 name: playground-config
-                key: workspace.defaultPoolAffinity
-          - name: WORKSPACE_DEFAULT_MAX_PER_NODE
+                key: session.defaultPoolAffinity
+          - name: SESSION_DEFAULT_MAX_PER_NODE
             valueFrom:
               configMapKeyRef:
                 name: playground-config
-                key: workspace.defaultMaxPerNode
+                key: session.defaultMaxPerNode
           - name: ROCKET_SECRET_KEY
             valueFrom:
               secretKeyRef:
