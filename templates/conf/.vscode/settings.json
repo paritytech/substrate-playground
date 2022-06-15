@@ -1,5 +1,24 @@
+/* Used as a global settings.conf. */
 {"rust-analyzer.updates.askBeforeDownload": false,
+"rust-analyzer.checkOnSave.enable": true,
+ "rust-analyzer.rustfmt.extraArgs": ["+nightly"], // make format on save work properly.
+ "rust-analyzer.checkOnSave.allTargets": true, // not sure when I why I added this one 🤷
+ "rust-analyzer.checkOnSave.overrideCommand": ["cargo", "+nightly", "check", "--tests", "--message-format", "json"], // check tests as well
+ "rust-analyzer.cargo.features": [ // checks more features
+  "runtime-benchmarks",
+  "try-runtime",
+ ],
+
+ "rust-analyzer.diagnostics.disabled": [ // silences some irrelevant issues
+  "unresolved-macro-call"
+ ],
+ "[rust]": {
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "rust-lang.rust-analyzer",
+ },
+ // helps it not crash.
+ "rust-analyzer.lru.capacity": 9192,
  "rust-analyzer.server.extraEnv": {
-    "CARGO_TARGET_DIR": "target/.rust-analyzer",
-    "SKIP_WASM_BUILD": 1,
+   "CARGO_TARGET_DIR": "target/.rust-analyzer",
+   "SKIP_WASM_BUILD": 1,
 }}
