@@ -1,7 +1,10 @@
 extern crate playground;
 
 use clap::Parser;
-use playground::repository::{clone, exec, read_and_parse_devcontainer};
+use playground::utils::{
+    devcontainer::{exec, read_and_parse_devcontainer},
+    git::clone,
+};
 use std::{env, error::Error};
 
 enum RepositoryBuildProgress {

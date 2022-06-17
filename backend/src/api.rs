@@ -3,14 +3,14 @@ use std::{collections::BTreeMap, io::Cursor};
 
 use crate::{
     error::{Error, Result},
-    github::{authorization_uri, current_user, exchange_code, orgs, GitHubUser},
     kubernetes::user,
     types::{
         Playground, Pool, Repository, RepositoryConfiguration, RepositoryUpdateConfiguration,
         RepositoryVersion, Role, RoleConfiguration, RoleUpdateConfiguration, Session,
-        SessionConfiguration, SessionExecutionConfiguration, SessionUpdateConfiguration, Template,
-        User, UserConfiguration, UserUpdateConfiguration,
+        SessionConfiguration, SessionExecutionConfiguration, SessionUpdateConfiguration, User,
+        UserConfiguration, UserUpdateConfiguration,
     },
+    utils::github::{authorization_uri, current_user, exchange_code, orgs, GitHubUser},
     Context,
 };
 use rocket::{
@@ -491,16 +491,6 @@ pub async fn create_session_execution(
         .create_session_execution(&caller, &id, conf.0)
         .await?;
     Ok(EmptyJsonRPC())
-}
-
-// Templates
-
-#[get("/templates")]
-pub async fn list_templates(
-    state: &State<Context>,
-    caller: User,
-) -> Result<JsonRPC<Vec<Template>>> {
-    state.manager.list_templates(&caller).await.map(JsonRPC)
 }
 
 // GitHub login logic

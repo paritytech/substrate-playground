@@ -2,12 +2,10 @@
 
 pub mod api;
 pub mod error;
-pub mod github;
 pub mod kubernetes;
 pub mod manager;
 pub mod metrics;
 pub mod prometheus;
-pub mod repository;
 pub mod types;
 pub mod utils;
 

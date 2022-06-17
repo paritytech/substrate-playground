@@ -65,8 +65,6 @@ async fn main() {
                 playground::api::create_repository,
                 playground::api::update_repository,
                 playground::api::delete_repository,
-                // Templates
-                playground::api::list_templates,
                 // Repository versions
                 playground::api::get_repository_version,
                 playground::api::list_repository_versions,

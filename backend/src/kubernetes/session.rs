@@ -3,10 +3,11 @@ use crate::{
     error::{Error, Result},
     kubernetes::get_host,
     types::{
-        self, Configuration, Port, RepositoryRuntimeConfiguration, ResourceType, Session,
+        self, Configuration, NameValuePair, Port, RepositoryVersionState, ResourceType, Session,
         SessionConfiguration, SessionExecution, SessionExecutionConfiguration,
-        SessionUpdateConfiguration, Template, User,
+        SessionRuntimeConfiguration, SessionUpdateConfiguration, User,
     },
+    utils::devcontainer::{parse_devcontainer, DevContainer},
 };
 use futures::StreamExt;
 use json_patch::{AddOperation, PatchOperation};
@@ -31,7 +32,8 @@ use std::{
 };
 
 use super::{
-    client, env_var, ingress_path, list_by_selector, pool::get_pool, template::list_templates,
+    client, env_var, ingress_path, list_by_selector, pool::get_pool,
+    repository::get_repository_version,
 };
 
 const NODE_POOL_LABEL: &str = "app.playground/pool";
@@ -58,18 +60,16 @@ fn string_to_duration(str: &str) -> Duration {
 
 // Model
 
-fn pod_env_variables(conf: &RepositoryRuntimeConfiguration, session_id: &str) -> Vec<EnvVar> {
-    let mut envs = vec![
+fn pod_env_variables(envs: Vec<NameValuePair>, session_id: &str) -> Vec<EnvVar> {
+    let mut envs = envs
+        .iter()
+        .map(|env| env_var(&env.name, &env.value))
+        .collect::<Vec<EnvVar>>();
+    // Add default variables
+    envs.append(&mut vec![
         env_var("SUBSTRATE_PLAYGROUND", ""),
         env_var("SUBSTRATE_PLAYGROUND_SESSION", session_id),
-    ];
-    if let Some(mut runtime_envs) = conf.env.clone().map(|envs| {
-        envs.iter()
-            .map(|env| env_var(&env.name, &env.value))
-            .collect::<Vec<EnvVar>>()
-    }) {
-        envs.append(&mut runtime_envs);
-    };
+    ]);
     envs
 }
 
@@ -85,9 +85,10 @@ fn pod_annotations(duration: &Duration) -> BTreeMap<String, String> {
 fn pod(
     user_id: &str,
     session_id: &str,
-    template: &Template,
+    image: &str,
     duration: &Duration,
     pool_id: &str,
+    envs: Vec<NameValuePair>,
 ) -> Pod {
     let mut labels = BTreeMap::new();
     labels.insert(APP_LABEL.to_string(), APP_VALUE.to_string());
@@ -124,11 +125,8 @@ fn pod(
             }),
             containers: vec![Container {
                 name: format!("{}-container", COMPONENT_VALUE),
-                image: Some(template.image.to_string()),
-                env: Some(pod_env_variables(
-                    template.runtime.as_ref().unwrap(),
-                    session_id,
-                )),
+                image: Some(image.to_string()),
+                env: Some(pod_env_variables(envs, session_id)),
                 resources: Some(ResourceRequirements {
                     requests: Some(BTreeMap::from([
                         ("memory".to_string(), Quantity("1Gi".to_string())),
@@ -176,7 +174,7 @@ fn namespace(name: String) -> Result<Namespace> {
 
 const SESSION_SERVICE_NAME: &str = "service";
 
-fn service(session_id: &str, runtime: &RepositoryRuntimeConfiguration) -> Service {
+fn service(session_id: &str, ports: Vec<Port>) -> Service {
     let mut labels = BTreeMap::new();
     labels.insert(APP_LABEL.to_string(), APP_VALUE.to_string());
     labels.insert(COMPONENT_LABEL.to_string(), COMPONENT_VALUE.to_string());
@@ -185,26 +183,23 @@ fn service(session_id: &str, runtime: &RepositoryRuntimeConfiguration) -> Servic
     selector.insert(OWNER_LABEL.to_string(), session_id.to_string());
 
     // The theia port itself is mandatory
-    let mut ports = vec![ServicePort {
+    let mut service_ports = vec![ServicePort {
         name: Some("web".to_string()),
         protocol: Some("TCP".to_string()),
         port: THEIA_WEB_PORT,
         ..Default::default()
     }];
-    if let Some(mut runtime_ports) = runtime.ports.clone().map(|ports| {
-        ports
-            .iter()
-            .map(|port| ServicePort {
-                name: Some(port.clone().name),
-                protocol: port.clone().protocol,
-                port: port.port,
-                target_port: port.clone().target.map(IntOrString::Int),
-                ..Default::default()
-            })
-            .collect::<Vec<ServicePort>>()
-    }) {
-        ports.append(&mut runtime_ports);
-    };
+    let mut extra_service_ports = ports
+        .iter()
+        .map(|port| ServicePort {
+            name: Some(port.clone().name),
+            protocol: port.clone().protocol,
+            port: port.port,
+            target_port: port.clone().target.map(IntOrString::Int),
+            ..Default::default()
+        })
+        .collect::<Vec<ServicePort>>();
+    service_ports.append(&mut extra_service_ports);
 
     Service {
         metadata: ObjectMeta {
@@ -215,7 +210,7 @@ fn service(session_id: &str, runtime: &RepositoryRuntimeConfiguration) -> Servic
         spec: Some(ServiceSpec {
             type_: Some("NodePort".to_string()),
             selector: Some(selector),
-            ports: Some(ports),
+            ports: Some(service_ports),
             ..Default::default()
         }),
         ..Default::default()
@@ -273,6 +268,11 @@ fn pod_to_state(pod: &Pod) -> types::SessionState {
                             .unwrap_or_default()
                             .node_name
                             .unwrap_or_default(),
+                    },
+                    runtime_configuration: SessionRuntimeConfiguration {
+                        // TODO
+                        env: vec![],
+                        ports: vec![],
                     },
                 };
             } else if let Some(terminated) = &state.terminated {
@@ -382,6 +382,22 @@ fn local_service_name(session_id: &str) -> String {
     format!("service-{}", session_id)
 }
 
+fn ports(devcontainer: &DevContainer) -> Vec<Port> {
+    devcontainer
+        .forward_ports
+        .clone()
+        .unwrap_or_default()
+        .into_iter()
+        .map(|port| Port {
+            name: "".to_string(),
+            port,
+            path: "".to_string(),
+            protocol: Some("TCP".to_string()),
+            target: None,
+        })
+        .collect::<Vec<Port>>()
+}
+
 pub async fn create_session(
     user: &User,
     id: &str,
@@ -413,34 +429,39 @@ pub async fn create_session(
         return Err(Error::ConcurrentSessionsLimitBreached(sessions.len()));
     }
 
-    // Access the right image id
-    let templates = list_templates().await?;
-    let template = templates
-        .iter()
-        .find(|template| template.id == session_configuration.template)
-        .ok_or_else(|| {
-            Error::UnknownResource(
-                ResourceType::Template,
-                session_configuration.clone().template,
-            )
-        })?;
+    let devcontainer = if let Some(repository_version) = get_repository_version(
+        session_configuration
+            .repository_source
+            .repository_id
+            .as_str(),
+        session_configuration
+            .repository_source
+            .repository_version_id
+            .as_str(),
+    )
+    .await?
+    {
+        //session_configuration.runtime_configuration
+        match repository_version.state {
+            RepositoryVersionState::Ready { devcontainer_json } => {
+                parse_devcontainer(devcontainer_json.as_str())
+            }
+            _ => Err(Error::Failure("TODO".to_string())),
+        }
+    } else {
+        Err(Error::Failure("TODO".to_string()))
+    }?;
+    // TODO
+    let image = devcontainer.image.as_ref().unwrap();
+    let ports = ports(&devcontainer);
+
     // TODO deploy a new ingress matching the route
     // With the proper mapping
     // Define the correct route
     // Also deploy proper tcp mapping configmap https://kubernetes.github.io/ingress-nginx/user-guide/exposing-tcp-udp-services/
 
     let mut sessions = BTreeMap::new();
-    sessions.insert(
-        id.to_string(),
-        template
-            .runtime
-            .as_ref()
-            .unwrap()
-            .ports
-            .clone()
-            .unwrap_or_default(),
-    );
-    let local_service_name = local_service_name(id);
+    sessions.insert(id.to_string(), ports.clone());
     patch_ingress(&sessions).await?;
 
     // Now create the session itself
@@ -479,19 +500,30 @@ pub async fn create_session(
             .await
             .map_err(Error::K8sCommunicationFailure)?;
     }
+
+    let envs = devcontainer
+        .container_env
+        .unwrap_or_default()
+        .iter()
+        .map(|(k, v)| NameValuePair {
+            name: k.to_string(),
+            value: v.to_string(),
+        })
+        .collect();
+
     // Deploy a new pod for this image
     let pod_api: Api<Pod> = Api::namespaced(client.clone(), id);
     pod_api
         .create(
             &PostParams::default(),
-            &pod(&user.id, id, template, &duration, &pool_id),
+            &pod(&user.id, id, image.as_str(), &duration, &pool_id, envs),
         )
         .await
         .map_err(Error::K8sCommunicationFailure)?;
 
     // Deploy the associated service
     let service_api: Api<Service> = Api::namespaced(client.clone(), id);
-    let service = service(id, template.runtime.as_ref().unwrap());
+    let service = service(id, ports);
     service_api
         .create(&PostParams::default(), &service)
         .await
@@ -502,7 +534,7 @@ pub async fn create_session(
     service_local_api
         .create(
             &PostParams::default(),
-            &external_service(&local_service_name, id),
+            &external_service(&local_service_name(id), id),
         )
         .await
         .map_err(Error::K8sCommunicationFailure)?;

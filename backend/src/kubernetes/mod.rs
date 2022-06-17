@@ -2,7 +2,6 @@ pub mod pool;
 pub mod repository;
 pub mod role;
 pub mod session;
-pub mod template;
 pub mod user;
 pub mod workspace;
 

@@ -1,7 +1,7 @@
 //! Helper methods ton interact with k8s
 use crate::{
     error::{Error, Result},
-    types::{Configuration, RepositoryRuntimeConfiguration},
+    types::Configuration,
 };
 use k8s_openapi::api::core::v1::{
     Container, PersistentVolumeClaim, PersistentVolumeClaimSpec, PersistentVolumeClaimVolumeSource,
@@ -127,7 +127,6 @@ pub async fn get_or_create_volume(
 pub fn create_workspace_pod(
     _conf: &Configuration,
     workspace_id: &str,
-    _runtime: &RepositoryRuntimeConfiguration,
     volume: &PersistentVolumeClaim,
 ) -> Result<Pod> {
     let volume_name = "repo".to_string();

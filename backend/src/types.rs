@@ -237,23 +237,6 @@ pub enum RepositoryVersionState {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct Template {
-    pub id: String,
-    pub name: String,
-    pub image: String,
-    pub description: String,
-    pub tags: Option<BTreeMap<String, String>>,
-    pub runtime: Option<RepositoryRuntimeConfiguration>,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-#[serde(rename_all = "camelCase")]
-pub struct RepositoryRuntimeConfiguration {
-    pub env: Option<Vec<NameValuePair>>,
-    pub ports: Option<Vec<Port>>,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct NameValuePair {
     pub name: String,
     pub value: String,
@@ -343,7 +326,7 @@ pub enum SessionState {
         #[serde(with = "system_time")]
         start_time: SystemTime,
         node: Node,
-        /* TODO env, ports, etc */
+        runtime_configuration: SessionRuntimeConfiguration,
     },
     Failed {
         message: String,
@@ -351,9 +334,16 @@ pub enum SessionState {
     },
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct SessionRuntimeConfiguration {
+    pub env: Vec<NameValuePair>,
+    pub ports: Vec<Port>,
+}
+
 #[derive(Deserialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
-pub struct RepositoryIdentifier {
+pub struct RepositorySource {
     pub repository_id: String,
     pub repository_version_id: String,
 }
@@ -361,11 +351,12 @@ pub struct RepositoryIdentifier {
 #[derive(Deserialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct SessionConfiguration {
-    pub repository_identifier: RepositoryIdentifier,
+    pub repository_source: RepositorySource,
     #[serde(default)]
     #[serde(with = "option_duration")]
     pub duration: Option<Duration>,
     pub pool_affinity: Option<String>,
+    pub runtime_configuration: Option<SessionRuntimeConfiguration>,
 }
 
 #[derive(Deserialize, Clone, Debug)]
@@ -373,7 +364,7 @@ pub struct SessionUpdateConfiguration {
     #[serde(default)]
     #[serde(with = "option_duration")]
     pub duration: Option<Duration>,
-    /* TODO env, ports, etc */
+    pub runtime_configuration: Option<SessionRuntimeConfiguration>,
 }
 
 #[derive(Serialize, Clone, Debug)]

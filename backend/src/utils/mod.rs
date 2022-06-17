@@ -1,6 +1,9 @@
 use crate::error::{Error, Result};
 use std::env;
 
+pub mod devcontainer;
+pub mod git;
+pub mod github;
 pub mod http;
 pub mod jsonc;
 

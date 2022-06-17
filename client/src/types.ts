@@ -34,13 +34,13 @@ export type SessionState =
     | {tag: "Running", startTime: number, node: Node }
     | {tag: "Failed", message: string, reason: string };
 
-export interface RepositoryIdentifier {
+export interface RepositorySource {
     repositoryId: Repository['id'],
     repositoryVersionId: RepositoryVersion['id'],
 }
 
 export interface SessionConfiguration {
-    repositoryIdentifier: RepositoryIdentifier,
+    repositorySource: RepositorySource,
     /* The number of minutes this session will be able to last */
     duration?: number,
     poolAffinity?: string,

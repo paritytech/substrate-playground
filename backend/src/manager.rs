@@ -15,7 +15,6 @@ use crate::{
             create_session, create_session_execution, delete_session, get_session, list_sessions,
             patch_ingress, update_session,
         },
-        template::list_templates,
         user::{create_user, delete_user, get_user, list_users, update_user},
     },
     metrics::Metrics,
@@ -23,7 +22,7 @@ use crate::{
         Playground, Pool, Repository, RepositoryConfiguration, RepositoryUpdateConfiguration,
         RepositoryVersion, ResourcePermission, ResourceType, Role, RoleConfiguration, Session,
         SessionConfiguration, SessionExecution, SessionExecutionConfiguration, SessionState,
-        SessionUpdateConfiguration, Template, User, UserConfiguration, UserUpdateConfiguration,
+        SessionUpdateConfiguration, User, UserConfiguration, UserUpdateConfiguration,
     },
 };
 use log::{error, info, warn};
@@ -445,13 +444,13 @@ impl Manager {
             return Err(Error::SessionIdAlreayUsed);
         }
 
-        let repository_identifier = session_configuration.clone().repository_identifier;
+        let repository_source = session_configuration.clone().repository_source;
         let configuration = get_configuration().await?;
         let result = create_session(caller, id, &configuration, session_configuration).await;
 
         info!(
-            "Created session {} with repository_identifier {}:{}",
-            id, repository_identifier.repository_id, repository_identifier.repository_version_id
+            "Created session {} with repository_source {}:{}",
+            id, repository_source.repository_id, repository_source.repository_version_id
         );
 
         match &result {
@@ -517,13 +516,5 @@ impl Manager {
             .await?;
 
         create_session_execution(session_id, session_execution_configuration).await
-    }
-
-    // Templates
-
-    pub async fn list_templates(&self, caller: &User) -> Result<Vec<Template>> {
-        ensure_permission(caller, ResourceType::Template, ResourcePermission::Read).await?;
-
-        list_templates().await
     }
 }
