@@ -130,5 +130,5 @@ openssl s_client -connect  playground.substrate.dev:443 -showcerts
 Finally, deploy the playground infrastructure:
 
 ```
-ENV=XXX make k8s-deploy-playground
+ENV=XXX make k8s-deploy
 ```
