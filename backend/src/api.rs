@@ -1,5 +1,8 @@
 //! HTTP endpoints exposed in /api context
-use std::{collections::BTreeMap, io::Cursor};
+use std::{
+    collections::{BTreeMap, HashMap},
+    io::Cursor,
+};
 
 use crate::{
     error::{Error, Result},
@@ -16,7 +19,7 @@ use crate::{
 use rocket::{
     catch, delete, get,
     http::{
-        uri::{fmt::Query, Origin, Segments},
+        uri::Origin,
         ContentType, Cookie, CookieJar, SameSite, Status,
     },
     patch, put,
@@ -113,7 +116,7 @@ fn create_jsonrpc_error(_type: &str, message: String) -> Value {
 // Responder implementations dealing with `Result` type
 
 fn respond_to(value: &Value) -> rocket::response::Result<'static> {
-    let str = String::from(value.as_str().unwrap_or(""));
+    let str = value.to_string();
     Response::build()
         .header(ContentType::JSON)
         .sized_body(str.len(), Cursor::new(str))
@@ -493,10 +496,6 @@ pub fn github_login(context: &State<Context>, cookies: &CookieJar<'_>) -> Result
     Ok(Redirect::to(uri))
 }
 
-fn get_segment<'a>(segments: &mut Segments<'a, Query>, name: &str) -> Option<(&'a str, &'a str)> {
-    segments.find(|(key, _value)| *key == name)
-}
-
 /// Callback to handle the authenticated token received from GitHub
 /// and store it as a cookie
 #[get("/auth/github")]
@@ -509,19 +508,18 @@ pub async fn post_install_callback(
         Some(q) => q,
         None => return Err(Error::Failure("Failed to access query".to_string())),
     };
-    let mut segments = query.segments();
-
+    let segments = query.segments().collect::<HashMap<&str, &str>>();
     // Make sure that the 'state' value provided matches the generated one
-    if let Some(state) = get_segment(&mut segments, "state") {
+    if let Some(state) = segments.get("state") {
         if let Some(cookie) = cookies.get_private(STATE_COOKIE_NAME) {
-            if cookie.value() == state.1 {
-                if let Some(code) = get_segment(&mut segments, "code") {
+            if cookie.value() == *state {
+                if let Some(code) = segments.get("code") {
                     add_access_token(
                         cookies,
                         exchange_code(
                             &context.configuration.github_client_id,
                             &context.secrets.github_client_secret,
-                            code.1,
+                            *code,
                         )
                         .await?,
                     );
