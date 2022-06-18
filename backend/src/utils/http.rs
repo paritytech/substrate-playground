@@ -37,6 +37,10 @@ where
         from_reader(whole_body.reader())
             .map_err(|_err| Error::Failure("Failed to read body".to_string()))
     } else {
-        Err(Error::Failure("Error while executing request".to_string()))
+        if let Ok(error) = from_reader::<_, String>(whole_body.reader()) {
+            Err(Error::Failure(format!("Error while executing request: {}, {}", status, error)))
+        } else {
+            Err(Error::Failure(format!("Error while executing request: {}", status)))
+        }
     }
 }
