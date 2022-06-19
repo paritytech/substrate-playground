@@ -77,14 +77,9 @@ pub fn authorization_uri(client_id: &str, state: &str) -> String {
 pub async fn exchange_code(client_id: &str, client_secret: &str, code: &str) -> Result<String> {
     let builder = create_request_builder()
         .header(ACCEPT, "application/json")
-        .header(CONTENT_TYPE, "application/x-www-form-urlencoded")
         .method(Method::POST)
-        .uri(TOKEN_URI);
-    let body = format!(
-        "grant_type=authorization_code&code={}&client_id={}&client_secret={}",
-        code, client_id, client_secret
-    );
-    let value: Value = send(builder, Body::from(body)).await?;
+        .uri(format!("{}?code={}&client_id={}&client_secret={}", TOKEN_URI, code, client_id, client_secret));
+    let value: Value = send(builder, Body::default()).await?;
     value
         .get("access_token")
         .and_then(Value::as_str)
