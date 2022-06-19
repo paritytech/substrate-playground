@@ -1,0 +1,51 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: playground-roles
+data:
+  super-admin:
+    Pool:
+    - Create
+    - Read
+    - Update
+    - Delete
+    Repository:
+    - Create
+    - Read
+    - Update
+    - Delete
+    RepositoryVersion:
+    - Create
+    - Read
+    - Update
+    - Delete
+    Role:
+    - Create
+    - Read
+    - Update
+    - Delete
+    Session:
+    - Create
+    - Read
+    - Update
+    - Delete
+    SessionExecution:
+    - Create
+    - Read
+    - Update
+    - Delete
+    Template:
+    - Create
+    - Read
+    - Update
+    - Delete
+    User:
+    - Create
+    - Read
+    - Update
+    - Delete
+    Workspace:
+    - Create
+    - Read
+    - Update
+    - Delete
