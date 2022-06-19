@@ -222,6 +222,7 @@ where
     T: DeserializeOwned,
 {
     let resources = get_config_map(client, config_map_name).await?;
+    log::info!("Looking for {} in {:?}", id, resources);
     match resources.get(id).map(|resource| unserialize(resource)) {
         Some(resource) => resource.map(Some),
         None => Ok(None),
