@@ -159,11 +159,22 @@ impl User {
         let all_permissions: Vec<BTreeMap<ResourceType, Vec<ResourcePermission>>> =
             futures::stream::iter(self.roles.clone())
                 .filter_map(|role| async move {
-                    let role = get_role(&role).await.ok().flatten();
-                    Some(role.map(|role| role.permissions).unwrap_or_default())
+                    match get_role(&role).await {
+                        Ok(Some(role)) => {
+                            log::info!("Adding perms for Role {}: {:?}", role.id, role.permissions);
+                            Some(role.permissions)
+                        },
+                        Ok(None) => None,
+                        Err(err) => {
+                            log::error!("Cannot read role {:?}", err);
+
+                            None
+                        }
+                    }
                 })
                 .collect()
                 .await;
+        log::info!("All permissions {:?}", all_permissions);
         all_permissions.iter().fold(BTreeMap::new(), |accum, item| {
             merge_permissions(accum, item)
         })

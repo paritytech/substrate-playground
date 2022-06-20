@@ -42,6 +42,6 @@ ENV PATH=/\
     SSL_CERT_DIR=/etc/ssl/certs\
     GITHUB_SHA=$GITHUB_SHA\
     RUST_BACKTRACE=full\
-    RUST_LOG="warn,backend=info"
+    RUST_LOG="warn,kubernetes=info"
 
 COPY --from=builder /opt/bin/* /
