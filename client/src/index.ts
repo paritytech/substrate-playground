@@ -8,7 +8,6 @@ export class Client {
     static sessionExecutionResourcePath = 'execution';
     static repositoriesResource = 'repositories';
     static rolesResource = 'roles';
-    static templatesResource = 'templates';
     static poolsResource = 'pools';
 
     private readonly base: string;
@@ -218,12 +217,6 @@ export class Client {
             method: 'DELETE',
             ...init
         }, timeout);
-    }
-
-    // Templates
-
-    async listTemplates(timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<Template[]> {
-        return rpc(this.path(Client.templatesResource), init, timeout);
     }
 
     // Pools
