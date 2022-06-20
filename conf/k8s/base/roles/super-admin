@@ -1,47 +1,47 @@
-id: super-admin
+id: super- type:admin
 permissions:
     Pool:
-    - Create
-    - Read
-    - Update
-    - Delete
+    - type: Create
+    - type: Read
+    - type: Update
+    - type: Delete
     Repository:
-    - Create
-    - Read
-    - Update
-    - Delete
+    - type: Create
+    - type: Read
+    - type: Update
+    - type: Delete
     RepositoryVersion:
-    - Create
-    - Read
-    - Update
-    - Delete
+    - type: Create
+    - type: Read
+    - type: Update
+    - type: Delete
     Role:
-    - Create
-    - Read
-    - Update
-    - Delete
+    - type: Create
+    - type: Read
+    - type: Update
+    - type: Delete
     Session:
-    - Create
-    - Read
-    - Update
-    - Delete
+    - type: Create
+    - type: Read
+    - type: Update
+    - type: Delete
     SessionExecution:
-    - Create
-    - Read
-    - Update
-    - Delete
+    - type: Create
+    - type: Read
+    - type: Update
+    - type: Delete
     Template:
-    - Create
-    - Read
-    - Update
-    - Delete
+    - type: Create
+    - type: Read
+    - type: Update
+    - type: Delete
     User:
-    - Create
-    - Read
-    - Update
-    - Delete
+    - type: Create
+    - type: Read
+    - type: Update
+    - type: Delete
     Workspace:
-    - Create
-    - Read
-    - Update
-    - Delete
+    - type: Create
+    - type: Read
+    - type: Update
+    - type: Delete
