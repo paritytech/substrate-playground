@@ -36,17 +36,15 @@ where
     if status.is_success() {
         from_reader(whole_body.reader())
             .map_err(|_err| Error::Failure("Failed to read body".to_string()))
+    } else if let Ok(error) = from_reader::<_, String>(whole_body.reader()) {
+        Err(Error::Failure(format!(
+            "Error while executing request: {}, {}",
+            status, error
+        )))
     } else {
-        if let Ok(error) = from_reader::<_, String>(whole_body.reader()) {
-            Err(Error::Failure(format!(
-                "Error while executing request: {}, {}",
-                status, error
-            )))
-        } else {
-            Err(Error::Failure(format!(
-                "Error while executing request: {}",
-                status
-            )))
-        }
+        Err(Error::Failure(format!(
+            "Error while executing request: {}",
+            status
+        )))
     }
 }
