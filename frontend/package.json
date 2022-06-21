@@ -28,7 +28,7 @@
   },
   "devDependencies": {
     "@mui/types": "7.1.4",
-    "@parcel/transformer-inline-string": "2.6.0",
+    "@parcel/transformer-inline-string": "2.6.1",
     "@types/marked": "4.0.3",
     "@types/node": "18.0.0",
     "@types/react": "18.0.9",
