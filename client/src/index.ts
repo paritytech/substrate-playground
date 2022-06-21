@@ -1,5 +1,5 @@
 import { fetchWithTimeout, rpc } from './rpc';
-import { Playground, Pool, User, UserConfiguration, UserUpdateConfiguration, Repository, RepositoryConfiguration, RepositoryUpdateConfiguration, RepositoryVersion, RepositoryVersionConfiguration, SessionConfiguration, Session, SessionUpdateConfiguration, Template, SessionExecutionConfiguration, SessionExecution, Role, RoleConfiguration, RoleUpdateConfiguration, } from './types';
+import { Playground, Pool, User, UserConfiguration, UserUpdateConfiguration, Repository, RepositoryConfiguration, RepositoryUpdateConfiguration, RepositoryVersion, RepositoryVersionConfiguration, SessionConfiguration, Session, SessionUpdateConfiguration, SessionExecutionConfiguration, SessionExecution, Role, RoleConfiguration, RoleUpdateConfiguration, } from './types';
 
 export class Client {
 
