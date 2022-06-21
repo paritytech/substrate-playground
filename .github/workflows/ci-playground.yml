@@ -147,8 +147,6 @@ jobs:
       - name: Configure playground
         run: |-
           SKIP_ACK=1 GH_CLIENT_ID=${{ secrets.GH_CLIENT_ID }} GH_CLIENT_SECRET=${{ secrets.GH_CLIENT_SECRET }} make k8s-setup-env
-          SKIP_ACK=1 make k8s-update-users-config
-          SKIP_ACK=1 make k8s-update-templates-config
           openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout tls.key -out tls.crt -subj "/CN=playground-dev.substrate.test"
           kubectl create secret tls playground-tls --save-config --key tls.key --cert tls.crt --dry-run=client -o yaml | kubectl apply -f -
 
