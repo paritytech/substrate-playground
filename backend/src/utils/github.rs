@@ -78,7 +78,10 @@ pub async fn exchange_code(client_id: &str, client_secret: &str, code: &str) -> 
     let builder = create_request_builder()
         .header(ACCEPT, "application/json")
         .method(Method::POST)
-        .uri(format!("{}?code={}&client_id={}&client_secret={}", TOKEN_URI, code, client_id, client_secret));
+        .uri(format!(
+            "{}?code={}&client_id={}&client_secret={}",
+            TOKEN_URI, code, client_id, client_secret
+        ));
     let value: Value = send(builder, Body::default()).await?;
     value
         .get("access_token")

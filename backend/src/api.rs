@@ -18,10 +18,7 @@ use crate::{
 };
 use rocket::{
     catch, delete, get,
-    http::{
-        uri::Origin,
-        ContentType, Cookie, CookieJar, SameSite, Status,
-    },
+    http::{uri::Origin, ContentType, Cookie, CookieJar, SameSite, Status},
     patch, put,
     request::{FromRequest, Outcome, Request},
     response::{Redirect, Responder},

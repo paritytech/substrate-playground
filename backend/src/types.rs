@@ -163,7 +163,7 @@ impl User {
                         Ok(Some(role)) => {
                             log::info!("Adding perms for Role {}: {:?}", role.id, role.permissions);
                             Some(role.permissions)
-                        },
+                        }
                         Ok(None) => None,
                         Err(err) => {
                             log::error!("Cannot read role {:?}", err);
