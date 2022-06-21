@@ -96,7 +96,7 @@ function UserCreationDialog({ client, conf, users, show, onCreate, onHide }: { c
                         label="Can Customize pool affinity"
                     />
                     <ButtonGroup style={{alignSelf: "flex-end", marginTop: 20}} size="small">
-                        <Button disabled={!id || find(users, id) != null || !poolAffinity} onClick={() => {onCreate(id.toLowerCase(), {admin: adminChecked, poolAffinity: poolAffinity, canCustomizeDuration: customizeDurationChecked, canCustomizePoolAffinity: customizePoolAffinityChecked}); onHide();}}>CREATE</Button>
+                        <Button disabled={!id || find(users, id) != null || !poolAffinity} onClick={() => {onCreate(id.toLowerCase(), {roles: [], preferences: {}}); onHide();}}>CREATE</Button>
                         <Button onClick={onHide}>CLOSE</Button>
                     </ButtonGroup>
                 </Container>

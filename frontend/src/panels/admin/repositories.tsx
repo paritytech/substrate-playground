@@ -52,7 +52,7 @@ function RepositoryCreationDialog({ repositories, show, onCreate, onHide }: { re
                         label="URL"
                         />
                     <ButtonGroup style={{alignSelf: "flex-end", marginTop: 20}} size="small">
-                        <Button disabled={!id || find(repositories, id) != null|| !url} onClick={() => {onCreate(id.toLowerCase(), {tags: {"public": "true"}, url: url}); onHide();}}>CREATE</Button>
+                        <Button disabled={!id || find(repositories, id) != null|| !url} onClick={() => {onCreate(id.toLowerCase(), {url: url}); onHide();}}>CREATE</Button>
                         <Button onClick={onHide}>CLOSE</Button>
                     </ButtonGroup>
                 </Container>
@@ -105,17 +105,15 @@ function RepositoryRow({ client, repository }: { client: Client, repository: Rep
                             <TableHead>
                             <TableRow>
                                 <TableCell>Reference</TableCell>
-                                <TableCell>Version</TableCell>
                                 <TableCell>State</TableCell>
                             </TableRow>
                             </TableHead>
                             <TableBody>
                             {history.map((version) => (
-                                <TableRow key={version.reference}>
+                                <TableRow key={version.id}>
                                 <TableCell component="th" scope="row">
-                                    {version.reference}
+                                    {version.id}
                                 </TableCell>
-                                <TableCell>{version.imageSource?.tag}</TableCell>
                                 <TableCell align="right">{version.state.tag}</TableCell>
                                 </TableRow>
                             ))}
@@ -163,7 +161,7 @@ export function Repositories({ client, user }: { client: Client, user: User }): 
                     onCreate={async (id, conf) => {
                         try {
                             await client.createRepository(id, conf);
-                            await client.createRepositoryVersion(id, "1", {reference: "master"});
+                            await client.createRepositoryVersion(id, "master");
                         } catch (e: any) {
                             setErrorMessage(`Error during creation: ${e.message}`);
                         }

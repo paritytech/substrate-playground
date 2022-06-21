@@ -10,7 +10,7 @@ import TableCell from '@mui/material/TableCell';
 import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
-import { Client, Configuration, Session, SessionConfiguration, Template, Pool, User, SessionUpdateConfiguration } from '@substrate/playground-client';
+import { Client, Configuration, Session, SessionConfiguration, Pool, User, SessionUpdateConfiguration, Repository } from '@substrate/playground-client';
 import { ErrorSnackbar } from "../../components";
 import { useInterval } from "../../hooks";
 import { canCustomizeDuration, canCustomizePoolAffinity, find, mainSessionId, remove } from "../../utils";
@@ -19,9 +19,9 @@ import { FirstPage, KeyboardArrowLeft, KeyboardArrowRight, LastPage } from "@mui
 import { EnhancedTableToolbar, NoResourcesContainer, Resources } from ".";
 import { useTheme } from "@mui/styles";
 
-export function SessionCreationDialog({ client, conf, sessions, user, template, templates, show, onCreate, onHide, allowUserSelection = false }: { client: Client, conf: Configuration, sessions?: Session[], user: User, template?: string, templates: Template[] | null, show: boolean, onCreate: (conf: SessionConfiguration, id: string, ) => void, onHide: () => void , allowUserSelection?: boolean}): JSX.Element {
+export function SessionCreationDialog({ client, conf, sessions, user, repository, repositories, show, onCreate, onHide, allowUserSelection = false }: { client: Client, conf: Configuration, sessions?: Session[], user: User, repository?: string, repositories: Repository[] | null, show: boolean, onCreate: (conf: SessionConfiguration, id: string, ) => void, onHide: () => void , allowUserSelection?: boolean}): JSX.Element {
     const [selectedUser, setUser] = React.useState<string | null>(user.id);
-    const [selectedTemplate, setTemplate] = React.useState<string | null>(null);
+    const [selectedRepository, setRepository] = React.useState<string | null>(null);
     const [duration, setDuration] = React.useState(conf.session.duration);
     const [poolAffinity, setPoolAffinity] = React.useState(conf.session.poolAffinity);
     const [pools, setPools] = useState<Pool[] | null>(null);
@@ -35,7 +35,7 @@ export function SessionCreationDialog({ client, conf, sessions, user, template, 
     }, 5000);
 
     const handleUserChange = (_event: unknown, newValue: string | null) => setUser(newValue);
-    const handleTemplateChange = (event: React.ChangeEvent<HTMLInputElement>) => setTemplate(event.target.value);
+    const handleRepositoryChange = (event: React.ChangeEvent<HTMLInputElement>) => setRepository(event.target.value);
     const handleDurationChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const duration = Number.parseInt(event.target.value);
         setDuration(Number.isNaN(duration)? 0 : duration);
@@ -43,7 +43,7 @@ export function SessionCreationDialog({ client, conf, sessions, user, template, 
     const handlePoolAffinityChange = (event: React.ChangeEvent<HTMLInputElement>) => setPoolAffinity(event.target.value);
 
     const currentUser = selectedUser || user.id;
-    const currentTemplate = template || selectedTemplate;
+    const currentRepository = repository || selectedRepository;
 
     function valid(): boolean {
         if (duration <= 0) {
@@ -52,7 +52,7 @@ export function SessionCreationDialog({ client, conf, sessions, user, template, 
         if (!currentUser) {
             return false;
         }
-        if (!currentTemplate) {
+        if (!currentRepository) {
             return false;
         }
         if (!poolAffinity) {
@@ -80,19 +80,19 @@ export function SessionCreationDialog({ client, conf, sessions, user, template, 
                         renderInput={(params) => <TextField {...params} label="User" />}
                       />
                     }
-                    {!template &&
+                    {!repository &&
                     <TextField
                         style={{marginBottom: 20}}
                         select
-                        value={template}
-                        onChange={handleTemplateChange}
+                        value={repository}
+                        onChange={handleRepositoryChange}
                         required
-                        label="Template"
+                        label="Repository"
                         >
-                    {templates &&
-                    templates.map(template => (
-                        <MenuItem key={template.id} value={template.id}>
-                        {template.id}
+                    {repositories &&
+                    repositories.map(repository => (
+                        <MenuItem key={repository.id} value={repository.id}>
+                        {repository.id}
                         </MenuItem>))
                     }
                     </TextField>
@@ -124,7 +124,7 @@ export function SessionCreationDialog({ client, conf, sessions, user, template, 
                         label="Duration"
                         />}
                     <ButtonGroup style={{alignSelf: "flex-end", marginTop: 20}} size="small">
-                        <Button disabled={!valid()} onClick={() => {onCreate({template: currentTemplate || "", duration: duration, poolAffinity: poolAffinity}, mainSessionId(currentUser)); onHide();}}>CREATE</Button>
+                        <Button disabled={!valid()} onClick={() => {onCreate({repositorySource: {repositoryId: currentRepository, repositoryVersionId, "TODO"}, duration: duration, poolAffinity: poolAffinity}, mainSessionId(currentUser)); onHide();}}>CREATE</Button>
                         <Button onClick={onHide}>CLOSE</Button>
                     </ButtonGroup>
                 </Container>
@@ -240,11 +240,11 @@ export function Sessions({ client, conf, user }: { client: Client, conf: Configu
             setSelected(session);
         }
     };
-    const [templates, setTemplates] = useState<Template[] | null>(null);
+    const [repositories, setRepositories] = useState<Repository[] | null>(null);
 
     useInterval(async () => {
-        const templates = await client.listTemplates();
-        setTemplates(templates);
+        const repositories = await client.listRepositories();
+        setRepositories(repositories);
     }, 5000);
 
     function sessionMock(conf: SessionConfiguration): Session {
@@ -396,7 +396,7 @@ export function Sessions({ client, conf, user }: { client: Client, conf: Configu
                         {errorMessage &&
                         <ErrorSnackbar open={true} message={errorMessage} onClose={() => setErrorMessage(null)} />}
                         {showCreationDialog &&
-                        <SessionCreationDialog allowUserSelection={true} client={client} conf={conf} sessions={resources} user={user} templates={templates} show={showCreationDialog} onCreate={(conf, id) => onCreate(conf, id, setSessions)} onHide={() => setShowCreationDialog(false)} />}
+                        <SessionCreationDialog allowUserSelection={true} client={client} conf={conf} sessions={resources} user={user} repositories={repositories} show={showCreationDialog} onCreate={(conf, id) => onCreate(conf, id, setSessions)} onHide={() => setShowCreationDialog(false)} />}
                         {(selected && showUpdateDialog) &&
                         <SessionUpdateDialog id={selected.id} duration={selected.maxDuration} show={showUpdateDialog} onUpdate={(id, conf) => onUpdate(id, conf, setSessions)} onHide={() => setShowUpdateDialog(false)} />}
                     </>

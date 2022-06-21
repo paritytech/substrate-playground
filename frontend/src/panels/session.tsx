@@ -25,7 +25,7 @@ import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
-import { Client, Configuration, NameValuePair, User, Port, Session, SessionConfiguration, Template } from '@substrate/playground-client';
+import { Client, Configuration, NameValuePair, User, Port, Session, SessionConfiguration, Template, Repository } from '@substrate/playground-client';
 import { CenteredContainer, ErrorMessage, ErrorSnackbar, LoadingPanel } from "../components";
 import { useInterval } from "../hooks";
 import { canCustomize, formatDuration, mainSessionId } from "../utils";
@@ -113,15 +113,15 @@ export default function SplitButton({ template, disabled, onCreate, onCreateCust
   );
 }
 
-function TemplateSelector({client, conf, user, onDeployed, onRetry}: {client: Client, conf: Configuration, user: User, onDeployed: (conf: SessionConfiguration) => Promise<void>, onRetry: () => void}): JSX.Element {
-    const [templates, setTemplates] = useState<Template[]>();
+function RepositorySelector({client, conf, user, onDeployed, onRetry}: {client: Client, conf: Configuration, user: User, onDeployed: (conf: SessionConfiguration) => Promise<void>, onRetry: () => void}): JSX.Element {
+    const [repositories, setTemplates] = useState<Repository[]>();
     const [deploying, setDeploying] = useState(false);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [openCustom, setOpenCustom] = useState(false);
     const [selection, select] = useState<Template | null>(null);
 
     useInterval(async () => {
-        const templates = await client.listTemplates();
+        const repositories = await client.listRepositories();
         const publicTemplates = templates.filter(template => template.tags?.public == "true");
         const template = publicTemplates[0];
         // Initialize the selection if none has been set
@@ -342,7 +342,7 @@ export function SessionPanel({ client, conf, user, onDeployed, onConnect, onRetr
                  ? <LoadingPanel />
                  : session
                  ?<ExistingSession session={session} onConnect={onConnect} onStop={onStop} />
-                 : <TemplateSelector client={client} conf={conf} user={user} onRetry={onRetry} onDeployed={onDeployed} />}
+                 : <RepositorySelector client={client} conf={conf} user={user} onRetry={onRetry} onDeployed={onDeployed} />}
             </Paper>
         </Container>
     );

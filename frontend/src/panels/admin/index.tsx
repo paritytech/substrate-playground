@@ -26,13 +26,11 @@ import LastPageIcon from '@mui/icons-material/LastPage';
 import { Client, Configuration, User } from '@substrate/playground-client';
 import { CenteredContainer, ErrorSnackbar, LoadingPanel } from '../../components';
 import { useInterval } from '../../hooks';
-import { hasAdminEditRights } from '../../utils';
 import { Details } from './details';
 import { Pools } from './pools';
 import { Users } from './users';
 import { Repositories } from './repositories';
 import { Sessions } from './sessions';
-import { Templates } from "./templates";
 
 export const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -248,7 +246,6 @@ const panels = {
     Repositories: (client: Client, _conf: Configuration, user: User) => <Repositories client={client} user={user} />,
     Users: (client: Client, conf: Configuration, user: User) => <Users client={client} user={user} conf={conf} />,
     Pools: (client: Client, _conf: Configuration, user: User) => <Pools client={client} user={user} />,
-    Templates: (client: Client, _conf: Configuration, user: User) => <Templates client={client} user={user} />,
     Sessions: (client: Client, conf: Configuration, user: User) => <Sessions client={client} conf={conf} user={user} />
 };
 
@@ -262,8 +259,8 @@ export function AdminPanel({ client, conf, user }: { client: Client, conf: Confi
   return (
     <CenteredContainer>
       <Tabs value={value} onChange={handleChange} aria-label="wrapped label tabs example">
-      {Object.keys(panels).map((panel) =>
-        <Tab label={panel} />)
+      {Object.keys(panels).map((panel, id) =>
+        <Tab key={id} label={panel} />)
       }
       </Tabs>
 
