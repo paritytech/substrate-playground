@@ -14,7 +14,7 @@
   dependencies:
     "@cspotcode/source-map-consumer" "0.8.0"
 
-"@kubernetes/client-node@^0.16.3":
+"@kubernetes/client-node@0.16.3":
   version "0.16.3"
   resolved "https://registry.yarnpkg.com/@kubernetes/client-node/-/client-node-0.16.3.tgz#a26a5abbd6e45603b4f75f0baff00e19853e5be7"
   integrity sha512-L7IckuyuPfhd+/Urib8MRas9D6sfKEq8IaITYcaE6LlU+Y8MeD7MTbuW6Yb2WdeRuFN8HPSS47mxPnOUNYBXEg==
@@ -52,10 +52,10 @@
   resolved "https://registry.yarnpkg.com/@sindresorhus/is/-/is-4.6.0.tgz#3c7c9c46e678feefe7a2e5bb609d3dbd665ffb3f"
   integrity sha512-t09vSN3MdfsyCHoFcTRCH/iUtG7OJ0CsjzB8cjAmKc/va/kIgeDI/TxsigdncE/4be734m0cvIYwNaV4i2XqAw==
 
-"@substrate/playground-client@1.9.0":
-  version "1.9.0"
-  resolved "https://registry.yarnpkg.com/@substrate/playground-client/-/playground-client-1.9.0.tgz#511ec18a8b2f27c353d56b0b5801dded29ed54cd"
-  integrity sha512-TVtkabxQCLdSZRpXCqxLnTWoYzyoK8QCpjwQLNAttk2jAhethmVZWmmcUp9FNmCmw8q99+6Rw88LL5C8ONnU5g==
+"@substrate/playground-client@1.9.3":
+  version "1.9.3"
+  resolved "https://registry.yarnpkg.com/@substrate/playground-client/-/playground-client-1.9.3.tgz#519840b4403e1db3f6633cb0af8ff4c748577be1"
+  integrity sha512-8iSMyGJdfBQonJNa4jWKry0gX1DrkgIRSsMTPVpPu18T0j4BkNJapaPXNVGLHRXLjSlPU7sh7S8Hd5TCudFKaw==
   dependencies:
     uuid "8.3.2"
 
