@@ -85,7 +85,6 @@ export enum ResourceType {
     Role,
     Session,
     SessionExecution,
-    Template,
     User,
     Workspace,
 }
@@ -137,14 +136,6 @@ export interface RepositoryRuntimeConfiguration {
     baseImage?: string,
     env?: NameValuePair[],
     ports?: Port[],
-}
-
-export interface Template extends IdentifiedResource {
-    name: string,
-    image: string,
-    description: string,
-    tags?: Record<string, string>,
-    runtime?: RepositoryRuntimeConfiguration,
 }
 
 export interface NameValuePair {
