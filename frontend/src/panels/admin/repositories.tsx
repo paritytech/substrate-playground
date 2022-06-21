@@ -19,7 +19,7 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
-import { Client, User, Repository, RepositoryConfiguration, RepositoryVersion } from "@substrate/playground-client";
+import { Client, User, Repository, RepositoryConfiguration, RepositoryVersion, ResourceType } from "@substrate/playground-client";
 import { useStyles, EnhancedTableToolbar, Resources } from '.';
 import { ErrorSnackbar } from '../../components';
 import { find } from "../../utils";
@@ -135,7 +135,7 @@ export function Repositories({ client, user }: { client: Client, user: User }): 
         <Resources<Repository> callback={async () => await client.listRepositories()}>
         {(resources: Repository[]) => (
             <>
-                <EnhancedTableToolbar user={user} label="Repositories" onCreate={() => setShowCreationDialog(true)} />
+                <EnhancedTableToolbar user={user} label="Repositories" onCreate={() => setShowCreationDialog(true)} resourceType={ResourceType.Repository} />
                 <TableContainer component={Paper}>
                     <Table className={classes.table} aria-label="simple table">
                         <TableHead>

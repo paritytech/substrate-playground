@@ -6,7 +6,7 @@ import TableCell from '@mui/material/TableCell';
 import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
-import { Client, User, Pool } from "@substrate/playground-client";
+import { Client, User, Pool, ResourceType } from "@substrate/playground-client";
 import { useStyles, EnhancedTableToolbar, Resources } from '.';
 
 export function Pools({ client, user }: { client: Client, user: User }): JSX.Element {
@@ -16,7 +16,7 @@ export function Pools({ client, user }: { client: Client, user: User }): JSX.Ele
         <Resources<Pool> callback={async () => await client.listPools()}>
         {(resources: Pool[]) => (
             <>
-                <EnhancedTableToolbar user={user} label="Pools" />
+                <EnhancedTableToolbar user={user} label="Pools" resourceType={ResourceType.Pool} />
                 <TableContainer component={Paper}>
                     <Table className={classes.table} aria-label="simple table">
                         <TableHead>

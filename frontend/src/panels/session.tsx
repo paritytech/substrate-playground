@@ -25,10 +25,10 @@ import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
-import { Client, Configuration, NameValuePair, User, Port, Session, SessionConfiguration, Template, Repository } from '@substrate/playground-client';
+import { Client, Configuration, NameValuePair, User, Port, Session, SessionConfiguration, Repository } from '@substrate/playground-client';
 import { CenteredContainer, ErrorMessage, ErrorSnackbar, LoadingPanel } from "../components";
 import { useInterval } from "../hooks";
-import { canCustomize, formatDuration, mainSessionId } from "../utils";
+import { formatDuration, mainSessionId } from "../utils";
 import { SessionCreationDialog } from "./admin/sessions";
 
 const options = [{id: 'create', label: 'Create'}, {id: 'custom', label: 'Customize and Create'}];
@@ -114,21 +114,21 @@ export default function SplitButton({ template, disabled, onCreate, onCreateCust
 }
 
 function RepositorySelector({client, conf, user, onDeployed, onRetry}: {client: Client, conf: Configuration, user: User, onDeployed: (conf: SessionConfiguration) => Promise<void>, onRetry: () => void}): JSX.Element {
-    const [repositories, setTemplates] = useState<Repository[]>();
+    const [repositories, setRepositories] = useState<Repository[]>();
     const [deploying, setDeploying] = useState(false);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [openCustom, setOpenCustom] = useState(false);
-    const [selection, select] = useState<Template | null>(null);
+    const [selection, select] = useState<Repository | null>(null);
 
     useInterval(async () => {
         const repositories = await client.listRepositories();
-        const publicTemplates = templates.filter(template => template.tags?.public == "true");
-        const template = publicTemplates[0];
+        const publicRepositories = repositories.filter(repository => repository.latestVersion.tags?.public == "true");
+        const repository = publicRepositories[0];
         // Initialize the selection if none has been set
-        if (!selection && template) {
-            select(template);
+        if (!selection && repository) {
+            select(repository);
         }
-        setTemplates(publicTemplates);
+        setRepositories(publicRepositories);
     }, 5000);
 
     async function onCreateClick(conf: SessionConfiguration): Promise<void> {
@@ -146,7 +146,7 @@ function RepositorySelector({client, conf, user, onDeployed, onRetry}: {client: 
         return !deploying;
     }
 
-    if (!templates) {
+    if (!repositories) {
         return <LoadingPanel />;
     } else if (selection) {
         return (
@@ -156,16 +156,16 @@ function RepositorySelector({client, conf, user, onDeployed, onRetry}: {client: 
                 <Container style={{display: "flex", flex: 1, padding: 0, alignItems: "center", overflowY: "auto"}}>
                     <div style={{display: "flex", flex: 1, flexDirection: "row", minHeight: 0, height: "100%"}}>
                             <List style={{paddingTop: 0, paddingBottom: 0, overflowY: "auto"}}>
-                                {templates.map((template: Template, index: number) => (
-                                <ListItem button key={index} selected={selection.id === template.id} onClick={() => select(template)}>
-                                    <ListItemText primary={template.id} />
+                                {repositories.map((repository: Repository, index: number) => (
+                                <ListItem button key={index} selected={selection.id === repository.id} onClick={() => select(repository)}>
+                                    <ListItemText primary={repository.id} />
                                 </ListItem>
                                 ))}
                             </List>
                             <Divider flexItem={true} orientation={"vertical"} light={true} />
                             <div style={{flex: 1, marginLeft: 20, paddingRight: 20, overflow: "auto", textAlign: "left"}}>
                                 <Typography>
-                                    <span dangerouslySetInnerHTML={{__html:marked(selection.description)}}></span>
+                                    <span dangerouslySetInnerHTML={{__html:marked(selection.latestVersion.description)}}></span>
                                 </Typography>
                                 <Divider orientation={"horizontal"} light={true} />
                                 <Typography variant="overline">
@@ -185,13 +185,13 @@ function RepositorySelector({client, conf, user, onDeployed, onRetry}: {client: 
                 {errorMessage &&
                 <ErrorSnackbar open={true} message={errorMessage} onClose={() => setErrorMessage(null)} />}
                 {openCustom &&
-                <SessionCreationDialog client={client} user={user} template={selection.id} conf={conf} templates={templates} show={openCustom} onCreate={onCreateClick} onHide={() => setOpenCustom(false)} />}
+                <SessionCreationDialog client={client} user={user} repository={selection.id} conf={conf} repositories={repositories} show={openCustom} onCreate={onCreateClick} onHide={() => setOpenCustom(false)} />}
             </>
         );
     } else {
         return (
             <CenteredContainer>
-                <ErrorMessage reason="Can't find any public template. The templates configuration might be incorrect." action={onRetry} />
+                <ErrorMessage reason="Can't find any public repository." action={onRetry} />
             </CenteredContainer>
         );
     }

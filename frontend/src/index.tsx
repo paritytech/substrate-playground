@@ -15,7 +15,7 @@ import { TermsPanel } from './panels/terms';
 import { RunningSessionPanel } from './panels/session_running';
 import { SessionPanel } from './panels/session';
 import { terms } from "./terms";
-import { hasAdminReadRights, mainSessionId } from "./utils";
+import { mainSessionId } from "./utils";
 import { SubstrateLight } from './themes';
 import { CssBaseline } from "@mui/material";
 
@@ -41,7 +41,7 @@ function MainPanel({ client, params, conf, user, panel, onRetry, onConnect, onAf
         case PanelId.Admin:
           return <AdminPanel client={client} conf={conf} user={user} />;
         case PanelId.Theia:
-          return <RunningSessionPanel client={client} user={user} autoDeploy={params.deploy} onMissingSession={onRetry} onSessionFailing={onRetry} onSessionTimeout={onRetry} />;
+          return <RunningSessionPanel client={client} user={user} autoDeployRepository={params.autoDeployRepository} onMissingSession={onRetry} onSessionFailing={onRetry} onSessionTimeout={onRetry} />;
     }
 }
 
@@ -102,7 +102,7 @@ function CustomLoggedNav({ client, send, conf, user, panel }: { client: Client, 
               {(panel == PanelId.Theia) &&
                 <ExtraTheiaNav client={client} user={user} conf={conf} restartAction={() => restart(send)} />}
               <div style={{display: "flex", alignItems: "center"}}>
-                  {hasAdminReadRights(user) &&
+                  {hasRole(user, "admin") &&
                   <NavSecondMenuAdmin onAdminClick={() => selectPanel(send, PanelId.Admin)} onStatsClick={() => selectPanel(send, PanelId.Stats)} />}
                   <NavMenuLogged conf={conf} user={user} onLogout={() => send(Events.LOGOUT)} />
               </div>
@@ -123,8 +123,8 @@ const theme = createTheme(adaptV4Theme(SubstrateLight));
 
 function App({ params }: { params: Params }): JSX.Element {
     const client = new Client(params.base, 30000, {credentials: "include"});
-    const { deploy } = params;
-    const [state, send] = useMachine(newMachine(client, deploy? PanelId.Theia: PanelId.Session), { devTools: true });
+    const { autoDeployRepository } = params;
+    const [state, send] = useMachine(newMachine(client, autoDeployRepository? PanelId.Theia: PanelId.Session), { devTools: true });
     const { panel, error } = state.context;
     const logged = state.matches(States.LOGGED);
 
@@ -169,23 +169,25 @@ function App({ params }: { params: Params }): JSX.Element {
 
 export interface Params {
     version?: string,
-    deploy: string | null,
+    autoDeployRepository: string | null,
     base: string,
 }
 
+const autoDeployRepositoryParamName = 'autoDeployRepository';
+
 function extractParams(): Params {
     const params = new URLSearchParams(window.location.search);
-    const deploy = params.get('deploy');
-    return {deploy: deploy,
+    const autoDeployRepository = params.get(autoDeployRepositoryParamName);
+    return {autoDeployRepository: autoDeployRepository,
             version: process.env.GITHUB_SHA,
             base: "/api"};
 }
 
 function removeTransientsURLParams() {
     const params = new URLSearchParams(window.location.search);
-    const deploy = params.get('deploy');
-    if (deploy) {
-        params.delete('deploy');
+    const autoDeployRepository = params.get(autoDeployRepositoryParamName);
+    if (autoDeployRepository) {
+        params.delete(autoDeployRepositoryParamName);
         const paramsStr = params.toString();
         window.history.replaceState({}, '', `${location.pathname}${paramsStr != "" ? params : ""}`);
     }

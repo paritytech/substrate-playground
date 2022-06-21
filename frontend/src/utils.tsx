@@ -1,4 +1,4 @@
-import { IdentifiedResource, User, Session } from "@substrate/playground-client";
+import { IdentifiedResource, User, Session, ResourceType, ResourcePermission } from "@substrate/playground-client";
 
 function timeout<T>(promise: Promise<T>, ms: number): Promise<T> {
     return new Promise(function(resolve, reject) {
@@ -24,28 +24,6 @@ export function formatDuration(s: number): string {
     } else {
         return `${withMinutes}`;
     }
-}
-
-// User helpers
-
-export function canCustomize(user: User): boolean {
-    return canCustomizeDuration(user) || canCustomizePoolAffinity(user);
-}
-
-export function canCustomizeDuration(user: User): boolean {
-    return user.admin || user.canCustomizeDuration;
-}
-
-export function canCustomizePoolAffinity(user: User): boolean {
-    return user.admin || user.canCustomizePoolAffinity;
-}
-
-export function hasAdminReadRights(user: User): boolean {
-    return user.admin;
-}
-
-export function hasAdminEditRights(user: User): boolean {
-    return user.admin;
 }
 
 export function sessionDomain(session: Session): string {
@@ -74,4 +52,17 @@ export function find<T extends IdentifiedResource>(resources: T[], id: string): 
 
 export function remove<T extends IdentifiedResource>(resources: T[], id: string): T[] {
     return resources.filter(resource => resource.id !== id);
+}
+
+export function hasPermission(user: User, resourceType: ResourceType, resourcePermission: ResourcePermission): boolean {
+    // TODO
+    return true;
+}
+
+export function canCustomizeSessionDuration(user: User): boolean {
+    return hasPermission(user, ResourceType.Session, {tag: "Custom", name: "CustomizeSessionDuration"});
+}
+
+export function canCustomizeSessionPoolAffinity(user: User): boolean {
+    return hasPermission(user, ResourceType.Session, {tag: "Custom", name: "CustomizeSessionPoolAffinity"});
 }

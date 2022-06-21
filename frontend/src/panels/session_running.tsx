@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import Paper from '@mui/material/Paper';
-import { Client, User } from '@substrate/playground-client';
+import { Client, Repository, User } from '@substrate/playground-client';
 import { CenteredContainer, ErrorMessage, Loading } from '../components';
 import { fetchWithTimeout, find, mainSessionId, sessionUrl } from '../utils';
 
@@ -15,7 +15,7 @@ interface Loading {
     retry: number,
 }
 
-export function RunningSessionPanel({ client, user, autoDeploy, onMissingSession, onSessionFailing, onSessionTimeout }: { client: Client, user: User, autoDeploy: string | null, onMissingSession: () => void, onSessionFailing: () => void, onSessionTimeout: () => void }): JSX.Element {
+export function RunningSessionPanel({ client, user, autoDeployRepository, onMissingSession, onSessionFailing, onSessionTimeout }: { client: Client, user: User, autoDeployRepository: string | null, onMissingSession: () => void, onSessionFailing: () => void, onSessionTimeout: () => void }): JSX.Element {
     const maxRetries = 5*60;
     const sessionId = mainSessionId(user.id);
     const ref = useRef(null);
@@ -24,8 +24,8 @@ export function RunningSessionPanel({ client, user, autoDeploy, onMissingSession
     const [loading, setLoading] = useState<Loading>();
 
     useEffect(() => {
-        function createSession(id: string): void {
-            client.createSession(sessionId, {template: id}).then(fetchData);
+        function createSession(repository: Repository): void {
+            client.createSession(sessionId, {repositorySource: {repositoryId: repository.id, repositoryVersionId: "TODO"}}).then(fetchData);
         }
 
         async function fetchData() {
@@ -60,10 +60,11 @@ export function RunningSessionPanel({ client, user, autoDeploy, onMissingSession
         // Entry point.
         // If autoDeploy, first attempt to locate the associated template and deploy it.
         // In all cases, delegates to `fetchData`
-        if (autoDeploy) {
-            client.listTemplates().then(templates => {
-                if (!find(templates, autoDeploy)) {
-                    setError({reason: `Unknown template ${autoDeploy}`,
+        if (autoDeployRepository) {
+            client.listRepositories().then(repositories => {
+                const repository = find(repositories, autoDeployRepository);
+                if (!repository) {
+                    setError({reason: `Unknown repository ${autoDeployRepository}`,
                               action: onMissingSession});
                     return;
                 }
@@ -87,11 +88,11 @@ export function RunningSessionPanel({ client, user, autoDeploy, onMissingSession
                                                 }
                                             )})
                                             .then(() => setError(undefined))
-                                            .then(() => createSession(autoDeploy));
+                                            .then(() => createSession(repository));
                                       },
                                       actionTitle: "Replace existing session"});
                         } else {
-                            createSession(autoDeploy);
+                            createSession(repository);
                         }
                     })
                 } catch {

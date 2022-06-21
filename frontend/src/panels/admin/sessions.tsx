@@ -10,10 +10,10 @@ import TableCell from '@mui/material/TableCell';
 import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
-import { Client, Configuration, Session, SessionConfiguration, Pool, User, SessionUpdateConfiguration, Repository } from '@substrate/playground-client';
+import { Client, Configuration, Session, SessionConfiguration, Pool, User, SessionUpdateConfiguration, Repository, ResourceType } from '@substrate/playground-client';
 import { ErrorSnackbar } from "../../components";
 import { useInterval } from "../../hooks";
-import { canCustomizeDuration, canCustomizePoolAffinity, find, mainSessionId, remove } from "../../utils";
+import { find, hasPermission, mainSessionId, remove } from "../../utils";
 import { Autocomplete, Checkbox, Dialog, DialogContent, DialogTitle, IconButton, Link, TableFooter, TablePagination, TextField } from "@mui/material";
 import { FirstPage, KeyboardArrowLeft, KeyboardArrowRight, LastPage } from "@mui/icons-material";
 import { EnhancedTableToolbar, NoResourcesContainer, Resources } from ".";
@@ -64,6 +64,13 @@ export function SessionCreationDialog({ client, conf, sessions, user, repository
         return true;
     }
 
+    function onCreateClick() {
+        const repositorySource = {repositoryId: currentRepository || "Can't happen", repositoryVersionId: "TODO"};
+        const sessionConfiguration = {repositorySource: repositorySource, duration: duration, poolAffinity: poolAffinity};
+        onCreate(sessionConfiguration, mainSessionId(currentUser));
+        onHide();
+    }
+
     return (
         <Dialog open={show} onClose={onHide} maxWidth="md">
             <DialogTitle>Session details</DialogTitle>
@@ -97,7 +104,7 @@ export function SessionCreationDialog({ client, conf, sessions, user, repository
                     }
                     </TextField>
                     }
-                    {canCustomizePoolAffinity(user) &&
+                    {hasPermission(user, ResourceType.Session, {tag: "Custom", name: "CustomizeSessionPoolAffinity"}) &&
                     <TextField
                         style={{marginBottom: 20}}
                         select
@@ -114,7 +121,7 @@ export function SessionCreationDialog({ client, conf, sessions, user, repository
                     }
                     </TextField>
                     }
-                    {canCustomizeDuration(user) &&
+                    {hasPermission(user, ResourceType.Session, {tag: "Custom", name: "CustomizeSessionDuration"}) &&
                     <TextField
                         style={{marginBottom: 20}}
                         value={duration}
@@ -124,7 +131,7 @@ export function SessionCreationDialog({ client, conf, sessions, user, repository
                         label="Duration"
                         />}
                     <ButtonGroup style={{alignSelf: "flex-end", marginTop: 20}} size="small">
-                        <Button disabled={!valid()} onClick={() => {onCreate({repositorySource: {repositoryId: currentRepository, repositoryVersionId, "TODO"}, duration: duration, poolAffinity: poolAffinity}, mainSessionId(currentUser)); onHide();}}>CREATE</Button>
+                        <Button disabled={!valid()} onClick={onCreateClick}>CREATE</Button>
                         <Button onClick={onHide}>CLOSE</Button>
                     </ButtonGroup>
                 </Container>
@@ -333,7 +340,7 @@ export function Sessions({ client, conf, user }: { client: Client, conf: Configu
                         {filteredResources.length > 0
                         ?
                         <>
-                            <EnhancedTableToolbar user={user} label="Sessions" selected={selected?.id} onCreate={() => setShowCreationDialog(true)} onUpdate={() => setShowUpdateDialog(true)} onDelete={() => onDelete(setSessions)} />
+                            <EnhancedTableToolbar user={user} label="Sessions" selected={selected?.id} onCreate={() => setShowCreationDialog(true)} onUpdate={() => setShowUpdateDialog(true)} onDelete={() => onDelete(setSessions)} resourceType={ResourceType.Session} />
                             <TableContainer component={Paper}>
                                 <Table aria-label="simple table">
                                     <TableHead>
@@ -392,7 +399,7 @@ export function Sessions({ client, conf, user }: { client: Client, conf: Configu
                                 </Table>
                             </TableContainer>
                         </>
-                        : <NoResourcesContainer user={user} label="No sessions" action={() => setShowCreationDialog(true)} />}
+                        : <NoResourcesContainer user={user} label="No sessions" action={() => setShowCreationDialog(true)} resourceType={ResourceType.Session} />}
                         {errorMessage &&
                         <ErrorSnackbar open={true} message={errorMessage} onClose={() => setErrorMessage(null)} />}
                         {showCreationDialog &&

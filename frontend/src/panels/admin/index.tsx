@@ -23,14 +23,15 @@ import FirstPageIcon from '@mui/icons-material/FirstPage';
 import KeyboardArrowLeft from '@mui/icons-material/KeyboardArrowLeft';
 import KeyboardArrowRight from '@mui/icons-material/KeyboardArrowRight';
 import LastPageIcon from '@mui/icons-material/LastPage';
-import { Client, Configuration, User } from '@substrate/playground-client';
+import { Client, Configuration, ResourceType, User } from '@substrate/playground-client';
 import { CenteredContainer, ErrorSnackbar, LoadingPanel } from '../../components';
 import { useInterval } from '../../hooks';
 import { Details } from './details';
 import { Pools } from './pools';
-import { Users } from './users';
 import { Repositories } from './repositories';
 import { Sessions } from './sessions';
+import { Users } from './users';
+import { hasPermission } from "../../utils";
 
 export const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -44,12 +45,12 @@ export const useStyles = makeStyles((theme: Theme) =>
   }),
 );
 
-export function NoResourcesContainer({ user, label, action }: { user: User, label: string, action?: () => void }): JSX.Element {
+export function NoResourcesContainer({ user, label, action, resourceType }: { user: User, label: string, action?: () => void, resourceType: ResourceType }): JSX.Element {
   return (
     <Container>
       <Typography variant="h6">
         {label}
-        {(action && hasAdminEditRights(user)) &&
+        {(action && hasPermission(user, resourceType, {tag: "Create"})) &&
           <Tooltip title="Create">
             <IconButton aria-label="create" onClick={action} size="large">
               <AddIcon />
@@ -195,19 +196,19 @@ function DeleteConfirmationDialog({ open, onClose, onConfirmation }: { open: boo
   );
 }
 
-function EditToolbar({ selected, onCreate, onUpdate, onDelete }: { selected?: string | null, onCreate?: () => void, onUpdate?: () => void, onDelete?: () => void }): JSX.Element {
+function EditToolbar({ user, resourceType, selected, onCreate, onUpdate, onDelete }: { user: User, resourceType: ResourceType, selected?: string | null, onCreate?: () => void, onUpdate?: () => void, onDelete?: () => void }): JSX.Element {
   const [open, setOpen] = React.useState(false);
   if (selected) {
     return <>
       {onUpdate &&
         <Tooltip title="Update">
-          <IconButton aria-label="update" onClick={onUpdate} size="large">
+          <IconButton disabled={!hasPermission(user, resourceType, {tag: "Update"})} aria-label="update" onClick={onUpdate} size="large">
             <EditIcon />
           </IconButton>
         </Tooltip>}
       {onDelete &&
         <Tooltip title="Delete">
-          <IconButton aria-label="delete" onClick={() => setOpen(true)} size="large">
+          <IconButton disabled={!hasPermission(user, resourceType, {tag: "Delete"})} aria-label="delete" onClick={() => setOpen(true)} size="large">
             <DeleteIcon />
           </IconButton>
         </Tooltip>}
@@ -217,7 +218,7 @@ function EditToolbar({ selected, onCreate, onUpdate, onDelete }: { selected?: st
     return <>
       {onCreate &&
         <Tooltip title="Create">
-          <IconButton aria-label="create" onClick={onCreate} size="large">
+          <IconButton disabled={!hasPermission(user, resourceType, {tag: "Create"})} aria-label="create" onClick={onCreate} size="large">
             <AddIcon />
           </IconButton>
         </Tooltip>}
@@ -225,7 +226,7 @@ function EditToolbar({ selected, onCreate, onUpdate, onDelete }: { selected?: st
   }
 }
 
-export function EnhancedTableToolbar({ user, label, selected = null, onCreate, onUpdate, onDelete }: { user: User, label: string, selected?: string | null, onCreate?: () => void, onUpdate?: () => void, onDelete?: () => void }): JSX.Element {
+export function EnhancedTableToolbar({ user, label, selected = null, onCreate, onUpdate, onDelete, resourceType }: { user: User, label: string, selected?: string | null, onCreate?: () => void, onUpdate?: () => void, onDelete?: () => void, resourceType: ResourceType }): JSX.Element {
   const classes = useToolbarStyles();
   return (
     <>
@@ -234,8 +235,7 @@ export function EnhancedTableToolbar({ user, label, selected = null, onCreate, o
         <Typography className={classes.title} variant="h6" id="tableTitle" component="div">
           {label}
         </Typography>
-        {hasAdminEditRights(user) &&
-          <EditToolbar selected={selected} onCreate={onCreate} onUpdate={onUpdate} onDelete={onDelete} />}
+        <EditToolbar user={user} resourceType={resourceType} selected={selected} onCreate={onCreate} onUpdate={onUpdate} onDelete={onDelete} />
       </Toolbar>
     </>
   );
