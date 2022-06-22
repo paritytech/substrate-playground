@@ -204,3 +204,19 @@ pub async fn create_repository_version(repository_id: &str, id: &str) -> Result<
 pub async fn delete_repository_version(_repository_id: &str, _id: &str) -> Result<()> {
     Ok(())
 }
+
+// Repository latest version
+
+pub async fn get_repository_latest_version(
+    repository_id: &str,
+) -> Result<Option<RepositoryVersion>> {
+    // TODO
+    Ok(Some(RepositoryVersion {
+        id: "".to_string(),
+        state: RepositoryVersionState::Cloning { progress: 50 },
+    }))
+}
+
+pub async fn create_repository_latest_version(repository_id: &str, id: &str) -> Result<()> {
+    Ok(())
+}

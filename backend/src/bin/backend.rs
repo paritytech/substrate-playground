@@ -70,6 +70,9 @@ async fn main() {
                 playground::api::list_repository_versions,
                 playground::api::create_repository_version,
                 playground::api::delete_repository_version,
+                // Repository versions
+                playground::api::get_repository_latest_version,
+                playground::api::create_repository_latest_version,
                 // Pools
                 playground::api::get_pool,
                 playground::api::list_pools,
