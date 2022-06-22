@@ -13,3 +13,8 @@ resources:
     - backend-ui.yaml
     - ingress.yaml
     - node-conf-daemon-set.yaml
+
+configMapGenerator:
+- name: playground-roles
+  files:
+    - roles/super-admin
