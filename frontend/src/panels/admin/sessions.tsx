@@ -13,7 +13,7 @@ import TableRow from '@mui/material/TableRow';
 import { Client, Configuration, Session, SessionConfiguration, Pool, User, SessionUpdateConfiguration, Repository, ResourceType } from '@substrate/playground-client';
 import { ErrorSnackbar } from "../../components";
 import { useInterval } from "../../hooks";
-import { find, hasPermission, mainSessionId, remove } from "../../utils";
+import { canCustomizeSessionDuration, canCustomizeSessionPoolAffinity, find, mainSessionId, remove } from "../../utils";
 import { Autocomplete, Checkbox, Dialog, DialogContent, DialogTitle, IconButton, Link, TableFooter, TablePagination, TextField } from "@mui/material";
 import { FirstPage, KeyboardArrowLeft, KeyboardArrowRight, LastPage } from "@mui/icons-material";
 import { EnhancedTableToolbar, NoResourcesContainer, Resources } from ".";
@@ -104,7 +104,7 @@ export function SessionCreationDialog({ client, conf, sessions, user, repository
                     }
                     </TextField>
                     }
-                    {hasPermission(user, ResourceType.Session, {tag: "Custom", name: "CustomizeSessionPoolAffinity"}) &&
+                    {canCustomizeSessionPoolAffinity(client, user) &&
                     <TextField
                         style={{marginBottom: 20}}
                         select
@@ -121,7 +121,7 @@ export function SessionCreationDialog({ client, conf, sessions, user, repository
                     }
                     </TextField>
                     }
-                    {hasPermission(user, ResourceType.Session, {tag: "Custom", name: "CustomizeSessionDuration"}) &&
+                    {canCustomizeSessionDuration(client, user) &&
                     <TextField
                         style={{marginBottom: 20}}
                         value={duration}
@@ -340,7 +340,7 @@ export function Sessions({ client, conf, user }: { client: Client, conf: Configu
                         {filteredResources.length > 0
                         ?
                         <>
-                            <EnhancedTableToolbar user={user} label="Sessions" selected={selected?.id} onCreate={() => setShowCreationDialog(true)} onUpdate={() => setShowUpdateDialog(true)} onDelete={() => onDelete(setSessions)} resourceType={ResourceType.Session} />
+                            <EnhancedTableToolbar client={client} user={user} label="Sessions" selected={selected?.id} onCreate={() => setShowCreationDialog(true)} onUpdate={() => setShowUpdateDialog(true)} onDelete={() => onDelete(setSessions)} resourceType={ResourceType.Session} />
                             <TableContainer component={Paper}>
                                 <Table aria-label="simple table">
                                     <TableHead>
@@ -399,7 +399,7 @@ export function Sessions({ client, conf, user }: { client: Client, conf: Configu
                                 </Table>
                             </TableContainer>
                         </>
-                        : <NoResourcesContainer user={user} label="No sessions" action={() => setShowCreationDialog(true)} resourceType={ResourceType.Session} />}
+                        : <NoResourcesContainer client={client} user={user} label="No sessions" action={() => setShowCreationDialog(true)} resourceType={ResourceType.Session} />}
                         {errorMessage &&
                         <ErrorSnackbar open={true} message={errorMessage} onClose={() => setErrorMessage(null)} />}
                         {showCreationDialog &&

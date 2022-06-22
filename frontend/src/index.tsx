@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom";
-import { Client, Configuration, User, Session } from '@substrate/playground-client';
+import { Client, Configuration, User, Session, ResourceType } from '@substrate/playground-client';
 import { createTheme, ThemeProvider, Theme, StyledEngineProvider, adaptV4Theme } from '@mui/material/styles';
 import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
@@ -15,7 +15,7 @@ import { TermsPanel } from './panels/terms';
 import { RunningSessionPanel } from './panels/session_running';
 import { SessionPanel } from './panels/session';
 import { terms } from "./terms";
-import { mainSessionId } from "./utils";
+import { hasPermission, mainSessionId } from "./utils";
 import { SubstrateLight } from './themes';
 import { CssBaseline } from "@mui/material";
 
@@ -102,7 +102,7 @@ function CustomLoggedNav({ client, send, conf, user, panel }: { client: Client, 
               {(panel == PanelId.Theia) &&
                 <ExtraTheiaNav client={client} user={user} conf={conf} restartAction={() => restart(send)} />}
               <div style={{display: "flex", alignItems: "center"}}>
-                  {hasRole(user, "admin") &&
+                  {hasPermission(client, user, ResourceType.Session, {tag: "Custom", name: "Administrate"}) &&
                   <NavSecondMenuAdmin onAdminClick={() => selectPanel(send, PanelId.Admin)} onStatsClick={() => selectPanel(send, PanelId.Stats)} />}
                   <NavMenuLogged conf={conf} user={user} onLogout={() => send(Events.LOGOUT)} />
               </div>

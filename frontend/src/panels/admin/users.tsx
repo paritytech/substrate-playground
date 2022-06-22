@@ -96,8 +96,8 @@ function UserCreationDialog({ client, conf, users, show, onCreate, onHide }: { c
 
 function UserUpdateDialog({ client, user, show, onUpdate, onHide }: { client: Client, user: User, show: boolean, onUpdate: (id: string, conf: UserUpdateConfiguration) => void, onHide: () => void }): JSX.Element {
     const [poolAffinity, setPoolAffinity] = React.useState(user.preferences["poolAffinity"] || "");
-    const [customizeDurationChecked, setCustomizeDurationChecked] = React.useState(canCustomizeSessionDuration(user) || false);
-    const [customizePoolAffinityChecked, setCustomizePoolAffinityChecked] = React.useState(canCustomizeSessionPoolAffinity(user) || false);
+    const [customizeDurationChecked, setCustomizeDurationChecked] = React.useState(canCustomizeSessionDuration(client, user) || false);
+    const [customizePoolAffinityChecked, setCustomizePoolAffinityChecked] = React.useState(canCustomizeSessionPoolAffinity(client, user) || false);
     const [pools, setPools] = useState<Pool[] | null>(null);
 
     useInterval(async () => {
@@ -147,7 +147,7 @@ function UserUpdateDialog({ client, user, show, onUpdate, onHide }: { client: Cl
                         label="Can Customize pool affinity"
                     />
                     <ButtonGroup style={{alignSelf: "flex-end", marginTop: 20}} size="small">
-                        <Button disabled={ poolAffinity == user.preferences["poolAffinity"] && customizeDurationChecked == canCustomizeSessionDuration(user) && customizePoolAffinityChecked == canCustomizeSessionPoolAffinity(user) } onClick={() => {onUpdate(mainSessionId(user.id), {roles: [], preferences: {}}); onHide();}}>UPDATE</Button>
+                        <Button disabled={ poolAffinity == user.preferences["poolAffinity"] && customizeDurationChecked == canCustomizeSessionDuration(client, user) && customizePoolAffinityChecked == canCustomizeSessionPoolAffinity(client, user) } onClick={() => {onUpdate(mainSessionId(user.id), {roles: [], preferences: {}}); onHide();}}>UPDATE</Button>
                         <Button onClick={onHide}>CLOSE</Button>
                     </ButtonGroup>
                 </Container>
@@ -207,7 +207,7 @@ export function Users({ client, user, conf }: { client: Client, user: User, conf
         <Resources<User> callback={async () => await client.listUsers()}>
         {(resources: User[], setUsers: Dispatch<SetStateAction<User[] | null>>) => (
             <>
-                <EnhancedTableToolbar user={user} label="Users" selected={selected?.id} onCreate={() => setShowCreationDialog(true)} onUpdate={() => setShowUpdateDialog(true)} onDelete={() => onDelete(setUsers)} resourceType={ResourceType.User} />
+                <EnhancedTableToolbar client={client} user={user} label="Users" selected={selected?.id} onCreate={() => setShowCreationDialog(true)} onUpdate={() => setShowUpdateDialog(true)} onDelete={() => onDelete(setUsers)} resourceType={ResourceType.User} />
                 <TableContainer component={Paper}>
                     <Table className={classes.table} aria-label="simple table">
                         <TableHead>
@@ -242,8 +242,8 @@ export function Users({ client, user, conf }: { client: Client, user: User, conf
                                         {user.id}
                                     </TableCell>
                                     <TableCell>{user.preferences["poolAffinity"]}</TableCell>
-                                    <TableCell>{canCustomizeSessionDuration(user)}</TableCell>
-                                    <TableCell>{canCustomizeSessionPoolAffinity(user)}</TableCell>
+                                    <TableCell>{canCustomizeSessionDuration(client, user)}</TableCell>
+                                    <TableCell>{canCustomizeSessionPoolAffinity(client, user)}</TableCell>
                                 </TableRow>
                                 )})}
                         </TableBody>

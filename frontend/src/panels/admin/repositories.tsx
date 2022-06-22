@@ -135,7 +135,7 @@ export function Repositories({ client, user }: { client: Client, user: User }): 
         <Resources<Repository> callback={async () => await client.listRepositories()}>
         {(resources: Repository[]) => (
             <>
-                <EnhancedTableToolbar user={user} label="Repositories" onCreate={() => setShowCreationDialog(true)} resourceType={ResourceType.Repository} />
+                <EnhancedTableToolbar client={client} user={user} label="Repositories" onCreate={() => setShowCreationDialog(true)} resourceType={ResourceType.Repository} />
                 <TableContainer component={Paper}>
                     <Table className={classes.table} aria-label="simple table">
                         <TableHead>

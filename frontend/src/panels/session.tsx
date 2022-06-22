@@ -28,7 +28,7 @@ import Typography from '@mui/material/Typography';
 import { Client, Configuration, NameValuePair, User, Port, Session, SessionConfiguration, Repository } from '@substrate/playground-client';
 import { CenteredContainer, ErrorMessage, ErrorSnackbar, LoadingPanel } from "../components";
 import { useInterval } from "../hooks";
-import { formatDuration, mainSessionId } from "../utils";
+import { canCustomizeSession, formatDuration, mainSessionId } from "../utils";
 import { SessionCreationDialog } from "./admin/sessions";
 
 const options = [{id: 'create', label: 'Create'}, {id: 'custom', label: 'Customize and Create'}];
@@ -122,7 +122,17 @@ function RepositorySelector({client, conf, user, onDeployed, onRetry}: {client: 
 
     useInterval(async () => {
         const repositories = await client.listRepositories();
-        const publicRepositories = repositories.filter(repository => repository.latestVersion.tags?.public == "true");
+        const repositoryLatestVersions = repositories.map(async repository => {
+            await client.getRepositoryLatestVersion(repository.id);
+        }).filter(repositoryLatestVersion => {
+            const { state } = repositoryLatestVersion;
+            if (state.tag == "Ready") {
+                const devcontainer = JSON.parse(state.devcontainerJson);
+                return devcontainer.customizations["substrate-playground"]?.tags?.public == "true";
+            }
+            return false;
+        });
+        const publicRepositories = repositoryLatestVersions.filter(repository => repositoryLatestVersions.tags?.public == "true");
         const repository = publicRepositories[0];
         // Initialize the selection if none has been set
         if (!selection && repository) {
@@ -134,7 +144,8 @@ function RepositorySelector({client, conf, user, onDeployed, onRetry}: {client: 
     async function onCreateClick(conf: SessionConfiguration): Promise<void> {
         try {
             setDeploying(true);
-            await onDeployed(conf);
+            const sessionConfiguration = {repositorySource: {repositoryId: "", repositoryVersionId: ""}}
+            await onDeployed(sessionConfiguration);
         } catch (e: any) {
             setErrorMessage(`Failed to create a new session: ${e.message}`);
         } finally {
@@ -149,6 +160,7 @@ function RepositorySelector({client, conf, user, onDeployed, onRetry}: {client: 
     if (!repositories) {
         return <LoadingPanel />;
     } else if (selection) {
+        const devcontainer = JSON.parse(selection.state.devcontainerJson);
         return (
             <>
                 <Typography variant="h5" style={{padding: 20}}>Select a template</Typography>
@@ -165,18 +177,18 @@ function RepositorySelector({client, conf, user, onDeployed, onRetry}: {client: 
                             <Divider flexItem={true} orientation={"vertical"} light={true} />
                             <div style={{flex: 1, marginLeft: 20, paddingRight: 20, overflow: "auto", textAlign: "left"}}>
                                 <Typography>
-                                    <span dangerouslySetInnerHTML={{__html:marked(selection.latestVersion.description)}}></span>
+                                    <span dangerouslySetInnerHTML={{__html:marked(devcontainer.description)}}></span>
                                 </Typography>
                                 <Divider orientation={"horizontal"} light={true} />
                                 <Typography variant="overline">
-                                    #{selection.image}
+                                    #{devcontainer.image}
                                 </Typography>
                             </div>
                         </div>
                 </Container>
                 <Divider orientation="horizontal" />
                 <Container style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", paddingTop: 10, paddingBottom: 10 }}>
-                    {canCustomize(user)
+                    {canCustomizeSession(client, user)
                     ? <SplitButton template={selection.id} onCreate={() => onCreateClick({template: selection.id})} onCreateCustom={() => setOpenCustom(true)} disabled={!createEnabled()} />
                     : <Button onClick={() => onCreateClick({template: selection.id})} color="primary" variant="contained" disableElevation disabled={!createEnabled()}>
                           Create

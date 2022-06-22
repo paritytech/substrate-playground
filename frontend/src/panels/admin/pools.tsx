@@ -16,7 +16,7 @@ export function Pools({ client, user }: { client: Client, user: User }): JSX.Ele
         <Resources<Pool> callback={async () => await client.listPools()}>
         {(resources: Pool[]) => (
             <>
-                <EnhancedTableToolbar user={user} label="Pools" resourceType={ResourceType.Pool} />
+                <EnhancedTableToolbar client={client} user={user} label="Pools" resourceType={ResourceType.Pool} />
                 <TableContainer component={Paper}>
                     <Table className={classes.table} aria-label="simple table">
                         <TableHead>
