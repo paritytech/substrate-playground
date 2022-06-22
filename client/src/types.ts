@@ -64,17 +64,17 @@ export interface RepositoryDetails extends IdentifiedResource {
 }
 
 export interface User extends IdentifiedResource {
-    roles: Array<string>,
+    role: string,
     preferences: Record<string, string>,
 }
 
 export interface UserConfiguration {
-    roles: Array<string>,
+    role: string,
     preferences: Record<string, string>,
 }
 
 export interface UserUpdateConfiguration {
-    roles: Array<string>,
+    role: string,
     preferences: Record<string, string>,
 }
 

@@ -24,7 +24,7 @@ pub async fn create_user(id: &str, conf: UserConfiguration) -> Result<()> {
     let client = client()?;
     let user = User {
         id: id.to_string(),
-        roles: conf.roles,
+        role: conf.role,
         preferences: conf.preferences,
     };
 
@@ -38,7 +38,7 @@ pub async fn update_user(id: &str, conf: UserUpdateConfiguration) -> Result<()> 
     let mut user: User = get_resource_from_config_map(&client, id, CONFIG_MAP)
         .await?
         .ok_or_else(|| Error::UnknownResource(ResourceType::User, id.to_string()))?;
-    user.roles = conf.roles;
+    user.role = conf.role;
     user.preferences = conf.preferences;
 
     store_resource_as_config_map(&client, &user.id, &user, CONFIG_MAP).await

@@ -62,15 +62,15 @@ impl<'r> FromRequest<'r> for User {
                             // Create a new User
                             let user = User {
                                 id: user_id.to_string(),
-                                roles: if is_paritytech_member(token_value, &gh_user).await {
-                                    vec![]
+                                role: if is_paritytech_member(token_value, &gh_user).await {
+                                    "user".to_string()
                                 } else {
-                                    vec!["paritytech_member".to_string()]
+                                    "paritytech_member".to_string()
                                 },
                                 preferences: BTreeMap::new(),
                             };
                             let user_configuration = UserConfiguration {
-                                roles: user.clone().roles,
+                                role: user.clone().role,
                                 preferences: user.clone().preferences,
                             };
                             if let Err(err) = user::create_user(user_id, user_configuration).await {
@@ -367,6 +367,35 @@ pub async fn delete_repository_version(
     state
         .manager
         .delete_repository_version(&caller, &repository_id, &id)
+        .await?;
+    Ok(EmptyJsonRPC())
+}
+
+// Repository latest version
+
+#[get("/repositories/<repository_id>/latest-version")]
+pub async fn get_repository_latest_version(
+    state: &State<Context>,
+    caller: User,
+    repository_id: String,
+) -> Result<JsonRPC<Option<RepositoryVersion>>> {
+    state
+        .manager
+        .get_repository_latest_version(&caller, &repository_id)
+        .await
+        .map(JsonRPC)
+}
+
+#[put("/repositories/<repository_id>/latest-version/<id>")]
+pub async fn create_repository_latest_version(
+    state: &State<Context>,
+    caller: User,
+    repository_id: String,
+    id: String,
+) -> Result<EmptyJsonRPC> {
+    state
+        .manager
+        .create_repository_latest_version(&caller, &repository_id, &id)
         .await?;
     Ok(EmptyJsonRPC())
 }

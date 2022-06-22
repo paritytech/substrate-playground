@@ -1,5 +1,4 @@
 use crate::kubernetes::role::get_role;
-use futures::StreamExt;
 use serde::{Deserialize, Serialize};
 use std::{
     collections::BTreeMap,
@@ -118,66 +117,25 @@ pub struct RoleUpdateConfiguration {
 #[serde(rename_all = "camelCase")]
 pub struct User {
     pub id: String,
-    pub roles: Vec<String>,
+    pub role: String,
     pub preferences: BTreeMap<String, String>,
-}
-
-fn merge_permissions(
-    mut permissions1: BTreeMap<ResourceType, Vec<ResourcePermission>>,
-    permissions2: &BTreeMap<ResourceType, Vec<ResourcePermission>>,
-) -> BTreeMap<ResourceType, Vec<ResourcePermission>> {
-    for (key, mut value) in permissions2.clone().into_iter() {
-        let mut old_value = permissions1.get(&key).cloned().unwrap_or_default();
-        old_value.append(&mut value);
-        old_value.dedup();
-        permissions1.insert(key.clone(), old_value);
-    }
-    permissions1
-}
-
-#[test]
-fn it_merges_permissions() {
-    let mut permissions1 = BTreeMap::new();
-    permissions1.insert(
-        ResourceType::Pool,
-        vec![ResourcePermission::Read, ResourcePermission::Create],
-    );
-    permissions1.insert(ResourceType::Repository, vec![ResourcePermission::Read]);
-    let mut permissions2 = BTreeMap::new();
-    permissions2.insert(ResourceType::Repository, vec![ResourcePermission::Create]);
-    let permissions = merge_permissions(permissions1, &permissions2);
-    assert_eq!(permissions.len(), 2);
-    assert_eq!(
-        permissions.get(&ResourceType::Repository).unwrap(),
-        &vec![ResourcePermission::Read, ResourcePermission::Create]
-    );
 }
 
 impl User {
     // For now assume Roles are static
     pub async fn all_permissions(&self) -> BTreeMap<ResourceType, Vec<ResourcePermission>> {
-        let all_permissions: Vec<BTreeMap<ResourceType, Vec<ResourcePermission>>> =
-            futures::stream::iter(self.roles.clone())
-                .filter_map(|role| async move {
-                    match get_role(&role).await {
-                        Ok(Some(role)) => {
-                            log::info!("Adding perms for Role {}: {:?}", role.id, role.permissions);
-                            Some(role.permissions)
-                        }
-                        Ok(None) => None,
-                        Err(err) => {
-                            log::error!("Cannot read role {:?}", err);
+        match get_role(&self.role).await {
+            Ok(Some(role)) => {
+                log::info!("Adding perms for Role {}: {:?}", role.id, role.permissions);
+                role.permissions
+            }
+            Ok(None) => BTreeMap::new(),
+            Err(err) => {
+                log::error!("Cannot read role {:?}", err);
 
-                            None
-                        }
-                    }
-                })
-                .collect()
-                .await;
-        log::info!("All permissions {:?}", all_permissions);
-        all_permissions.iter().fold(BTreeMap::new(), |accum, item| {
-            merge_permissions(accum, item)
-        })
+                BTreeMap::new()
+            }
+        }
     }
 
     pub async fn has_permission(
@@ -198,14 +156,14 @@ impl User {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct UserConfiguration {
-    pub roles: Vec<String>,
+    pub role: String,
     pub preferences: BTreeMap<String, String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct UserUpdateConfiguration {
-    pub roles: Vec<String>,
+    pub role: String,
     pub preferences: BTreeMap<String, String>,
 }
 
