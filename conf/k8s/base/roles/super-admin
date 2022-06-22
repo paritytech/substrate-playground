@@ -25,6 +25,14 @@ permissions:
     - type: Read
     - type: Update
     - type: Delete
+    - type: Custom
+      name: Administrate
+    - type: Custom
+      name: CustomizeSessionName
+    - type: Custom
+      name: CustomizeSessionDuration
+    - type: Custom
+      name: CustomizeSessionPoolAffinity
     SessionExecution:
     - type: Create
     - type: Read
