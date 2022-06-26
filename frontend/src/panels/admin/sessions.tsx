@@ -1,4 +1,4 @@
-import React, { Dispatch, SetStateAction, useState } from "react";
+import React, { Dispatch, SetStateAction, useEffect, useState } from "react";
 import Button from '@mui/material/Button';
 import ButtonGroup from "@mui/material/ButtonGroup";
 import Container from "@mui/material/Container";
@@ -10,19 +10,22 @@ import TableCell from '@mui/material/TableCell';
 import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
-import { Client, Configuration, Session, SessionConfiguration, Pool, User, SessionUpdateConfiguration, Repository, ResourceType } from '@substrate/playground-client';
-import { ErrorSnackbar } from "../../components";
-import { useInterval } from "../../hooks";
-import { canCustomizeSessionDuration, canCustomizeSessionPoolAffinity, find, mainSessionId, remove } from "../../utils";
+import { Client, Configuration, Session, SessionConfiguration, Pool, User, SessionUpdateConfiguration, Repository, ResourceType, RepositoryVersion } from '@substrate/playground-client';
 import { Autocomplete, Checkbox, Dialog, DialogContent, DialogTitle, IconButton, Link, TableFooter, TablePagination, TextField } from "@mui/material";
 import { FirstPage, KeyboardArrowLeft, KeyboardArrowRight, LastPage } from "@mui/icons-material";
 import { EnhancedTableToolbar, NoResourcesContainer, Resources } from ".";
 import { useTheme } from "@mui/styles";
+import { ErrorSnackbar } from "../../components";
+import { useInterval } from "../../hooks";
+import { canCustomizeSessionDuration, canCustomizeSessionPoolAffinity, find, mainSessionId, remove } from "../../utils";
+import { fetchRepositoriesWithLatestVersions } from "../session";
 
-export function SessionCreationDialog({ client, conf, sessions, user, repository, repositories, show, onCreate, onHide, allowUserSelection = false }: { client: Client, conf: Configuration, sessions?: Session[], user: User, repository?: string, repositories: Repository[] | null, show: boolean, onCreate: (conf: SessionConfiguration, id: string, ) => void, onHide: () => void , allowUserSelection?: boolean}): JSX.Element {
+export function SessionCreationDialog({ client, conf, sessions, user, repository, repositories, show, onCreate, onHide, allowUserSelection = false }: { client: Client, conf: Configuration, sessions?: Session[], user: User, repository?: string, repositories: [Repository, RepositoryVersion][] | undefined, show: boolean, onCreate: (conf: SessionConfiguration, id: string, ) => void, onHide: () => void , allowUserSelection?: boolean}): JSX.Element {
     const [selectedUser, setUser] = React.useState<string | null>(user.id);
-    const [selectedRepository, setRepository] = React.useState<string | null>(null);
+    const [selection, setSelection] = React.useState<number | null>(null);
+    const [canCustomizeDuration, setCanCustomizeDuration] = React.useState(false);
     const [duration, setDuration] = React.useState(conf.session.duration);
+    const [canCustomizePoolAffinity, setCanCustomizePoolAffinity] = React.useState(false);
     const [poolAffinity, setPoolAffinity] = React.useState(conf.session.poolAffinity);
     const [pools, setPools] = useState<Pool[] | null>(null);
     const [users, setUsers] = useState<User[] | null>(null);
@@ -34,8 +37,17 @@ export function SessionCreationDialog({ client, conf, sessions, user, repository
         }
     }, 5000);
 
+    useEffect(() => {
+        async function fetchData() {
+            setCanCustomizeDuration(await canCustomizeSessionDuration(client, user));
+            setCanCustomizePoolAffinity(await canCustomizeSessionPoolAffinity(client, user));
+        }
+
+        fetchData();
+    }, []);
+
     const handleUserChange = (_event: unknown, newValue: string | null) => setUser(newValue);
-    const handleRepositoryChange = (event: React.ChangeEvent<HTMLInputElement>) => setRepository(event.target.value);
+    const handleRepositoryChange = (event: React.ChangeEvent<HTMLInputElement>) => setSelection(Number.parseInt(event.target.value));
     const handleDurationChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const duration = Number.parseInt(event.target.value);
         setDuration(Number.isNaN(duration)? 0 : duration);
@@ -43,7 +55,6 @@ export function SessionCreationDialog({ client, conf, sessions, user, repository
     const handlePoolAffinityChange = (event: React.ChangeEvent<HTMLInputElement>) => setPoolAffinity(event.target.value);
 
     const currentUser = selectedUser || user.id;
-    const currentRepository = repository || selectedRepository;
 
     function valid(): boolean {
         if (duration <= 0) {
@@ -52,7 +63,7 @@ export function SessionCreationDialog({ client, conf, sessions, user, repository
         if (!currentUser) {
             return false;
         }
-        if (!currentRepository) {
+        if (!selection) {
             return false;
         }
         if (!poolAffinity) {
@@ -65,10 +76,13 @@ export function SessionCreationDialog({ client, conf, sessions, user, repository
     }
 
     function onCreateClick() {
-        const repositorySource = {repositoryId: currentRepository || "Can't happen", repositoryVersionId: "TODO"};
-        const sessionConfiguration = {repositorySource: repositorySource, duration: duration, poolAffinity: poolAffinity};
-        onCreate(sessionConfiguration, mainSessionId(currentUser));
-        onHide();
+        const repositoryWithVersion = selection && repositories?.at(selection);
+        if (repositoryWithVersion) {
+            const repositorySource = {repositoryId: repositoryWithVersion[0].id, repositoryVersionId: repositoryWithVersion[1].id};
+            const sessionConfiguration = {repositorySource: repositorySource, duration: duration, poolAffinity: poolAffinity};
+            onCreate(sessionConfiguration, mainSessionId(currentUser));
+            onHide();
+        }
     }
 
     return (
@@ -97,14 +111,18 @@ export function SessionCreationDialog({ client, conf, sessions, user, repository
                         label="Repository"
                         >
                     {repositories &&
-                    repositories.map(repository => (
-                        <MenuItem key={repository.id} value={repository.id}>
-                        {repository.id}
-                        </MenuItem>))
+                      repositories.map((repository, index) => {
+                        const id = repository[0].id;
+                        return (
+                          <MenuItem key={index} value={index}>
+                          {id}
+                          </MenuItem>
+                        );
+                      })
                     }
                     </TextField>
                     }
-                    {canCustomizeSessionPoolAffinity(client, user) &&
+                    {canCustomizePoolAffinity &&
                     <TextField
                         style={{marginBottom: 20}}
                         select
@@ -113,15 +131,14 @@ export function SessionCreationDialog({ client, conf, sessions, user, repository
                         required
                         label="Pool affinity"
                         >
-                    {pools &&
-                    pools.map(pool => (
+                    {pools?.map(pool => (
                         <MenuItem key={pool.id} value={pool.id}>
                         {pool.id}
                         </MenuItem>))
                     }
                     </TextField>
                     }
-                    {canCustomizeSessionDuration(client, user) &&
+                    {canCustomizeDuration &&
                     <TextField
                         style={{marginBottom: 20}}
                         value={duration}
@@ -239,6 +256,7 @@ export function Sessions({ client, conf, user }: { client: Client, conf: Configu
     const [showCreationDialog, setShowCreationDialog] = useState(false);
     const [showUpdateDialog, setShowUpdateDialog] = useState(false);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
+    const [repositories, setRepositories] = useState<[Repository, RepositoryVersion][]>();
     const isSelected = (name: string) => selected?.id == name;
     const handleClick = (session: Session) => {
         if (isSelected(session.id)) {
@@ -247,11 +265,9 @@ export function Sessions({ client, conf, user }: { client: Client, conf: Configu
             setSelected(session);
         }
     };
-    const [repositories, setRepositories] = useState<Repository[] | null>(null);
 
     useInterval(async () => {
-        const repositories = await client.listRepositories();
-        setRepositories(repositories);
+        setRepositories(await fetchRepositoriesWithLatestVersions(client));
     }, 5000);
 
     function sessionMock(conf: SessionConfiguration): Session {

@@ -24,8 +24,13 @@ export function RunningSessionPanel({ client, user, autoDeployRepository, onMiss
     const [loading, setLoading] = useState<Loading>();
 
     useEffect(() => {
-        function createSession(repository: Repository): void {
-            client.createSession(sessionId, {repositorySource: {repositoryId: repository.id, repositoryVersionId: "TODO"}}).then(fetchData);
+        async function createSession(repository: Repository): Promise<void> {
+            const repositoryVersion = await client.getRepositoryLatestVersion(repository.id);
+            if (repositoryVersion && repositoryVersion.state.tag == "Ready") {
+                client.createSession(sessionId, {repositorySource: {repositoryId: repository.id, repositoryVersionId: repositoryVersion.id}}).then(fetchData);
+            } else {
+                setError({reason: `No existing RepositoryVersion for ${repository.id}`, action: onSessionFailing});
+            }
         }
 
         async function fetchData() {

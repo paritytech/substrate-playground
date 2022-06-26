@@ -6,7 +6,6 @@ import Container from '@mui/material/Container';
 import Dialog from '@mui/material/Dialog';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
-import FormControlLabel from '@mui/material/FormControlLabel';
 import MenuItem from '@mui/material/MenuItem';
 import Paper from '@mui/material/Paper';
 import Table from '@mui/material/Table';
@@ -20,13 +19,14 @@ import { Client, Configuration, Pool, ResourceType, User, UserConfiguration, Use
 import { ErrorSnackbar } from '../../components';
 import { useInterval } from '../../hooks';
 import { useStyles, EnhancedTableToolbar, Resources } from '.';
-import { canCustomizeSessionDuration, canCustomizeSessionPoolAffinity, find, mainSessionId } from "../../utils";
+import { find, mainSessionId } from "../../utils";
+
+const defaultRole = 'user';
 
 function UserCreationDialog({ client, conf, users, show, onCreate, onHide }: { client: Client, conf: Configuration, users: User[], show: boolean, onCreate: (id: string, conf: UserConfiguration) => void, onHide: () => void }): JSX.Element {
     const [id, setID] = React.useState('');
     const [poolAffinity, setPoolAffinity] = React.useState<string>(conf.session.poolAffinity);
-    const [customizeDurationChecked, setCustomizeDurationChecked] = React.useState(false);
-    const [customizePoolAffinityChecked, setCustomizePoolAffinityChecked] = React.useState(false);
+    const [role, setRole] = React.useState(defaultRole);
     const [pools, setPools] = useState<Pool[] | null>(null);
 
     useInterval(async () => {
@@ -35,8 +35,7 @@ function UserCreationDialog({ client, conf, users, show, onCreate, onHide }: { c
 
     const handleIDChange = (event: React.ChangeEvent<HTMLInputElement>) => setID(event.target.value);
     const handlePoolAffinityChange = (event: React.ChangeEvent<HTMLInputElement>) => setPoolAffinity(event.target.value);
-    const handleCustomizeDurationChange = (event: React.ChangeEvent<HTMLInputElement>) => setCustomizeDurationChecked(event.target.checked);
-    const handleCustomizePoolAffinityChange = (event: React.ChangeEvent<HTMLInputElement>) => setCustomizePoolAffinityChecked(event.target.checked);
+    const handleRoleChange = (event: React.ChangeEvent<HTMLInputElement>) => setRole(event.target.value);
     return (
         <Dialog open={show} onClose={onHide} maxWidth="md">
             <DialogTitle>User details</DialogTitle>
@@ -66,26 +65,15 @@ function UserCreationDialog({ client, conf, users, show, onCreate, onHide }: { c
                         </MenuItem>))
                     }
                     </TextField>
-                    <FormControlLabel
-                        control={
-                            <Checkbox
-                                checked={customizeDurationChecked}
-                                onChange={handleCustomizeDurationChange}
-                                />
-                        }
-                        label="Can Customize duration"
-                    />
-                    <FormControlLabel
-                        control={
-                            <Checkbox
-                                checked={customizePoolAffinityChecked}
-                                onChange={handleCustomizePoolAffinityChange}
-                                />
-                        }
-                        label="Can Customize pool affinity"
-                    />
+                    <TextField
+                        style={{marginBottom: 20}}
+                        value={role}
+                        onChange={handleRoleChange}
+                        required
+                        label="Role"
+                        />
                     <ButtonGroup style={{alignSelf: "flex-end", marginTop: 20}} size="small">
-                        <Button disabled={!id || find(users, id) != null || !poolAffinity} onClick={() => {onCreate(mainSessionId(id), {roles: [], preferences: {}}); onHide();}}>CREATE</Button>
+                        <Button disabled={!id || find(users, id) != null || !poolAffinity} onClick={() => {onCreate(mainSessionId(id), {role: role, preferences: {poolAffinity: poolAffinity}}); onHide();}}>CREATE</Button>
                         <Button onClick={onHide}>CLOSE</Button>
                     </ButtonGroup>
                 </Container>
@@ -96,8 +84,7 @@ function UserCreationDialog({ client, conf, users, show, onCreate, onHide }: { c
 
 function UserUpdateDialog({ client, user, show, onUpdate, onHide }: { client: Client, user: User, show: boolean, onUpdate: (id: string, conf: UserUpdateConfiguration) => void, onHide: () => void }): JSX.Element {
     const [poolAffinity, setPoolAffinity] = React.useState(user.preferences["poolAffinity"] || "");
-    const [customizeDurationChecked, setCustomizeDurationChecked] = React.useState(canCustomizeSessionDuration(client, user) || false);
-    const [customizePoolAffinityChecked, setCustomizePoolAffinityChecked] = React.useState(canCustomizeSessionPoolAffinity(client, user) || false);
+    const [role, setRole] = React.useState(user.role);
     const [pools, setPools] = useState<Pool[] | null>(null);
 
     useInterval(async () => {
@@ -105,8 +92,7 @@ function UserUpdateDialog({ client, user, show, onUpdate, onHide }: { client: Cl
     }, 5000);
 
     const handlePoolAffinityChange = (event: React.ChangeEvent<HTMLInputElement>) => setPoolAffinity(event.target.value);
-    const handleCustomizeDurationChange = (event: React.ChangeEvent<HTMLInputElement>) => setCustomizeDurationChecked(event.target.checked);
-    const handleCustomizePoolAffinityChange = (event: React.ChangeEvent<HTMLInputElement>) => setCustomizePoolAffinityChecked(event.target.checked);
+    const handleRoleChange = (event: React.ChangeEvent<HTMLInputElement>) => setRole(event.target.value);
     return (
         <Dialog open={show} onClose={onHide} maxWidth="md">
             <DialogTitle>User details</DialogTitle>
@@ -128,26 +114,15 @@ function UserUpdateDialog({ client, user, show, onUpdate, onHide }: { client: Cl
                         </MenuItem>))
                     }
                     </TextField>
-                    <FormControlLabel
-                        control={
-                            <Checkbox
-                                checked={customizeDurationChecked}
-                                onChange={handleCustomizeDurationChange}
-                                />
-                        }
-                        label="Can Customize duration"
-                    />
-                    <FormControlLabel
-                        control={
-                            <Checkbox
-                                checked={customizePoolAffinityChecked}
-                                onChange={handleCustomizePoolAffinityChange}
-                                />
-                        }
-                        label="Can Customize pool affinity"
-                    />
+                    <TextField
+                        style={{marginBottom: 20}}
+                        value={role}
+                        onChange={handleRoleChange}
+                        required
+                        label="Role"
+                        />
                     <ButtonGroup style={{alignSelf: "flex-end", marginTop: 20}} size="small">
-                        <Button disabled={ poolAffinity == user.preferences["poolAffinity"] && customizeDurationChecked == canCustomizeSessionDuration(client, user) && customizePoolAffinityChecked == canCustomizeSessionPoolAffinity(client, user) } onClick={() => {onUpdate(mainSessionId(user.id), {roles: [], preferences: {}}); onHide();}}>UPDATE</Button>
+                        <Button disabled={ poolAffinity == user.preferences["poolAffinity"] && role == user.role } onClick={() => {onUpdate(mainSessionId(user.id), {role: role, preferences: {poolAffinity: poolAffinity}}); onHide();}}>UPDATE</Button>
                         <Button onClick={onHide}>CLOSE</Button>
                     </ButtonGroup>
                 </Container>
@@ -214,9 +189,8 @@ export function Users({ client, user, conf }: { client: Client, user: User, conf
                             <TableRow>
                                 <TableCell></TableCell>
                                 <TableCell>ID</TableCell>
-                                <TableCell>Pool Affinity</TableCell>
-                                <TableCell>Can Customize Duration</TableCell>
-                                <TableCell>Can Customize Pool Affinity</TableCell>
+                                <TableCell>Role</TableCell>
+                                <TableCell>Preferences</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
@@ -241,9 +215,8 @@ export function Users({ client, user, conf }: { client: Client, user: User, conf
                                     <TableCell component="th" scope="row">
                                         {user.id}
                                     </TableCell>
-                                    <TableCell>{user.preferences["poolAffinity"]}</TableCell>
-                                    <TableCell>{canCustomizeSessionDuration(client, user)}</TableCell>
-                                    <TableCell>{canCustomizeSessionPoolAffinity(client, user)}</TableCell>
+                                    <TableCell>{user.role}</TableCell>
+                                    <TableCell>{user.preferences.toString()}</TableCell>
                                 </TableRow>
                                 )})}
                         </TableBody>

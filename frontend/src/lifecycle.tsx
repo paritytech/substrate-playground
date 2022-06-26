@@ -2,7 +2,7 @@ import { assign, createMachine, StateMachine, StateSchema } from 'xstate';
 import { Client, Configuration, User } from '@substrate/playground-client';
 import { approve, approved } from './terms';
 
-export enum PanelId {Session, Admin, Stats, Theia}
+export enum PanelId {SessionSelection, Admin, Stats, RunningSession}
 
 export interface Context {
   panel: PanelId,

@@ -1,6 +1,4 @@
-
-
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { marked } from 'marked';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import Button from '@mui/material//Button';
@@ -25,7 +23,7 @@ import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
-import { Client, Configuration, NameValuePair, User, Port, Session, SessionConfiguration, Repository } from '@substrate/playground-client';
+import { Client, Configuration, NameValuePair, User, Port, Session, SessionConfiguration, Repository, RepositoryVersion } from '@substrate/playground-client';
 import { CenteredContainer, ErrorMessage, ErrorSnackbar, LoadingPanel } from "../components";
 import { useInterval } from "../hooks";
 import { canCustomizeSession, formatDuration, mainSessionId } from "../utils";
@@ -33,7 +31,7 @@ import { SessionCreationDialog } from "./admin/sessions";
 
 const options = [{id: 'create', label: 'Create'}, {id: 'custom', label: 'Customize and Create'}];
 
-export default function SplitButton({ template, disabled, onCreate, onCreateCustom }: { template: string, disabled: boolean, onCreate: (conf: SessionConfiguration) => void, onCreateCustom: () => void}): JSX.Element {
+export default function SplitButton({ disabled, onCreate, onCreateCustom }: { disabled: boolean, onCreate: () => void, onCreateCustom: () => void}): JSX.Element {
   const [open, setOpen] = React.useState(false);
   const anchorRef = React.useRef<HTMLDivElement>(null);
   const [selectedIndex, setSelectedIndex] = React.useState(0);
@@ -41,7 +39,7 @@ export default function SplitButton({ template, disabled, onCreate, onCreateCust
   const handleClick = () => {
       const selection = options[selectedIndex];
       if (selection.id == 'create') {
-        onCreate({template: template});
+        onCreate();
       } else {
         onCreateCustom();
       }
@@ -113,38 +111,61 @@ export default function SplitButton({ template, disabled, onCreate, onCreateCust
   );
 }
 
+function isNotNull<T>(argument: T | null): argument is T {
+    return argument !== null
+}
+
+export async function fetchRepositoriesWithLatestVersions(client: Client): Promise<[Repository, RepositoryVersion][]> {
+    const repositories = await client.listRepositories();
+    const repositoriesWithLatestVersions = (await Promise.all(repositories.map(async repository => {
+        const latestRepositoryVersion = await client.getRepositoryLatestVersion(repository.id);
+        return [repository, latestRepositoryVersion];
+    }))).filter(isNotNull) as Array<[Repository, RepositoryVersion]>;
+    return repositoriesWithLatestVersions.filter(repositoryWithLatestVersion => {
+        const state = repositoryWithLatestVersion[1]?.state;
+        if (state?.tag == "Ready") {
+            const devcontainer = JSON.parse(state.devcontainerJson);
+            return devcontainer.customizations["substrate-playground"]?.tags?.public == "true";
+        }
+        return false;
+    });
+}
+
 function RepositorySelector({client, conf, user, onDeployed, onRetry}: {client: Client, conf: Configuration, user: User, onDeployed: (conf: SessionConfiguration) => Promise<void>, onRetry: () => void}): JSX.Element {
-    const [repositories, setRepositories] = useState<Repository[]>();
+    const [repositories, setRepositories] = useState<[Repository, RepositoryVersion][]>();
     const [deploying, setDeploying] = useState(false);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [openCustom, setOpenCustom] = useState(false);
-    const [selection, select] = useState<Repository | null>(null);
+    const [selection, setSelection] = useState<number | null>(null);
+    const [canCustomize, setCanCustomize] = React.useState(false);
+
+    function getSelectedRepositoryWithLatestVersion(): [Repository, RepositoryVersion] | undefined {
+        return selection ? repositories?.at(selection) : undefined;
+    }
 
     useInterval(async () => {
-        const repositories = await client.listRepositories();
-        const repositoryLatestVersions = repositories.map(async repository => {
-            await client.getRepositoryLatestVersion(repository.id);
-        }).filter(repositoryLatestVersion => {
-            const { state } = repositoryLatestVersion;
-            if (state.tag == "Ready") {
-                const devcontainer = JSON.parse(state.devcontainerJson);
-                return devcontainer.customizations["substrate-playground"]?.tags?.public == "true";
-            }
-            return false;
-        });
-        const publicRepositories = repositoryLatestVersions.filter(repository => repositoryLatestVersions.tags?.public == "true");
-        const repository = publicRepositories[0];
+        const publicRepositoriesWithLatestVersions = await fetchRepositoriesWithLatestVersions(client);
+        setRepositories(publicRepositoriesWithLatestVersions);
+
         // Initialize the selection if none has been set
+        const repository = publicRepositoriesWithLatestVersions[0];
         if (!selection && repository) {
-            select(repository);
+            setSelection(0);
         }
-        setRepositories(publicRepositories);
     }, 5000);
 
-    async function onCreateClick(conf: SessionConfiguration): Promise<void> {
+    useEffect(() => {
+        async function fetchData() {
+            setCanCustomize(await canCustomizeSession(client, user));
+        }
+
+        fetchData();
+    }, []);
+
+    async function onCreateClick(repositoryId: string, repositoryVersionId: string): Promise<void> {
         try {
             setDeploying(true);
-            const sessionConfiguration = {repositorySource: {repositoryId: "", repositoryVersionId: ""}}
+            const sessionConfiguration = {repositorySource: {repositoryId: repositoryId, repositoryVersionId: repositoryVersionId}}
             await onDeployed(sessionConfiguration);
         } catch (e: any) {
             setErrorMessage(`Failed to create a new session: ${e.message}`);
@@ -157,10 +178,11 @@ function RepositorySelector({client, conf, user, onDeployed, onRetry}: {client: 
         return !deploying;
     }
 
+    const selectedRepository = getSelectedRepositoryWithLatestVersion();
     if (!repositories) {
         return <LoadingPanel />;
-    } else if (selection) {
-        const devcontainer = JSON.parse(selection.state.devcontainerJson);
+    } else if (selectedRepository && selectedRepository[1].state.tag == "Ready") {
+        const devcontainer = JSON.parse(selectedRepository[1].state.devcontainerJson);
         return (
             <>
                 <Typography variant="h5" style={{padding: 20}}>Select a template</Typography>
@@ -168,9 +190,9 @@ function RepositorySelector({client, conf, user, onDeployed, onRetry}: {client: 
                 <Container style={{display: "flex", flex: 1, padding: 0, alignItems: "center", overflowY: "auto"}}>
                     <div style={{display: "flex", flex: 1, flexDirection: "row", minHeight: 0, height: "100%"}}>
                             <List style={{paddingTop: 0, paddingBottom: 0, overflowY: "auto"}}>
-                                {repositories.map((repository: Repository, index: number) => (
-                                <ListItem button key={index} selected={selection.id === repository.id} onClick={() => select(repository)}>
-                                    <ListItemText primary={repository.id} />
+                                {repositories.map((repository: [Repository, RepositoryVersion], index: number) => (
+                                <ListItem button key={index} selected={selection === index} onClick={() => setSelection(index)}>
+                                    <ListItemText primary={repository[0].id} />
                                 </ListItem>
                                 ))}
                             </List>
@@ -188,16 +210,16 @@ function RepositorySelector({client, conf, user, onDeployed, onRetry}: {client: 
                 </Container>
                 <Divider orientation="horizontal" />
                 <Container style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", paddingTop: 10, paddingBottom: 10 }}>
-                    {canCustomizeSession(client, user)
-                    ? <SplitButton template={selection.id} onCreate={() => onCreateClick({template: selection.id})} onCreateCustom={() => setOpenCustom(true)} disabled={!createEnabled()} />
-                    : <Button onClick={() => onCreateClick({template: selection.id})} color="primary" variant="contained" disableElevation disabled={!createEnabled()}>
+                    {canCustomize
+                    ? <SplitButton onCreate={() => onCreateClick(selectedRepository[0].id, selectedRepository[1].id)} onCreateCustom={() => setOpenCustom(true)} disabled={!createEnabled()} />
+                    : <Button onClick={() => onCreateClick(selectedRepository[0].id, selectedRepository[1].id)} color="primary" variant="contained" disableElevation disabled={!createEnabled()}>
                           Create
                       </Button>}
                 </Container>
                 {errorMessage &&
                 <ErrorSnackbar open={true} message={errorMessage} onClose={() => setErrorMessage(null)} />}
                 {openCustom &&
-                <SessionCreationDialog client={client} user={user} repository={selection.id} conf={conf} repositories={repositories} show={openCustom} onCreate={onCreateClick} onHide={() => setOpenCustom(false)} />}
+                <SessionCreationDialog client={client} user={user} repository={selectedRepository[0].id} conf={conf} repositories={repositories} show={openCustom} onCreate={() => onCreateClick(selectedRepository[0].id, selectedRepository[1].id)} onHide={() => setOpenCustom(false)} />}
             </>
         );
     } else {

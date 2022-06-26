@@ -26,7 +26,7 @@ declare module '@mui/styles/defaultTheme' {
 
 function MainPanel({ client, params, conf, user, panel, onRetry, onConnect, onAfterDeployed }: { client: Client, params: Params, conf: Configuration, user: User, panel: PanelId, onRetry: () => void, onConnect: () => void, onAfterDeployed: () => void }): JSX.Element {
     switch(panel) {
-        case PanelId.Session:
+        case PanelId.SessionSelection:
           return <SessionPanel client={client} conf={conf} user={user} onRetry={onRetry}
                     onStop={async () => {
                         await client.deleteSession(mainSessionId(user.id));
@@ -40,7 +40,7 @@ function MainPanel({ client, params, conf, user, panel, onRetry, onConnect, onAf
           return <StatsPanel />;
         case PanelId.Admin:
           return <AdminPanel client={client} conf={conf} user={user} />;
-        case PanelId.Theia:
+        case PanelId.RunningSession:
           return <RunningSessionPanel client={client} user={user} autoDeployRepository={params.autoDeployRepository} onMissingSession={onRetry} onSessionFailing={onRetry} onSessionTimeout={onRetry} />;
     }
 }
@@ -96,13 +96,23 @@ function restart(send: (event: Events) => void) { send(Events.RESTART)}
 function selectPanel(send: (event: Events, payload: Record<string, unknown>) => void, id: PanelId) { send(Events.SELECT, {panel: id})}
 
 function CustomLoggedNav({ client, send, conf, user, panel }: { client: Client, send: (event: Events) => void, conf: Configuration, user: User, panel: PanelId }): JSX.Element  {
+    const [canAdministrate, setCanAdministrate] = React.useState(false);
+
+    useEffect(() => {
+        async function fetchData() {
+            setCanAdministrate(await hasPermission(client, user, ResourceType.Session, {tag: "Custom", name: "Administrate"}));
+        }
+
+        fetchData();
+    }, []);
+
     return (
-        <Nav onPlayground={() => selectPanel(send, PanelId.Session)}>
+        <Nav onPlayground={() => selectPanel(send, PanelId.SessionSelection)}>
             <>
-              {(panel == PanelId.Theia) &&
+              {(panel == PanelId.RunningSession) &&
                 <ExtraTheiaNav client={client} user={user} conf={conf} restartAction={() => restart(send)} />}
               <div style={{display: "flex", alignItems: "center"}}>
-                  {hasPermission(client, user, ResourceType.Session, {tag: "Custom", name: "Administrate"}) &&
+                  {canAdministrate &&
                   <NavSecondMenuAdmin onAdminClick={() => selectPanel(send, PanelId.Admin)} onStatsClick={() => selectPanel(send, PanelId.Stats)} />}
                   <NavMenuLogged conf={conf} user={user} onLogout={() => send(Events.LOGOUT)} />
               </div>
@@ -113,7 +123,7 @@ function CustomLoggedNav({ client, send, conf, user, panel }: { client: Client, 
 
 function CustomNav({ send }: { send: (event: Events) => void }): JSX.Element  {
     return (
-        <Nav onPlayground={() => selectPanel(send, PanelId.Session)}>
+        <Nav onPlayground={() => selectPanel(send, PanelId.SessionSelection)}>
             <NavMenuUnlogged />
         </Nav>
     );
@@ -124,7 +134,7 @@ const theme = createTheme(adaptV4Theme(SubstrateLight));
 function App({ params }: { params: Params }): JSX.Element {
     const client = new Client(params.base, 30000, {credentials: "include"});
     const { autoDeployRepository } = params;
-    const [state, send] = useMachine(newMachine(client, autoDeployRepository? PanelId.Theia: PanelId.Session), { devTools: true });
+    const [state, send] = useMachine(newMachine(client, autoDeployRepository? PanelId.RunningSession: PanelId.SessionSelection), { devTools: true });
     const { panel, error } = state.context;
     const logged = state.matches(States.LOGGED);
 
@@ -147,8 +157,8 @@ function App({ params }: { params: Params }): JSX.Element {
                        {logged
                        ? <MainPanel client={client} params={params} conf={state.context.conf} user={state.context.user} panel={panel}
                                  onRetry={() => restart(send)}
-                                 onAfterDeployed={() => selectPanel(send, PanelId.Theia)}
-                                 onConnect={() => selectPanel(send, PanelId.Theia)} />
+                                 onAfterDeployed={() => selectPanel(send, PanelId.RunningSession)}
+                                 onConnect={() => selectPanel(send, PanelId.RunningSession)} />
                        : state.matches(States.TERMS_UNAPPROVED)
                          ? <TermsPanel terms={terms} onTermsApproved={() => send(Events.TERMS_APPROVAL)} />
                          : state.matches(States.UNLOGGED)
@@ -158,7 +168,7 @@ function App({ params }: { params: Params }): JSX.Element {
                          </CenteredContainer>
                          : <LoginPanel client={client} />
                          : <LoadingPanel />}
-                       {panel == PanelId.Theia &&
+                       {panel == PanelId.RunningSession &&
                          <Footer base={params.base} version={params.version} />}
                     </div>
                 </div>
