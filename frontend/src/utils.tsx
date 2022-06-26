@@ -55,10 +55,14 @@ export function remove<T extends IdentifiedResource>(resources: T[], id: string)
 }
 
 export async function hasPermission(client: Client, user: User, resourceType: ResourceType, resourcePermission: ResourcePermission): Promise<boolean> {
-    const role = await client.getRole(user.role);
-    return role?.permissions[resourceType]?.find(permission => {
-        permission.tag == resourcePermission.tag && (permission.tag == "Custom" && resourcePermission.tag == "Custom") ? permission.name == resourcePermission.name : true
-    }) != null;
+    const permissions = (await client.getRole(user.role))?.permissions;
+    if (permissions) {
+        return permissions[resourceType]?.find(permission => {
+            permission.tag == resourcePermission.tag && (permission.tag == "Custom" && resourcePermission.tag == "Custom") ? permission.name == resourcePermission.name : true
+        }) != null;
+    } else {
+        return false;
+    }
 }
 
 export async function canCustomizeSessionDuration(client: Client, user: User): Promise<boolean> {
