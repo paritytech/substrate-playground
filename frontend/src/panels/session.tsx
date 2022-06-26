@@ -144,13 +144,17 @@ function RepositorySelector({client, conf, user, onDeployed, onRetry}: {client: 
     }
 
     useInterval(async () => {
-        const publicRepositoriesWithLatestVersions = await fetchRepositoriesWithLatestVersions(client);
-        setRepositories(publicRepositoriesWithLatestVersions);
+        try {
+            const publicRepositoriesWithLatestVersions = await fetchRepositoriesWithLatestVersions(client);
+            setRepositories(publicRepositoriesWithLatestVersions);
 
-        // Initialize the selection if none has been set
-        const repository = publicRepositoriesWithLatestVersions[0];
-        if (!selection && repository) {
-            setSelection(0);
+            // Initialize the selection if none has been set
+            const repository = publicRepositoriesWithLatestVersions[0];
+            if (!selection && repository) {
+                setSelection(0);
+            }
+        } catch {
+            setRepositories([]);
         }
     }, 5000);
 
