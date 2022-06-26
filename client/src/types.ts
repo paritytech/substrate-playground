@@ -30,9 +30,9 @@ export interface Session extends IdentifiedResource, OwnedResource {
 }
 
 export type SessionState =
-    | {tag: "Deploying" }
-    | {tag: "Running", startTime: number, node: Node }
-    | {tag: "Failed", message: string, reason: string };
+    | {type: "Deploying" }
+    | {type: "Running", startTime: number, node: Node }
+    | {type: "Failed", message: string, reason: string };
 
 export interface RepositorySource {
     repositoryId: Repository['id'],
@@ -90,11 +90,11 @@ export enum ResourceType {
 }
 
 export type ResourcePermission =
-    | {tag: "Create" }
-    | {tag: "Read" }
-    | {tag: "Update" }
-    | {tag: "Delete" }
-    | {tag: "Custom", name: string };
+    | {type: "Create" }
+    | {type: "Read" }
+    | {type: "Update" }
+    | {type: "Delete" }
+    | {type: "Custom", name: string };
 
 export interface Role extends IdentifiedResource {
     permissions: Record<ResourceType, Array<ResourcePermission>>,
@@ -128,9 +128,9 @@ export interface RepositoryVersionConfiguration {
 }
 
 export type RepositoryVersionState =
-    | {tag: "Cloning", progress: number }
-    | {tag: "Building", progress: number, devcontainerJson: string }
-    | {tag: "Ready", devcontainerJson: string };
+    | {type: "Cloning", progress: number }
+    | {type: "Building", progress: number, devcontainerJson: string }
+    | {type: "Ready", devcontainerJson: string };
 
 export interface RepositoryRuntimeConfiguration {
     baseImage?: string,

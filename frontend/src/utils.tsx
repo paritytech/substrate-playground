@@ -54,11 +54,13 @@ export function remove<T extends IdentifiedResource>(resources: T[], id: string)
     return resources.filter(resource => resource.id !== id);
 }
 
+const customPermission = 'Custom';
+
 export async function hasPermission(client: Client, user: User, resourceType: ResourceType, resourcePermission: ResourcePermission): Promise<boolean> {
     const permissions = (await client.getRole(user.role))?.permissions;
     if (permissions) {
         return permissions[resourceType]?.find(permission => {
-            permission.tag == resourcePermission.tag && (permission.tag == "Custom" && resourcePermission.tag == "Custom") ? permission.name == resourcePermission.name : true
+            permission.type == resourcePermission.type && (permission.type == customPermission && resourcePermission.type == customPermission) ? permission.name == resourcePermission.name : true
         }) != null;
     } else {
         return false;
@@ -66,11 +68,11 @@ export async function hasPermission(client: Client, user: User, resourceType: Re
 }
 
 export async function canCustomizeSessionDuration(client: Client, user: User): Promise<boolean> {
-    return hasPermission(client, user, ResourceType.Session, {tag: "Custom", name: "CustomizeSessionDuration"});
+    return hasPermission(client, user, ResourceType.Session, {tag: customPermission, name: "CustomizeSessionDuration"});
 }
 
 export async function canCustomizeSessionPoolAffinity(client: Client, user: User): Promise<boolean> {
-    return hasPermission(client, user, ResourceType.Session, {tag: "Custom", name: "CustomizeSessionPoolAffinity"});
+    return hasPermission(client, user, ResourceType.Session, {tag: customPermission, name: "CustomizeSessionPoolAffinity"});
 }
 
 export async function canCustomizeSession(client: Client, user: User): Promise<boolean> {

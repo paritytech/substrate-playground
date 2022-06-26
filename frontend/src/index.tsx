@@ -56,7 +56,7 @@ function ExtraTheiaNav({ client, user, conf, restartAction }: { client: Client, 
         // Periodically extend duration of running sessions
         if (session) {
             const { state, maxDuration } = session;
-            if (state.tag == 'Running') {
+            if (state.type == 'Running') {
                 const remaining = maxDuration - (state.startTime || 0) / 60; // In minutes
                 const maxConfDuration = conf.session.maxDuration;
                 // Increase duration
@@ -70,7 +70,7 @@ function ExtraTheiaNav({ client, user, conf, restartAction }: { client: Client, 
 
     if (session) {
         const { state, maxDuration } = session;
-        if (state.tag == 'Running') {
+        if (state.type == 'Running') {
             const remaining = maxDuration * 60 - (state.startTime || 0);
             if (remaining < 300) { // 5 minutes
                 return (
@@ -79,7 +79,7 @@ function ExtraTheiaNav({ client, user, conf, restartAction }: { client: Client, 
                     </Typography>
                 );
             }
-        } else if (state.tag == 'Failed') {
+        } else if (state.type == 'Failed') {
             return (
                 <Typography variant="h6">
                     Your session is over. <Button onClick={restartAction}>Restart it</Button>

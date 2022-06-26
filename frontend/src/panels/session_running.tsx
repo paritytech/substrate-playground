@@ -26,7 +26,7 @@ export function RunningSessionPanel({ client, user, autoDeployRepository, onMiss
     useEffect(() => {
         async function createSession(repository: Repository): Promise<void> {
             const repositoryVersion = await client.getRepositoryLatestVersion(repository.id);
-            if (repositoryVersion && repositoryVersion.state.tag == "Ready") {
+            if (repositoryVersion && repositoryVersion.state.type == "Ready") {
                 client.createSession(sessionId, {repositorySource: {repositoryId: repository.id, repositoryVersionId: repositoryVersion.id}}).then(fetchData);
             } else {
                 setError({reason: `No existing RepositoryVersion for ${repository.id}`, action: onSessionFailing});
@@ -54,7 +54,7 @@ export function RunningSessionPanel({ client, user, autoDeployRepository, onMiss
 
             const retry = loading?.retry ?? 0;
             if (retry < maxRetries) {
-                setLoading({phase: session?.state.tag || 'Unknown', retry: retry + 1});
+                setLoading({phase: session?.state.type || 'Unknown', retry: retry + 1});
                 setTimeout(fetchData, 1000);
             } else if (retry == maxRetries) {
                 setError({reason: "Couldn't access the session in time",

@@ -123,7 +123,7 @@ export async function fetchRepositoriesWithLatestVersions(client: Client): Promi
     }))).filter(isNotNull) as Array<[Repository, RepositoryVersion]>;
     return repositoriesWithLatestVersions.filter(repositoryWithLatestVersion => {
         const state = repositoryWithLatestVersion[1]?.state;
-        if (state?.tag == "Ready") {
+        if (state?.type == "Ready") {
             const devcontainer = JSON.parse(state.devcontainerJson);
             return devcontainer.customizations["substrate-playground"]?.tags?.public == "true";
         }
@@ -185,7 +185,7 @@ function RepositorySelector({client, conf, user, onDeployed, onRetry}: {client: 
     const selectedRepository = getSelectedRepositoryWithLatestVersion();
     if (!repositories) {
         return <LoadingPanel />;
-    } else if (selectedRepository && selectedRepository[1].state.tag == "Ready") {
+    } else if (selectedRepository && selectedRepository[1].state.type == "Ready") {
         const devcontainer = JSON.parse(selectedRepository[1].state.devcontainerJson);
         return (
             <>
@@ -299,17 +299,17 @@ export function SessionDetails({ session }: {session: Session}): JSX.Element {
                 <Typography>
                     {id}
                 </Typography>
-                {state.tag == 'Running' &&
+                {state.type == 'Running' &&
                 <Typography color="textSecondary" gutterBottom>
                 Started {formatDuration(state.startTime)} ago ({formatDuration(maxDuration*60-state.startTime)} left)
                 </Typography>
                 }
-                {state.tag == 'Deploying' &&
+                {state.type == 'Deploying' &&
                 <Typography color="textSecondary" gutterBottom>
                 Deploying
                 </Typography>
                 }
-                {state.tag == 'Failed' &&
+                {state.type == 'Failed' &&
                 <Typography color="textSecondary" gutterBottom>
                 Failed
                 {state.message && `(${state.reason})`}
@@ -356,7 +356,7 @@ function ExistingSession({session, onStop, onConnect}: {session: Session, onStop
                     <Button onClick={onStopClick} disabled={stopping} color="secondary" disableElevation>
                         Stop
                     </Button>
-                    <Button onClick={() => onConnectClick(session)} disabled={stopping || session.state.tag !== 'Running'} disableElevation>
+                    <Button onClick={() => onConnectClick(session)} disabled={stopping || session.state.type !== 'Running'} disableElevation>
                         Connect
                     </Button>
                 </ButtonGroup>
