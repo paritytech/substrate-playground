@@ -79,14 +79,14 @@ export interface UserUpdateConfiguration {
 }
 
 export enum ResourceType {
-    Pool,
-    Repository,
-    RepositoryVersion,
-    Role,
-    Session,
-    SessionExecution,
-    User,
-    Workspace,
+    Pool = "Pool",
+    Repository = "Repository",
+    RepositoryVersion = "RepositoryVersion",
+    Role = "Role",
+    Session = "Session",
+    SessionExecution = "SessionExecution",
+    User = "User",
+    Workspace = "Workspace",
 }
 
 export type ResourcePermission =
