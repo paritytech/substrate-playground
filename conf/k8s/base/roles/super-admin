@@ -1,4 +1,4 @@
-id: super- type:admin
+id: super-admin
 permissions:
     Pool:
     - type: Create
