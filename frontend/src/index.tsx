@@ -100,7 +100,7 @@ function CustomLoggedNav({ client, send, conf, user, panel }: { client: Client, 
 
     useEffect(() => {
         async function fetchData() {
-            setCanAdministrate(await hasPermission(client, user, ResourceType.Session, {tag: "Custom", name: "Administrate"}));
+            setCanAdministrate(await hasPermission(client, user, ResourceType.Session, {type: "Custom", name: "Administrate"}));
         }
 
         fetchData();

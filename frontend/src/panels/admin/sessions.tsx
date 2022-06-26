@@ -275,7 +275,7 @@ export function Sessions({ client, conf, user }: { client: Client, conf: Configu
             id: "",
             maxDuration: conf.duration || 0,
             userId: "",
-            state: {tag: 'Deploying'}
+            state: {type: 'Deploying'}
         };
     }
 

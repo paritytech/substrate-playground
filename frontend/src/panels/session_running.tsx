@@ -36,8 +36,8 @@ export function RunningSessionPanel({ client, user, autoDeployRepository, onMiss
         async function fetchData() {
             const session = await client.getSession(sessionId);
             if (session) {
-                const { tag }  = session.state;
-                if (tag == 'Running') {
+                const { type }  = session.state;
+                if (type == 'Running') {
                     // Check URL is fine
                     const url = sessionUrl(session);
                     if (url) {
@@ -46,7 +46,7 @@ export function RunningSessionPanel({ client, user, autoDeployRepository, onMiss
                             return;
                         }
                     }
-                } else if (tag == 'Failed') {
+                } else if (type == 'Failed') {
                     setError({reason: session.state.reason || 'Session failed', action: onSessionFailing});
                 }
                 // The session is being deployed, nothing to do

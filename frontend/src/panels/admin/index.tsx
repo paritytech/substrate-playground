@@ -50,7 +50,7 @@ export function NoResourcesContainer({ client, user, label, action, resourceType
     <Container>
       <Typography variant="h6">
         {label}
-        {(action && hasPermission(client, user, resourceType, {tag: "Create"})) &&
+        {(action && hasPermission(client, user, resourceType, {type: "Create"})) &&
           <Tooltip title="Create">
             <IconButton aria-label="create" onClick={action} size="large">
               <AddIcon />
@@ -202,13 +202,13 @@ function EditToolbar({ client, user, resourceType, selected, onCreate, onUpdate,
     return <>
       {onUpdate &&
         <Tooltip title="Update">
-          <IconButton disabled={!hasPermission(client, user, resourceType, {tag: "Update"})} aria-label="update" onClick={onUpdate} size="large">
+          <IconButton disabled={!hasPermission(client, user, resourceType, {type: "Update"})} aria-label="update" onClick={onUpdate} size="large">
             <EditIcon />
           </IconButton>
         </Tooltip>}
       {onDelete &&
         <Tooltip title="Delete">
-          <IconButton disabled={!hasPermission(client, user, resourceType, {tag: "Delete"})} aria-label="delete" onClick={() => setOpen(true)} size="large">
+          <IconButton disabled={!hasPermission(client, user, resourceType, {type: "Delete"})} aria-label="delete" onClick={() => setOpen(true)} size="large">
             <DeleteIcon />
           </IconButton>
         </Tooltip>}
@@ -218,7 +218,7 @@ function EditToolbar({ client, user, resourceType, selected, onCreate, onUpdate,
     return <>
       {onCreate &&
         <Tooltip title="Create">
-          <IconButton disabled={!hasPermission(client, user, resourceType, {tag: "Create"})} aria-label="create" onClick={onCreate} size="large">
+          <IconButton disabled={!hasPermission(client, user, resourceType, {type: "Create"})} aria-label="create" onClick={onCreate} size="large">
             <AddIcon />
           </IconButton>
         </Tooltip>}

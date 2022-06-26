@@ -31,7 +31,7 @@ export function sessionDomain(session: Session): string {
 }
 
 export function sessionUrl(session: Session): string | null {
-    switch (session.state.tag) {
+    switch (session.state.type) {
         // TODO retrieve RepoVersion, extract ports
         case 'Running': {
             //TODO const ports = session.template.runtime?.ports;
@@ -68,11 +68,11 @@ export async function hasPermission(client: Client, user: User, resourceType: Re
 }
 
 export async function canCustomizeSessionDuration(client: Client, user: User): Promise<boolean> {
-    return hasPermission(client, user, ResourceType.Session, {tag: customPermission, name: "CustomizeSessionDuration"});
+    return hasPermission(client, user, ResourceType.Session, {type: customPermission, name: "CustomizeSessionDuration"});
 }
 
 export async function canCustomizeSessionPoolAffinity(client: Client, user: User): Promise<boolean> {
-    return hasPermission(client, user, ResourceType.Session, {tag: customPermission, name: "CustomizeSessionPoolAffinity"});
+    return hasPermission(client, user, ResourceType.Session, {type: customPermission, name: "CustomizeSessionPoolAffinity"});
 }
 
 export async function canCustomizeSession(client: Client, user: User): Promise<boolean> {

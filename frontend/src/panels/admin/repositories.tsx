@@ -114,7 +114,7 @@ function RepositoryRow({ client, repository }: { client: Client, repository: Rep
                                 <TableCell component="th" scope="row">
                                     {version.id}
                                 </TableCell>
-                                <TableCell align="right">{version.state.tag}</TableCell>
+                                <TableCell align="right">{version.state.type}</TableCell>
                                 </TableRow>
                             ))}
                             </TableBody>
