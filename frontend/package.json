@@ -19,7 +19,7 @@
     "@mui/lab": "5.0.0-alpha.87",
     "@mui/material": "5.8.5",
     "@mui/styles": "5.8.4",
-    "@substrate/playground-client": "1.9.5",
+    "@substrate/playground-client": "1.9.6",
     "@xstate/react": "3.0.0",
     "marked": "4.0.17",
     "react": "17.0.2",
