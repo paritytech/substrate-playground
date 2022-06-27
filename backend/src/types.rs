@@ -191,7 +191,7 @@ pub struct RepositoryVersion {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-#[serde(tag = "type")]
+#[serde(tag = "type", rename_all = "camelCase")]
 pub enum RepositoryVersionState {
     Cloning {
         progress: i32,
