@@ -16,9 +16,9 @@ spec:
       annotations:
         prometheus.io/scrape: "true"
         prometheus.io/port: "8080"
-    terminationGracePeriodSeconds: 0
     spec:
       serviceAccountName: backend-service-account
+      terminationGracePeriodSeconds: 0
       containers:
       - name: backend-api
         image: paritytech/substrate-playground-backend-api
