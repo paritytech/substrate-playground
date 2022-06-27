@@ -123,12 +123,20 @@ export async function fetchRepositoriesWithLatestVersions(client: Client): Promi
     }))).filter(isNotNull) as Array<[Repository, RepositoryVersion]>;
     return repositoriesWithLatestVersions.filter(repositoryWithLatestVersion => {
         const state = repositoryWithLatestVersion[1]?.state;
-        if (state?.type == "Ready") {
+        if (state.type == "Ready") {
             const devcontainer = JSON.parse(state.devcontainerJson);
-            return devcontainer.customizations["substrate-playground"]?.tags?.public == "true";
+            return getPlaygroundCustomizations(devcontainer)?.tags?.public == "true";
         }
         return false;
     });
+}
+
+function getPlaygroundCustomizations(devcontainer: any): any | undefined {
+    return devcontainer.customizations["substrate-playground"];
+}
+
+function getDescription(devcontainer: any): string {
+    return getPlaygroundCustomizations(devcontainer)?.description || "";
 }
 
 function RepositorySelector({client, conf, user, onDeployed, onRetry}: {client: Client, conf: Configuration, user: User, onDeployed: (conf: SessionConfiguration) => Promise<void>, onRetry: () => void}): JSX.Element {
@@ -149,11 +157,12 @@ function RepositorySelector({client, conf, user, onDeployed, onRetry}: {client: 
             setRepositories(publicRepositoriesWithLatestVersions);
 
             // Initialize the selection if none has been set
-            const repository = publicRepositoriesWithLatestVersions[0];
-            if (!selection && repository) {
+            if (!selection && publicRepositoriesWithLatestVersions[0]) {
                 setSelection(0);
             }
-        } catch {
+        } catch(e) {
+            console.error("Failed to fetch repositories", e)
+
             setRepositories([]);
         }
     }, 5000);
@@ -203,7 +212,7 @@ function RepositorySelector({client, conf, user, onDeployed, onRetry}: {client: 
                             <Divider flexItem={true} orientation={"vertical"} light={true} />
                             <div style={{flex: 1, marginLeft: 20, paddingRight: 20, overflow: "auto", textAlign: "left"}}>
                                 <Typography>
-                                    <span dangerouslySetInnerHTML={{__html:marked(devcontainer.description)}}></span>
+                                    <span dangerouslySetInnerHTML={{__html:marked(getDescription(devcontainer))}}></span>
                                 </Typography>
                                 <Divider orientation={"horizontal"} light={true} />
                                 <Typography variant="overline">
