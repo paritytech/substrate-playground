@@ -133,7 +133,15 @@ pub async fn get_repository_version(
 pub async fn list_repository_versions(_repository_id: &str) -> Result<Vec<RepositoryVersion>> {
     // TODO list volume template
     Ok(vec![RepositoryVersion {
-        id: "yo".to_string(),
+        id: "yop".to_string(),
+        state: RepositoryVersionState::Ready { devcontainer_json: "".to_string() },
+    },
+    RepositoryVersion {
+        id: "yip".to_string(),
+        state: RepositoryVersionState::Ready { devcontainer_json: "{customizations: {substrate-playground: {tags: {public: \"true\"}}}}".to_string() },
+    },
+    RepositoryVersion {
+        id: "yap".to_string(),
         state: RepositoryVersionState::Cloning { progress: 50 },
     }])
 }
@@ -213,7 +221,7 @@ pub async fn get_repository_latest_version(
     // TODO
     Ok(Some(RepositoryVersion {
         id: "".to_string(),
-        state: RepositoryVersionState::Cloning { progress: 50 },
+        state: RepositoryVersionState::Ready { devcontainer_json: "{\"customizations\": {\"substrate-playground\": {\"tags\": {\"public\": \"true\"}}}}".to_string() },
     }))
 }
 
