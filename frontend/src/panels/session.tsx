@@ -148,7 +148,7 @@ function RepositorySelector({client, conf, user, onDeployed, onRetry}: {client: 
     const [canCustomize, setCanCustomize] = React.useState(false);
 
     function getSelectedRepositoryWithLatestVersion(): [Repository, RepositoryVersion] | undefined {
-        return selection ? repositories?.at(selection) : undefined;
+        return selection != null ? repositories?.at(selection) : undefined;
     }
 
     useInterval(async () => {
