@@ -132,18 +132,26 @@ pub async fn get_repository_version(
 
 pub async fn list_repository_versions(_repository_id: &str) -> Result<Vec<RepositoryVersion>> {
     // TODO list volume template
-    Ok(vec![RepositoryVersion {
-        id: "yop".to_string(),
-        state: RepositoryVersionState::Ready { devcontainer_json: "".to_string() },
-    },
-    RepositoryVersion {
-        id: "yip".to_string(),
-        state: RepositoryVersionState::Ready { devcontainer_json: "{customizations: {substrate-playground: {tags: {public: \"true\"}}}}".to_string() },
-    },
-    RepositoryVersion {
-        id: "yap".to_string(),
-        state: RepositoryVersionState::Cloning { progress: 50 },
-    }])
+    Ok(vec![
+        RepositoryVersion {
+            id: "yop".to_string(),
+            state: RepositoryVersionState::Ready {
+                devcontainer_json: "".to_string(),
+            },
+        },
+        RepositoryVersion {
+            id: "yip".to_string(),
+            state: RepositoryVersionState::Ready {
+                devcontainer_json:
+                    "{customizations: {substrate-playground: {tags: {public: \"true\"}}}}"
+                        .to_string(),
+            },
+        },
+        RepositoryVersion {
+            id: "yap".to_string(),
+            state: RepositoryVersionState::Cloning { progress: 50 },
+        },
+    ])
 }
 
 pub async fn create_repository_version(repository_id: &str, id: &str) -> Result<()> {
@@ -216,7 +224,7 @@ pub async fn delete_repository_version(_repository_id: &str, _id: &str) -> Resul
 // Repository latest version
 
 pub async fn get_repository_latest_version(
-    repository_id: &str,
+    _repository_id: &str,
 ) -> Result<Option<RepositoryVersion>> {
     // TODO
     Ok(Some(RepositoryVersion {
@@ -225,6 +233,6 @@ pub async fn get_repository_latest_version(
     }))
 }
 
-pub async fn create_repository_latest_version(repository_id: &str, id: &str) -> Result<()> {
+pub async fn create_repository_latest_version(_repository_id: &str, _id: &str) -> Result<()> {
     Ok(())
 }
