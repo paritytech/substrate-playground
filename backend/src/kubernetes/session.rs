@@ -429,27 +429,29 @@ pub async fn create_session(
         return Err(Error::ConcurrentSessionsLimitBreached(sessions.len()));
     }
 
-    let devcontainer = if let Some(repository_version) = get_repository_version(
-        session_configuration
-            .repository_source
-            .repository_id
-            .as_str(),
-        session_configuration
-            .repository_source
-            .repository_version_id
-            .as_str(),
-    )
-    .await?
+    let repository_id = session_configuration
+        .repository_source
+        .repository_id
+        .as_str();
+    let repository_version_id = session_configuration
+        .repository_source
+        .repository_version_id
+        .as_str();
+    let devcontainer = if let Some(repository_version) =
+        get_repository_version(repository_id, repository_version_id).await?
     {
         //session_configuration.runtime_configuration
         match repository_version.state {
             RepositoryVersionState::Ready { devcontainer_json } => {
                 parse_devcontainer(devcontainer_json.as_str())
             }
-            _ => Err(Error::Failure("TODO".to_string())),
+            _ => Err(Error::Failure(format!("Repository version {} is not in Ready state", repository_version_id))),
         }
     } else {
-        Err(Error::Failure("TODO".to_string()))
+        Err(Error::Failure(format!(
+            "No matching repository version for {}:{}",
+            repository_id, repository_version_id
+        )))
     }?;
     // TODO
     let image = devcontainer.image.as_ref().unwrap();
