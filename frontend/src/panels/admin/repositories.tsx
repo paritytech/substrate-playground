@@ -67,13 +67,8 @@ function RepositoryRow({ client, repository }: { client: Client, repository: Rep
 
     useEffect(() => {
         async function fetchData() {
-            try {
-                const versions = await client.listRepositoryVersions(repository.id);
-                console.log(versions)
-                setHistory(versions);
-            } catch (e) {
-                console.log(e);
-            }
+            const versions = await client.listRepositoryVersions(repository.id);
+            setHistory(versions);
         }
 
         if (open) {
