@@ -10,7 +10,6 @@ use crate::{
     utils::devcontainer::{parse_devcontainer, DevContainer},
 };
 use futures::StreamExt;
-use json_patch::{AddOperation, PatchOperation};
 use k8s_openapi::api::{
     core::v1::{
         Affinity, Container, EnvVar, Namespace, NodeAffinity, NodeSelectorRequirement,
@@ -22,9 +21,7 @@ use k8s_openapi::api::{
 use k8s_openapi::apimachinery::pkg::{
     api::resource::Quantity, apis::meta::v1::ObjectMeta, util::intstr::IntOrString,
 };
-use kube::api::{
-    Api, AttachParams, AttachedProcess, DeleteParams, Patch, PatchParams, PostParams, ResourceExt,
-};
+use kube::api::{Api, AttachParams, AttachedProcess, DeleteParams, PostParams, ResourceExt};
 use serde_json::json;
 use std::{
     collections::BTreeMap,
@@ -33,19 +30,12 @@ use std::{
 
 use super::{
     client, env_var, ingress_path, list_by_selector, pool::get_pool,
-    repository::get_repository_version,
+    repository::get_repository_version, update_annotation_value, APP_LABEL, APP_VALUE,
+    COMPONENT_LABEL, INGRESS_NAME, NODE_POOL_LABEL, OWNER_LABEL,
 };
 
-const NODE_POOL_LABEL: &str = "app.playground/pool";
-
-const APP_LABEL: &str = "app.kubernetes.io/part-of";
-const APP_VALUE: &str = "playground";
-const COMPONENT_LABEL: &str = "app.kubernetes.io/component";
 const COMPONENT_VALUE: &str = "session";
-
-const OWNER_LABEL: &str = "app.kubernetes.io/owner";
-const INGRESS_NAME: &str = "ingress";
-const SESSION_DURATION_ANNOTATION: &str = "playground.substrate.io/session_duration";
+const SESSION_DURATION_ANNOTATION: &str = "app.playground/session_duration";
 const THEIA_WEB_PORT: i32 = 3000;
 const SESSION_NAME: &str = "session";
 const SERVICE_SESSION_NAME: &str = "session-service-account";
@@ -438,14 +428,17 @@ pub async fn create_session(
         .repository_version_id
         .as_str();
     let devcontainer = if let Some(repository_version) =
-        get_repository_version(repository_id, repository_version_id).await?
+        get_repository_version(user.id.as_str(), repository_id, repository_version_id).await?
     {
         //session_configuration.runtime_configuration
         match repository_version.state {
             RepositoryVersionState::Ready { devcontainer_json } => {
                 parse_devcontainer(devcontainer_json.as_str())
             }
-            _ => Err(Error::Failure(format!("Repository version {} is not in Ready state", repository_version_id))),
+            _ => Err(Error::Failure(format!(
+                "Repository version {} is not in Ready state",
+                repository_version_id
+            ))),
         }
     } else {
         Err(Error::Failure(format!(
@@ -454,7 +447,12 @@ pub async fn create_session(
         )))
     }?;
     // TODO
-    let image = devcontainer.image.as_ref().unwrap();
+    let image = match devcontainer.clone().image {
+        Some(image) => image,
+        None => {
+            return Err(Error::IncorrectDevContainerValue("Missing image"));
+        }
+    };
     let ports = ports(&devcontainer);
 
     // TODO deploy a new ingress matching the route
@@ -563,21 +561,13 @@ pub async fn update_session(
     if duration != session.max_duration {
         let client = client()?;
         let pod_api: Api<Pod> = Api::namespaced(client.clone(), id);
-        let params = PatchParams {
-            ..PatchParams::default()
-        };
-        let patch: Patch<json_patch::Patch> =
-            Patch::Json(json_patch::Patch(vec![PatchOperation::Add(AddOperation {
-                path: format!(
-                    "/metadata/annotations/{}",
-                    SESSION_DURATION_ANNOTATION.replace('/', "~1")
-                ),
-                value: json!(duration_to_string(duration)),
-            })]));
-        pod_api
-            .patch(SESSION_NAME, &params, &patch)
-            .await
-            .map_err(Error::K8sCommunicationFailure)?;
+        update_annotation_value(
+            &pod_api,
+            SESSION_NAME,
+            SESSION_DURATION_ANNOTATION.to_string(),
+            json!(duration_to_string(duration)),
+        )
+        .await?
     }
 
     Ok(())

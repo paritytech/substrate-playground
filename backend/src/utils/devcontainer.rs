@@ -9,7 +9,7 @@ use std::{
     process::{Command, Output},
 };
 
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DevContainer {
     pub image: Option<String>,

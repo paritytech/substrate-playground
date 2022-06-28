@@ -1,5 +1,8 @@
 //! Helper methods ton interact with k8s
-use super::{client, list_by_selector};
+use super::{
+    client, list_by_selector, HOSTNAME_LABEL, INSTANCE_TYPE_LABEL, NODE_POOL_LABEL,
+    NODE_POOL_TYPE_LABEL,
+};
 use crate::{
     error::{Error, Result},
     types::Pool,
@@ -7,12 +10,6 @@ use crate::{
 use k8s_openapi::api::core::v1::Node;
 use kube::api::Api;
 use std::collections::BTreeMap;
-
-const NODE_POOL_LABEL: &str = "app.playground/pool";
-
-const NODE_POOL_TYPE_LABEL: &str = "app.playground/pool-type";
-const INSTANCE_TYPE_LABEL: &str = "node.kubernetes.io/instance-type";
-const HOSTNAME_LABEL: &str = "kubernetes.io/hostname";
 
 fn nodes_to_pool(id: String, nodes: Vec<Node>) -> Result<Pool> {
     let node = nodes

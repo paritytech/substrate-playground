@@ -22,10 +22,18 @@ use kube::{
     Api, Client, Config,
 };
 use serde::{de::DeserializeOwned, Serialize};
-use serde_json::json;
+use serde_json::{json, Value};
 use std::{collections::BTreeMap, convert::TryFrom, fmt::Debug, time::Duration};
 
-const INGRESS_NAME: &str = "ingress";
+pub const HOSTNAME_LABEL: &str = "kubernetes.io/hostname";
+pub const APP_LABEL: &str = "app.kubernetes.io/part-of";
+pub const APP_VALUE: &str = "playground";
+pub const OWNER_LABEL: &str = "app.kubernetes.io/owner";
+pub const COMPONENT_LABEL: &str = "app.kubernetes.io/component";
+pub const INSTANCE_TYPE_LABEL: &str = "node.kubernetes.io/instance-type";
+pub const NODE_POOL_LABEL: &str = "app.playground/pool";
+pub const NODE_POOL_TYPE_LABEL: &str = "app.playground/pool-type";
+pub const INGRESS_NAME: &str = "ingress";
 
 pub async fn get_host() -> Result<String> {
     let client = client()?;
@@ -194,6 +202,30 @@ pub async fn delete_config_map_value(client: &Client, name: &str, key: &str) -> 
         .patch(name, &params, &patch)
         .await
         .map_err(Error::K8sCommunicationFailure)?;
+    Ok(())
+}
+
+pub async fn update_annotation_value<K: Clone + DeserializeOwned + Debug>(
+    api: &Api<K>,
+    id: &str,
+    annotation_name: String,
+    value: Value,
+) -> Result<()> {
+    let params = PatchParams {
+        ..PatchParams::default()
+    };
+    let patch: Patch<json_patch::Patch> =
+        Patch::Json(json_patch::Patch(vec![PatchOperation::Add(AddOperation {
+            path: format!(
+                "/metadata/annotations/{}",
+                annotation_name.replace('/', "~1")
+            ),
+            value,
+        })]));
+    api.patch(id, &params, &patch)
+        .await
+        .map_err(Error::K8sCommunicationFailure)?;
+
     Ok(())
 }
 
