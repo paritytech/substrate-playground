@@ -221,19 +221,6 @@ export class Client {
         }, timeout);
     }
 
-    // Repository latest version
-
-    async getRepositoryLatestVersion(repositoryId: Repository['id'], timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<RepositoryVersion | null> {
-        return rpc(this.path(Client.repositoriesResource, repositoryId, 'latest-version'), init, timeout);
-    }
-
-    async createRepositoryRepositoryVersion(repositoryId: Repository['id'], repositoryVersionId: RepositoryVersion['id'], timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<void> {
-        return rpc(this.path(Client.repositoriesResource, repositoryId, 'latest-version', repositoryVersionId), {
-            method: 'PUT',
-            ...init
-        }, timeout);
-    }
-
     // Pools
 
     async getPool(id: Pool['id'], timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<Pool | null> {

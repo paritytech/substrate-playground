@@ -9,7 +9,7 @@ use crate::{
 use k8s_openapi::api::{
     batch::v1::{Job, JobSpec},
     core::v1::{
-        Container, PersistentVolume, PersistentVolumeClaim, PersistentVolumeClaimSpec,
+        Container, PersistentVolume, PersistentVolumeClaim, PersistentVolumeSpec,
         PersistentVolumeClaimVolumeSource, PodSpec, PodTemplateSpec, ResourceRequirements, Volume,
         VolumeMount,
     },
@@ -50,6 +50,7 @@ pub async fn create_repository(id: &str, conf: RepositoryConfiguration) -> Resul
     let repository = Repository {
         id: id.to_string(),
         url: conf.url,
+        current_version: None,
     };
 
     store_resource_as_config_map(&client, &repository.id, &repository, CONFIG_MAP).await
@@ -61,7 +62,10 @@ pub async fn update_repository(id: &str, conf: RepositoryUpdateConfiguration) ->
     let mut repository: Repository = get_resource_from_config_map(&client, id, CONFIG_MAP)
         .await?
         .ok_or_else(|| Error::UnknownResource(ResourceType::Repository, id.to_string()))?;
-    repository.url = conf.url;
+    if let Some(url) = conf.url {
+        repository.url = url;
+    }
+    repository.current_version = conf.current_version;
 
     store_resource_as_config_map(&client, &repository.id, &repository, CONFIG_MAP).await
 }
@@ -77,7 +81,7 @@ fn volume_template(
     volume_template_name: &str,
     repository_id: &str,
     repository_version_id: &str,
-) -> PersistentVolumeClaim {
+) -> PersistentVolume {
     let mut labels = BTreeMap::new();
     labels.insert(APP_LABEL.to_string(), APP_VALUE.to_string());
     labels.insert(COMPONENT_LABEL.to_string(), COMPONENT_TYPE.to_string());
@@ -87,21 +91,18 @@ fn volume_template(
         repository_version_id.to_string(),
     );
 
-    let mut requests = BTreeMap::new();
-    requests.insert("storage".to_string(), Quantity("5Gi".to_string()));
+    let mut capacities = BTreeMap::new();
+    capacities.insert("storage".to_string(), Quantity("5Gi".to_string()));
 
-    PersistentVolumeClaim {
+    PersistentVolume {
         metadata: ObjectMeta {
             name: Some(volume_template_name.to_string()),
             labels: Some(labels),
             ..Default::default()
         },
-        spec: Some(PersistentVolumeClaimSpec {
+        spec: Some(PersistentVolumeSpec {
             access_modes: Some(vec!["ReadWriteOnce".to_string()]),
-            resources: Some(ResourceRequirements {
-                requests: Some(requests),
-                ..Default::default()
-            }),
+            capacity: Some(capacities),
             ..Default::default()
         }),
         ..Default::default()
@@ -116,11 +117,11 @@ fn volume_template_name(repository_id: &str, repository_version_id: &str) -> Str
 }
 
 async fn create_volume_template(
-    api: &Api<PersistentVolumeClaim>,
+    api: &Api<PersistentVolume>,
     volume_template_name: &str,
     repository_id: &str,
     repository_version_id: &str,
-) -> Result<PersistentVolumeClaim> {
+) -> Result<PersistentVolume> {
     api.create(
         &PostParams::default(),
         &volume_template(volume_template_name, repository_id, repository_version_id),
@@ -225,10 +226,12 @@ pub async fn create_repository_version(user_id: &str, repository_id: &str, id: &
     let client = client()?;
 
     // Create volume
-    let volume_api: Api<PersistentVolumeClaim> = Api::namespaced(client.clone(), user_id);
+    let volume_api: Api<PersistentVolume> = Api::namespaced(client.clone(), user_id);
     let volume_template_name = volume_template_name(repository_id, id);
     let _volume =
         create_volume_template(&volume_api, &volume_template_name, repository_id, id).await?;
+
+// TODO set has latest vero
 
     // TODO remove, for test only
     update_repository_version_state(
@@ -308,21 +311,5 @@ pub async fn delete_repository_version(user_id: &str, repository_id: &str, id: &
         .await
         .map_err(Error::K8sCommunicationFailure)?;
 
-    Ok(())
-}
-
-// Repository latest version
-
-pub async fn get_repository_latest_version(
-    _repository_id: &str,
-) -> Result<Option<RepositoryVersion>> {
-    // TODO
-    Ok(Some(RepositoryVersion {
-        id: "".to_string(),
-        state: RepositoryVersionState::Ready { devcontainer_json: "{\"customizations\": {\"substrate-playground\": {\"tags\": {\"public\": \"true\"}}}}".to_string() },
-    }))
-}
-
-pub async fn create_repository_latest_version(_repository_id: &str, _id: &str) -> Result<()> {
     Ok(())
 }

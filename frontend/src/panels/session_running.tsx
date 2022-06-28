@@ -24,8 +24,8 @@ export function RunningSessionPanel({ client, user, autoDeployRepository, onMiss
     const [loading, setLoading] = useState<Loading>();
 
     useEffect(() => {
-        async function createSession(repository: Repository): Promise<void> {
-            const repositoryVersion = await client.getRepositoryLatestVersion(repository.id);
+        function createSession(repository: Repository): void {
+            const repositoryVersion = repository.currentVersion;
             if (repositoryVersion && repositoryVersion.state.type == "Ready") {
                 client.createSession(sessionId, {repositorySource: {repositoryId: repository.id, repositoryVersionId: repositoryVersion.id}}).then(fetchData);
             } else {

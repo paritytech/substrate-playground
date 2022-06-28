@@ -117,12 +117,12 @@ function isNotNull<T>(argument: T | null): argument is T {
 
 export async function fetchRepositoriesWithLatestVersions(client: Client): Promise<[Repository, RepositoryVersion][]> {
     const repositories = await client.listRepositories();
-    const repositoriesWithLatestVersions = (await Promise.all(repositories.map(async repository => {
-        const latestRepositoryVersion = await client.getRepositoryLatestVersion(repository.id);
-        return [repository, latestRepositoryVersion];
+    const repositoriesWithCurrentVersions = (await Promise.all(repositories.map(repository => {
+        const currentRepositoryVersion = repository.currentVersion;
+        return [repository, currentRepositoryVersion];
     }))).filter(isNotNull) as Array<[Repository, RepositoryVersion]>;
-    return repositoriesWithLatestVersions.filter(repositoryWithLatestVersion => {
-        const state = repositoryWithLatestVersion[1]?.state;
+    return repositoriesWithCurrentVersions.filter(repositoryWithCurrentVersion => {
+        const state = repositoryWithCurrentVersion[1]?.state;
         if (state.type == "Ready") {
             const devcontainer = JSON.parse(state.devcontainerJson);
             return getPlaygroundCustomizations(devcontainer)?.tags?.public == "true";

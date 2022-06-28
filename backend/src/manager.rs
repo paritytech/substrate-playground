@@ -6,9 +6,9 @@ use crate::{
         get_configuration,
         pool::{get_pool, list_pools},
         repository::{
-            create_repository, create_repository_latest_version, create_repository_version,
+            create_repository, create_repository_version,
             delete_repository, delete_repository_version, get_repository,
-            get_repository_latest_version, get_repository_version, list_repositories,
+            get_repository_version, list_repositories,
             list_repository_versions, update_repository,
         },
         role::{create_role, delete_role, get_role, list_roles, update_role},
@@ -346,39 +346,6 @@ impl Manager {
         .await?;
 
         delete_repository_version(&caller.id, repository_id, id).await
-    }
-
-    // Repository latest version
-
-    pub async fn get_repository_latest_version(
-        &self,
-        caller: &User,
-        repository_id: &str,
-    ) -> Result<Option<RepositoryVersion>> {
-        ensure_permission(
-            caller,
-            ResourceType::RepositoryVersion,
-            ResourcePermission::Read,
-        )
-        .await?;
-
-        get_repository_latest_version(repository_id).await
-    }
-
-    pub async fn create_repository_latest_version(
-        &self,
-        caller: &User,
-        repository_id: &str,
-        id: &str,
-    ) -> Result<()> {
-        ensure_permission(
-            caller,
-            ResourceType::RepositoryVersion,
-            ResourcePermission::Create,
-        )
-        .await?;
-
-        create_repository_latest_version(repository_id, id).await
     }
 
     // Pools

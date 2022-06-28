@@ -78,6 +78,7 @@ function RepositoryRow({ client, repository }: { client: Client, repository: Rep
 
     return (
         <>
+            <Button onClick={() => {client.createRepositoryVersion("substrate-node-template", "e1abd651d1412a5171db6595fa37f613b57a73f3")}}>CLOSE</Button>
             <TableRow key={repository.id}>
                 <TableCell>
                     <IconButton aria-label="expand row" size="small" onClick={() => setOpen(!open)}>

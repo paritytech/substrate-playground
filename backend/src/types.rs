@@ -168,9 +168,11 @@ pub struct UserUpdateConfiguration {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct Repository {
     pub id: String,
     pub url: String,
+    pub current_version: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -180,7 +182,8 @@ pub struct RepositoryConfiguration {
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct RepositoryUpdateConfiguration {
-    pub url: String,
+    pub url: Option<String>,
+    pub current_version: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

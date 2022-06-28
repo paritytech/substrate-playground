@@ -371,35 +371,6 @@ pub async fn delete_repository_version(
     Ok(EmptyJsonRPC())
 }
 
-// Repository latest version
-
-#[get("/repositories/<repository_id>/latest-version")]
-pub async fn get_repository_latest_version(
-    state: &State<Context>,
-    caller: User,
-    repository_id: String,
-) -> Result<JsonRPC<Option<RepositoryVersion>>> {
-    state
-        .manager
-        .get_repository_latest_version(&caller, &repository_id)
-        .await
-        .map(JsonRPC)
-}
-
-#[put("/repositories/<repository_id>/latest-version/<id>")]
-pub async fn create_repository_latest_version(
-    state: &State<Context>,
-    caller: User,
-    repository_id: String,
-    id: String,
-) -> Result<EmptyJsonRPC> {
-    state
-        .manager
-        .create_repository_latest_version(&caller, &repository_id, &id)
-        .await?;
-    Ok(EmptyJsonRPC())
-}
-
 // Pools
 
 #[get("/pools/<id>")]

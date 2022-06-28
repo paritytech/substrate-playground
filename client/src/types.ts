@@ -110,6 +110,7 @@ export interface RoleUpdateConfiguration {
 
 export interface Repository extends IdentifiedResource {
     url: string,
+    currentVersion?: string,
 }
 
 export interface RepositoryConfiguration {
@@ -117,7 +118,8 @@ export interface RepositoryConfiguration {
 }
 
 export interface RepositoryUpdateConfiguration {
-    url: string,
+    url?: string,
+    currentVersion?: string,
 }
 
 export interface RepositoryVersion extends IdentifiedResource {
