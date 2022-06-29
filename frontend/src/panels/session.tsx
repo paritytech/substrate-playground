@@ -111,24 +111,20 @@ export default function SplitButton({ disabled, onCreate, onCreateCustom }: { di
   );
 }
 
-function isNotNull<T>(argument: T | null): argument is T {
-    return argument !== null
-}
-
 export async function fetchRepositoriesWithLatestVersions(client: Client): Promise<[Repository, RepositoryVersion][]> {
     const repositories = await client.listRepositories();
     const repositoriesWithCurrentVersions = (await Promise.all(repositories.map(repository => {
         const currentRepositoryVersion = repository.currentVersion;
         return [repository, currentRepositoryVersion];
-    }))).filter(isNotNull) as Array<[Repository, RepositoryVersion]>;
+    }))) as Array<[Repository, RepositoryVersion | undefined]>;
     return repositoriesWithCurrentVersions.filter(repositoryWithCurrentVersion => {
         const state = repositoryWithCurrentVersion[1]?.state;
-        if (state.type == "Ready") {
+        if (state?.type == "Ready") {
             const devcontainer = JSON.parse(state.devcontainerJson);
             return getPlaygroundCustomizations(devcontainer)?.tags?.public == "true";
         }
         return false;
-    });
+    }) as Array<[Repository, RepositoryVersion]>;
 }
 
 function getPlaygroundCustomizations(devcontainer: any): any | undefined {
