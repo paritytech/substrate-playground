@@ -7,7 +7,6 @@ use crate::{
     },
 };
 use k8s_openapi::api::{
-    batch::v1::{Job, JobSpec},
     core::v1::{
         Container, PersistentVolume, PersistentVolumeClaim, PersistentVolumeClaimVolumeSource,
         PersistentVolumeSpec, PodSpec, PodTemplateSpec, ResourceRequirements, Volume, VolumeMount,
@@ -230,8 +229,6 @@ pub async fn create_repository_version(user_id: &str, repository_id: &str, id: &
     let _volume =
         create_volume_template(&volume_api, &volume_template_name, repository_id, id).await?;
 
-    // TODO set has latest vero
-
     // TODO remove, for test only
     update_repository_version_state(
         user_id,
@@ -243,6 +240,10 @@ pub async fn create_repository_version(user_id: &str, repository_id: &str, id: &
         },
     )
     .await?;
+
+    // TODO move to builder. Only do it build is successful
+    // Update current version so that it matches this newly created version
+    update_repository(repository_id, RepositoryUpdateConfiguration { url: None, current_version: Some(id.to_string()) }).await?;
 
     /*let job_api: Api<Job> = Api::default_namespaced(client.clone());
         let job = Job {
