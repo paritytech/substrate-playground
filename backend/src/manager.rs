@@ -6,9 +6,8 @@ use crate::{
         get_configuration,
         pool::{get_pool, list_pools},
         repository::{
-            create_repository, create_repository_version,
-            delete_repository, delete_repository_version, get_repository,
-            get_repository_version, list_repositories,
+            create_repository, create_repository_version, delete_repository,
+            delete_repository_version, get_repository, get_repository_version, list_repositories,
             list_repository_versions, update_repository,
         },
         role::{create_role, delete_role, get_role, list_roles, update_role},

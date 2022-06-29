@@ -9,9 +9,8 @@ use crate::{
 use k8s_openapi::api::{
     batch::v1::{Job, JobSpec},
     core::v1::{
-        Container, PersistentVolume, PersistentVolumeClaim, PersistentVolumeSpec,
-        PersistentVolumeClaimVolumeSource, PodSpec, PodTemplateSpec, ResourceRequirements, Volume,
-        VolumeMount,
+        Container, PersistentVolume, PersistentVolumeClaim, PersistentVolumeClaimVolumeSource,
+        PersistentVolumeSpec, PodSpec, PodTemplateSpec, ResourceRequirements, Volume, VolumeMount,
     },
 };
 use k8s_openapi::apimachinery::pkg::{api::resource::Quantity, apis::meta::v1::ObjectMeta};
@@ -231,7 +230,7 @@ pub async fn create_repository_version(user_id: &str, repository_id: &str, id: &
     let _volume =
         create_volume_template(&volume_api, &volume_template_name, repository_id, id).await?;
 
-// TODO set has latest vero
+    // TODO set has latest vero
 
     // TODO remove, for test only
     update_repository_version_state(
