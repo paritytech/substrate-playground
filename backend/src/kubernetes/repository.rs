@@ -6,12 +6,7 @@ use crate::{
         RepositoryVersionState, ResourceType,
     },
 };
-use k8s_openapi::api::{
-    core::v1::{
-        Container, PersistentVolume, PersistentVolumeClaim, PersistentVolumeClaimVolumeSource,
-        PersistentVolumeSpec, PodSpec, PodTemplateSpec, ResourceRequirements, Volume, VolumeMount,
-    },
-};
+use k8s_openapi::api::core::v1::{PersistentVolume, PersistentVolumeSpec};
 use k8s_openapi::apimachinery::pkg::{api::resource::Quantity, apis::meta::v1::ObjectMeta};
 use kube::{
     api::{Api, DeleteParams, PostParams},
@@ -203,11 +198,7 @@ pub async fn list_repository_versions(
     let persistent_volume_api: Api<PersistentVolume> = Api::namespaced(client.clone(), user_id);
     let persistent_volumes = list_by_selector(
         &persistent_volume_api,
-        format!(
-            "{}={},{}={}",
-            COMPONENT_LABEL, COMPONENT_TYPE, REPOSITORY_LABEL, repository_id
-        )
-        .to_string(),
+        format!("{}={}", REPOSITORY_LABEL, repository_id).to_string(),
     )
     .await?;
 
@@ -240,7 +231,13 @@ pub async fn create_repository_version(user_id: &str, repository_id: &str, id: &
 
     // TODO move to builder. Only do it build is successful
     // Update current version so that it matches this newly created version
-    update_repository(repository_id, RepositoryUpdateConfiguration { current_version: Some(id.to_string()) }).await?;
+    update_repository(
+        repository_id,
+        RepositoryUpdateConfiguration {
+            current_version: Some(id.to_string()),
+        },
+    )
+    .await?;
 
     /*let job_api: Api<Job> = Api::default_namespaced(client.clone());
         let job = Job {
