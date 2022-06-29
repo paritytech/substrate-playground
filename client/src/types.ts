@@ -118,7 +118,6 @@ export interface RepositoryConfiguration {
 }
 
 export interface RepositoryUpdateConfiguration {
-    url?: string,
     currentVersion?: string,
 }
 

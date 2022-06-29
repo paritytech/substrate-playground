@@ -60,9 +60,6 @@ pub async fn update_repository(id: &str, conf: RepositoryUpdateConfiguration) ->
     let mut repository: Repository = get_resource_from_config_map(&client, id, CONFIG_MAP)
         .await?
         .ok_or_else(|| Error::UnknownResource(ResourceType::Repository, id.to_string()))?;
-    if let Some(url) = conf.url {
-        repository.url = url;
-    }
     repository.current_version = conf.current_version;
 
     store_resource_as_config_map(&client, &repository.id, &repository, CONFIG_MAP).await
@@ -243,7 +240,7 @@ pub async fn create_repository_version(user_id: &str, repository_id: &str, id: &
 
     // TODO move to builder. Only do it build is successful
     // Update current version so that it matches this newly created version
-    update_repository(repository_id, RepositoryUpdateConfiguration { url: None, current_version: Some(id.to_string()) }).await?;
+    update_repository(repository_id, RepositoryUpdateConfiguration { current_version: Some(id.to_string()) }).await?;
 
     /*let job_api: Api<Job> = Api::default_namespaced(client.clone());
         let job = Job {

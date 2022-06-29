@@ -182,7 +182,6 @@ pub struct RepositoryConfiguration {
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct RepositoryUpdateConfiguration {
-    pub url: Option<String>,
     pub current_version: Option<String>,
 }
 
