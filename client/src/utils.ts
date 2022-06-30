@@ -25,3 +25,13 @@ export function playgroundBaseURL(env: EnvironmentType) {
             throw new Error(`Unrecognized env ${env}`);
     }
 }
+
+// Return a normalized session ID that is valid with regards to Playground constraints
+export function normalizeSessionId(sessionId: string): string {
+    return sessionId.toLocaleLowerCase();
+}
+
+// Return the main session ID for a considered user
+export function mainSessionId(userId: string): string {
+    return normalizeSessionId(userId);
+}
