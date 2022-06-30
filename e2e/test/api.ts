@@ -16,15 +16,19 @@ if (env == EnvironmentType.dev) {
 }
 
 async function mainSessionId(client: Client): Promise<string> {
-    return (await client.get()).user?.id.toLocaleLowerCase();
+    return (await client.get()).user?.toLocaleLowerCase();
 }
 
-const template = 'node-template';
+async function createSession(client: Client): Promise<string> {
+    const sessionId = await mainSessionId(client);
+    await client.createSession(sessionId, {repositorySource: {repositoryId: 'substrate-node-template', repositoryVersionId: 'master'}});
+    return sessionId;
+}
 
 test('unauthenticated - should not be able to create a new session', async (t) => {
     try {
         const client = newClient();
-        await client.createSession(await mainSessionId(client), {template: template});
+        await createSession(client);
         t.fail('Can create a session w/o login');
     } catch {
         t.pass();
@@ -55,8 +59,7 @@ if (accessToken) {
         const client = newClient();
         await client.login(accessToken);
         try {
-            const sessionId = await mainSessionId(client);
-            await client.createSession(sessionId, {template: template});
+            const sessionId = await createSession(client);
             t.not(await client.getSession(sessionId), null);
             await client.deleteSession(sessionId);
             await waitForSessionDeletion(client, sessionId);
@@ -71,8 +74,7 @@ if (accessToken) {
         const client = newClient();
         await client.login(accessToken);
 
-        const sessionId = await mainSessionId(client);
-        await client.createSession(sessionId, {template: template});
+        const sessionId = await createSession(client);
         t.not(await client.getSession(sessionId), null);
 
         await client.logout();
@@ -94,8 +96,7 @@ if (accessToken) {
             const client = newClient();
             await client.login(accessToken);
 
-            const sessionId = await mainSessionId(client);
-            await client.createSession(sessionId, {template: template});
+            const sessionId = await createSession(client);
             try {
                 const { stdout } = await client.createSessionExecution(sessionId, {command: ["ls"]});
                 console.log(stdout);
