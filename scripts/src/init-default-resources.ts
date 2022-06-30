@@ -9,10 +9,6 @@ function newClient(): Client {
     return new Client(playgroundBaseURL(env), 30000, {credentials: "include"});
 }
 
-async function mainSessionId(client: Client): Promise<string> {
-    return (await client.get()).user?.id.toLocaleLowerCase();
-}
-
 // Connect via Client, create others Role, feed repository
 
 /// TODO
@@ -32,7 +28,7 @@ try {
     client.createRepositoryVersion(repositoryId, "");
 
     const sessionId = "sessionId";
-    client.createSession(sessionId, {repositoryId: repositoryId, repositoryVersionId: "master"});
+    client.createSession(sessionId, {repositorySource: {repositoryId: repositoryId, repositoryVersionId: "master"}});
 
 } finally {
     await client.logout();
