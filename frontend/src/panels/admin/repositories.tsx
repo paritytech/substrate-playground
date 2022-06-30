@@ -89,6 +89,7 @@ function RepositoryRow({ client, repository }: { client: Client, repository: Rep
                     {repository.id}
                 </TableCell>
                 <TableCell>{repository.url}</TableCell>
+                <TableCell>{repository.currentVersion}</TableCell>
             </TableRow>
             <TableRow>
                 <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
@@ -139,6 +140,7 @@ export function Repositories({ client, user }: { client: Client, user: User }): 
                                 <TableCell />
                                 <TableCell>ID</TableCell>
                                 <TableCell>URL</TableCell>
+                                <TableCell>Current Version</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
