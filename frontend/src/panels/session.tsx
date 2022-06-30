@@ -113,10 +113,10 @@ export default function SplitButton({ disabled, onCreate, onCreateCustom }: { di
 
 export async function fetchRepositoriesWithLatestVersions(client: Client): Promise<[Repository, RepositoryVersion][]> {
     const repositories = await client.listRepositories();
-    const repositoriesWithCurrentVersions = (await Promise.all(repositories.map(repository => {
-        const currentRepositoryVersion = repository.currentVersion;
-        return [repository, currentRepositoryVersion];
-    }))) as Array<[Repository, RepositoryVersion | undefined]>;
+    const repositoriesWithCurrentVersions = (await Promise.all(repositories.map(async repository => {
+        const repositoryVersion = repository.currentVersion ? await client.getRepositoryVersion(repository.id, repository.currentVersion) : null;
+        return [repository, repositoryVersion];
+    }))) as Array<[Repository, RepositoryVersion | null]>;
     return repositoriesWithCurrentVersions.filter(repositoryWithCurrentVersion => {
         const state = repositoryWithCurrentVersion[1]?.state;
         if (state?.type == "Ready") {
