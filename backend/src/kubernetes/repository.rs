@@ -6,13 +6,16 @@ use crate::{
         RepositoryVersionState, ResourceType,
     },
 };
-use k8s_openapi::api::core::v1::{PersistentVolume, PersistentVolumeSpec};
+use k8s_openapi::api::core::v1::{
+    PersistentVolumeClaim, PersistentVolumeClaimSpec, ResourceRequirements,
+};
 use k8s_openapi::apimachinery::pkg::{api::resource::Quantity, apis::meta::v1::ObjectMeta};
 use kube::{
     api::{Api, DeleteParams, PostParams},
     Resource,
 };
-use serde_json::from_str;
+use log::warn;
+use serde_json::json;
 use std::collections::BTreeMap;
 
 use super::{
@@ -71,7 +74,7 @@ fn volume_template(
     volume_template_name: &str,
     repository_id: &str,
     repository_version_id: &str,
-) -> PersistentVolume {
+) -> PersistentVolumeClaim {
     let mut labels = BTreeMap::new();
     labels.insert(APP_LABEL.to_string(), APP_VALUE.to_string());
     labels.insert(COMPONENT_LABEL.to_string(), COMPONENT_TYPE.to_string());
@@ -81,18 +84,21 @@ fn volume_template(
         repository_version_id.to_string(),
     );
 
-    let mut capacities = BTreeMap::new();
-    capacities.insert("storage".to_string(), Quantity("5Gi".to_string()));
+    let mut requests = BTreeMap::new();
+    requests.insert("storage".to_string(), Quantity("5Gi".to_string()));
 
-    PersistentVolume {
+    PersistentVolumeClaim {
         metadata: ObjectMeta {
             name: Some(volume_template_name.to_string()),
             labels: Some(labels),
             ..Default::default()
         },
-        spec: Some(PersistentVolumeSpec {
+        spec: Some(PersistentVolumeClaimSpec {
             access_modes: Some(vec!["ReadWriteOnce".to_string()]),
-            capacity: Some(capacities),
+            resources: Some(ResourceRequirements {
+                requests: Some(requests),
+                ..Default::default()
+            }),
             ..Default::default()
         }),
         ..Default::default()
@@ -107,11 +113,11 @@ fn volume_template_name(repository_id: &str, repository_version_id: &str) -> Str
 }
 
 async fn create_volume_template(
-    api: &Api<PersistentVolume>,
+    api: &Api<PersistentVolumeClaim>,
     volume_template_name: &str,
     repository_id: &str,
     repository_version_id: &str,
-) -> Result<PersistentVolume> {
+) -> Result<PersistentVolumeClaim> {
     api.create(
         &PostParams::default(),
         &volume_template(volume_template_name, repository_id, repository_version_id),
@@ -127,24 +133,26 @@ pub async fn update_repository_version_state(
     repository_version_state: &RepositoryVersionState,
 ) -> Result<()> {
     let client = client()?;
-    let persistent_volume_api: Api<PersistentVolume> = Api::namespaced(client.clone(), user_id);
+    let persistent_volume_api: Api<PersistentVolumeClaim> =
+        Api::namespaced(client.clone(), user_id);
     let volume_template_name = volume_template_name(repository_id, repository_version_id);
-
+    let state = serialize(repository_version_state)?;
     update_annotation_value(
         &persistent_volume_api,
         &volume_template_name,
         REPOSITORY_VERSION_STATE_ANNOTATION.to_string(),
-        serialize(repository_version_state)
-            .and_then(|s| from_str(&s).map_err(|err| Error::Failure(err.to_string())))?,
+        json!(state),
     )
     .await
 }
 
 fn persistent_volume_to_repository_version(
-    persistent_volume: &PersistentVolume,
+    persistent_volume: &PersistentVolumeClaim,
 ) -> Result<RepositoryVersion> {
-    let labels = persistent_volume.meta().labels.clone().unwrap_or_default();
-    match labels
+    let metadata = persistent_volume.meta();
+    let annotations = metadata.annotations.clone().unwrap_or_default();
+    let labels = metadata.labels.clone().unwrap_or_default();
+    match annotations
         .get(REPOSITORY_VERSION_STATE_ANNOTATION)
         .map(|s| unserialize(s))
     {
@@ -155,17 +163,21 @@ fn persistent_volume_to_repository_version(
                 .unwrap_or_else(|| "CAN'T HAPPEN".to_string()),
             state,
         }),
-        _ => Err(Error::Failure(
+        Some(Err(err)) => Err(Error::Failure(format!(
+            "Failed to unserialize RepositoryVersion state: {}",
+            err
+        ))),
+        None => Err(Error::Failure(
             "Failed to access RepositoryVersion state".to_string(),
         )),
     }
 }
 
 async fn get_persistent_volume(
-    persistent_volume_api: &Api<PersistentVolume>,
+    persistent_volume_api: &Api<PersistentVolumeClaim>,
     repository_id: &str,
     id: &str,
-) -> Result<Option<PersistentVolume>> {
+) -> Result<Option<PersistentVolumeClaim>> {
     persistent_volume_api
         .get_opt(&volume_template_name(repository_id, id))
         .await
@@ -178,14 +190,18 @@ pub async fn get_repository_version(
     id: &str,
 ) -> Result<Option<RepositoryVersion>> {
     let client = client()?;
-    let persistent_volume_api: Api<PersistentVolume> = Api::namespaced(client.clone(), user_id);
+    let persistent_volume_api: Api<PersistentVolumeClaim> =
+        Api::namespaced(client.clone(), user_id);
     let persistent_volume =
         get_persistent_volume(&persistent_volume_api, repository_id, id).await?;
 
-    match persistent_volume.and_then(|persistent_volume| {
-        persistent_volume_to_repository_version(&persistent_volume).ok()
-    }) {
-        Some(session) => Ok(Some(session)),
+    match persistent_volume {
+        Some(persistent_volume) => {
+            match persistent_volume_to_repository_version(&persistent_volume) {
+                Ok(repository_version) => Ok(Some(repository_version)),
+                Err(err) => Err(err),
+            }
+        }
         None => Ok(None),
     }
 }
@@ -195,27 +211,45 @@ pub async fn list_repository_versions(
     repository_id: &str,
 ) -> Result<Vec<RepositoryVersion>> {
     let client = client()?;
-    let persistent_volume_api: Api<PersistentVolume> = Api::namespaced(client.clone(), user_id);
+    let persistent_volume_api: Api<PersistentVolumeClaim> =
+        Api::namespaced(client.clone(), user_id);
     let persistent_volumes = list_by_selector(
         &persistent_volume_api,
         format!("{}={}", REPOSITORY_LABEL, repository_id).to_string(),
     )
     .await?;
-
     Ok(persistent_volumes
         .into_iter()
-        .flat_map(|p| persistent_volume_to_repository_version(&p))
+        .flat_map(|p| match persistent_volume_to_repository_version(&p) {
+            Ok(repository_version) => Ok(repository_version),
+            Err(err) => {
+                warn!("Failed to convert RepositoryVersion: {}", err);
+
+                Err(err)
+            }
+        })
         .collect())
 }
 
 pub async fn create_repository_version(user_id: &str, repository_id: &str, id: &str) -> Result<()> {
     let client = client()?;
-
     // Create volume
-    let volume_api: Api<PersistentVolume> = Api::namespaced(client.clone(), user_id);
+    let volume_api: Api<PersistentVolumeClaim> = Api::namespaced(client.clone(), user_id);
     let volume_template_name = volume_template_name(repository_id, id);
+
+    // TODO fail if exists
     let _volume =
         create_volume_template(&volume_api, &volume_template_name, repository_id, id).await?;
+
+    // TODO move to builder. Only do it build is successful
+    // Update current version so that it matches this newly created version
+    update_repository(
+        repository_id,
+        RepositoryUpdateConfiguration {
+            current_version: Some(id.to_string()),
+        },
+    )
+    .await?;
 
     // TODO remove, for test only
     update_repository_version_state(
@@ -224,17 +258,7 @@ pub async fn create_repository_version(user_id: &str, repository_id: &str, id: &
         id,
         &RepositoryVersionState::Ready {
             devcontainer_json:
-                "{customizations: {substrate-playground: {tags: {public: \"true\"}}}}".to_string(),
-        },
-    )
-    .await?;
-
-    // TODO move to builder. Only do it build is successful
-    // Update current version so that it matches this newly created version
-    update_repository(
-        repository_id,
-        RepositoryUpdateConfiguration {
-            current_version: Some(id.to_string()),
+                "{\"customizations\": {\"substrate-playground\": {\"description\": \"Test description\", \"tags\": {\"public\": \"true\"}}}}".to_string(),
         },
     )
     .await?;
@@ -296,7 +320,8 @@ pub async fn create_repository_version(user_id: &str, repository_id: &str, id: &
 
 pub async fn delete_repository_version(user_id: &str, repository_id: &str, id: &str) -> Result<()> {
     let client = client()?;
-    let persistent_volume_api: Api<PersistentVolume> = Api::namespaced(client.clone(), user_id);
+    let persistent_volume_api: Api<PersistentVolumeClaim> =
+        Api::namespaced(client.clone(), user_id);
     persistent_volume_api
         .delete(
             &volume_template_name(repository_id, id),
