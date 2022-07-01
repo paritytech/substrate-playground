@@ -21,7 +21,7 @@ async function mainSessionId(client: Client): Promise<string> {
 
 async function createSession(client: Client): Promise<string> {
     const sessionId = await mainSessionId(client);
-    await client.createSession(sessionId, {repositorySource: {repositoryId: 'substrate-node-template', repositoryVersionId: 'master'}});
+    await client.createSession(sessionId, {repositorySource: {repositoryId: 'substrate-node-template'}});
     return sessionId;
 }
 

@@ -1,5 +1,5 @@
 
-import { Client, EnvironmentType, playgroundBaseURL, environmentTypeFromString } from '@substrate/playground-client';
+import { Client, playgroundBaseURL, environmentTypeFromString } from '@substrate/playground-client';
 import 'cross-fetch/dist/node-polyfill.js'; // TODO remove once moving to Node18 (https://github.com/nodejs/node/pull/41749)
 
 const accessToken = process.env.ACCESS_TOKEN;
@@ -11,24 +11,15 @@ function newClient(): Client {
 
 // Connect via Client, create others Role, feed repository
 
-/// TODO
-
 const client = newClient();
 await client.login(accessToken);
 try {
-    /*
-    client.createRole("editor",
-    {permissions: {
-       ResourceType.Pool, [{tag: "Create" }, {tag: "Read" }]}});
-    client.createUser("id", {roles: ["editor"], preferences: {}});
-    */
-
-    const repositoryId = "id";
-    client.createRepository(repositoryId, {url: ""});
-    client.createRepositoryVersion(repositoryId, "");
+    const repositoryId = 'substrate-node-template';
+    client.createRepository(repositoryId, {url: "https://github.com/jeluard/substrate-node-template"});
+    client.createRepositoryVersion(repositoryId, "e1abd651d1412a5171db6595fa37f613b57a73f3");
 
     const sessionId = "sessionId";
-    client.createSession(sessionId, {repositorySource: {repositoryId: repositoryId, repositoryVersionId: "master"}});
+    client.createSession(sessionId, {repositorySource: {repositoryId: repositoryId}});
 
 } finally {
     await client.logout();

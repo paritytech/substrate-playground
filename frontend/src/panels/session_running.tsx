@@ -25,12 +25,7 @@ export function RunningSessionPanel({ client, user, autoDeployRepository, onMiss
 
     useEffect(() => {
         async function createSession(repository: Repository): Promise<void> {
-            const repositoryVersionId = repository.currentVersion;
-            if (repositoryVersionId) {
-                client.createSession(sessionId, {repositorySource: {repositoryId: repository.id, repositoryVersionId: repositoryVersionId}}).then(fetchData);
-            } else {
-                setError({reason: 'No current version defined', action: onSessionFailing});
-            }
+            client.createSession(sessionId, {repositorySource: {repositoryId: repository.id}}).then(fetchData);
         }
 
         async function fetchData() {
