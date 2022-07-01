@@ -27,7 +27,6 @@ export function SessionCreationDialog({ client, conf, sessions, user, repository
     const [canCustomizePoolAffinity, setCanCustomizePoolAffinity] = React.useState(false);
     const [poolAffinity, setPoolAffinity] = React.useState(conf.session.poolAffinity);
     const [pools, setPools] = useState<Pool[] | null>(null);
-    const [users, setUsers] = useState<User[] | null>(null);
 
     useInterval(async () => {
         setPools(await client.listPools());
