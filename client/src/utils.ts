@@ -1,3 +1,5 @@
+import { User } from "./types";
+
 export enum EnvironmentType {dev, staging, production}
 
 export function environmentTypeFromString(s: string): EnvironmentType {
@@ -32,6 +34,6 @@ export function normalizeSessionId(sessionId: string): string {
 }
 
 // Return the main session ID for a considered user
-export function mainSessionId(userId: string): string {
-    return normalizeSessionId(userId);
+export function mainSessionId(user: User): string {
+    return normalizeSessionId(user.id);
 }

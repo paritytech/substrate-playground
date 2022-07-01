@@ -3,11 +3,11 @@ export interface IdentifiedResource {
 }
 
 export interface OwnedResource {
-    userId: string
+    userId: User['id']
 }
 export interface Playground {
     configuration: Configuration,
-    user?: string,
+    userId?: User['id'],
 }
 
 export interface Configuration {
@@ -36,7 +36,7 @@ export type SessionState =
 
 export interface RepositorySource {
     repositoryId: Repository['id'],
-    repositoryVersionId: RepositoryVersion['id'],
+    repositoryVersionId?: RepositoryVersion['id'],
 }
 
 export interface SessionConfiguration {
