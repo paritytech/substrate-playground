@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
 import Paper from '@mui/material/Paper';
-import { Client, Repository, User } from '@substrate/playground-client';
+import { Client, mainSessionId, Repository, User } from '@substrate/playground-client';
 import { CenteredContainer, ErrorMessage, Loading } from '../components';
-import { fetchWithTimeout, find, mainSessionId, sessionUrl } from '../utils';
+import { fetchWithTimeout, find, sessionUrl } from '../utils';
 
 interface Error {
     reason: string,
@@ -17,7 +17,7 @@ interface Loading {
 
 export function RunningSessionPanel({ client, user, autoDeployRepository, onMissingSession, onSessionFailing, onSessionTimeout }: { client: Client, user: User, autoDeployRepository: string | null, onMissingSession: () => void, onSessionFailing: () => void, onSessionTimeout: () => void }): JSX.Element {
     const maxRetries = 5*60;
-    const sessionId = mainSessionId(user.id);
+    const sessionId = mainSessionId(user);
     const ref = useRef(null);
     const [error, setError] = useState<Error>();
     const [url, setUrl] = useState<string>();

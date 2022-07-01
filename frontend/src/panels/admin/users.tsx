@@ -19,7 +19,7 @@ import { Client, Configuration, Pool, ResourceType, User, UserConfiguration, Use
 import { ErrorSnackbar } from '../../components';
 import { useInterval } from '../../hooks';
 import { useStyles, EnhancedTableToolbar, Resources } from '.';
-import { find, mainSessionId } from "../../utils";
+import { find } from "../../utils";
 
 const defaultRole = 'user';
 
@@ -73,7 +73,7 @@ function UserCreationDialog({ client, conf, users, show, onCreate, onHide }: { c
                         label="Role"
                         />
                     <ButtonGroup style={{alignSelf: "flex-end", marginTop: 20}} size="small">
-                        <Button disabled={!id || find(users, id) != null || !poolAffinity} onClick={() => {onCreate(mainSessionId(id), {role: role, preferences: {poolAffinity: poolAffinity}}); onHide();}}>CREATE</Button>
+                        <Button disabled={!id || find(users, id) != null || !poolAffinity} onClick={() => {onCreate(id, {role: role, preferences: {poolAffinity: poolAffinity}}); onHide();}}>CREATE</Button>
                         <Button onClick={onHide}>CLOSE</Button>
                     </ButtonGroup>
                 </Container>
@@ -122,7 +122,7 @@ function UserUpdateDialog({ client, user, show, onUpdate, onHide }: { client: Cl
                         label="Role"
                         />
                     <ButtonGroup style={{alignSelf: "flex-end", marginTop: 20}} size="small">
-                        <Button disabled={ poolAffinity == user.preferences["poolAffinity"] && role == user.role } onClick={() => {onUpdate(mainSessionId(user.id), {role: role, preferences: {poolAffinity: poolAffinity}}); onHide();}}>UPDATE</Button>
+                        <Button disabled={ poolAffinity == user.preferences["poolAffinity"] && role == user.role } onClick={() => {onUpdate(user.id, {role: role, preferences: {poolAffinity: poolAffinity}}); onHide();}}>UPDATE</Button>
                         <Button onClick={onHide}>CLOSE</Button>
                     </ButtonGroup>
                 </Container>

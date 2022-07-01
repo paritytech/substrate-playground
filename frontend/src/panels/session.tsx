@@ -23,10 +23,10 @@ import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
-import { Client, Configuration, NameValuePair, User, Port, Session, SessionConfiguration, Repository, RepositoryVersion } from '@substrate/playground-client';
+import { Client, Configuration, NameValuePair, User, Port, Session, SessionConfiguration, Repository, RepositoryVersion, mainSessionId } from '@substrate/playground-client';
 import { CenteredContainer, ErrorMessage, ErrorSnackbar, LoadingPanel } from "../components";
 import { useInterval } from "../hooks";
-import { canCustomizeSession, formatDuration, mainSessionId } from "../utils";
+import { canCustomizeSession, formatDuration } from "../utils";
 import { SessionCreationDialog } from "./admin/sessions";
 
 const options = [{id: 'create', label: 'Create'}, {id: 'custom', label: 'Customize and Create'}];
@@ -374,7 +374,7 @@ function ExistingSession({session, onStop, onConnect}: {session: Session, onStop
 
 export function SessionPanel({ client, conf, user, onDeployed, onConnect, onRetry, onStop }: {client: Client, conf: Configuration, user: User, onStop: () => Promise<void>, onConnect: (session: Session) => void, onDeployed: (conf: SessionConfiguration) => Promise<void>, onRetry: () => void}): JSX.Element {
     const [session, setSession] = useState<Session | null | undefined>(undefined);
-    const sessionId = mainSessionId(user.id);
+    const sessionId = mainSessionId(user);
 
     useInterval(async () => setSession(await client.getSession(sessionId)), 5000);
 

@@ -25,7 +25,7 @@ export enum Actions {
 
 export type Event =
   | { type: Events.TERMS_APPROVAL; id: string }
-  | { type: Events.LOGIN; user: string; conf: Configuration }
+  | { type: Events.LOGIN; user: User; conf: Configuration }
   | { type: Events.SELECT; panel: PanelId }
   | { type: Events.RESTART; }
   | { type: Events.UNLOGIN; conf?: Configuration; error?: string }

@@ -1,5 +1,5 @@
 import test from 'ava';
-import { Client, EnvironmentType, playgroundBaseURL, environmentTypeFromString } from '@substrate/playground-client';
+import { Client, EnvironmentType, playgroundBaseURL, environmentTypeFromString, mainSessionId } from '@substrate/playground-client';
 
 import 'cross-fetch/dist/node-polyfill.js'; // TODO remove once moving to Node18 (https://github.com/nodejs/node/pull/41749)
 
@@ -15,12 +15,8 @@ if (env == EnvironmentType.dev) {
     process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 }
 
-async function mainSessionId(client: Client): Promise<string> {
-    return (await client.get()).user?.toLocaleLowerCase();
-}
-
 async function createSession(client: Client): Promise<string> {
-    const sessionId = await mainSessionId(client);
+    const sessionId = await mainSessionId((await client.get()).user);
     await client.createSession(sessionId, {repositorySource: {repositoryId: 'substrate-node-template'}});
     return sessionId;
 }

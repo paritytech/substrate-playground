@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom";
-import { Client, Configuration, User, Session, ResourceType } from '@substrate/playground-client';
+import { Client, Configuration, User, Session, ResourceType, mainSessionId } from '@substrate/playground-client';
 import { createTheme, ThemeProvider, Theme, StyledEngineProvider, adaptV4Theme } from '@mui/material/styles';
 import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
@@ -15,7 +15,7 @@ import { TermsPanel } from './panels/terms';
 import { RunningSessionPanel } from './panels/session_running';
 import { SessionPanel } from './panels/session';
 import { terms } from "./terms";
-import { hasPermission, mainSessionId } from "./utils";
+import { hasPermission } from "./utils";
 import { SubstrateLight } from './themes';
 import { CssBaseline } from "@mui/material";
 
@@ -29,10 +29,10 @@ function MainPanel({ client, params, conf, user, panel, onRetry, onConnect, onAf
         case PanelId.SessionSelection:
           return <SessionPanel client={client} conf={conf} user={user} onRetry={onRetry}
                     onStop={async () => {
-                        await client.deleteSession(mainSessionId(user.id));
+                        await client.deleteSession(mainSessionId(user));
                     }}
                     onDeployed={async conf => {
-                        await client.createSession(mainSessionId(user.id), conf);
+                        await client.createSession(mainSessionId(user), conf);
                         onAfterDeployed();
                     }}
                     onConnect={onConnect} />;
@@ -47,7 +47,7 @@ function MainPanel({ client, params, conf, user, panel, onRetry, onConnect, onAf
 
 function ExtraTheiaNav({ client, user, conf, restartAction }: { client: Client, user: User, conf: Configuration, restartAction: () => void }): JSX.Element {
     const [session, setSession] = useState<Session | null | undefined>(undefined);
-    const sessionId = mainSessionId(user.id);
+    const sessionId = mainSessionId(user);
 
     useInterval(async () => {
         const session = await client.getSession(sessionId);
