@@ -235,7 +235,7 @@ fn serialize<T>(value: &T) -> Result<String>
 where
     T: ?Sized + Serialize,
 {
-    serde_yaml::to_string(&value).map_err(|err| Error::Failure(err.to_string()))
+    serde_json::to_string(&value).map_err(|err| Error::Failure(err.to_string()))
 }
 
 fn unserialize<T>(s: &str) -> Result<T>
@@ -283,7 +283,5 @@ pub async fn store_resource_as_config_map<T>(
 where
     T: ?Sized + Serialize,
 {
-    let ser = serialize(resource)?;
-    let str = ser.as_str();
-    add_config_map_value(client, config_map_name, id, str).await
+    add_config_map_value(client, config_map_name, id, serialize(resource)?.as_str()).await
 }
