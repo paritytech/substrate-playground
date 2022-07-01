@@ -37,3 +37,6 @@ pub enum Error {
     #[error("K8sCommunicationFailure: {0}")]
     K8sCommunicationFailure(#[from] kube::Error),
 }
+
+// ResourceError
+// AlreadyExists
