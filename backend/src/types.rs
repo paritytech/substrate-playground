@@ -133,7 +133,7 @@ impl User {
                 log::error!("Unknown role {}", self.role);
 
                 BTreeMap::new()
-            },
+            }
             Err(err) => {
                 log::error!("Cannot read role {}: {:?}", self.role, err);
 
