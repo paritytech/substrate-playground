@@ -18,5 +18,6 @@ configMapGenerator:
 - name: playground-roles
   files:
     - roles/super-admin
+    - roles/user
   options:
     disableNameSuffixHash: true

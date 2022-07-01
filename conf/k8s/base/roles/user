@@ -1,48 +1,26 @@
 id: super-admin
 permissions:
-    Pool:
-    - type: Create
-    - type: Read
-    - type: Update
-    - type: Delete
     Repository:
-    - type: Create
     - type: Read
-    - type: Update
-    - type: Delete
     RepositoryVersion:
     - type: Create
     - type: Read
     - type: Update
     - type: Delete
     Role:
-    - type: Create
     - type: Read
-    - type: Update
-    - type: Delete
     Session:
     - type: Create
     - type: Read
     - type: Update
     - type: Delete
-    - type: Custom
-      name: Administrate
-    - type: Custom
-      name: CustomizeSessionName
-    - type: Custom
-      name: CustomizeSessionDuration
-    - type: Custom
-      name: CustomizeSessionPoolAffinity
     SessionExecution:
     - type: Create
     - type: Read
     - type: Update
     - type: Delete
     User:
-    - type: Create
     - type: Read
-    - type: Update
-    - type: Delete
     Workspace:
     - type: Create
     - type: Read

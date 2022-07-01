@@ -65,7 +65,7 @@ impl<'r> FromRequest<'r> for User {
                                 role: if is_paritytech_member(token_value, &gh_user).await {
                                     "user".to_string()
                                 } else {
-                                    "paritytech_member".to_string()
+                                    "paritytech-member".to_string()
                                 },
                                 preferences: BTreeMap::new(),
                             };
