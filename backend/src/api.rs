@@ -63,9 +63,9 @@ impl<'r> FromRequest<'r> for User {
                             let user = User {
                                 id: user_id.to_string(),
                                 role: if is_paritytech_member(token_value, &gh_user).await {
-                                    "user".to_string()
-                                } else {
                                     "paritytech-member".to_string()
+                                } else {
+                                    "user".to_string()
                                 },
                                 preferences: BTreeMap::new(),
                             };
