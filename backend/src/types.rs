@@ -318,7 +318,7 @@ pub struct SessionRuntimeConfiguration {
 #[serde(rename_all = "camelCase")]
 pub struct RepositorySource {
     pub repository_id: String,
-    pub repository_version_id: String,
+    pub repository_version_id: Option<String>,
 }
 
 #[derive(Deserialize, Clone, Debug)]

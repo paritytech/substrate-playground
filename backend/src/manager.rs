@@ -449,7 +449,7 @@ impl Manager {
         let result = create_session(caller, id, &configuration, session_configuration).await;
 
         info!(
-            "Created session {} with repository_source {}:{}",
+            "Created session {} with repository_source {}:{:?}",
             id, repository_source.repository_id, repository_source.repository_version_id
         );
 

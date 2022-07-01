@@ -29,9 +29,11 @@ use std::{
 };
 
 use super::{
-    client, env_var, ingress_path, list_by_selector, pool::get_pool,
-    repository::get_repository_version, update_annotation_value, APP_LABEL, APP_VALUE,
-    COMPONENT_LABEL, INGRESS_NAME, NODE_POOL_LABEL, OWNER_LABEL,
+    client, env_var, ingress_path, list_by_selector,
+    pool::get_pool,
+    repository::{get_repository, get_repository_version},
+    update_annotation_value, APP_LABEL, APP_VALUE, COMPONENT_LABEL, INGRESS_NAME, NODE_POOL_LABEL,
+    OWNER_LABEL,
 };
 
 const COMPONENT_VALUE: &str = "session";
@@ -423,14 +425,19 @@ pub async fn create_session(
         .repository_source
         .repository_id
         .as_str();
+
+    let repository = get_repository(repository_id)
+        .await?
+        .ok_or_else(|| Error::Failure("".to_string()))?;
     let repository_version_id = session_configuration
         .repository_source
         .repository_version_id
+        .as_ref()
+        .unwrap_or(&repository.id)
         .as_str();
     let devcontainer = if let Some(repository_version) =
         get_repository_version(user.id.as_str(), repository_id, repository_version_id).await?
     {
-        //session_configuration.runtime_configuration
         match repository_version.state {
             RepositoryVersionState::Ready { devcontainer_json } => {
                 parse_devcontainer(devcontainer_json.as_str())
