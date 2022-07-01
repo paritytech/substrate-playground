@@ -7,7 +7,7 @@ export interface OwnedResource {
 }
 export interface Playground {
     configuration: Configuration,
-    userId?: User['id'],
+    user?: User,
 }
 
 export interface Configuration {
