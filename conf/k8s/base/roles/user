@@ -1,4 +1,4 @@
-id: super-admin
+id: user
 permissions:
     Repository:
     - type: Read

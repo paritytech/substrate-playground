@@ -1,4 +1,4 @@
-id: super-admin
+id: paritytech-member
 permissions:
     Pool:
     - type: Create

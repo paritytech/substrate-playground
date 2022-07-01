@@ -17,6 +17,7 @@ resources:
 configMapGenerator:
 - name: playground-roles
   files:
+    - roles/paritytech-member
     - roles/super-admin
     - roles/user
   options:
