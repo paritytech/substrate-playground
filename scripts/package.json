@@ -5,15 +5,13 @@
   "type": "module",
   "scripts": {
     "build": "tsc",
-    "run:create-pool": "node dist/createPool.js",
-    "run:setup": "node dist/index.js",
+    "run:init-default-resources": "node dist/init-default-resources.js",
     "clean": "rm -rf dist/ node_modules/ yarn.lock"
   },
   "engines": {
     "node": ">=16.0.0"
   },
   "dependencies": {
-    "@kubernetes/client-node": "0.16.3",
     "@substrate/playground-client": "1.9.12",
     "cross-fetch": "3.1.5"
   },

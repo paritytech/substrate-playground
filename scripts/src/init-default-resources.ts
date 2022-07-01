@@ -12,15 +12,17 @@ function newClient(): Client {
 // Connect via Client, create others Role, feed repository
 
 const client = newClient();
-await client.login(accessToken);
 try {
+    await client.login(accessToken);
+    console.log( await client.get())
     const repositoryId = 'substrate-node-template';
-    client.createRepository(repositoryId, {url: "https://github.com/jeluard/substrate-node-template"});
-    client.createRepositoryVersion(repositoryId, "e1abd651d1412a5171db6595fa37f613b57a73f3");
+    await client.createRepository(repositoryId, {url: "https://github.com/jeluard/substrate-node-template"});
+    await client.createRepositoryVersion(repositoryId, "e1abd651d1412a5171db6595fa37f613b57a73f3");
 
     const sessionId = "sessionId";
-    client.createSession(sessionId, {repositorySource: {repositoryId: repositoryId}});
-
+    await client.createSession(sessionId, {repositorySource: {repositoryId: repositoryId}});
+} catch(e) {
+    console.error(e);
 } finally {
     await client.logout();
 }
