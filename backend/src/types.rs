@@ -129,9 +129,13 @@ impl User {
                 log::info!("Adding perms for Role {}: {:?}", role.id, role.permissions);
                 role.permissions
             }
-            Ok(None) => BTreeMap::new(),
+            Ok(None) => {
+                log::error!("Unknown role {}", self.role);
+
+                BTreeMap::new()
+            },
             Err(err) => {
-                log::error!("Cannot read role {:?}", err);
+                log::error!("Cannot read role {}: {:?}", self.role, err);
 
                 BTreeMap::new()
             }
