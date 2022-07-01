@@ -216,7 +216,7 @@ export function Users({ client, user, conf }: { client: Client, user: User, conf
                                         {user.id}
                                     </TableCell>
                                     <TableCell>{user.role}</TableCell>
-                                    <TableCell>{user.preferences.toString()}</TableCell>
+                                    <TableCell>{JSON.stringify(user.preferences)}</TableCell>
                                 </TableRow>
                                 )})}
                         </TableBody>
