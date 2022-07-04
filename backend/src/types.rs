@@ -89,7 +89,7 @@ impl fmt::Display for ResourcePermission {
             ResourcePermission::Read => write!(f, "Read"),
             ResourcePermission::Update => write!(f, "Update"),
             ResourcePermission::Delete => write!(f, "Delete"),
-            ResourcePermission::Custom { .. } => write!(f, "Custom"),
+            ResourcePermission::Custom { name } => write!(f, "Custom: {}", name),
         }
     }
 }
