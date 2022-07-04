@@ -203,7 +203,7 @@ pub async fn get_repository_version(
 
 pub async fn list_repository_versions(repository_id: &str) -> Result<Vec<RepositoryVersion>> {
     let client = client()?;
-    let persistent_volume_api: Api<PersistentVolumeClaim> = Api::all(client.clone());
+    let persistent_volume_api: Api<PersistentVolumeClaim> = Api::default_namespaced(client.clone());
     let persistent_volumes = list_by_selector(
         &persistent_volume_api,
         format!("{}={}", REPOSITORY_LABEL, repository_id).as_str(),
@@ -248,7 +248,7 @@ pub async fn create_repository_version(repository_id: &str, id: &str) -> Result<
         id,
         &RepositoryVersionState::Ready {
             devcontainer_json:
-                "{\"customizations\": {\"substrate-playground\": {\"description\": \"Test description\", \"tags\": {\"public\": \"true\"}}}}".to_string(),
+                "{\"image\": \"gitpod/openvscode-server\",\"customizations\": {\"substrate-playground\": {\"description\": \"Test description\", \"tags\": {\"public\": \"true\"}}}}".to_string(),
         },
     )
     .await?;
