@@ -59,8 +59,8 @@ if (accessToken) {
             t.not(await client.getSession(sessionId), null);
             await client.deleteSession(sessionId);
             await waitForSessionDeletion(client, sessionId);
-        } catch {
-            t.fail('Failed to create a session');
+        } catch(e) {
+            t.fail(`Failed to create a session ${e.message}`);
         } finally {
             await client.logout();
         }
