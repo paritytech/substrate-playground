@@ -12,9 +12,9 @@ use crate::{
 use futures::StreamExt;
 use k8s_openapi::api::{
     core::v1::{
-        Affinity, Container, EnvVar, Namespace, NodeAffinity, NodeSelectorRequirement,
-        NodeSelectorTerm, Pod, PodSpec, PreferredSchedulingTerm, ResourceRequirements,
-        SecurityContext, Service, ServiceAccount, ServicePort, ServiceSpec,
+        Affinity, Container, EnvVar, NodeAffinity, NodeSelectorRequirement, NodeSelectorTerm, Pod,
+        PodSpec, PreferredSchedulingTerm, ResourceRequirements, SecurityContext, Service,
+        ServicePort, ServiceSpec,
     },
     networking::v1::{HTTPIngressPath, HTTPIngressRuleValue, Ingress, IngressRule},
 };
@@ -29,18 +29,17 @@ use std::{
 };
 
 use super::{
-    client, env_var, ingress_path, list_by_selector,
+    client, env_var, ingress_path, list_resources,
     pool::get_pool,
     repository::{get_repository, get_repository_version},
-    update_annotation_value, APP_LABEL, APP_VALUE, COMPONENT_LABEL, INGRESS_NAME, NODE_POOL_LABEL,
-    OWNER_LABEL,
+    update_annotation_value, user_namespace, APP_LABEL, APP_VALUE, COMPONENT_LABEL, INGRESS_NAME,
+    NODE_POOL_LABEL, OWNER_LABEL,
 };
 
-const COMPONENT_VALUE: &str = "session";
+const RESOURCE_ID: &str = "RESOURCE_ID";
+const COMPONENT: &str = "session";
 const SESSION_DURATION_ANNOTATION: &str = "app.playground/session_duration";
 const THEIA_WEB_PORT: i32 = 3000;
-const SESSION_NAME: &str = "session";
-const SERVICE_SESSION_NAME: &str = "session-service-account";
 
 fn duration_to_string(duration: Duration) -> String {
     duration.as_secs().to_string()
@@ -74,6 +73,10 @@ fn pod_annotations(duration: &Duration) -> BTreeMap<String, String> {
     annotations
 }
 
+fn service_account_name(id: &str) -> String {
+    format!("{}-service-account", id)
+}
+
 fn pod(
     user_id: &str,
     session_id: &str,
@@ -84,18 +87,19 @@ fn pod(
 ) -> Pod {
     let mut labels = BTreeMap::new();
     labels.insert(APP_LABEL.to_string(), APP_VALUE.to_string());
-    labels.insert(COMPONENT_LABEL.to_string(), COMPONENT_VALUE.to_string());
+    labels.insert(COMPONENT_LABEL.to_string(), COMPONENT.to_string());
+    labels.insert(RESOURCE_ID.to_string(), session_id.to_string());
     labels.insert(OWNER_LABEL.to_string(), user_id.to_string());
 
     Pod {
         metadata: ObjectMeta {
-            name: Some(SESSION_NAME.to_string()),
+            name: Some(session_id.to_string()),
             labels: Some(labels),
             annotations: Some(pod_annotations(duration)),
             ..Default::default()
         },
         spec: Some(PodSpec {
-            service_account: Some(SERVICE_SESSION_NAME.to_string()),
+            service_account: Some(service_account_name(session_id)),
             affinity: Some(Affinity {
                 node_affinity: Some(NodeAffinity {
                     preferred_during_scheduling_ignored_during_execution: Some(vec![
@@ -116,7 +120,7 @@ fn pod(
                 ..Default::default()
             }),
             containers: vec![Container {
-                name: format!("{}-container", COMPONENT_VALUE),
+                name: format!("{}-container", COMPONENT),
                 image: Some(image.to_string()),
                 env: Some(pod_env_variables(envs, session_id)),
                 resources: Some(ResourceRequirements {
@@ -144,7 +148,7 @@ fn pod(
                 }),
                 ..Default::default()
             }],
-            termination_grace_period_seconds: Some(1),
+            termination_grace_period_seconds: Some(0),
             automount_service_account_token: Some(false),
             ..Default::default()
         }),
@@ -152,24 +156,12 @@ fn pod(
     }
 }
 
-fn namespace(name: String) -> Result<Namespace> {
-    let labels = BTreeMap::from([(NAMESPACE_TYPE.to_string(), NAMESPACE_SESSION.to_string())]);
-    Ok(Namespace {
-        metadata: ObjectMeta {
-            name: Some(name),
-            labels: Some(labels),
-            ..Default::default()
-        },
-        ..Default::default()
-    })
-}
-
 const SESSION_SERVICE_NAME: &str = "service";
 
 fn service(session_id: &str, ports: Vec<Port>) -> Service {
     let mut labels = BTreeMap::new();
     labels.insert(APP_LABEL.to_string(), APP_VALUE.to_string());
-    labels.insert(COMPONENT_LABEL.to_string(), COMPONENT_VALUE.to_string());
+    labels.insert(COMPONENT_LABEL.to_string(), COMPONENT.to_string());
     labels.insert(OWNER_LABEL.to_string(), session_id.to_string());
     let mut selector = BTreeMap::new();
     selector.insert(OWNER_LABEL.to_string(), session_id.to_string());
@@ -279,60 +271,45 @@ fn pod_to_state(pod: &Pod) -> types::SessionState {
 }
 
 // Creates a Session from a Pod annotations
-fn pod_to_session(id: &str, pod: &Pod) -> Session {
+fn pod_to_session(pod: &Pod) -> Result<Session> {
     let max_duration = string_to_duration(
         pod.annotations()
             .get(SESSION_DURATION_ANNOTATION)
             .unwrap_or(&"".to_string()),
     );
-    Session {
-        id: id.to_string(),
+    Ok(Session {
+        id: pod
+            .labels()
+            .get(RESOURCE_ID)
+            .ok_or_else(|| Error::Failure(format!("Missing label {}", RESOURCE_ID)))?
+            .to_string(),
         user_id: pod
             .labels()
             .get(OWNER_LABEL)
-            .unwrap_or(&"".to_string())
+            .ok_or_else(|| Error::Failure(format!("Missing label {}", OWNER_LABEL)))?
             .to_string(),
         max_duration,
         state: pod_to_state(pod),
-    }
+    })
 }
 
-pub async fn get_session(session_id: &str) -> Result<Option<Session>> {
+pub async fn get_session(user_id: &str, session_id: &str) -> Result<Option<Session>> {
     let client = client()?;
-    let pod_api: Api<Pod> = Api::namespaced(client, session_id);
+    let pod_api: Api<Pod> = Api::namespaced(client, &user_namespace(user_id));
     let pod = pod_api
-        .get_opt(SESSION_NAME)
+        .get_opt(session_id)
         .await
         .map_err(Error::K8sCommunicationFailure)?;
 
-    match pod.map(|pod| pod_to_session(session_id, &pod)) {
-        Some(session) => Ok(Some(session)),
+    match pod {
+        Some(pod) => pod_to_session(&pod).map(Some),
         None => Ok(None),
     }
 }
 
-const NAMESPACE_TYPE: &str = "NAMESPACE_TYPE";
-const NAMESPACE_SESSION: &str = "NAMESPACE_SESSION";
-
 /// Lists all currently running sessions
 pub async fn list_sessions() -> Result<Vec<Session>> {
-    let client = client()?;
-    let namespace_api: Api<Namespace> = Api::all(client);
-
-    let namespaces = list_by_selector(
-        &namespace_api,
-        format!("{}={}", NAMESPACE_TYPE, NAMESPACE_SESSION).to_string(),
-    )
-    .await?;
-
-    Ok(futures::stream::iter(
-        namespaces
-            .iter()
-            .flat_map(|namespace| namespace.metadata.name.clone()),
-    )
-    .filter_map(|name| async move { get_session(&name).await.ok().flatten() })
-    .collect::<Vec<Session>>()
-    .await)
+    list_resources(COMPONENT, pod_to_session).await
 }
 
 pub async fn patch_ingress(runtimes: &BTreeMap<String, Vec<Port>>) -> Result<()> {
@@ -414,6 +391,7 @@ pub async fn create_session(
         .await?
         .ok_or_else(|| Error::UnknownResource(ResourceType::Pool, pool_id.clone()))?;
     let max_sessions_allowed = pool.nodes.len() * configuration.session.max_sessions_per_pod;
+    let user_id = &user.id;
     let sessions = list_sessions().await?;
     if sessions.len() >= max_sessions_allowed {
         // TODO Should trigger pool dynamic scalability. Right now this will only consider the pool lower bound.
@@ -429,14 +407,21 @@ pub async fn create_session(
     let repository = get_repository(repository_id)
         .await?
         .ok_or_else(|| Error::Failure("".to_string()))?;
-    let repository_version_id = session_configuration
+    let repository_version_id = match &session_configuration
         .repository_source
         .repository_version_id
-        .as_ref()
-        .unwrap_or(&repository.id)
-        .as_str();
+    {
+        Some(repository_version_id) => Ok(repository_version_id),
+        None => match repository.current_version.as_ref() {
+            Some(version) => Ok(version),
+            None => Err(Error::Failure(
+                "No version provided and no currentVersion set".to_string(),
+            )),
+        },
+    }?
+    .as_str();
     let devcontainer = if let Some(repository_version) =
-        get_repository_version(user.id.as_str(), repository_id, repository_version_id).await?
+        get_repository_version(user_id, repository_id, repository_version_id).await?
     {
         match repository_version.state {
             RepositoryVersionState::Ready { devcontainer_json } => {
@@ -478,36 +463,6 @@ pub async fn create_session(
         .duration
         .unwrap_or(configuration.session.duration);
 
-    // Deploy a new namespace for this session, if needed
-    let namespace_api: Api<Namespace> = Api::all(client.clone());
-    if namespace_api
-        .get_opt(id)
-        .await
-        .map_err(Error::K8sCommunicationFailure)?
-        .is_none()
-    {
-        let namespace = namespace(id.to_string())?;
-        namespace_api
-            .create(&PostParams::default(), &namespace)
-            .await
-            .map_err(Error::K8sCommunicationFailure)?;
-
-        let service_account_api: Api<ServiceAccount> = Api::namespaced(client.clone(), id);
-        service_account_api
-            .create(
-                &PostParams::default(),
-                &ServiceAccount {
-                    metadata: ObjectMeta {
-                        name: Some(SERVICE_SESSION_NAME.to_string()),
-                        ..Default::default()
-                    },
-                    ..Default::default()
-                },
-            )
-            .await
-            .map_err(Error::K8sCommunicationFailure)?;
-    }
-
     let envs = devcontainer
         .container_env
         .unwrap_or_default()
@@ -519,7 +474,7 @@ pub async fn create_session(
         .collect();
 
     // Deploy a new pod for this image
-    let pod_api: Api<Pod> = Api::namespaced(client.clone(), id);
+    let pod_api: Api<Pod> = Api::namespaced(client.clone(), &user_namespace(user_id));
     pod_api
         .create(
             &PostParams::default(),
@@ -529,7 +484,7 @@ pub async fn create_session(
         .map_err(Error::K8sCommunicationFailure)?;
 
     // Deploy the associated service
-    let service_api: Api<Service> = Api::namespaced(client.clone(), id);
+    let service_api: Api<Service> = Api::namespaced(client.clone(), &user_namespace(user_id));
     let service = service(id, ports);
     service_api
         .create(&PostParams::default(), &service)
@@ -550,11 +505,12 @@ pub async fn create_session(
 }
 
 pub async fn update_session(
+    user_id: &str,
     id: &str,
     configuration: Configuration,
     session_configuration: SessionUpdateConfiguration,
 ) -> Result<()> {
-    let session = get_session(id)
+    let session = get_session(user_id, id)
         .await?
         .ok_or_else(|| Error::UnknownResource(ResourceType::Session, id.to_string()))?;
 
@@ -567,11 +523,11 @@ pub async fn update_session(
     }
     if duration != session.max_duration {
         let client = client()?;
-        let pod_api: Api<Pod> = Api::namespaced(client.clone(), id);
+        let pod_api: Api<Pod> = Api::namespaced(client.clone(), &user_namespace(user_id));
         update_annotation_value(
             &pod_api,
-            SESSION_NAME,
-            SESSION_DURATION_ANNOTATION.to_string(),
+            id,
+            SESSION_DURATION_ANNOTATION,
             json!(duration_to_string(duration)),
         )
         .await?
@@ -580,9 +536,9 @@ pub async fn update_session(
     Ok(())
 }
 
-pub async fn delete_session(id: &str) -> Result<()> {
+pub async fn delete_session(user_id: &str, id: &str) -> Result<()> {
     let client = client()?;
-    get_session(id)
+    get_session(user_id, id)
         .await?
         .ok_or_else(|| Error::UnknownResource(ResourceType::Session, id.to_string()))?;
 
@@ -597,19 +553,19 @@ pub async fn delete_session(id: &str) -> Result<()> {
         .map_err(Error::K8sCommunicationFailure)?;
 
     // Undeploy the ingress service
-    let service_api: Api<Service> = Api::namespaced(client.clone(), id);
+    let service_api: Api<Service> = Api::namespaced(client.clone(), &user_namespace(user_id));
     service_api
         .delete(
-            SESSION_SERVICE_NAME,
+            &service_account_name(id),
             &DeleteParams::default().grace_period(0),
         )
         .await
         .map_err(Error::K8sCommunicationFailure)?;
 
     // Undeploy the pod
-    let pod_api: Api<Pod> = Api::namespaced(client.clone(), id);
+    let pod_api: Api<Pod> = Api::namespaced(client.clone(), &user_namespace(user_id));
     pod_api
-        .delete(SESSION_NAME, &DeleteParams::default().grace_period(0))
+        .delete(id, &DeleteParams::default().grace_period(0))
         .await
         .map_err(Error::K8sCommunicationFailure)?;
 
@@ -657,11 +613,12 @@ async fn get_output(mut attached: AttachedProcess) -> String {
 }
 
 pub async fn create_session_execution(
+    user_id: &str,
     session_id: &str,
     execution_configuration: SessionExecutionConfiguration,
 ) -> Result<SessionExecution> {
     let client = client()?;
-    let pod_api: Api<Pod> = Api::namespaced(client, session_id);
+    let pod_api: Api<Pod> = Api::namespaced(client, &user_namespace(user_id));
     let attached = pod_api
         .exec(
             session_id,

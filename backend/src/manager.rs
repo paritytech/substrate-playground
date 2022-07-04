@@ -94,7 +94,7 @@ impl Manager {
                                 let session = session.clone();
                                 let sid = session.id;
                                 let id = sid.as_str();
-                                if let Err(err) = delete_session(id).await {
+                                if let Err(err) = delete_session(&session.user_id, id).await {
                                     warn!("Error while undeploying {}: {}", id, err)
                                 }
                             }
@@ -312,7 +312,7 @@ impl Manager {
         )
         .await?;
 
-        list_repository_versions(&caller.id, repository_id).await
+        list_repository_versions(repository_id).await
     }
 
     pub async fn create_repository_version(
@@ -363,9 +363,9 @@ impl Manager {
 
     // Sessions
 
-    async fn ensure_session_ownership(&self, user_id: &str, session_id: &str) -> Result<Session> {
-        if let Some(session) = get_session(session_id).await? {
-            if user_id != session.user_id {
+    async fn ensure_session_ownership(&self, user: &User, session_id: &str) -> Result<Session> {
+        if let Some(session) = get_session(&user.id, session_id).await? {
+            if user.id != session.user_id {
                 return Err(Error::ResourceNotOwned(
                     ResourceType::Session,
                     session_id.to_string(),
@@ -383,7 +383,7 @@ impl Manager {
     pub async fn get_session(&self, caller: &User, id: &str) -> Result<Option<Session>> {
         ensure_permission(caller, ResourceType::Session, ResourcePermission::Read).await?;
 
-        match self.ensure_session_ownership(&caller.id, id).await {
+        match self.ensure_session_ownership(caller, id).await {
             Err(failure @ Error::Failure(_)) => Err(failure),
             Err(_) => Ok(None),
             Ok(session) => Ok(Some(session)),
@@ -473,18 +473,18 @@ impl Manager {
     ) -> Result<()> {
         ensure_permission(caller, ResourceType::Session, ResourcePermission::Update).await?;
 
-        self.ensure_session_ownership(&caller.id, id).await?;
+        self.ensure_session_ownership(caller, id).await?;
 
         let configuration = get_configuration().await?;
-        update_session(id, configuration, session_update_configuration).await
+        update_session(&caller.id, id, configuration, session_update_configuration).await
     }
 
     pub async fn delete_session(&self, caller: &User, id: &str) -> Result<()> {
         ensure_permission(caller, ResourceType::Session, ResourcePermission::Delete).await?;
 
-        self.ensure_session_ownership(&caller.id, id).await?;
+        self.ensure_session_ownership(caller, id).await?;
 
-        let result = delete_session(id).await;
+        let result = delete_session(&caller.id, id).await;
         match &result {
             Ok(_) => {
                 self.metrics.inc_undeploy_counter();
@@ -512,9 +512,8 @@ impl Manager {
         )
         .await?;
 
-        self.ensure_session_ownership(&caller.id, session_id)
-            .await?;
+        self.ensure_session_ownership(caller, session_id).await?;
 
-        create_session_execution(session_id, session_execution_configuration).await
+        create_session_execution(&caller.id, session_id, session_execution_configuration).await
     }
 }

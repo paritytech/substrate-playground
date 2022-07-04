@@ -11,14 +11,17 @@ use crate::{
     utils::var,
 };
 use json_patch::{AddOperation, PatchOperation, RemoveOperation};
-use k8s_openapi::api::{
-    core::v1::{ConfigMap, EnvVar, Pod},
-    networking::v1::{
-        HTTPIngressPath, Ingress, IngressBackend, IngressServiceBackend, ServiceBackendPort,
+use k8s_openapi::{
+    api::{
+        core::v1::{ConfigMap, EnvVar, Pod},
+        networking::v1::{
+            HTTPIngressPath, Ingress, IngressBackend, IngressServiceBackend, ServiceBackendPort,
+        },
     },
+    Metadata,
 };
 use kube::{
-    api::{ListParams, Patch, PatchParams},
+    api::{ListParams, ObjectMeta, Patch, PatchParams},
     Api, Client, Config,
 };
 use serde::{de::DeserializeOwned, Serialize};
@@ -123,13 +126,9 @@ pub fn client() -> Result<Client> {
 
 pub async fn list_by_selector<K: Clone + DeserializeOwned + Debug>(
     api: &Api<K>,
-    selector: String,
+    label_selector: &str,
 ) -> Result<Vec<K>> {
-    let params = ListParams {
-        label_selector: Some(selector),
-        ..ListParams::default()
-    };
-    api.list(&params)
+    api.list(&ListParams::default().labels(label_selector))
         .await
         .map(|l| l.items)
         .map_err(Error::K8sCommunicationFailure)
@@ -138,6 +137,10 @@ pub async fn list_by_selector<K: Clone + DeserializeOwned + Debug>(
 pub async fn current_pod_api() -> Result<Api<Pod>> {
     // TODO GET name / namespace from an env variable
     Err(Error::SessionIdAlreayUsed)
+}
+
+pub fn user_namespace(user_id: &str) -> String {
+    user_id.to_lowercase()
 }
 
 /// ConfigMap utilities
@@ -167,16 +170,13 @@ pub async fn add_config_map_value(
     value: &str,
 ) -> Result<()> {
     let config_map_api: Api<ConfigMap> = Api::default_namespaced(client.to_owned());
-    let params = PatchParams {
-        ..PatchParams::default()
-    };
     let patch: Patch<json_patch::Patch> =
         Patch::Json(json_patch::Patch(vec![PatchOperation::Add(AddOperation {
             path: format!("/data/{}", key),
             value: json!(value),
         })]));
     config_map_api
-        .patch(name, &params, &patch)
+        .patch(name, &PatchParams::default(), &patch)
         .await
         .map_err(Error::K8sCommunicationFailure)?;
     Ok(())
@@ -189,9 +189,6 @@ pub async fn add_config_map_value(
 // Equivalent to `kubectl patch configmap $name --type=json -p='[{"op": "remove", "path": "/data/$key"}]'`
 pub async fn delete_config_map_value(client: &Client, name: &str, key: &str) -> Result<()> {
     let config_map_api: Api<ConfigMap> = Api::default_namespaced(client.to_owned());
-    let params = PatchParams {
-        ..PatchParams::default()
-    };
     let patch: Patch<json_patch::Patch> =
         Patch::Json(json_patch::Patch(vec![PatchOperation::Remove(
             RemoveOperation {
@@ -199,7 +196,7 @@ pub async fn delete_config_map_value(client: &Client, name: &str, key: &str) -> 
             },
         )]));
     config_map_api
-        .patch(name, &params, &patch)
+        .patch(name, &PatchParams::default(), &patch)
         .await
         .map_err(Error::K8sCommunicationFailure)?;
     Ok(())
@@ -208,21 +205,33 @@ pub async fn delete_config_map_value(client: &Client, name: &str, key: &str) -> 
 pub async fn update_annotation_value<K: Clone + DeserializeOwned + Debug>(
     api: &Api<K>,
     id: &str,
-    annotation_name: String,
+    name: &str,
     value: Value,
 ) -> Result<()> {
-    let params = PatchParams {
-        ..PatchParams::default()
-    };
+    update_value(api, id, format!("/metadata/annotations/{}", name), value).await
+}
+
+pub async fn update_label_value<K: Clone + DeserializeOwned + Debug>(
+    api: &Api<K>,
+    id: &str,
+    name: &str,
+    value: Value,
+) -> Result<()> {
+    update_value(api, id, format!("/metadata/labels/{}", name), value).await
+}
+
+pub async fn update_value<K: Clone + DeserializeOwned + Debug>(
+    api: &Api<K>,
+    id: &str,
+    path: String,
+    value: Value,
+) -> Result<()> {
     let patch: Patch<json_patch::Patch> =
         Patch::Json(json_patch::Patch(vec![PatchOperation::Add(AddOperation {
-            path: format!(
-                "/metadata/annotations/{}",
-                annotation_name.replace('/', "~1")
-            ),
+            path,
             value,
         })]));
-    api.patch(id, &params, &patch)
+    api.patch(id, &PatchParams::default(), &patch)
         .await
         .map_err(Error::K8sCommunicationFailure)?;
 
@@ -231,14 +240,21 @@ pub async fn update_annotation_value<K: Clone + DeserializeOwned + Debug>(
 
 /// Resource utilities
 
-fn serialize<T>(value: &T) -> Result<String>
+fn serialize_json<T>(value: &T) -> Result<String>
 where
     T: ?Sized + Serialize,
 {
     serde_json::to_string(&value).map_err(|err| Error::Failure(err.to_string()))
 }
 
-fn unserialize<T>(s: &str) -> Result<T>
+fn unserialize_json<T>(s: &str) -> Result<T>
+where
+    T: DeserializeOwned,
+{
+    serde_json::from_str(s).map_err(|err| Error::Failure(err.to_string()))
+}
+
+fn unserialize_yaml<T>(s: &str) -> Result<T>
 where
     T: DeserializeOwned,
 {
@@ -254,7 +270,7 @@ where
     T: DeserializeOwned,
 {
     let resources = get_config_map(client, config_map_name).await?;
-    match resources.get(id).map(|resource| unserialize(resource)) {
+    match resources.get(id).map(|resource| unserialize_yaml(resource)) {
         Some(resource) => resource.map(Some),
         None => Ok(None),
     }
@@ -270,7 +286,7 @@ where
     Ok(get_config_map(client, config_map_name)
         .await?
         .into_iter()
-        .flat_map(|(_k, v)| unserialize::<T>(&v))
+        .flat_map(|(_k, v)| unserialize_yaml::<T>(&v))
         .collect())
 }
 
@@ -283,5 +299,40 @@ pub async fn store_resource_as_config_map<T>(
 where
     T: ?Sized + Serialize,
 {
-    add_config_map_value(client, config_map_name, id, serialize(resource)?.as_str()).await
+    add_config_map_value(
+        client,
+        config_map_name,
+        id,
+        serialize_json(resource)?.as_str(),
+    )
+    .await
+}
+
+/// Resources
+
+pub async fn list_resources<T, U>(resource_type: &str, f: fn(t: &T) -> Result<U>) -> Result<Vec<U>>
+where
+    T: Clone + std::fmt::Debug + DeserializeOwned + Metadata,
+    T: Default,
+    T: Metadata<Ty = ObjectMeta>,
+{
+    let client = client()?;
+    let api: Api<T> = Api::all(client);
+    let resources = list_by_selector(
+        &api,
+        format!("{}={}", COMPONENT_LABEL, resource_type).as_str(),
+    )
+    .await?;
+
+    Ok(resources
+        .iter()
+        .filter_map(|resource| match f(resource) {
+            Ok(resource) => Some(resource),
+            Err(err) => {
+                log::error!("Failed to convert: {}", err);
+
+                None
+            }
+        })
+        .collect())
 }
