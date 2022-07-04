@@ -4,7 +4,7 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "test": "ava -s --timeout=10m",
+    "test": "ava -s --timeout=5m",
     "clean": "rm -rf dist/ node_modules/ yarn.lock"
   },
   "ava": {
@@ -15,7 +15,8 @@
       "ts": "module"
     },
     "nodeArguments": [
-      "--loader=ts-node/esm"
+      "--loader=esbuild-node-loader",
+      "--experimental-specifier-resolution=node"
     ]
   },
   "engines": {
@@ -23,13 +24,13 @@
   },
   "dependencies": {
     "@substrate/playground-client": "1.9.12",
-    "cross-fetch": "3.1.5"
+    "cross-fetch": "3.1.5",
+    "esbuild-node-loader": "^0.8.0"
   },
   "devDependencies": {
     "@types/node": "18.0.1",
     "ava": "4.3.0",
     "playwright": "1.23.0",
-    "ts-node": "10.8.2",
     "typescript": "4.7.4"
   }
 }
