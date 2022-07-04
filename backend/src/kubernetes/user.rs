@@ -25,7 +25,7 @@ const RESOURCE_ID: &str = "RESOURCE_ID";
 const COMPONENT: &str = "user";
 const ROLE_ANNOTATION: &str = "ROLE";
 const PREFERENCES_ANNOTATION: &str = "PREFERENCES";
-const SERVICE_SESSION_NAME: &str = "session-service-account";
+pub const DEFAULT_SERVICE_ACCOUNT: &str = "default-service-account";
 
 fn namespace_to_user(namespace: &Namespace) -> Result<User> {
     let annotations = namespace.annotations();
@@ -109,7 +109,7 @@ pub async fn create_user(id: &str, conf: UserConfiguration) -> Result<()> {
             &PostParams::default(),
             &ServiceAccount {
                 metadata: ObjectMeta {
-                    name: Some(SERVICE_SESSION_NAME.to_string()),
+                    name: Some(DEFAULT_SERVICE_ACCOUNT.to_string()),
                     ..Default::default()
                 },
                 ..Default::default()

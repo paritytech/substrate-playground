@@ -33,7 +33,7 @@ use super::{
     pool::get_pool,
     repository::{get_repository, get_repository_version},
     update_annotation_value, user_namespace, APP_LABEL, APP_VALUE, COMPONENT_LABEL, INGRESS_NAME,
-    NODE_POOL_LABEL, OWNER_LABEL,
+    NODE_POOL_LABEL, OWNER_LABEL, user::DEFAULT_SERVICE_ACCOUNT,
 };
 
 const RESOURCE_ID: &str = "RESOURCE_ID";
@@ -73,10 +73,6 @@ fn pod_annotations(duration: &Duration) -> BTreeMap<String, String> {
     annotations
 }
 
-fn service_account_name(id: &str) -> String {
-    format!("{}-service-account", id)
-}
-
 fn pod(
     user_id: &str,
     session_id: &str,
@@ -99,7 +95,7 @@ fn pod(
             ..Default::default()
         },
         spec: Some(PodSpec {
-            service_account: Some(service_account_name(session_id)),
+            service_account_name: Some(DEFAULT_SERVICE_ACCOUNT.to_string()),
             affinity: Some(Affinity {
                 node_affinity: Some(NodeAffinity {
                     preferred_during_scheduling_ignored_during_execution: Some(vec![
@@ -556,7 +552,7 @@ pub async fn delete_session(user_id: &str, id: &str) -> Result<()> {
     let service_api: Api<Service> = Api::namespaced(client.clone(), &user_namespace(user_id));
     service_api
         .delete(
-            &service_account_name(id),
+            SESSION_SERVICE_NAME,
             &DeleteParams::default().grace_period(0),
         )
         .await
