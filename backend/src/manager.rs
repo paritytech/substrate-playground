@@ -297,7 +297,7 @@ impl Manager {
         )
         .await?;
 
-        get_repository_version(&caller.id, repository_id, id).await
+        get_repository_version(repository_id, id).await
     }
 
     pub async fn list_repository_versions(
@@ -328,7 +328,7 @@ impl Manager {
         )
         .await?;
 
-        create_repository_version(&caller.id, repository_id, id).await
+        create_repository_version(repository_id, id).await
     }
 
     pub async fn delete_repository_version(
@@ -344,7 +344,7 @@ impl Manager {
         )
         .await?;
 
-        delete_repository_version(&caller.id, repository_id, id).await
+        delete_repository_version(repository_id, id).await
     }
 
     // Pools

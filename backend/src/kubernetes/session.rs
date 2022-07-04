@@ -421,7 +421,7 @@ pub async fn create_session(
     }?
     .as_str();
     let devcontainer = if let Some(repository_version) =
-        get_repository_version(user_id, repository_id, repository_version_id).await?
+        get_repository_version(repository_id, repository_version_id).await?
     {
         match repository_version.state {
             RepositoryVersionState::Ready { devcontainer_json } => {

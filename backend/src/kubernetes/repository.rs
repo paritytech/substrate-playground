@@ -21,7 +21,7 @@ use std::collections::BTreeMap;
 use super::{
     client, delete_config_map_value, get_resource_from_config_map, list_by_selector,
     list_resources_from_config_map, serialize_json, store_resource_as_config_map, unserialize_yaml,
-    update_annotation_value, user_namespace, APP_LABEL, APP_VALUE, COMPONENT_LABEL,
+    update_annotation_value, APP_LABEL, APP_VALUE, COMPONENT_LABEL,
 };
 
 const REPOSITORY_LABEL: &str = "REPOSITORY_LABEL";
@@ -127,14 +127,12 @@ async fn create_volume_template(
 }
 
 pub async fn update_repository_version_state(
-    user_id: &str,
     repository_id: &str,
     repository_version_id: &str,
     repository_version_state: &RepositoryVersionState,
 ) -> Result<()> {
     let client = client()?;
-    let persistent_volume_api: Api<PersistentVolumeClaim> =
-        Api::namespaced(client.clone(), &user_namespace(user_id));
+    let persistent_volume_api: Api<PersistentVolumeClaim> = Api::default_namespaced(client.clone());
     let volume_template_name = volume_template_name(repository_id, repository_version_id);
     let state = serialize_json(repository_version_state)?;
     update_annotation_value(
@@ -184,13 +182,11 @@ async fn get_persistent_volume(
 }
 
 pub async fn get_repository_version(
-    user_id: &str,
     repository_id: &str,
     id: &str,
 ) -> Result<Option<RepositoryVersion>> {
     let client = client()?;
-    let persistent_volume_api: Api<PersistentVolumeClaim> =
-        Api::namespaced(client.clone(), &user_namespace(user_id));
+    let persistent_volume_api: Api<PersistentVolumeClaim> = Api::default_namespaced(client.clone());
     let persistent_volume =
         get_persistent_volume(&persistent_volume_api, repository_id, id).await?;
 
@@ -226,11 +222,10 @@ pub async fn list_repository_versions(repository_id: &str) -> Result<Vec<Reposit
         .collect())
 }
 
-pub async fn create_repository_version(user_id: &str, repository_id: &str, id: &str) -> Result<()> {
+pub async fn create_repository_version(repository_id: &str, id: &str) -> Result<()> {
     let client = client()?;
     // Create volume
-    let volume_api: Api<PersistentVolumeClaim> =
-        Api::namespaced(client.clone(), &user_namespace(user_id));
+    let volume_api: Api<PersistentVolumeClaim> = Api::default_namespaced(client.clone());
     let volume_template_name = volume_template_name(repository_id, id);
 
     // TODO fail if exists
@@ -249,7 +244,6 @@ pub async fn create_repository_version(user_id: &str, repository_id: &str, id: &
 
     // TODO remove, for test only
     update_repository_version_state(
-        user_id,
         repository_id,
         id,
         &RepositoryVersionState::Ready {
@@ -314,10 +308,9 @@ pub async fn create_repository_version(user_id: &str, repository_id: &str, id: &
     Ok(())
 }
 
-pub async fn delete_repository_version(user_id: &str, repository_id: &str, id: &str) -> Result<()> {
+pub async fn delete_repository_version(repository_id: &str, id: &str) -> Result<()> {
     let client = client()?;
-    let persistent_volume_api: Api<PersistentVolumeClaim> =
-        Api::namespaced(client.clone(), &user_namespace(user_id));
+    let persistent_volume_api: Api<PersistentVolumeClaim> = Api::default_namespaced(client.clone());
     persistent_volume_api
         .delete(
             &volume_template_name(repository_id, id),
