@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import Paper from '@mui/material/Paper';
-import { Client, mainSessionId, Repository, User } from '@substrate/playground-client';
+import { Client, mainSessionId, Repository, SessionState, User } from '@substrate/playground-client';
 import { CenteredContainer, ErrorMessage, Loading } from '../components';
 import { fetchWithTimeout, find, sessionUrl } from '../utils';
 
@@ -11,7 +11,7 @@ interface Error {
 }
 
 interface Loading {
-    phase: string,
+    state?: SessionState,
     retry: number,
 }
 
@@ -49,7 +49,7 @@ export function RunningSessionPanel({ client, user, autoDeployRepository, onMiss
 
             const retry = loading?.retry ?? 0;
             if (retry < maxRetries) {
-                setLoading({phase: session?.state.type || 'Unknown', retry: retry + 1});
+                setLoading({state: session?.state, retry: retry + 1});
                 setTimeout(fetchData, 1000);
             } else if (retry == maxRetries) {
                 setError({reason: "Couldn't access the session in time",
@@ -112,7 +112,7 @@ export function RunningSessionPanel({ client, user, autoDeployRepository, onMiss
                 <Paper style={{ display: "flex", flexDirection: "column", height: "60vh", width: "60vw", justifyContent: "center"}} elevation={3}>
                     {error?.reason
                      ? <ErrorMessage reason={error.reason} action={error.action} actionTitle={error.actionTitle} />
-                     : <Loading phase={loading?.phase} retry={loading?.retry} />}
+                     : <Loading state={loading?.state} retry={loading?.retry} />}
                 </Paper>
             </CenteredContainer>
         );

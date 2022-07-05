@@ -17,7 +17,7 @@ import MoreVertIcon from '@mui/icons-material/MoreVert';
 import Snackbar from "@mui/material/Snackbar";
 import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
-import { Configuration, User } from "@substrate/playground-client";
+import { Configuration, SessionState, User } from "@substrate/playground-client";
 import { useInterval } from './hooks';
 import { Params } from "./index";
 import { LogoSubstrate } from "./LogoSubstrate";
@@ -87,20 +87,20 @@ const loadingPhrases = [
     'The blaffs rub against the chumbles',
     'That leaves you with a regular old plumbus!']
 
-function Phase({ value }: { value: string }): JSX.Element {
-    switch (value) {
-        case "Preparing":
-            return <div>Preparing...</div>;
-        case "Pending":
+function State({ value }: { value: SessionState | undefined }): JSX.Element {
+    switch (value?.type) {
+        case "Failed":
+            return <div>Oups!! An error occured: {value.message}</div>;
+        case "Deploying":
             return <div>Deploying image</div>;
         case "Running":
             return <div>Creating your custom domain</div>;
         default:
-            return <></>;
+            return <div>Preparing...</div>;
     }
 }
 
-export function Loading({ phase, retry = 0 }: { phase?: string, retry?: number }): JSX.Element {
+export function Loading({ state, retry = 0 }: { state?: SessionState, retry?: number }): JSX.Element {
     const [phrase, setPhrase] = useState(loadingPhrases[0]);
 
     useInterval(() => {
@@ -113,8 +113,8 @@ export function Loading({ phase, retry = 0 }: { phase?: string, retry?: number }
             <Typography variant="h1">{phrase}</Typography>
             {(retry > 10) &&
                 <div>It looks like it takes longer than expected to load. Please be patient :)</div>}
-            {phase
-              ? <Phase value={phase} />
+            {state
+              ? <State value={state} />
               : <CircularProgress size={20} />}
         </div>
     );
