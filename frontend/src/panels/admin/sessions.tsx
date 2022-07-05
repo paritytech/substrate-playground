@@ -10,7 +10,7 @@ import TableCell from '@mui/material/TableCell';
 import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
-import { Client, Configuration, Session, SessionConfiguration, Pool, User, SessionUpdateConfiguration, Repository, ResourceType, RepositoryVersion, mainSessionId } from '@substrate/playground-client';
+import { Client, Configuration, Session, SessionConfiguration, Pool, User, SessionUpdateConfiguration, Repository, ResourceType, RepositoryVersion, mainSessionId, SessionState } from '@substrate/playground-client';
 import { Checkbox, Dialog, DialogContent, DialogTitle, IconButton, Link, TableFooter, TablePagination, TextField } from "@mui/material";
 import { FirstPage, KeyboardArrowLeft, KeyboardArrowRight, LastPage } from "@mui/icons-material";
 import { EnhancedTableToolbar, NoResourcesContainer, Resources } from ".";
@@ -229,6 +229,17 @@ interface TablePaginationActionsProps {
     );
   }
 
+function SessionStateElement({ state }: { state: SessionState }): JSX.Element {
+    switch (state.type) {
+        case "Deploying":
+            return <div>Deploying</div>
+        case "Failed":
+            return <div>Failed: {state.message}</div>
+        case "Running":
+            return <div>Running</div>
+    }
+}
+
 export function Sessions({ client, conf, user }: { client: Client, conf: Configuration, user: User }): JSX.Element {
     const [selected, setSelected] = useState<Session | null>(null);
     const [showCreationDialog, setShowCreationDialog] = useState(false);
@@ -342,7 +353,7 @@ export function Sessions({ client, conf, user }: { client: Client, conf: Configu
                                             <TableCell></TableCell>
                                             <TableCell>ID</TableCell>
                                             <TableCell>Duration</TableCell>
-                                            <TableCell>Phase</TableCell>
+                                            <TableCell>State</TableCell>
                                         </TableRow>
                                     </TableHead>
                                     <TableBody>
@@ -368,7 +379,7 @@ export function Sessions({ client, conf, user }: { client: Client, conf: Configu
                                                     <Link href={`https://github.com/${session.userId}`} target="_blank" rel="noreferrer" onClick={stopPropagation}>{session.userId}</Link>
                                                 </TableCell>
                                                 <TableCell>{session.maxDuration}</TableCell>
-                                                <TableCell>{JSON.stringify(session.state)}</TableCell>
+                                                <TableCell><SessionStateElement state={session.state} /></TableCell>
                                             </TableRow>
                                         )})}
                                     </TableBody>
