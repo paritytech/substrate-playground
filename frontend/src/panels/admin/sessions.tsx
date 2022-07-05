@@ -232,11 +232,11 @@ interface TablePaginationActionsProps {
 function SessionStateElement({ state }: { state: SessionState }): JSX.Element {
     switch (state.type) {
         case "Deploying":
-            return <div>Deploying</div>
+            return <div>Deploying</div>;
         case "Failed":
-            return <div>Failed: {state.message}</div>
+            return <div>Failed: {state.message}</div>;
         case "Running":
-            return <div>Running</div>
+            return <div>Running</div>;
     }
 }
 
