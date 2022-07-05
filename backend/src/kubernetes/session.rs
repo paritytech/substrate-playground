@@ -75,7 +75,7 @@ fn pod_annotations(duration: &Duration) -> BTreeMap<String, String> {
     annotations
 }
 
-fn pod(
+fn session_to_pod(
     user_id: &str,
     session_id: &str,
     image: &str,
@@ -262,6 +262,13 @@ fn pod_to_state(pod: &Pod) -> types::SessionState {
                     message: terminated.message.clone().unwrap_or_default(),
                     reason: terminated.reason.clone().unwrap_or_default(),
                 };
+            } else if let Some(waiting) = &state.waiting {
+                if waiting.reason.clone().unwrap_or_default() == "CreateContainerConfigError" {
+                    return types::SessionState::Failed {
+                        message: waiting.message.clone().unwrap_or_default(),
+                        reason: waiting.reason.clone().unwrap_or_default(),
+                    };
+                }
             }
         }
     }
@@ -466,7 +473,7 @@ pub async fn create_session(
     pod_api
         .create(
             &PostParams::default(),
-            &pod(&user.id, id, image.as_str(), &duration, &pool_id, envs),
+            &session_to_pod(&user.id, id, image.as_str(), &duration, &pool_id, envs),
         )
         .await
         .map_err(Error::K8sCommunicationFailure)?;
