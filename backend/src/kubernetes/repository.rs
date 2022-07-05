@@ -43,6 +43,10 @@ pub async fn list_repositories() -> Result<Vec<Repository>> {
 pub async fn create_repository(id: &str, conf: RepositoryConfiguration) -> Result<()> {
     let client = client()?;
 
+    get_repository(id)
+        .await?
+        .ok_or_else(|| Error::Failure("AlreadyExists".to_string()))?;
+
     let repository = Repository {
         id: id.to_string(),
         url: conf.url,
