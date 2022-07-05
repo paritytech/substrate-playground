@@ -154,9 +154,7 @@ fn session_to_pod(
     }
 }
 
-const SESSION_SERVICE_NAME: &str = "service";
-
-fn service(session_id: &str, ports: Vec<Port>) -> Service {
+fn service(session_id: &str, service_name: &str, ports: Vec<Port>) -> Service {
     let mut labels = BTreeMap::new();
     labels.insert(APP_LABEL.to_string(), APP_VALUE.to_string());
     labels.insert(COMPONENT_LABEL.to_string(), COMPONENT.to_string());
@@ -185,7 +183,7 @@ fn service(session_id: &str, ports: Vec<Port>) -> Service {
 
     Service {
         metadata: ObjectMeta {
-            name: Some(SESSION_SERVICE_NAME.to_string()),
+            name: Some(service_name.to_string()),
             labels: Some(labels),
             ..Default::default()
         },
@@ -199,7 +197,11 @@ fn service(session_id: &str, ports: Vec<Port>) -> Service {
     }
 }
 
-fn external_service(local_service_name: &str, session_namespace: &str) -> Service {
+fn external_service(
+    local_service_name: &str,
+    service_name: &str,
+    session_namespace: &str,
+) -> Service {
     Service {
         metadata: ObjectMeta {
             name: Some(local_service_name.to_string()),
@@ -209,7 +211,7 @@ fn external_service(local_service_name: &str, session_namespace: &str) -> Servic
             type_: Some("ExternalName".to_string()),
             external_name: Some(format!(
                 "{}.{}.svc.cluster.local",
-                SESSION_SERVICE_NAME, session_namespace
+                service_name, session_namespace
             )),
             ..Default::default()
         }),
@@ -342,8 +344,12 @@ pub async fn patch_ingress(runtimes: &BTreeMap<String, Vec<Port>>) -> Result<()>
     Ok(())
 }
 
-fn local_service_name(session_id: &str) -> String {
+fn service_name(session_id: &str) -> String {
     format!("service-{}", session_id)
+}
+
+fn local_service_name(session_id: &str) -> String {
+    format!("local-service-{}", session_id)
 }
 
 fn ports(devcontainer: &DevContainer) -> Vec<Port> {
@@ -480,7 +486,8 @@ pub async fn create_session(
 
     // Deploy the associated service
     let service_api: Api<Service> = Api::namespaced(client.clone(), &user_namespace(user_id));
-    let service = service(id, ports);
+    let service_name = service_name(id);
+    let service = service(id, &service_name, ports);
     service_api
         .create(&PostParams::default(), &service)
         .await
@@ -491,7 +498,7 @@ pub async fn create_session(
     service_local_api
         .create(
             &PostParams::default(),
-            &external_service(&local_service_name(id), id),
+            &external_service(&local_service_name(id), &service_name, id),
         )
         .await
         .map_err(Error::K8sCommunicationFailure)?;
@@ -550,10 +557,7 @@ pub async fn delete_session(user_id: &str, id: &str) -> Result<()> {
     // Undeploy the ingress service
     let service_api: Api<Service> = Api::namespaced(client.clone(), &user_namespace(user_id));
     service_api
-        .delete(
-            SESSION_SERVICE_NAME,
-            &DeleteParams::default().grace_period(0),
-        )
+        .delete(&service_name(id), &DeleteParams::default().grace_period(0))
         .await
         .map_err(Error::K8sCommunicationFailure)?;
 
