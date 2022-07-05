@@ -5,8 +5,8 @@
 //!
 
 use super::{
-    client, list_resources, serialize_json, unserialize_json, update_annotation_value,
-    user_namespace, APP_LABEL, APP_VALUE, COMPONENT_LABEL,
+    client, delete_resource, get_resource, list_all_resources, serialize_json, unserialize_json,
+    update_annotation_value, user_namespace, APP_LABEL, APP_VALUE, COMPONENT_LABEL,
 };
 use crate::{
     error::{Error, Result},
@@ -15,7 +15,7 @@ use crate::{
 use k8s_openapi::api::core::v1::{Namespace, ServiceAccount};
 use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
 use kube::{
-    api::{Api, DeleteParams, PostParams},
+    api::{Api, PostParams},
     ResourceExt,
 };
 use serde_json::json;
@@ -71,20 +71,12 @@ fn user_to_namespace(user: &User) -> Result<Namespace> {
 
 pub async fn get_user(id: &str) -> Result<Option<User>> {
     let client = client()?;
-    let namespace_api: Api<Namespace> = Api::all(client.clone());
-    let namespace = namespace_api
-        .get_opt(id)
-        .await
-        .map_err(Error::K8sCommunicationFailure)?;
-
-    match namespace {
-        Some(namespace) => namespace_to_user(&namespace).map(Some),
-        None => Ok(None),
-    }
+    let api: Api<Namespace> = Api::all(client.clone());
+    get_resource(api, id, namespace_to_user).await
 }
 
 pub async fn list_users() -> Result<Vec<User>> {
-    list_resources(COMPONENT, namespace_to_user).await
+    list_all_resources(COMPONENT, namespace_to_user).await
 }
 
 pub async fn create_user(id: &str, conf: UserConfiguration) -> Result<()> {
@@ -148,11 +140,6 @@ pub async fn update_user(id: &str, conf: UserUpdateConfiguration) -> Result<()> 
 
 pub async fn delete_user(id: &str) -> Result<()> {
     let client = client()?;
-    let namespace_api: Api<Namespace> = Api::all(client.clone());
-    namespace_api
-        .delete(&user_namespace(id), &DeleteParams::default())
-        .await
-        .map_err(Error::K8sCommunicationFailure)?;
-
-    Ok(())
+    let api: Api<Namespace> = Api::all(client.clone());
+    delete_resource(api, &user_namespace(id)).await
 }

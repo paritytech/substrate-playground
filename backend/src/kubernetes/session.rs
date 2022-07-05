@@ -29,11 +29,13 @@ use std::{
 };
 
 use super::{
-    client, env_var, ingress_path, list_resources,
+    client, env_var, get_owned_resource, ingress_path, list_all_resources,
     pool::get_pool,
     repository::{get_repository, get_repository_version},
-    update_annotation_value, user_namespace, APP_LABEL, APP_VALUE, COMPONENT_LABEL, INGRESS_NAME,
-    NODE_POOL_LABEL, OWNER_LABEL, user::DEFAULT_SERVICE_ACCOUNT,
+    update_annotation_value,
+    user::DEFAULT_SERVICE_ACCOUNT,
+    user_namespace, APP_LABEL, APP_VALUE, COMPONENT_LABEL, INGRESS_NAME, NODE_POOL_LABEL,
+    OWNER_LABEL,
 };
 
 const RESOURCE_ID: &str = "RESOURCE_ID";
@@ -290,22 +292,12 @@ fn pod_to_session(pod: &Pod) -> Result<Session> {
 }
 
 pub async fn get_session(user_id: &str, session_id: &str) -> Result<Option<Session>> {
-    let client = client()?;
-    let pod_api: Api<Pod> = Api::namespaced(client, &user_namespace(user_id));
-    let pod = pod_api
-        .get_opt(session_id)
-        .await
-        .map_err(Error::K8sCommunicationFailure)?;
-
-    match pod {
-        Some(pod) => pod_to_session(&pod).map(Some),
-        None => Ok(None),
-    }
+    get_owned_resource(user_id, session_id, pod_to_session).await
 }
 
 /// Lists all currently running sessions
 pub async fn list_sessions() -> Result<Vec<Session>> {
-    list_resources(COMPONENT, pod_to_session).await
+    list_all_resources(COMPONENT, pod_to_session).await
 }
 
 pub async fn patch_ingress(runtimes: &BTreeMap<String, Vec<Port>>) -> Result<()> {

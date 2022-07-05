@@ -21,7 +21,7 @@ use k8s_openapi::{
     Metadata,
 };
 use kube::{
-    api::{ListParams, ObjectMeta, Patch, PatchParams},
+    api::{DeleteParams, ListParams, ObjectMeta, Patch, PatchParams},
     Api, Client, Config,
 };
 use serde::{de::DeserializeOwned, Serialize};
@@ -310,7 +310,64 @@ where
 
 /// Resources
 
-pub async fn list_resources<T, U>(resource_type: &str, f: fn(t: &T) -> Result<U>) -> Result<Vec<U>>
+// Get
+
+pub async fn get_default_resource<T, U>(
+    resource_id: &str,
+    f: fn(t: &T) -> Result<U>,
+) -> Result<Option<U>>
+where
+    T: Clone + std::fmt::Debug + DeserializeOwned + Metadata,
+    T: Default,
+    T: Metadata<Ty = ObjectMeta>,
+{
+    let client = client()?;
+    let api: Api<T> = Api::default_namespaced(client);
+    get_resource(api, resource_id, f).await
+}
+
+pub async fn get_owned_resource<T, U>(
+    owner_id: &str,
+    resource_id: &str,
+    f: fn(t: &T) -> Result<U>,
+) -> Result<Option<U>>
+where
+    T: Clone + std::fmt::Debug + DeserializeOwned + Metadata,
+    T: Default,
+    T: Metadata<Ty = ObjectMeta>,
+{
+    let client = client()?;
+    let api: Api<T> = Api::namespaced(client, &user_namespace(owner_id));
+    get_resource(api, resource_id, f).await
+}
+
+async fn get_resource<T, U>(
+    api: Api<T>,
+    resource_id: &str,
+    f: fn(t: &T) -> Result<U>,
+) -> Result<Option<U>>
+where
+    T: Clone + std::fmt::Debug + DeserializeOwned + Metadata,
+    T: Default,
+    T: Metadata<Ty = ObjectMeta>,
+{
+    let resource = api
+        .get_opt(resource_id)
+        .await
+        .map_err(Error::K8sCommunicationFailure)?;
+
+    match resource {
+        Some(resource) => f(&resource).map(Some),
+        None => Ok(None),
+    }
+}
+
+// List
+
+pub async fn list_all_resources<T, U>(
+    resource_type: &str,
+    f: fn(t: &T) -> Result<U>,
+) -> Result<Vec<U>>
 where
     T: Clone + std::fmt::Debug + DeserializeOwned + Metadata,
     T: Default,
@@ -318,6 +375,48 @@ where
 {
     let client = client()?;
     let api: Api<T> = Api::all(client);
+    list_resources(api, resource_type, f).await
+}
+
+pub async fn list_default_resources<T, U>(
+    resource_type: &str,
+    f: fn(t: &T) -> Result<U>,
+) -> Result<Vec<U>>
+where
+    T: Clone + std::fmt::Debug + DeserializeOwned + Metadata,
+    T: Default,
+    T: Metadata<Ty = ObjectMeta>,
+{
+    let client = client()?;
+    let api: Api<T> = Api::default_namespaced(client);
+    list_resources(api, resource_type, f).await
+}
+
+pub async fn list_owned_resources<T, U>(
+    owner_id: &str,
+    resource_type: &str,
+    f: fn(t: &T) -> Result<U>,
+) -> Result<Vec<U>>
+where
+    T: Clone + std::fmt::Debug + DeserializeOwned + Metadata,
+    T: Default,
+    T: Metadata<Ty = ObjectMeta>,
+{
+    let client = client()?;
+    let api: Api<T> = Api::namespaced(client, &user_namespace(owner_id));
+    list_resources(api, resource_type, f).await
+}
+
+pub async fn list_resources<T, U>(
+    api: Api<T>,
+    resource_type: &str,
+    f: fn(t: &T) -> Result<U>,
+) -> Result<Vec<U>>
+where
+    T: Clone + std::fmt::Debug + DeserializeOwned + Metadata,
+    T: Default,
+    T: Metadata<Ty = ObjectMeta>,
+{
     let resources = list_by_selector(
         &api,
         format!("{}={}", COMPONENT_LABEL, resource_type).as_str(),
@@ -335,4 +434,41 @@ where
             }
         })
         .collect())
+}
+
+// Delete
+
+pub async fn delete_default_resource<T>(resource_id: &str) -> Result<()>
+where
+    T: Clone + std::fmt::Debug + DeserializeOwned + Metadata,
+    T: Default,
+    T: Metadata<Ty = ObjectMeta>,
+{
+    let client = client()?;
+    let api: Api<T> = Api::default_namespaced(client);
+    delete_resource(api, resource_id).await
+}
+
+pub async fn delete_owned_resource<T>(owner_id: &str, resource_id: &str) -> Result<()>
+where
+    T: Clone + std::fmt::Debug + DeserializeOwned + Metadata,
+    T: Default,
+    T: Metadata<Ty = ObjectMeta>,
+{
+    let client = client()?;
+    let api: Api<T> = Api::namespaced(client, &user_namespace(owner_id));
+    delete_resource(api, resource_id).await
+}
+
+async fn delete_resource<T>(api: Api<T>, resource_id: &str) -> Result<()>
+where
+    T: Clone + std::fmt::Debug + DeserializeOwned + Metadata,
+    T: Default,
+    T: Metadata<Ty = ObjectMeta>,
+{
+    api.delete(resource_id, &DeleteParams::default())
+        .await
+        .map_err(Error::K8sCommunicationFailure)?;
+
+    Ok(())
 }
