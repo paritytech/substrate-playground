@@ -296,7 +296,7 @@ pub struct Session {
 }
 
 #[derive(Serialize, Clone, Debug)]
-#[serde(tag = "type", rename_all = "camelCase")]
+#[serde(tag = "type", rename_all = "PascalCase")]
 pub enum SessionState {
     Deploying,
     Running {
