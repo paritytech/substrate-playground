@@ -20,7 +20,7 @@ import { useInterval } from "../../hooks";
 import { canCustomizeSessionDuration, canCustomizeSessionPoolAffinity, find, remove } from "../../utils";
 import { fetchRepositoriesWithLatestVersions } from "../session";
 
-export function SessionCreationDialog({ client, conf, sessions, user, repository, repositories, show, onCreate, onHide }: { client: Client, conf: Configuration, sessions?: Session[], user: User, repository?: string, repositories: [Repository, RepositoryVersion][] | undefined, show: boolean, onCreate: (conf: SessionConfiguration, id: string, ) => void, onHide: () => void }): JSX.Element {
+export function SessionCreationDialog({ client, conf, user, repository, repositories, show, onCreate, onHide }: { client: Client, conf: Configuration, user: User, repository?: string, repositories: [Repository, RepositoryVersion][] | undefined, show: boolean, onCreate: (conf: SessionConfiguration, id: string, ) => void, onHide: () => void }): JSX.Element {
     const [selection, setSelection] = React.useState<number | null>(null);
     const [canCustomizeDuration, setCanCustomizeDuration] = React.useState(false);
     const [duration, setDuration] = React.useState(conf.session.duration);
@@ -49,16 +49,7 @@ export function SessionCreationDialog({ client, conf, sessions, user, repository
     const handlePoolAffinityChange = (event: React.ChangeEvent<HTMLInputElement>) => setPoolAffinity(event.target.value);
 
     function valid(): boolean {
-        if (duration <= 0) {
-            return false;
-        }
         if (!selection) {
-            return false;
-        }
-        if (!poolAffinity) {
-            return false;
-        }
-        if (sessions && find(sessions, user.id) != null) {
             return false;
         }
         return true;
@@ -100,7 +91,7 @@ export function SessionCreationDialog({ client, conf, sessions, user, repository
                     }
                     </TextField>
                     }
-                    {canCustomizePoolAffinity &&
+                    {(pools && canCustomizePoolAffinity) &&
                     <TextField
                         style={{marginBottom: 20}}
                         select
@@ -408,7 +399,7 @@ export function Sessions({ client, conf, user }: { client: Client, conf: Configu
                         {errorMessage &&
                         <ErrorSnackbar open={true} message={errorMessage} onClose={() => setErrorMessage(null)} />}
                         {showCreationDialog &&
-                        <SessionCreationDialog client={client} conf={conf} sessions={resources} user={user} repositories={repositories} show={showCreationDialog} onCreate={(conf, sessionId) => createSession(conf, sessionId, setSessions)} onHide={() => setShowCreationDialog(false)} />}
+                        <SessionCreationDialog client={client} conf={conf} user={user} repositories={repositories} show={showCreationDialog} onCreate={(conf, sessionId) => createSession(conf, sessionId, setSessions)} onHide={() => setShowCreationDialog(false)} />}
                         {(selected && showUpdateDialog) &&
                         <SessionUpdateDialog id={selected.id} duration={selected.maxDuration} show={showUpdateDialog} onUpdate={(id, conf) => onUpdate(id, conf, setSessions)} onHide={() => setShowUpdateDialog(false)} />}
                     </>
