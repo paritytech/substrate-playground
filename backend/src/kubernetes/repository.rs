@@ -43,9 +43,7 @@ pub async fn list_repositories() -> Result<Vec<Repository>> {
 pub async fn create_repository(id: &str, conf: RepositoryConfiguration) -> Result<()> {
     let client = client()?;
 
-    if get_repository(id)
-        .await?
-        .is_some() {
+    if get_repository(id).await?.is_some() {
         return Err(Error::Failure("AlreadyExists".to_string()));
     }
 
@@ -254,7 +252,7 @@ pub async fn create_repository_version(repository_id: &str, id: &str) -> Result<
         id,
         &RepositoryVersionState::Ready {
             devcontainer_json:
-                "{\"image\": \"gitpod/openvscode-server\",\"customizations\": {\"substrate-playground\": {\"description\": \"Test description\", \"tags\": {\"public\": \"true\"}}}}".to_string(),
+                "{\"image\": \"paritytech/substrate-playground-template-ink-openvscode\",\"customizations\": {\"substrate-playground\": {\"description\": \"Test description\", \"tags\": {\"public\": \"true\"}}}}".to_string(),
         },
     )
     .await?;
