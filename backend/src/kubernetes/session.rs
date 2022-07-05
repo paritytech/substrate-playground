@@ -126,7 +126,7 @@ fn session_to_pod(
                         ("memory".to_string(), Quantity("1Gi".to_string())),
                         (
                             "ephemeral-storage".to_string(),
-                            Quantity("25Gi".to_string()),
+                            Quantity("5Gi".to_string()),
                         ),
                         ("cpu".to_string(), Quantity("0.5".to_string())),
                     ])),
@@ -141,7 +141,7 @@ fn session_to_pod(
                 }),
                 security_context: Some(SecurityContext {
                     allow_privilege_escalation: Some(false),
-                    run_as_non_root: Some(true),
+                    run_as_non_root: Some(false), // TODO Reinvestigate, should provide guidance for image creation
                     ..Default::default()
                 }),
                 ..Default::default()
