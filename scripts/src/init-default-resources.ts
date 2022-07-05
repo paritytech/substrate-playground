@@ -17,9 +17,15 @@ try {
 
     const repositoryId = 'substrate-node-template';
     await client.createRepository(repositoryId, {url: "https://github.com/jeluard/substrate-node-template"});
-    await client.createRepositoryVersion(repositoryId, "e1abd651d1412a5171db6595fa37f613b57a73f3");
+    console.log("Created Repository");
+    try {
+        await client.createRepositoryVersion(repositoryId, "e1abd651d1412a5171db6595fa37f613b57a73f3");
+        console.log("Created RepositoryVersion");
+    } catch {
+    }
 
     await client.createSession(mainSessionId((await client.get()).user), {repositorySource: {repositoryId: repositoryId}});
+    console.log("Created Session");
 } catch(e) {
     console.error(e);
 } finally {
