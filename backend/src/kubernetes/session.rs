@@ -124,10 +124,7 @@ fn session_to_pod(
                 resources: Some(ResourceRequirements {
                     requests: Some(BTreeMap::from([
                         ("memory".to_string(), Quantity("1Gi".to_string())),
-                        (
-                            "ephemeral-storage".to_string(),
-                            Quantity("5Gi".to_string()),
-                        ),
+                        ("ephemeral-storage".to_string(), Quantity("5Gi".to_string())),
                         ("cpu".to_string(), Quantity("0.5".to_string())),
                     ])),
                     limits: Some(BTreeMap::from([

@@ -329,7 +329,7 @@ where
     Ok(Api::default_namespaced(client))
 }
 
-fn user_namespaced_api<T>(owner_id: &str) ->  Result<Api<T>>
+fn user_namespaced_api<T>(owner_id: &str) -> Result<Api<T>>
 where
     T: Clone + std::fmt::Debug + DeserializeOwned + Metadata,
     T: Default,
