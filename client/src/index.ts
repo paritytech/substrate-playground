@@ -174,7 +174,7 @@ export class Client {
 
     // All Sessions
 
-    async listAllUserSessions(timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<Session[]> {
+    async listAllSessions(timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<Session[]> {
         return rpc(this.path(Client.allSessionsResource), init, timeout);
     }
 
