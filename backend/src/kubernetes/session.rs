@@ -29,7 +29,7 @@ use std::{
 };
 
 use super::{
-    client, env_var, get_owned_resource, ingress_path, list_all_resources,
+    client, env_var, get_owned_resource, ingress_path, list_all_resources, list_owned_resources,
     pool::get_pool,
     repository::{get_repository, get_repository_version},
     update_annotation_value,
@@ -301,8 +301,13 @@ pub async fn get_session(user_id: &str, session_id: &str) -> Result<Option<Sessi
     get_owned_resource(user_id, session_id, pod_to_session).await
 }
 
-/// Lists all currently running sessions
-pub async fn list_sessions() -> Result<Vec<Session>> {
+/// Lists all currently running sessions for `user_id`
+pub async fn list_sessions(user_id: &str) -> Result<Vec<Session>> {
+    list_owned_resources(user_id, COMPONENT, pod_to_session).await
+}
+
+/// Lists all currently running sessions for `user_id`
+pub async fn list_all_sessions() -> Result<Vec<Session>> {
     list_all_resources(COMPONENT, pod_to_session).await
 }
 
@@ -390,7 +395,7 @@ pub async fn create_session(
         .ok_or_else(|| Error::UnknownResource(ResourceType::Pool, pool_id.clone()))?;
     let max_sessions_allowed = pool.nodes.len() * configuration.session.max_sessions_per_pod;
     let user_id = &user.id;
-    let sessions = list_sessions().await?;
+    let sessions = list_all_sessions().await?;
     if sessions.len() >= max_sessions_allowed {
         // TODO Should trigger pool dynamic scalability. Right now this will only consider the pool lower bound.
         // "Reached maximum number of concurrent sessions allowed: {}"
@@ -536,6 +541,7 @@ pub async fn update_session(
 }
 
 pub async fn delete_session(user_id: &str, id: &str) -> Result<()> {
+    // TODO allow other users to delete a session, with the right permission
     let client = client()?;
     get_session(user_id, id)
         .await?

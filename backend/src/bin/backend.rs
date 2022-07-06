@@ -52,7 +52,10 @@ async fn main() {
                 playground::api::create_session,
                 playground::api::update_session,
                 playground::api::delete_session,
+                // Session Executions
                 playground::api::create_session_execution,
+                // All Sessions
+                playground::api::list_all_sessions,
                 // Roles
                 playground::api::get_role,
                 playground::api::list_roles,

@@ -209,6 +209,103 @@ pub async fn delete_user(state: &State<Context>, caller: User, id: String) -> Re
     Ok(EmptyJsonRPC())
 }
 
+// Sessions
+
+#[get("/users/<user_id>/sessions/<id>")]
+pub async fn get_session(
+    state: &State<Context>,
+    caller: User,
+    user_id: String,
+    id: String,
+) -> Result<JsonRPC<Option<Session>>> {
+    state
+        .manager
+        .get_session(&caller, &user_id, &id)
+        .await
+        .map(JsonRPC)
+}
+
+#[get("/users/<user_id>/sessions")]
+pub async fn list_sessions(
+    state: &State<Context>,
+    user_id: String,
+    caller: User,
+) -> Result<JsonRPC<Vec<Session>>> {
+    state
+        .manager
+        .list_sessions(&caller, &user_id)
+        .await
+        .map(JsonRPC)
+}
+
+#[put("/users/<user_id>/sessions/<id>", data = "<conf>")]
+pub async fn create_session(
+    state: &State<Context>,
+    caller: User,
+    user_id: String,
+    id: String,
+    conf: Json<SessionConfiguration>,
+) -> Result<EmptyJsonRPC> {
+    state
+        .manager
+        .create_session(&caller, &user_id, &id, &conf.0)
+        .await?;
+    Ok(EmptyJsonRPC())
+}
+
+#[patch("/users/<user_id>/sessions/<id>", data = "<conf>")]
+pub async fn update_session(
+    state: &State<Context>,
+    caller: User,
+    user_id: String,
+    id: String,
+    conf: Json<SessionUpdateConfiguration>,
+) -> Result<EmptyJsonRPC> {
+    state
+        .manager
+        .update_session(&caller, &user_id, &id, conf.0)
+        .await?;
+    Ok(EmptyJsonRPC())
+}
+
+#[delete("/users/<user_id>/sessions/<id>")]
+pub async fn delete_session(
+    state: &State<Context>,
+    caller: User,
+    user_id: String,
+    id: String,
+) -> Result<EmptyJsonRPC> {
+    state.manager.delete_session(&caller, &user_id, &id).await?;
+    Ok(EmptyJsonRPC())
+}
+
+// Session executions
+
+#[put("/users/<user_id>/sessions/<id>/executions", data = "<conf>")]
+pub async fn create_session_execution(
+    state: &State<Context>,
+    caller: User,
+    user_id: String,
+    id: String,
+    conf: Json<SessionExecutionConfiguration>,
+) -> Result<EmptyJsonRPC> {
+    state
+        .manager
+        .create_session_execution(&caller, &user_id, &id, conf.0)
+        .await?;
+    Ok(EmptyJsonRPC())
+}
+
+// All sessions
+
+#[get("/sessions")]
+pub async fn list_all_sessions(
+    state: &State<Context>,
+    caller: User,
+) -> Result<JsonRPC<Vec<Session>>> {
+    state.manager.list_all_sessions(&caller).await.map(JsonRPC)
+}
+
 // Roles
 
 #[get("/roles/<id>")]
@@ -385,70 +482,6 @@ pub async fn get_pool(
 #[get("/pools")]
 pub async fn list_pools(state: &State<Context>, caller: User) -> Result<JsonRPC<Vec<Pool>>> {
     state.manager.list_pools(&caller).await.map(JsonRPC)
-}
-
-// Sessions
-
-#[get("/sessions/<id>")]
-pub async fn get_session(
-    state: &State<Context>,
-    caller: User,
-    id: String,
-) -> Result<JsonRPC<Option<Session>>> {
-    state.manager.get_session(&caller, &id).await.map(JsonRPC)
-}
-
-#[get("/sessions")]
-pub async fn list_sessions(state: &State<Context>, caller: User) -> Result<JsonRPC<Vec<Session>>> {
-    state.manager.list_sessions(&caller).await.map(JsonRPC)
-}
-
-#[put("/sessions/<id>", data = "<conf>")]
-pub async fn create_session(
-    state: &State<Context>,
-    caller: User,
-    id: String,
-    conf: Json<SessionConfiguration>,
-) -> Result<EmptyJsonRPC> {
-    state.manager.create_session(&caller, &id, &conf.0).await?;
-    Ok(EmptyJsonRPC())
-}
-
-#[patch("/sessions/<id>", data = "<conf>")]
-pub async fn update_session(
-    state: &State<Context>,
-    caller: User,
-    id: String,
-    conf: Json<SessionUpdateConfiguration>,
-) -> Result<EmptyJsonRPC> {
-    state.manager.update_session(&caller, &id, conf.0).await?;
-    Ok(EmptyJsonRPC())
-}
-
-#[delete("/sessions/<id>")]
-pub async fn delete_session(
-    state: &State<Context>,
-    caller: User,
-    id: String,
-) -> Result<EmptyJsonRPC> {
-    state.manager.delete_session(&caller, &id).await?;
-    Ok(EmptyJsonRPC())
-}
-
-// Session executions
-
-#[put("/sessions/<id>/execution", data = "<conf>")]
-pub async fn create_session_execution(
-    state: &State<Context>,
-    caller: User,
-    id: String,
-    conf: Json<SessionExecutionConfiguration>,
-) -> Result<EmptyJsonRPC> {
-    state
-        .manager
-        .create_session_execution(&caller, &id, conf.0)
-        .await?;
-    Ok(EmptyJsonRPC())
 }
 
 // GitHub login logic

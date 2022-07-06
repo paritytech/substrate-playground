@@ -12,8 +12,8 @@ use crate::{
         },
         role::{create_role, delete_role, get_role, list_roles, update_role},
         session::{
-            create_session, create_session_execution, delete_session, get_session, list_sessions,
-            patch_ingress, update_session,
+            create_session, create_session_execution, delete_session, get_session,
+            list_all_sessions, list_sessions, patch_ingress, update_session,
         },
         user::{create_user, delete_user, get_user, list_users, update_user},
     },
@@ -43,7 +43,7 @@ impl Manager {
         let metrics = Metrics::new()?;
         // Go through all existing sessions and update the ingress
         // TODO remove once migrated to per session nginx
-        match list_sessions().await {
+        match list_all_sessions().await {
             Ok(sessions) => {
                 let running = sessions
                     .iter()
@@ -78,7 +78,7 @@ impl Manager {
             thread::sleep(Manager::SLEEP_TIME);
 
             // Go through all Running pods and figure out if they have to be undeployed
-            if let Ok(sessions) = list_sessions().await {
+            if let Ok(sessions) = list_all_sessions().await {
                 for session in sessions {
                     if let SessionState::Running { start_time, .. } = session.state {
                         if let Ok(duration) = start_time.elapsed() {
@@ -363,15 +363,30 @@ impl Manager {
 
     // Sessions
 
-    async fn ensure_session_ownership(&self, user: &User, session_id: &str) -> Result<Session> {
-        if let Some(session) = get_session(&user.id, session_id).await? {
-            if user.id != session.user_id {
-                return Err(Error::ResourceNotOwned(
-                    ResourceType::Session,
-                    session_id.to_string(),
-                ));
+    async fn ensure_session_ownership(
+        &self,
+        caller: &User,
+        user_id: &str,
+        session_id: &str,
+    ) -> Result<Session> {
+        if let Some(session) = get_session(user_id, session_id).await? {
+            if user_id == session.user_id
+                || caller
+                    .has_permission(
+                        &ResourceType::Session,
+                        &ResourcePermission::Custom {
+                            name: "ControlAnySession".to_string(),
+                        },
+                    )
+                    .await
+            {
+                return Ok(session);
             }
-            Ok(session)
+
+            Err(Error::ResourceNotOwned(
+                ResourceType::Session,
+                session_id.to_string(),
+            ))
         } else {
             Err(Error::UnknownResource(
                 ResourceType::Session,
@@ -380,25 +395,31 @@ impl Manager {
         }
     }
 
-    pub async fn get_session(&self, caller: &User, id: &str) -> Result<Option<Session>> {
+    pub async fn get_session(
+        &self,
+        caller: &User,
+        user_id: &str,
+        id: &str,
+    ) -> Result<Option<Session>> {
         ensure_permission(caller, ResourceType::Session, ResourcePermission::Read).await?;
 
-        match self.ensure_session_ownership(caller, id).await {
+        match self.ensure_session_ownership(caller, user_id, id).await {
             Err(failure @ Error::Failure(_)) => Err(failure),
             Err(_) => Ok(None),
             Ok(session) => Ok(Some(session)),
         }
     }
 
-    pub async fn list_sessions(&self, caller: &User) -> Result<Vec<Session>> {
+    pub async fn list_sessions(&self, caller: &User, user_id: &str) -> Result<Vec<Session>> {
         ensure_permission(caller, ResourceType::Session, ResourcePermission::Read).await?;
 
-        list_sessions().await
+        list_sessions(user_id).await
     }
 
     pub async fn create_session(
         &self,
         caller: &User,
+        user_id: &str,
         id: &str,
         session_configuration: &SessionConfiguration,
     ) -> Result<()> {
@@ -440,7 +461,7 @@ impl Manager {
         }
 
         // Check that the session doesn't already exists
-        if self.get_session(caller, id).await?.is_some() {
+        if self.get_session(caller, user_id, id).await?.is_some() {
             return Err(Error::SessionIdAlreayUsed);
         }
 
@@ -468,21 +489,22 @@ impl Manager {
     pub async fn update_session(
         &self,
         caller: &User,
+        user_id: &str,
         id: &str,
         session_update_configuration: SessionUpdateConfiguration,
     ) -> Result<()> {
         ensure_permission(caller, ResourceType::Session, ResourcePermission::Update).await?;
 
-        self.ensure_session_ownership(caller, id).await?;
+        self.ensure_session_ownership(caller, user_id, id).await?;
 
         let configuration = get_configuration().await?;
         update_session(&caller.id, id, configuration, session_update_configuration).await
     }
 
-    pub async fn delete_session(&self, caller: &User, id: &str) -> Result<()> {
+    pub async fn delete_session(&self, caller: &User, user_id: &str, id: &str) -> Result<()> {
         ensure_permission(caller, ResourceType::Session, ResourcePermission::Delete).await?;
 
-        self.ensure_session_ownership(caller, id).await?;
+        self.ensure_session_ownership(caller, user_id, id).await?;
 
         let result = delete_session(&caller.id, id).await;
         match &result {
@@ -502,6 +524,7 @@ impl Manager {
     pub async fn create_session_execution(
         &self,
         caller: &User,
+        user_id: &str,
         session_id: &str,
         session_execution_configuration: SessionExecutionConfiguration,
     ) -> Result<SessionExecution> {
@@ -512,8 +535,17 @@ impl Manager {
         )
         .await?;
 
-        self.ensure_session_ownership(caller, session_id).await?;
+        self.ensure_session_ownership(caller, user_id, session_id)
+            .await?;
 
         create_session_execution(&caller.id, session_id, session_execution_configuration).await
+    }
+
+    // All Sessions
+
+    pub async fn list_all_sessions(&self, caller: &User) -> Result<Vec<Session>> {
+        ensure_permission(caller, ResourceType::Session, ResourcePermission::Read).await?;
+
+        list_all_sessions().await
     }
 }
