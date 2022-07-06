@@ -407,7 +407,7 @@ pub async fn create_session(
 
     let repository = get_repository(repository_id)
         .await?
-        .ok_or_else(|| Error::Failure("".to_string()))?;
+        .ok_or_else(|| Error::Failure("No matching repository".to_string()))?;
     let repository_version_id = match &session_configuration
         .repository_source
         .repository_version_id
