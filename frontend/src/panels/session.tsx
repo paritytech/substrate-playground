@@ -343,8 +343,6 @@ function ExistingSession({session, onStop, onConnect}: {session: Session, onStop
             await onStop();
         } catch {
             setErrorMessage("Failed to stop the session");
-        } finally {
-            setStopping(false);
         }
     }
 
@@ -374,9 +372,8 @@ function ExistingSession({session, onStop, onConnect}: {session: Session, onStop
 
 export function SessionPanel({ client, conf, user, onDeployed, onConnect, onRetry, onStop }: {client: Client, conf: Configuration, user: User, onStop: () => Promise<void>, onConnect: (session: Session) => void, onDeployed: (conf: SessionConfiguration) => Promise<void>, onRetry: () => void}): JSX.Element {
     const [session, setSession] = useState<Session | null | undefined>(undefined);
-    const sessionId = mainSessionId(user);
 
-    useInterval(async () => setSession(await client.getSession(sessionId)), 5000);
+    useInterval(async () => setSession(await client.getSession(mainSessionId(user))), 1000);
 
     return (
         <Container style={{ display: "flex", flex: 1, justifyContent: "center", alignItems: "center" }}>
