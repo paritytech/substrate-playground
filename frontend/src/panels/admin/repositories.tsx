@@ -97,7 +97,7 @@ function RepositoryRow({ client, repository }: { client: Client, repository: Rep
                         <Typography variant="h6" gutterBottom component="div">
                             Versions
                         </Typography>
-                        <Button onClick={() => {client.createRepositoryVersion("substrate-node-template", "e1abd651d1412a5171db6595fa37f613b57a73f3")}}>CLOSE</Button>
+                        <Button onClick={() => {client.createRepositoryVersion("substrate-node-template", "e1abd651d1412a5171db6595fa37f613b57a73f3")}}>CREATE NEW VERSION</Button>
                         <Table size="small" aria-label="purchases">
                             <TableHead>
                             <TableRow>
