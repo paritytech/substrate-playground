@@ -153,6 +153,13 @@ jobs:
       - name: Deploy playground
         run: SKIP_ACK=1 make k8s-deploy && sleep 300
 
+      - name: Run e2e tests
+        run: yarn && yarn build && yarn run:init-default-resources
+        working-directory: ./scripts
+        env:
+          ENV: dev
+          ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+
       # Will not run authenticated tests when triggered by PR
       # See https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
       - name: Run e2e tests
