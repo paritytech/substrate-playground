@@ -3,6 +3,7 @@ import { Playground, Pool, User, UserConfiguration, UserUpdateConfiguration, Rep
 
 export class Client {
 
+    static userResource = 'user';
     static usersResource = 'users';
     static sessionsResourcePath = 'sessions';
     static sessionExecutionResourcePath = 'executions';
@@ -91,19 +92,23 @@ export class Client {
 
     // Sessions
 
-    async getSession(user_id: User['id'], id: Session['id'], timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<Session | null> {
+    async getUserSession(user_id: User['id'], id: Session['id'], timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<Session | null> {
         return rpc(this.path(Client.usersResource, user_id, Client.sessionsResourcePath, id), init, timeout);
     }
 
-    async listSessions(user_id: User['id'], timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<Session[]> {
+    async getSession(id: Session['id'], timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<Session | null> {
+        return rpc(this.path(Client.userResource, Client.sessionsResourcePath, id), init, timeout);
+    }
+
+    async listUserSessions(user_id: User['id'], timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<Session[]> {
         return rpc(this.path(Client.usersResource, user_id, Client.sessionsResourcePath), init, timeout);
     }
 
-    async listAllSessions(user_id: User['id'], timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<Session[]> {
-        return rpc(this.path(Client.allSessionsResource), init, timeout);
+    async listSessions(timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<Session[]> {
+        return rpc(this.path(Client.userResource, Client.sessionsResourcePath), init, timeout);
     }
 
-    async createSession(user_id: User['id'], id: Session['id'], conf: SessionConfiguration, timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<void> {
+    async createUserSession(user_id: User['id'], id: Session['id'], conf: SessionConfiguration, timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<void> {
         return rpc(this.path(Client.usersResource, user_id, Client.sessionsResourcePath, id), {
             method: 'PUT',
             body: JSON.stringify(conf),
@@ -111,7 +116,15 @@ export class Client {
         }, timeout);
     }
 
-    async updateSession(user_id: User['id'], id: Session['id'], conf: SessionUpdateConfiguration, timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<void> {
+    async createSession(id: Session['id'], conf: SessionConfiguration, timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<void> {
+        return rpc(this.path(Client.userResource, Client.sessionsResourcePath, id), {
+            method: 'PUT',
+            body: JSON.stringify(conf),
+            ...init
+        }, timeout);
+    }
+
+    async updateUserSession(user_id: User['id'], id: Session['id'], conf: SessionUpdateConfiguration, timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<void> {
         return rpc(this.path(Client.usersResource, user_id, Client.sessionsResourcePath, id), {
             method: 'PATCH',
             body: JSON.stringify(conf),
@@ -119,8 +132,23 @@ export class Client {
         }, timeout);
     }
 
-    async deleteSession(user_id: User['id'], id: Session['id'], timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<void> {
+    async updateSession(id: Session['id'], conf: SessionUpdateConfiguration, timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<void> {
+        return rpc(this.path(Client.userResource, Client.sessionsResourcePath, id), {
+            method: 'PATCH',
+            body: JSON.stringify(conf),
+            ...init
+        }, timeout);
+    }
+
+    async deleteUserSession(user_id: User['id'], id: Session['id'], timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<void> {
         return rpc(this.path(Client.usersResource, user_id, Client.sessionsResourcePath, id), {
+            method: 'DELETE',
+            ...init
+        }, timeout);
+    }
+
+    async deleteSession(id: Session['id'], timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<void> {
+        return rpc(this.path(Client.userResource, Client.sessionsResourcePath, id), {
             method: 'DELETE',
             ...init
         }, timeout);
@@ -128,12 +156,26 @@ export class Client {
 
     // Session executions
 
-    async createSessionExecution(user_id: User['id'], id: Session['id'], conf: SessionExecutionConfiguration, timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<SessionExecution> {
+    async createUserSessionExecution(user_id: User['id'], id: Session['id'], conf: SessionExecutionConfiguration, timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<SessionExecution> {
         return rpc(this.path(Client.usersResource, user_id, Client.sessionsResourcePath, id, Client.sessionExecutionResourcePath), {
             method: 'PUT',
             body: JSON.stringify(conf),
             ...init
         }, timeout);
+    }
+
+    async createSessionExecution(id: Session['id'], conf: SessionExecutionConfiguration, timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<SessionExecution> {
+        return rpc(this.path(Client.userResource, Client.sessionsResourcePath, id, Client.sessionExecutionResourcePath), {
+            method: 'PUT',
+            body: JSON.stringify(conf),
+            ...init
+        }, timeout);
+    }
+
+    // All Sessions
+
+    async listAllUserSessions(timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<Session[]> {
+        return rpc(this.path(Client.allSessionsResource), init, timeout);
     }
 
     // Roles

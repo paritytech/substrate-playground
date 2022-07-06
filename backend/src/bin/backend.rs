@@ -48,12 +48,18 @@ async fn main() {
                 playground::api::delete_user,
                 // Sessions
                 playground::api::get_session,
+                playground::api::get_user_session,
                 playground::api::list_sessions,
+                playground::api::list_user_sessions,
                 playground::api::create_session,
+                playground::api::create_user_session,
                 playground::api::update_session,
+                playground::api::update_user_session,
                 playground::api::delete_session,
+                playground::api::delete_user_session,
                 // Session Executions
                 playground::api::create_session_execution,
+                playground::api::create_user_session_execution,
                 // All Sessions
                 playground::api::list_all_sessions,
                 // Roles
