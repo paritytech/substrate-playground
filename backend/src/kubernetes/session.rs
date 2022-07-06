@@ -541,7 +541,6 @@ pub async fn update_session(
 }
 
 pub async fn delete_session(user_id: &str, id: &str) -> Result<()> {
-    // TODO allow other users to delete a session, with the right permission
     let client = client()?;
     get_session(user_id, id)
         .await?
