@@ -39,8 +39,7 @@ pub const NODE_POOL_TYPE_LABEL: &str = "app.playground/pool-type";
 pub const INGRESS_NAME: &str = "ingress";
 
 pub async fn get_host() -> Result<String> {
-    let client = client()?;
-    let ingress_api: Api<Ingress> = Api::default_namespaced(client.clone());
+    let ingress_api: Api<Ingress> = default_namespaced_api()?;
     let ingress = ingress_api
         .get(INGRESS_NAME)
         .await
@@ -310,6 +309,36 @@ where
 
 /// Resources
 
+fn all_namespaces_api<T>() -> Result<Api<T>>
+where
+    T: Clone + std::fmt::Debug + DeserializeOwned + Metadata,
+    T: Default,
+    T: Metadata<Ty = ObjectMeta>,
+{
+    let client = client()?;
+    Ok(Api::all(client))
+}
+
+fn default_namespaced_api<T>() -> Result<Api<T>>
+where
+    T: Clone + std::fmt::Debug + DeserializeOwned + Metadata,
+    T: Default,
+    T: Metadata<Ty = ObjectMeta>,
+{
+    let client = client()?;
+    Ok(Api::default_namespaced(client))
+}
+
+fn user_namespaced_api<T>(owner_id: &str) ->  Result<Api<T>>
+where
+    T: Clone + std::fmt::Debug + DeserializeOwned + Metadata,
+    T: Default,
+    T: Metadata<Ty = ObjectMeta>,
+{
+    let client = client()?;
+    Ok(Api::namespaced(client, &user_namespace(owner_id)))
+}
+
 // Get
 
 pub async fn get_default_resource<T, U>(
@@ -321,8 +350,7 @@ where
     T: Default,
     T: Metadata<Ty = ObjectMeta>,
 {
-    let client = client()?;
-    let api: Api<T> = Api::default_namespaced(client);
+    let api: Api<T> = default_namespaced_api()?;
     get_resource(api, resource_id, f).await
 }
 
@@ -336,8 +364,7 @@ where
     T: Default,
     T: Metadata<Ty = ObjectMeta>,
 {
-    let client = client()?;
-    let api: Api<T> = Api::namespaced(client, &user_namespace(owner_id));
+    let api: Api<T> = user_namespaced_api(owner_id)?;
     get_resource(api, resource_id, f).await
 }
 
@@ -373,8 +400,7 @@ where
     T: Default,
     T: Metadata<Ty = ObjectMeta>,
 {
-    let client = client()?;
-    let api: Api<T> = Api::all(client);
+    let api: Api<T> = all_namespaces_api()?;
     list_resources(api, resource_type, f).await
 }
 
@@ -387,8 +413,7 @@ where
     T: Default,
     T: Metadata<Ty = ObjectMeta>,
 {
-    let client = client()?;
-    let api: Api<T> = Api::default_namespaced(client);
+    let api: Api<T> = default_namespaced_api()?;
     list_resources(api, resource_type, f).await
 }
 
@@ -402,8 +427,7 @@ where
     T: Default,
     T: Metadata<Ty = ObjectMeta>,
 {
-    let client = client()?;
-    let api: Api<T> = Api::namespaced(client, &user_namespace(owner_id));
+    let api: Api<T> = user_namespaced_api(owner_id)?;
     list_resources(api, resource_type, f).await
 }
 
@@ -444,8 +468,7 @@ where
     T: Default,
     T: Metadata<Ty = ObjectMeta>,
 {
-    let client = client()?;
-    let api: Api<T> = Api::default_namespaced(client);
+    let api: Api<T> = default_namespaced_api()?;
     delete_resource(api, resource_id).await
 }
 
@@ -455,8 +478,7 @@ where
     T: Default,
     T: Metadata<Ty = ObjectMeta>,
 {
-    let client = client()?;
-    let api: Api<T> = Api::namespaced(client, &user_namespace(owner_id));
+    let api: Api<T> = user_namespaced_api(owner_id)?;
     delete_resource(api, resource_id).await
 }
 
