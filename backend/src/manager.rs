@@ -375,7 +375,7 @@ impl Manager {
                     .has_permission(
                         &ResourceType::Session,
                         &ResourcePermission::Custom {
-                            name: "ControlAnySession".to_string(),
+                            name: "CustomizeAllSessions".to_string(),
                         },
                     )
                     .await

@@ -33,6 +33,8 @@ permissions:
       name: CustomizeSessionDuration
     - type: Custom
       name: CustomizeSessionPoolAffinity
+    - type: Custom
+      name: CustomizeAllSessions
     SessionExecution:
     - type: Create
     - type: Read
