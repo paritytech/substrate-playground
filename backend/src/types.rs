@@ -3,7 +3,6 @@ use serde::{Deserialize, Serialize};
 use std::{
     collections::BTreeMap,
     fmt,
-    str::FromStr,
     time::{Duration, SystemTime},
 };
 
@@ -355,62 +354,4 @@ pub struct SessionExecution {
 #[serde(rename_all = "camelCase")]
 pub struct SessionExecutionConfiguration {
     pub command: Vec<String>,
-}
-
-#[derive(Serialize, Clone, Debug)]
-pub struct ContainerStatus {
-    pub phase: ContainerPhase,
-    pub reason: Option<String>,
-    pub message: Option<String>,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
-pub enum Status {
-    True,
-    False,
-    Unknown,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
-pub enum ContainerPhase {
-    Running,
-    Terminated,
-    Waiting,
-    Unknown,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
-pub enum Phase {
-    Pending,
-    Running,
-    Succeeded,
-    Failed,
-    Unknown,
-}
-
-impl FromStr for Status {
-    type Err = String;
-
-    fn from_str(s: &str) -> Result<Status, Self::Err> {
-        match s {
-            "True" => Ok(Status::True),
-            "False" => Ok(Status::False),
-            "Unknown" => Ok(Status::Unknown),
-            _ => Err(format!("'{}' is not a valid value for Status", s)),
-        }
-    }
-}
-
-impl FromStr for Phase {
-    type Err = String;
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            "Pending" => Ok(Phase::Pending),
-            "Running" => Ok(Phase::Running),
-            "Succeeded" => Ok(Phase::Succeeded),
-            "Failed" => Ok(Phase::Failed),
-            "Unknown" => Ok(Phase::Unknown),
-            _ => Err(format!("'{}' is not a valid value for Phase", s)),
-        }
-    }
 }
