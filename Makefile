@@ -150,7 +150,6 @@ endif
 k8s-setup-env: requires-k8s
 	@read -p "GH client ID?" CLIENT_ID; \
 	read -p "GH client secret?" CLIENT_SECRET; \
-	kubectl create configmap playground-repositories && \
 	kubectl create configmap playground-config --from-literal=github.clientId="$${CLIENT_ID}" --from-literal=session.defaultDuration="45" --from-literal=session.maxDuration="1440" --from-literal=session.defaultMaxPerNode="6" --from-literal=session.defaultPoolAffinity="default" --from-literal=userRoles="$${USER_ROLES}" --dry-run=client -o yaml | kubectl apply -f - && \
 	kubectl create secret generic playground-secrets --from-literal=github.clientSecret="$${CLIENT_SECRET}" --from-literal=rocket.secretKey=`openssl rand -base64 32` --dry-run=client -o yaml | kubectl apply -f -
 
