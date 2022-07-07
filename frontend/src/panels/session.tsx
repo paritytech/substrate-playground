@@ -306,7 +306,7 @@ export function SessionDetails({ session }: {session: Session}): JSX.Element {
                 </Typography>
                 {state.type == 'Running' &&
                 <Typography color="textSecondary" gutterBottom>
-                Started {formatDuration(state.startTime)} ago ({formatDuration(maxDuration*60-state.startTime)} left)
+                Started {formatDuration(state.startTime)} ago ({formatDuration(maxDuration*60-(Date.now()-state.startTime))} left)
                 </Typography>
                 }
                 {state.type == 'Deploying' &&
