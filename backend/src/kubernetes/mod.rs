@@ -58,10 +58,15 @@ pub async fn get_host() -> Result<String> {
 }
 
 fn parse_user_roles(s: String) -> BTreeMap<String, String> {
-    s.split(';').map(|s| {
-        let pair = s.split('=').collect::<Vec<&str>>();
-        (String::from(*pair.get(0).unwrap_or(&"")), String::from(*pair.get(1).unwrap_or(&"")))
-    }).collect()
+    s.split(';')
+        .map(|s| {
+            let pair = s.split('=').collect::<Vec<&str>>();
+            (
+                String::from(*pair.get(0).unwrap_or(&"")),
+                String::from(*pair.get(1).unwrap_or(&"")),
+            )
+        })
+        .collect()
 }
 
 pub async fn get_configuration() -> Result<Configuration> {
