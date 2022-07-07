@@ -63,9 +63,15 @@ async function waitForSessionDeletion(client: Client, sessionId: string) {
 }
 
 if (accessToken) {
+
     test('authenticated - should be able to list users', async (t) => {
         const client = newClient();
         await client.login(accessToken);
+
+        const details = await client.get();
+        console.log(`Logged as ${details.user}`);
+        console.log(`Repositories: ${JSON.stringify(await client.listRepositories())}`);
+
         try {
             const users = await client.listUsers();
             t.not(users.length, 0);
