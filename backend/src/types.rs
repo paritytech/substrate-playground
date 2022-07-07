@@ -38,13 +38,13 @@ pub struct SessionDefaults {
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
-#[serde(rename_all = "camelCase")]
 pub struct RepositoryDetails {
     pub id: String,
     pub reference: String,
 }
 
 #[derive(PartialOrd, Ord, PartialEq, Eq, Serialize, Deserialize, Clone, Debug)]
+#[serde(rename_all = "PascalCase")]
 pub enum ResourceType {
     Pool,
     Repository,
@@ -74,7 +74,7 @@ impl fmt::Display for ResourceType {
 }
 
 #[derive(PartialOrd, Ord, PartialEq, Eq, Serialize, Deserialize, Clone, Debug)]
-#[serde(tag = "type")]
+#[serde(tag = "type", rename_all = "PascalCase")]
 pub enum ResourcePermission {
     Create,
     Read,
@@ -301,7 +301,7 @@ pub struct Session {
 pub enum SessionState {
     Deploying,
     Running {
-        #[serde(with = "system_time")]
+        #[serde(with = "system_time", rename = "startTime")]
         start_time: SystemTime,
         node: Node,
         runtime_configuration: SessionRuntimeConfiguration,
