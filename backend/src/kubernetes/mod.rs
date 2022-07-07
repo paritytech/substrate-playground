@@ -57,6 +57,13 @@ pub async fn get_host() -> Result<String> {
         .clone())
 }
 
+fn parse_user_roles(s: String) -> BTreeMap<String, String> {
+    s.split(';').map(|s| {
+        let pair = s.split('=').collect::<Vec<&str>>();
+        (String::from(*pair.get(0).unwrap_or(&"")), String::from(*pair.get(1).unwrap_or(&"")))
+    }).collect()
+}
+
 pub async fn get_configuration() -> Result<Configuration> {
     Ok(Configuration {
         github_client_id: var("GITHUB_CLIENT_ID")?,
@@ -68,6 +75,7 @@ pub async fn get_configuration() -> Result<Configuration> {
                 .parse()
                 .map_err(|_err| Error::Failure("Failed to parse variable".to_string()))?,
         },
+        user_roles: parse_user_roles(var("USER_ROLES")?),
     })
 }
 

@@ -18,6 +18,7 @@ pub struct Playground {
 pub struct Configuration {
     pub github_client_id: String,
     pub session: SessionDefaults,
+    pub user_roles: BTreeMap<String, String>,
 }
 
 #[derive(Clone)]

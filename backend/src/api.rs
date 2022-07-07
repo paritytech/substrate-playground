@@ -6,7 +6,7 @@ use std::{
 
 use crate::{
     error::{Error, Result},
-    kubernetes::user,
+    kubernetes::{get_configuration, user},
     types::{
         Playground, Pool, Repository, RepositoryConfiguration, RepositoryUpdateConfiguration,
         RepositoryVersion, Role, RoleConfiguration, RoleUpdateConfiguration, Session,
@@ -38,6 +38,17 @@ async fn is_paritytech_member(token: &str, user: &GitHubUser) -> bool {
         .any(|organization| organization == *"paritytech".to_string())
 }
 
+async fn get_user_roles() -> BTreeMap<String, String> {
+    match get_configuration().await {
+        Ok(conf) => conf.user_roles,
+        Err(err) => {
+            log::warn!("Error while accessing configuration: {}", err);
+
+            BTreeMap::new()
+        }
+    }
+}
+
 // Extract a User from cookies
 #[rocket::async_trait]
 impl<'r> FromRequest<'r> for User {
@@ -59,14 +70,22 @@ impl<'r> FromRequest<'r> for User {
                             return Outcome::Success(user);
                         }
                         Ok(None) => {
+                            let user_roles = get_user_roles().await;
+                            let is_paritytech_member =
+                                is_paritytech_member(token_value, &gh_user).await;
+                            let default_user_role = if is_paritytech_member {
+                                "paritytech-member"
+                            } else {
+                                "user"
+                            }
+                            .to_string();
                             // Create a new User
                             let user = User {
                                 id: user_id.to_string(),
-                                role: if is_paritytech_member(token_value, &gh_user).await {
-                                    "paritytech-member".to_string()
-                                } else {
-                                    "user".to_string()
-                                },
+                                role: user_roles
+                                    .get(user_id)
+                                    .unwrap_or(&default_user_role)
+                                    .to_string(),
                                 preferences: BTreeMap::new(),
                             };
                             let user_configuration = UserConfiguration {

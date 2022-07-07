@@ -13,6 +13,7 @@ export interface Playground {
 export interface Configuration {
     githubClientId: string,
     session: SessionDefaults,
+    userRoles: Record<string, string>,
 }
 
 export interface SessionDefaults {
