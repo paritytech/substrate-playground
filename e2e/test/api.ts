@@ -21,6 +21,18 @@ async function createSession(client: Client): Promise<string> {
     return sessionId;
 }
 
+test('unauthenticated - should be able to get details', async (t) => {
+    try {
+        const client = newClient();
+        const details = await client.get();
+        details.configuration
+        t.is(details.user, null);
+        t.not(details.configuration, null);
+    } catch {
+        t.pass();
+    }
+});
+
 test('unauthenticated - should not be able to create a new session', async (t) => {
     try {
         const client = newClient();
@@ -51,6 +63,17 @@ async function waitForSessionDeletion(client: Client, sessionId: string) {
 }
 
 if (accessToken) {
+    test('authenticated - should be able to list users', async (t) => {
+        const client = newClient();
+        await client.login(accessToken);
+        try {
+            const users = await client.listUsers();
+            t.not(users.length, 0);
+        } finally {
+            await client.logout();
+        }
+    });
+
     test('authenticated - should be able to get current session', async (t) => {
         const client = newClient();
         await client.login(accessToken);
