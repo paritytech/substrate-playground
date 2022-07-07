@@ -78,7 +78,7 @@ spec:
                 key: session.defaultMaxPerNode
           - name: USER_ROLES
             valueFrom:
-              secretKeyRef:
+              configMapKeyRef:
                 name: playground-config
                 key: userRoles
           - name: ROCKET_SECRET_KEY
