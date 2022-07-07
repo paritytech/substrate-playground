@@ -17,7 +17,7 @@ import { EnhancedTableToolbar, NoResourcesContainer, Resources } from ".";
 import { useTheme } from "@mui/styles";
 import { ErrorSnackbar } from "../../components";
 import { useInterval } from "../../hooks";
-import { canCustomizeSessionDuration, canCustomizeSessionPoolAffinity, find, remove } from "../../utils";
+import { canCustomizeSessionDuration, canCustomizeSessionPoolAffinity, find, formatDuration, remove } from "../../utils";
 import { fetchRepositoriesWithLatestVersions } from "../session";
 
 export function SessionCreationDialog({ client, conf, user, repository, repositories, show, onCreate, onHide }: { client: Client, conf: Configuration, user: User, repository?: string, repositories: [Repository, RepositoryVersion][] | undefined, show: boolean, onCreate: (id: string, userId: string, conf: SessionConfiguration ) => void, onHide: () => void }): JSX.Element {
@@ -227,7 +227,7 @@ function SessionStateElement({ state }: { state: SessionState }): JSX.Element {
         case "Failed":
             return <div>Failed: {state.message}</div>;
         case "Running":
-            return <div>Running</div>;
+            return <div>Running since ${formatDuration(state.startTime)}</div>;
     }
 }
 
