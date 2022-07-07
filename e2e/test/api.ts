@@ -69,7 +69,7 @@ if (accessToken) {
         await client.login(accessToken);
 
         const details = await client.get();
-        console.log(`Logged as ${details.user}`);
+        console.log(`Logged as ${details.user?.id}`);
         console.log(`Repositories: ${JSON.stringify(await client.listRepositories())}`);
 
         try {
