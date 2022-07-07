@@ -25,12 +25,14 @@ try {
     try {
         await client.createRepository(repositoryId, {url: "https://github.com/jeluard/substrate-node-template"});
         console.log("Created Repository");
-    } catch {
+    } catch (e) {
+        console.error(e);
     }
     try {
         await client.createRepositoryVersion(repositoryId, "e1abd651d1412a5171db6595fa37f613b57a73f3");
         console.log("Created RepositoryVersion");
-    } catch {
+    } catch (e) {
+        console.error(e);
     }
 
     await client.createSession(mainSessionId((await client.get()).user), {repositorySource: {repositoryId: repositoryId}});
