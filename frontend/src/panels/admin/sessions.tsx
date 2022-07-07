@@ -342,8 +342,9 @@ export function Sessions({ client, conf, user }: { client: Client, conf: Configu
                                     <TableHead>
                                         <TableRow>
                                             <TableCell></TableCell>
+                                            <TableCell>User ID</TableCell>
                                             <TableCell>ID</TableCell>
-                                            <TableCell>Duration</TableCell>
+                                            <TableCell>Max duration</TableCell>
                                             <TableCell>State</TableCell>
                                         </TableRow>
                                     </TableHead>
@@ -369,6 +370,7 @@ export function Sessions({ client, conf, user }: { client: Client, conf: Configu
                                                 <TableCell component="th" scope="row">
                                                     <Link href={`https://github.com/${session.userId}`} target="_blank" rel="noreferrer" onClick={stopPropagation}>{session.userId}</Link>
                                                 </TableCell>
+                                                <TableCell>{session.id}</TableCell>
                                                 <TableCell>{session.maxDuration}</TableCell>
                                                 <TableCell><SessionStateElement state={session.state} /></TableCell>
                                             </TableRow>
