@@ -32,7 +32,7 @@ export interface Session extends IdentifiedResource, OwnedResource {
 
 export type SessionState =
     | {type: "Deploying" }
-    | {type: "Running", startTime: number, node: Node }
+    | {type: "Running", startTime: number/* in seconds */ , node: Node }
     | {type: "Failed", message: string, reason: string };
 
 export interface RepositorySource {
