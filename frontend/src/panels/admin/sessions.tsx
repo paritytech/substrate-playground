@@ -20,7 +20,7 @@ import { useInterval } from "../../hooks";
 import { canCustomizeSessionDuration, canCustomizeSessionPoolAffinity, find, remove } from "../../utils";
 import { fetchRepositoriesWithLatestVersions } from "../session";
 
-export function SessionCreationDialog({ client, conf, user, repository, repositories, show, onCreate, onHide }: { client: Client, conf: Configuration, user: User, repository?: string, repositories: [Repository, RepositoryVersion][] | undefined, show: boolean, onCreate: (conf: SessionConfiguration, id: string, ) => void, onHide: () => void }): JSX.Element {
+export function SessionCreationDialog({ client, conf, user, repository, repositories, show, onCreate, onHide }: { client: Client, conf: Configuration, user: User, repository?: string, repositories: [Repository, RepositoryVersion][] | undefined, show: boolean, onCreate: (id: string, userId: string, conf: SessionConfiguration ) => void, onHide: () => void }): JSX.Element {
     const [selection, setSelection] = React.useState<number | null>(null);
     const [canCustomizeDuration, setCanCustomizeDuration] = React.useState(false);
     const [duration, setDuration] = React.useState(conf.session.duration);
@@ -60,7 +60,7 @@ export function SessionCreationDialog({ client, conf, user, repository, reposito
         if (repositoryWithVersion) {
             const repositorySource = {repositoryId: repositoryWithVersion[0].id, repositoryVersionId: repositoryWithVersion[1].id};
             const sessionConfiguration = {repositorySource: repositorySource, duration: duration, poolAffinity: poolAffinity};
-            onCreate(sessionConfiguration, mainSessionId(user));
+            onCreate(user.id, mainSessionId(user), sessionConfiguration);
             onHide();
         }
     }
@@ -126,7 +126,7 @@ export function SessionCreationDialog({ client, conf, user, repository, reposito
     );
 }
 
-function SessionUpdateDialog({ id, duration, show, onUpdate, onHide }: { id: string, duration: number, show: boolean, onUpdate: (id: string, conf: SessionUpdateConfiguration) => void, onHide: () => void }): JSX.Element {
+function SessionUpdateDialog({ session, duration, show, onUpdate, onHide }: { session: Session, duration: number, show: boolean, onUpdate: (session: Session, conf: SessionUpdateConfiguration) => void, onHide: () => void }): JSX.Element {
     const [newDuration, setDuration] = React.useState(0);
 
     React.useEffect(() => {
@@ -152,7 +152,7 @@ function SessionUpdateDialog({ id, duration, show, onUpdate, onHide }: { id: str
                         autoFocus
                         />
                     <ButtonGroup style={{alignSelf: "flex-end", marginTop: 20}} size="small">
-                        <Button disabled={ newDuration <= 0 || duration == newDuration} onClick={() => {onUpdate(id.toLowerCase(), {duration: newDuration}); onHide();}}>UPDATE</Button>
+                        <Button disabled={ newDuration <= 0 || duration == newDuration} onClick={() => {onUpdate(session, {duration: newDuration}); onHide();}}>UPDATE</Button>
                         <Button onClick={onHide}>CLOSE</Button>
                     </ButtonGroup>
                 </Container>
@@ -259,9 +259,9 @@ export function Sessions({ client, conf, user }: { client: Client, conf: Configu
         };
     }
 
-    async function createSession(conf: SessionConfiguration, sessionId: string, setSessions: Dispatch<SetStateAction<Session[] | null>>): Promise<void> {
+    async function createSession(userId: string, sessionId: string, conf: SessionConfiguration, setSessions: Dispatch<SetStateAction<Session[] | null>>): Promise<void> {
         try {
-            await client.createSession(sessionId, conf);
+            await client.createUserSession(userId, sessionId, conf);
             setSessions((sessions: Session[] | null) => {
                 if (sessions) {
                     sessions.concat(sessionMock(conf));
@@ -273,14 +273,14 @@ export function Sessions({ client, conf, user }: { client: Client, conf: Configu
         }
     }
 
-    async function onUpdate(id: string, conf: SessionUpdateConfiguration, setSessions: Dispatch<SetStateAction<Session[] | null>>): Promise<void> {
+    async function updateSession(session: Session, conf: SessionUpdateConfiguration, setSessions: Dispatch<SetStateAction<Session[] | null>>): Promise<void> {
         try {
-            await client.updateSession(id, conf);
+            await client.updateUserSession(session.userId, session.id, conf);
             setSessions((sessions: Session[] | null) => {
                 if (sessions && conf.duration) {
-                    const session = find(sessions, id);
-                    if (session) {
-                        session.maxDuration = conf.duration;
+                    const existingSession = find(sessions, session.id);
+                    if (existingSession) {
+                        existingSession.maxDuration = conf.duration;
                     }
                 }
                 return sessions;
@@ -290,14 +290,14 @@ export function Sessions({ client, conf, user }: { client: Client, conf: Configu
         }
     }
 
-    async function onDelete(setSessions: Dispatch<SetStateAction<Session[] | null>>): Promise<void> {
-        if (selected) {
+    async function deleteSession(setSessions: Dispatch<SetStateAction<Session[] | null>>, userId?: string, sessionId?: string): Promise<void> {
+        if (userId && sessionId) {
             try {
-                await client.deleteSession(selected.id);
+                await client.deleteUserSession(userId, sessionId);
 
                 setSessions((sessions: Session[] | null) => {
                     if (sessions) {
-                        return remove(sessions, selected.id);
+                        return remove(sessions, userId);
                     }
                     return sessions;
                 });
@@ -307,13 +307,13 @@ export function Sessions({ client, conf, user }: { client: Client, conf: Configu
                 setErrorMessage("Failed to delete session");
             }
         } else {
-            setErrorMessage("Can't delete currently logged session");
+            // Can't happen
         }
     }
 
     const [page, setPage] = React.useState(0);
     const [rowsPerPage, setRowsPerPage] = React.useState(5);
-    const handleChangePage = (event: React.MouseEvent<HTMLButtonElement> | null, newPage: number) => {
+    const handleChangePage = (_event: React.MouseEvent<HTMLButtonElement> | null, newPage: number) => {
       setPage(newPage);
     };
 
@@ -327,7 +327,7 @@ export function Sessions({ client, conf, user }: { client: Client, conf: Configu
     const stopPropagation = (event: React.SyntheticEvent) => event.stopPropagation();
 
     return (
-        <Resources<Session> callback={async () => await client.listSessions()}>
+        <Resources<Session> callback={async () => await client.listAllSessions()}>
             {(resources: Session[], setSessions: Dispatch<SetStateAction<Session[] | null>>) => {
                 const allResources = Object.entries(resources);
                 const filteredResources = rowsPerPage > 0 ? allResources.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage) : allResources;
@@ -336,7 +336,7 @@ export function Sessions({ client, conf, user }: { client: Client, conf: Configu
                         {filteredResources.length > 0
                         ?
                         <>
-                            <EnhancedTableToolbar client={client} user={user} label="Sessions" selected={selected?.id} onCreate={() => setShowCreationDialog(true)} onUpdate={() => setShowUpdateDialog(true)} onDelete={() => onDelete(setSessions)} resourceType={ResourceType.Session} />
+                            <EnhancedTableToolbar client={client} user={user} label="Sessions" selected={selected?.id} onCreate={() => setShowCreationDialog(true)} onUpdate={() => setShowUpdateDialog(true)} onDelete={() => deleteSession(setSessions, selected?.userId, selected?.id)} resourceType={ResourceType.Session} />
                             <TableContainer component={Paper}>
                                 <Table aria-label="simple table">
                                     <TableHead>
@@ -399,9 +399,9 @@ export function Sessions({ client, conf, user }: { client: Client, conf: Configu
                         {errorMessage &&
                         <ErrorSnackbar open={true} message={errorMessage} onClose={() => setErrorMessage(null)} />}
                         {showCreationDialog &&
-                        <SessionCreationDialog client={client} conf={conf} user={user} repositories={repositories} show={showCreationDialog} onCreate={(conf, sessionId) => createSession(conf, sessionId, setSessions)} onHide={() => setShowCreationDialog(false)} />}
+                        <SessionCreationDialog client={client} conf={conf} user={user} repositories={repositories} show={showCreationDialog} onCreate={(userId, sessionId, conf) => createSession(userId, sessionId, conf, setSessions)} onHide={() => setShowCreationDialog(false)} />}
                         {(selected && showUpdateDialog) &&
-                        <SessionUpdateDialog id={selected.id} duration={selected.maxDuration} show={showUpdateDialog} onUpdate={(id, conf) => onUpdate(id, conf, setSessions)} onHide={() => setShowUpdateDialog(false)} />}
+                        <SessionUpdateDialog session={selected} duration={selected.maxDuration} show={showUpdateDialog} onUpdate={(session, conf) => updateSession(session, conf, setSessions)} onHide={() => setShowUpdateDialog(false)} />}
                     </>
                 );
             }}
