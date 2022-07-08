@@ -262,11 +262,18 @@ fn pod_to_state(pod: &Pod) -> types::SessionState {
                     reason: terminated.reason.clone().unwrap_or_default(),
                 };
             } else if let Some(waiting) = &state.waiting {
-                if waiting.reason.clone().unwrap_or_default() == "CreateContainerConfigError" {
-                    return types::SessionState::Failed {
-                        message: waiting.message.clone().unwrap_or_default(),
-                        reason: waiting.reason.clone().unwrap_or_default(),
-                    };
+                match waiting.reason.clone().unwrap_or_default().as_str() {
+                    // https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#container-state-waiting
+                    // https://kubernetes.io/docs/concepts/containers/images/#imagepullbackoff
+                    // https://github.com/kubernetes/kubernetes/blob/master/pkg/kubelet/images/types.go
+                    // https://github.com/kubernetes/kubernetes/blob/master/pkg/kubelet/events/event.go
+                    "CreateContainerConfigError" | "ImagePullBackOff" => {
+                        return types::SessionState::Failed {
+                            message: waiting.message.clone().unwrap_or_default(),
+                            reason: waiting.reason.clone().unwrap_or_default(),
+                        };
+                    },
+                    _ => ()
                 }
             }
         }
