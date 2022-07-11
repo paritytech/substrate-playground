@@ -197,8 +197,8 @@ function DeleteConfirmationDialog({ open, onClose, onConfirmation }: { open: boo
 }
 
 function EditToolbar({ client, user, resourceType, selected, onCreate, onUpdate, onDelete }: { client: Client, user: User, resourceType: ResourceType, selected?: string | null, onCreate?: () => void, onUpdate?: () => void, onDelete?: () => void }): JSX.Element {
-  const [open, setOpen] = React.useState(false);
   if (selected) {
+    const [open, setOpen] = React.useState(false);
     return <>
       {onUpdate &&
         <Tooltip title="Update">
@@ -215,6 +215,7 @@ function EditToolbar({ client, user, resourceType, selected, onCreate, onUpdate,
       <DeleteConfirmationDialog open={open} onClose={() => setOpen(false)} onConfirmation={onDelete} />
     </>;
   } else {
+    console.log("hasPermission", hasPermission(client, user, resourceType, {type: "Create"}))
     return <>
       {onCreate &&
         <Tooltip title="Create">
