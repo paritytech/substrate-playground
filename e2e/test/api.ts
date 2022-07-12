@@ -17,7 +17,7 @@ if (env == EnvironmentType.dev) {
 
 async function createSession(client: Client): Promise<string> {
     const sessionId = await mainSessionId((await client.get()).user);
-    await client.createSession(sessionId, {repositorySource: {repositoryId: 'substrate-node-template'}});
+    await client.createSession(sessionId, {repositorySource: {repositoryId: 'node-template'}});
     return sessionId;
 }
 

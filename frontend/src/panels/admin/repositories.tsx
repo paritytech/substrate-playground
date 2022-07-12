@@ -114,12 +114,13 @@ function RepositoryVersionUpdateDialog({ client, repository, show, onSetVersionC
 }
 
 function RepositoryVersionsTable({ client, repositoryVersions }: { client: Client, repositoryVersions: RepositoryVersion[] }): JSX.Element {
+    // TODO allow to specify versions
     return (
     <Box margin={1}>
         <Typography variant="h6" gutterBottom component="div">
             Versions
         </Typography>
-        <Button onClick={() => {client.createRepositoryVersion("substrate-node-template", "e1abd651d1412a5171db6595fa37f613b57a73f3")}}>CREATE NEW VERSION</Button>
+        <Button onClick={() => {client.createRepositoryVersion("node-template", "e1abd651d1412a5171db6595fa37f613b57a73f3")}}>CREATE NEW VERSION</Button>
         <Table size="small" aria-label="versions">
             <TableHead>
             <TableRow>

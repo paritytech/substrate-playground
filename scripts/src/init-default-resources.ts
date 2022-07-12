@@ -21,7 +21,7 @@ const client = newClient(env);
 try {
     await client.login(accessToken);
 
-    const repositoryId = 'substrate-node-template';
+    const repositoryId = 'node-template';
     try {
         await client.createRepository(repositoryId, {url: "https://github.com/jeluard/substrate-node-template"});
         console.log("Created Repository");

@@ -17,7 +17,7 @@ resources:
 configMapGenerator:
 - name: playground-repositories
   files:
-    - repositories/substrate-node-template
+    - repositories/node-template
   options:
     disableNameSuffixHash: true
 - name: playground-roles
