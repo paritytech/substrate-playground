@@ -1,4 +1,4 @@
-#![feature(async_closure, proc_macro_hygiene, decl_macro)]
+#![feature(async_closure, decl_macro, proc_macro_hygiene, result_flattening)]
 
 pub mod api;
 pub mod error;

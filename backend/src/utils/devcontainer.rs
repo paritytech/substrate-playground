@@ -22,10 +22,9 @@ pub struct DevContainer {
 }
 
 // TODO add support for multiple devcontainer files (.devcontainer/FOLDER1/devcontainer.json)
-pub fn read_and_parse_devcontainer(path: String) -> Result<DevContainer> {
+pub fn read_devcontainer(path: String) -> Result<String> {
     fs::read_to_string(format!("{}/.devcontainer/devcontainer.json", path))
         .map_err(|err| Error::Failure(err.to_string()))
-        .and_then(|data| parse_devcontainer(&data))
 }
 
 pub fn exec(path: String, command: Vec<String>) -> Vec<Result<Output>> {

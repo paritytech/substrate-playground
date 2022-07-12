@@ -1,38 +1,33 @@
 extern crate playground;
 
 use clap::Parser;
-use playground::utils::{
-    devcontainer::{exec, read_and_parse_devcontainer},
-    git::clone,
+use playground::{
+    error::Result,
+    kubernetes::repository::{get_repository, update_repository, update_repository_version_state},
+    types::{RepositoryUpdateConfiguration, RepositoryVersionState},
+    utils::{
+        devcontainer::{exec, parse_devcontainer, read_devcontainer},
+        git::clone,
+    },
 };
-use std::{env, error::Error};
-
-enum RepositoryBuildProgress {
-    Cloning,
-    Building,
-    Done,
-}
-
-fn report_progress(progress: RepositoryBuildProgress) {
-    match progress {
-        RepositoryBuildProgress::Cloning => log::info!("Cloning"),
-        RepositoryBuildProgress::Building => log::info!("Building"),
-        RepositoryBuildProgress::Done => log::info!("Done"),
-    }
-}
+use std::env;
 
 #[derive(Parser, Debug)]
 #[clap(about, version, author)]
 struct Args {
     #[clap(short, long)]
-    url: String,
+    repository_id: String,
+
+    #[clap(short, long)]
+    id: String,
 
     /// Number of times to greet
     #[clap(short, long, default_value_t = String::from(".clone"))]
     path: String,
 }
 
-fn main() -> Result<(), Box<dyn Error>> {
+#[rocket::main]
+async fn main() -> Result<()> {
     // Initialize log configuration. Reads `RUST_LOG` if any, otherwise fallsback to `default`
     if env::var("RUST_LOG").is_err() {
         env::set_var("RUST_LOG", "warn,builder=info");
@@ -40,24 +35,41 @@ fn main() -> Result<(), Box<dyn Error>> {
     env_logger::init();
 
     let args = Args::parse();
+    let repository_id = args.repository_id;
+    let id = args.id;
 
     // https://github.com/substrate-developer-hub/substrate-node-template
 
-    // Clone repository
-    report_progress(RepositoryBuildProgress::Cloning);
-
     // https://stackoverflow.com/questions/41081240/idiomatic-callbacks-in-rust
 
-    clone(args.path.clone(), args.url)?;
+    update_repository_version_state(
+        &repository_id,
+        &id,
+        &RepositoryVersionState::Cloning { progress: 0 },
+    )
+    .await?;
 
-    let conf = read_and_parse_devcontainer(args.path.clone())?;
+    let repository = get_repository(&repository_id).await?.unwrap();
+    clone(args.path.clone(), repository.url)?;
+
+    let devcontainer_json = read_devcontainer(args.path.clone())?;
+
+    update_repository_version_state(
+        &repository_id,
+        &id,
+        &RepositoryVersionState::Building {
+            progress: 0,
+            devcontainer_json: devcontainer_json.clone(),
+        },
+    )
+    .await?;
+
+    let conf = parse_devcontainer(&devcontainer_json)?;
 
     // TODO Attach conf to volume
 
     // Trigger eventual build based on Configuration
     if let Some(on_create_command) = conf.on_create_command {
-        report_progress(RepositoryBuildProgress::Building);
-
         // TODO starts new job doing build if needed
 
         // Fail if at least a build command failed
@@ -72,7 +84,14 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
     }
 
-    report_progress(RepositoryBuildProgress::Done);
+    // Update current version so that it matches this newly created version
+    update_repository(
+        &repository_id,
+        RepositoryUpdateConfiguration {
+            current_version: Some(id.to_string()),
+        },
+    )
+    .await?;
 
     Ok(())
 }
