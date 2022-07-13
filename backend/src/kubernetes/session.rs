@@ -272,8 +272,8 @@ fn pod_to_state(pod: &Pod) -> types::SessionState {
                             message: waiting.message.clone().unwrap_or_default(),
                             reason: waiting.reason.clone().unwrap_or_default(),
                         };
-                    },
-                    _ => ()
+                    }
+                    _ => (),
                 }
             }
         }
