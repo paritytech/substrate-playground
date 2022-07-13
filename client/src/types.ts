@@ -130,9 +130,11 @@ export interface RepositoryVersionConfiguration {
 }
 
 export type RepositoryVersionState =
+    | {type: "Init" }
     | {type: "Cloning", progress: number }
     | {type: "Building", progress: number, devcontainerJson: string }
-    | {type: "Ready", devcontainerJson: string };
+    | {type: "Ready", devcontainerJson: string }
+    | {type: "Failed", message: string };
 
 export interface RepositoryRuntimeConfiguration {
     baseImage?: string,

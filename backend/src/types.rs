@@ -199,6 +199,7 @@ pub struct RepositoryVersion {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(tag = "type")]
 pub enum RepositoryVersionState {
+    Init,
     Cloning {
         progress: i32,
     },
@@ -210,6 +211,9 @@ pub enum RepositoryVersionState {
     Ready {
         #[serde(rename = "devcontainerJson")]
         devcontainer_json: String,
+    },
+    Failed {
+        message: String,
     },
 }
 
