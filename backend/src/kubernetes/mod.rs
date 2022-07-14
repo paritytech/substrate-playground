@@ -146,9 +146,41 @@ pub async fn list_by_selector<K: Clone + DeserializeOwned + Debug>(
         .map_err(Error::K8sCommunicationFailure)
 }
 
-pub async fn current_pod_api() -> Result<Api<Pod>> {
-    // TODO GET name / namespace from an env variable
-    Err(Error::SessionIdAlreayUsed)
+pub async fn backend_pod() -> Result<Pod> {
+    pod_by_component_name("backend-api").await
+}
+
+pub async fn pod_by_component_name(name: &str) -> Result<Pod> {
+    let api: Api<Pod> = default_namespaced_api()?;
+    let pods = list_by_selector(
+        &api,
+        format!("app.kubernetes.io/component={}", name).as_str(),
+    )
+    .await?;
+    if pods.len() > 1 {
+        return Err(Error::Failure("Too many pods".to_string()));
+    }
+    match pods.get(0) {
+        Some(pod) => Ok(pod.clone()),
+        None => Err(Error::Failure("No pods".to_string())),
+    }
+}
+
+pub fn docker_image_name(pod: &Pod) -> Result<String> {
+    match &pod.spec {
+        Some(spec) => spec
+            .containers
+            .get(0)
+            .map(|container| {
+                container
+                    .image
+                    .clone()
+                    .ok_or_else(|| Error::Failure("No image defined".to_string()))
+            })
+            .ok_or_else(|| Error::Failure("No containers".to_string()))
+            .flatten(),
+        None => Err(Error::Failure("No spec".to_string())),
+    }
 }
 
 pub fn user_namespace(user_id: &str) -> String {
@@ -366,6 +398,8 @@ where
     let api: Api<T> = default_namespaced_api()?;
     get_resource(api, resource_id, f).await
 }
+
+// Introduce Resource trait, rely on creation_timestamp
 
 pub async fn get_owned_resource<T, U>(
     owner_id: &str,

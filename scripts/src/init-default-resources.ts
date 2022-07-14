@@ -29,7 +29,7 @@ try {
         console.error(e);
     }
     try {
-        await client.createRepositoryVersion(repositoryId, "60385998e1a454604404d8fc4affd3f7a498ab78");
+        await client.createRepositoryVersion(repositoryId, "0d2047031d8642ec5b4447e1eca9f47d00123bbe");
         console.log("Created RepositoryVersion");
     } catch (e) {
         console.error(e);

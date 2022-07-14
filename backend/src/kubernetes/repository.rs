@@ -7,21 +7,22 @@ use crate::{
     },
 };
 use k8s_openapi::api::core::v1::{
-    PersistentVolumeClaim, PersistentVolumeClaimSpec, ResourceRequirements,
+    Container, PersistentVolumeClaim, PersistentVolumeClaimSpec, PersistentVolumeClaimVolumeSource,
+    Pod, PodSpec, ResourceRequirements, Volume, VolumeMount,
 };
 use k8s_openapi::apimachinery::pkg::{api::resource::Quantity, apis::meta::v1::ObjectMeta};
 use kube::{
     api::{Api, DeleteParams, PostParams},
-    ResourceExt,
+    Resource, ResourceExt,
 };
 use log::warn;
 use serde_json::json;
 use std::collections::BTreeMap;
 
 use super::{
-    client, delete_config_map_value, get_resource_from_config_map, list_by_selector,
-    list_resources_from_config_map, serialize_json, store_resource_as_config_map, unserialize_yaml,
-    update_annotation_value, APP_LABEL, APP_VALUE, COMPONENT_LABEL,
+    backend_pod, client, delete_config_map_value, docker_image_name, get_resource_from_config_map,
+    list_by_selector, list_resources_from_config_map, serialize_json, store_resource_as_config_map,
+    unserialize_yaml, update_annotation_value, APP_LABEL, APP_VALUE, COMPONENT_LABEL,
 };
 
 const REPOSITORY_LABEL: &str = "REPOSITORY_LABEL";
@@ -109,11 +110,8 @@ fn volume_template(
     }
 }
 
-fn volume_template_name(repository_id: &str, repository_version_id: &str) -> String {
-    format!(
-        "volume-template-{}-{}",
-        repository_id, repository_version_id
-    )
+pub fn volume_template_name(repository_id: &str, repository_version_id: &str) -> String {
+    format!("{}-{}", repository_id, repository_version_id)
 }
 
 async fn create_volume_template(
@@ -194,6 +192,7 @@ pub async fn get_repository_version(
     let persistent_volume =
         get_persistent_volume(&persistent_volume_api, repository_id, id).await?;
 
+    // TODO also check job ?
     match persistent_volume {
         Some(persistent_volume) => {
             match persistent_volume_to_repository_version(&persistent_volume) {
@@ -232,83 +231,112 @@ pub async fn create_repository_version(repository_id: &str, id: &str) -> Result<
     let volume_api: Api<PersistentVolumeClaim> = Api::default_namespaced(client.clone());
     let volume_template_name = volume_template_name(repository_id, id);
 
-    // TODO fail if exists
-    let _volume =
+    if get_repository_version(repository_id, id).await?.is_some() {
+        return Err(Error::Failure("AlreadyExists".to_string()));
+    }
+
+    let volume =
         create_volume_template(&volume_api, &volume_template_name, repository_id, id).await?;
 
-    // TODO move to builder. Only do it build is successful
-    // Update current version so that it matches this newly created version
-    update_repository(
-        repository_id,
-        RepositoryUpdateConfiguration {
-            current_version: Some(id.to_string()),
-        },
-    )
-    .await?;
+    update_repository_version_state(repository_id, id, &RepositoryVersionState::Init).await?;
 
-    // TODO remove, for test only
-    update_repository_version_state(
-        repository_id,
-        id,
-        &RepositoryVersionState::Ready {
-            devcontainer_json:
-                "{\"image\": \"paritytech/substrate-playground-template-ink-openvscode\",\"customizations\": {\"substrate-playground\": {\"description\": \"Test description\", \"tags\": {\"public\": \"true\"}}}}".to_string(),
-        },
-    )
-    .await?;
-
-    /*let job_api: Api<Job> = Api::default_namespaced(client.clone());
-        let job = Job {
-            metadata: ObjectMeta {
-                name: Some(format!("builder-{}-{}", repository_id, id)),
-                ..Default::default()
-            },
-            spec: Some(JobSpec {
-                ttl_seconds_after_finished: Some(0),
-                backoff_limit: Some(1),
-                template: PodTemplateSpec {
-                    spec: Some(PodSpec {
-                        volumes: Some(vec![Volume {
-                            name: volume_template_name.clone(),
-                            persistent_volume_claim: Some(PersistentVolumeClaimVolumeSource {
-                                claim_name: volume
-                                    .meta()
-                                    .clone()
-                                    .name
-                                    .ok_or(Error::MissingData("meta#name"))?,
-                                ..Default::default()
-                            }),
-                            ..Default::default()
-                        }]),
-                        restart_policy: Some("OnFailure".to_string()),
-                        containers: vec![Container {
-                            name: "builder".to_string(),
-                            image: Some(
-                                // TODO programmatically fetch from current image
-                                "paritytech/substrate-playground-backend-api:latest".to_string(),
-                            ),
-                            command: Some(vec!["builder".to_string()]),
-                            args: Some(vec![repository_id.to_string()]),
-                            volume_mounts: Some(vec![VolumeMount {
-                                name: volume_template_name,
-                                mount_path: "/".to_string(),
-                                ..Default::default()
-                            }]),
-                            ..Default::default()
-                        }],
-                        ..Default::default()
-                    }),
-                    ..Default::default()
-                },
-                ..Default::default()
-            }),
+    //let job_api: Api<Job> = Api::default_namespaced(client.clone());
+    let job_api: Api<Pod> = Api::default_namespaced(client.clone());
+    let pod = Pod {
+        metadata: ObjectMeta {
+            generate_name: Some(format!("builder-{}-", repository_id)),
             ..Default::default()
-        };
-        job_api
-            .create(&PostParams::default(), &job)
-            .await
-            .map_err(Error::K8sCommunicationFailure)?;
-    */
+        },
+        spec: Some(PodSpec {
+            service_account_name: Some("backend-service-account".to_string()),
+            volumes: Some(vec![Volume {
+                name: volume_template_name.clone(),
+                persistent_volume_claim: Some(PersistentVolumeClaimVolumeSource {
+                    claim_name: volume
+                        .meta()
+                        .clone()
+                        .name
+                        .ok_or(Error::MissingData("meta#name"))?,
+                    ..Default::default()
+                }),
+                ..Default::default()
+            }]),
+            //restart_policy: Some("OnFailure".to_string()),
+            containers: vec![Container {
+                name: "cloner".to_string(),
+                image: Some(docker_image_name(&backend_pod().await?)?),
+                command: Some(vec!["cloner".to_string()]),
+                args: Some(vec![
+                    "-r".to_string(),
+                    repository_id.to_string(),
+                    "-i".to_string(),
+                    id.to_string(),
+                ]),
+                volume_mounts: Some(vec![VolumeMount {
+                    name: volume_template_name,
+                    mount_path: "/workspaces".to_string(),
+                    ..Default::default()
+                }]),
+                ..Default::default()
+            }],
+            ..Default::default()
+        }),
+        ..Default::default()
+    }; /*
+       let job = Job {
+           metadata: ObjectMeta {
+               generate_name: Some(format!("builder-{}-", repository_id)),
+               ..Default::default()
+           },
+           spec: Some(JobSpec {
+               ttl_seconds_after_finished: Some(10000),
+               backoff_limit: Some(1),
+               template: PodTemplateSpec {
+                   spec: Some(PodSpec {
+                       service_account_name: Some("backend-service-account".to_string()),
+                       volumes: Some(vec![Volume {
+                           name: volume_template_name.clone(),
+                           persistent_volume_claim: Some(PersistentVolumeClaimVolumeSource {
+                               claim_name: volume
+                                   .meta()
+                                   .clone()
+                                   .name
+                                   .ok_or(Error::MissingData("meta#name"))?,
+                               ..Default::default()
+                           }),
+                           ..Default::default()
+                       }]),
+                       restart_policy: Some("OnFailure".to_string()),
+                       containers: vec![Container {
+                           name: "cloner".to_string(),
+                           image: Some(docker_image_name(&backend_pod().await?)?),
+                           command: Some(vec!["cloner".to_string()]),
+                           args: Some(vec![
+                               "-r".to_string(),
+                               repository_id.to_string(),
+                               "-i".to_string(),
+                               id.to_string(),
+                           ]),
+                           volume_mounts: Some(vec![VolumeMount {
+                               name: volume_template_name,
+                               mount_path: "/".to_string(),
+                               ..Default::default()
+                           }]),
+                           ..Default::default()
+                       }],
+                       ..Default::default()
+                   }),
+                   ..Default::default()
+               },
+               ..Default::default()
+           }),
+           ..Default::default()
+       };*/
+    job_api
+        .create(&PostParams::default(), &pod)
+        .await
+        .map_err(Error::K8sCommunicationFailure)?;
+
     Ok(())
 }
 

@@ -5,7 +5,7 @@ use git2::{
 };
 use std::path::Path;
 
-pub fn clone(path: String, url: String) -> Result<()> {
+pub fn clone(path: &str, url: String) -> Result<()> {
     // https://stackoverflow.com/questions/55141013/how-to-get-the-behaviour-of-git-checkout-in-rust-git2
     let mut cb = RemoteCallbacks::new();
     cb.transfer_progress(|_stats| true);

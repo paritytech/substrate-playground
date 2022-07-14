@@ -15,40 +15,25 @@ pub struct DevContainer {
     pub image: Option<String>,
     pub container_env: Option<HashMap<String, String>>,
     pub forward_ports: Option<Vec<i32>>,
-    pub ports_attributes: Option<HashMap<String, String>>,
-    pub on_create_command: Option<Vec<String>>,
-    pub post_create_command: Option<Vec<String>>,
-    pub post_start_command: Option<Vec<String>>,
+    pub ports_attributes: Option<HashMap<String, HashMap<String, String>>>,
+    pub on_create_command: Option<String>,
+    pub post_create_command: Option<String>,
+    pub post_start_command: Option<String>,
 }
 
 // TODO add support for multiple devcontainer files (.devcontainer/FOLDER1/devcontainer.json)
-pub fn read_devcontainer(path: String) -> Result<String> {
+pub fn read_devcontainer(path: &str) -> Result<String> {
     fs::read_to_string(format!("{}/.devcontainer/devcontainer.json", path))
         .map_err(|err| Error::Failure(err.to_string()))
 }
 
-pub fn exec(path: String, command: Vec<String>) -> Vec<Result<Output>> {
-    if command.len() == 1 {
-        vec![Command::new("sh")
-            .current_dir(path)
-            .arg("-c")
-            .args(command[0].split_whitespace().collect::<Vec<_>>())
-            .output()
-            .map_err(|err| Error::Failure(err.to_string()))]
-    } else {
-        command
-            .iter()
-            .map(|command| {
-                let mut members = command.split_whitespace().collect::<Vec<_>>();
-                let program = members.remove(0);
-                Command::new(program)
-                    .current_dir(path.clone())
-                    .args(members)
-                    .output()
-                    .map_err(|err| Error::Failure(err.to_string()))
-            })
-            .collect()
-    }
+pub fn exec(path: &str, command: String) -> Result<Output> {
+    Command::new("sh")
+        .current_dir(path)
+        .arg("-c")
+        .args(command.split_whitespace().collect::<Vec<_>>())
+        .output()
+        .map_err(|err| Error::Failure(err.to_string()))
 }
 
 /// Parses a `devcontainer.json` file into a Configuration.
@@ -71,31 +56,19 @@ fn it_fails_to_parse_devcontainer() {
 fn it_parses_devcontainer() -> Result<()> {
     parse_devcontainer("{}")?;
     assert_eq!(parse_devcontainer("{}").is_ok(), true);
-    /*assert_eq!(
-        parse_devcontainer(r#"{ "onCreateCommand": "" }"#)?.on_create_command,
-        Some(vec!["".to_string()])
-    );*/
     assert_eq!(
-        parse_devcontainer("{/* Comment */ // test comment\n }").is_ok(),
-        true
-    );
-    assert_eq!(
-        parse_devcontainer("{/* Comment */ \"onCreateCommand\": [\"//\"] // test comment \n}")
+        parse_devcontainer("{/* Comment */ \"onCreateCommand\": \"//\" // test comment \n}")
             .is_ok(),
         true
     );
     assert_eq!(
-        parse_devcontainer("{ \"onCreateCommand\": [\"\"] }").is_ok(),
+        parse_devcontainer("{ \"onCreateCommand\": \"\" }").is_ok(),
         true
     );
     assert_eq!(
-        parse_devcontainer("{ \"onCreateCommand\": [\"\", 5] }").is_ok(),
-        false
-    );
-    assert_eq!(
-        parse_devcontainer("{ \"onCreateCommand\": [\"1\"] }")?
+        parse_devcontainer("{ \"onCreateCommand\": \"1\" }")?
             .on_create_command
-            .unwrap()[0],
+            .unwrap(),
         "1".to_string()
     );
     assert_eq!(
