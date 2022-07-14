@@ -182,11 +182,11 @@ fn create_pod(
                 env: Some(pod_env_variables(template, &env.host, session_id)),
                 resources: Some(ResourceRequirements {
                     requests: Some(BTreeMap::from([
-                        ("memory".to_string(), Quantity("32Gi".to_string())),
+                        ("memory".to_string(), Quantity("8Gi".to_string())),
                         ("ephemeral-storage".to_string(), Quantity("25Gi".to_string())),
                     ])),
                     limits: Some(BTreeMap::from([
-                        ("memory".to_string(), Quantity("64Gi".to_string())),
+                        ("memory".to_string(), Quantity("30Gi".to_string())),
                         ("ephemeral-storage".to_string(), Quantity("50Gi".to_string())),
                     ])),
                     ..Default::default()
