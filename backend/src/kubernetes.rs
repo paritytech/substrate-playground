@@ -190,7 +190,7 @@ fn create_pod(
                 }),
                 ..Default::default()
             }],
-            termination_grace_period_seconds: Some(1),
+            termination_grace_period_seconds: Some(0),
             automount_service_account_token: Some(false),
             ..Default::default()
         }),
