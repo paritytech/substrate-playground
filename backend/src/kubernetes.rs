@@ -186,11 +186,15 @@ fn create_pod(
                         ("memory".to_string(), Quantity("4Gi".to_string())),
                         ("ephemeral-storage".to_string(), Quantity("25Gi".to_string())),
                     ])),
+                    limits: Some(BTreeMap::from([
+                        ("memory".to_string(), Quantity("8Gi".to_string())),
+                        ("ephemeral-storage".to_string(), Quantity("40Gi".to_string())),
+                    ])),
                     ..Default::default()
                 }),
                 ..Default::default()
             }],
-            termination_grace_period_seconds: Some(0),
+            termination_grace_period_seconds: Some(1),
             automount_service_account_token: Some(false),
             ..Default::default()
         }),
