@@ -30,7 +30,7 @@
     "@mui/types": "7.1.4",
     "@parcel/transformer-inline-string": "2.6.2",
     "@types/marked": "4.0.3",
-    "@types/node": "18.0.4",
+    "@types/node": "18.0.6",
     "@types/react": "18.0.9",
     "@types/react-dom": "18.0.3",
     "@typescript-eslint/eslint-plugin": "5.30.6",
