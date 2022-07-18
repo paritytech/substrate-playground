@@ -159,7 +159,7 @@ fn create_pod(
         spec: Some(PodSpec {
             affinity: Some(Affinity {
                 node_affinity: Some(NodeAffinity {
-                    preferred_during_scheduling_ignored_during_execution: Some(vec![
+                    required_during_scheduling_ignored_during_execution: Some(vec![
                         PreferredSchedulingTerm {
                             weight: 100,
                             preference: NodeSelectorTerm {
