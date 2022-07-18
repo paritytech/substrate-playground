@@ -8,18 +8,21 @@ use crate::{
     },
 };
 use json_patch::{AddOperation, PatchOperation, RemoveOperation};
-use k8s_openapi::{api::{
-    core::v1::{
-        Affinity, ConfigMap, Container, ContainerStatus, EnvVar, Node, NodeAffinity,
-        NodeSelectorRequirement, NodeSelectorTerm, Pod, PodSpec, PreferredSchedulingTerm, Service,
-        ServicePort, ServiceSpec, ResourceRequirements,
-    },
-    networking::v1::{
-        HTTPIngressPath, HTTPIngressRuleValue, Ingress, IngressBackend, IngressRule,
-        IngressServiceBackend, ServiceBackendPort,
-    },
-}, apimachinery::pkg::api::resource::Quantity};
 use k8s_openapi::apimachinery::pkg::{apis::meta::v1::ObjectMeta, util::intstr::IntOrString};
+use k8s_openapi::{
+    api::{
+        core::v1::{
+            Affinity, ConfigMap, Container, ContainerStatus, EnvVar, Node, NodeAffinity,
+            NodeSelector, NodeSelectorRequirement, NodeSelectorTerm, Pod, PodSpec,
+            ResourceRequirements, Service, ServicePort, ServiceSpec,
+        },
+        networking::v1::{
+            HTTPIngressPath, HTTPIngressRuleValue, Ingress, IngressBackend, IngressRule,
+            IngressServiceBackend, ServiceBackendPort,
+        },
+    },
+    apimachinery::pkg::api::resource::Quantity,
+};
 use kube::{
     api::{Api, DeleteParams, ListParams, Patch, PatchParams, PostParams},
     config::KubeConfigOptions,
@@ -51,7 +54,9 @@ const THEIA_WEB_PORT: i32 = 3000;
 fn running_or_pending_sessions(sessions: Vec<&Session>) -> Vec<&Session> {
     sessions
         .into_iter()
-        .filter(|session| session.pod.phase == Phase::Running || session.pod.phase == Phase::Pending)
+        .filter(|session| {
+            session.pod.phase == Phase::Running || session.pod.phase == Phase::Pending
+        })
         .collect()
 }
 
@@ -159,19 +164,16 @@ fn create_pod(
         spec: Some(PodSpec {
             affinity: Some(Affinity {
                 node_affinity: Some(NodeAffinity {
-                    required_during_scheduling_ignored_during_execution: Some(vec![
-                        PreferredSchedulingTerm {
-                            weight: 100,
-                            preference: NodeSelectorTerm {
-                                match_expressions: Some(vec![NodeSelectorRequirement {
-                                    key: NODE_POOL_LABEL.to_string(),
-                                    operator: "In".to_string(),
-                                    values: Some(vec![pool_id.to_string()]),
-                                }]),
-                                ..Default::default()
-                            },
-                        },
-                    ]),
+                    required_during_scheduling_ignored_during_execution: Some(NodeSelector {
+                        node_selector_terms: vec![NodeSelectorTerm {
+                            match_expressions: Some(vec![NodeSelectorRequirement {
+                                key: NODE_POOL_LABEL.to_string(),
+                                operator: "In".to_string(),
+                                values: Some(vec![pool_id.to_string()]),
+                            }]),
+                            ..Default::default()
+                        }],
+                    }),
                     ..Default::default()
                 }),
                 ..Default::default()
@@ -183,11 +185,15 @@ fn create_pod(
                 resources: Some(ResourceRequirements {
                     requests: Some(BTreeMap::from([
                         ("memory".to_string(), Quantity("10Gi".to_string())),
-                        ("ephemeral-storage".to_string(), Quantity("25Gi".to_string())),
+                        (
+                            "ephemeral-storage".to_string(),
+                            Quantity("25Gi".to_string()),
+                        ),
                     ])),
-                    limits: Some(BTreeMap::from([
-                        ("ephemeral-storage".to_string(), Quantity("40Gi".to_string())),
-                    ])),
+                    limits: Some(BTreeMap::from([(
+                        "ephemeral-storage".to_string(),
+                        Quantity("40Gi".to_string()),
+                    )])),
                     ..Default::default()
                 }),
                 ..Default::default()
