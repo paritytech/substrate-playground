@@ -7,9 +7,6 @@ generatorOptions:
 configMapGenerator:
 - name: playground-templates
   files:
-    - ../../../../templates/ink
     - ../../../../templates/node-template
-        - ../../../../templates/node-template-openvscode
-    - ../../../../templates/front-end-template
-    - ../../../../templates/parachain-template
+    - ../../../../templates/node-template-openvscode
     - ../../../../templates/recipes
