@@ -12,14 +12,15 @@ use crate::{
 use futures::StreamExt;
 use k8s_openapi::api::{
     core::v1::{
-        Affinity, Container, EnvVar, NodeAffinity, NodeSelectorRequirement, NodeSelectorTerm, Pod,
-        PodSpec, PreferredSchedulingTerm, ResourceRequirements, SecurityContext, Service,
-        ServicePort, ServiceSpec,
+        Affinity, Container, EnvVar, Pod, PodAffinityTerm, PodAntiAffinity, PodSpec,
+        ResourceRequirements, SecurityContext, Service, ServicePort, ServiceSpec,
     },
     networking::v1::{HTTPIngressPath, HTTPIngressRuleValue, Ingress, IngressRule},
 };
 use k8s_openapi::apimachinery::pkg::{
-    api::resource::Quantity, apis::meta::v1::ObjectMeta, util::intstr::IntOrString,
+    api::resource::Quantity,
+    apis::meta::v1::{LabelSelector, ObjectMeta},
+    util::intstr::IntOrString,
 };
 use kube::api::{Api, AttachParams, AttachedProcess, DeleteParams, PostParams, ResourceExt};
 use serde_json::json;
@@ -102,6 +103,25 @@ fn session_to_pod(
                 NODE_POOL_LABEL.to_string(),
                 pool_id.to_string(),
             )])),
+            affinity: Some(Affinity {
+                pod_anti_affinity: Some(PodAntiAffinity {
+                    required_during_scheduling_ignored_during_execution: Some(vec![
+                        PodAffinityTerm {
+                            topology_key: "kubernetes.io/hostname".to_string(),
+                            label_selector: Some(LabelSelector {
+                                match_labels: Some(BTreeMap::from([(
+                                    COMPONENT_LABEL.to_string(),
+                                    COMPONENT.to_string(),
+                                )])),
+                                ..Default::default()
+                            }),
+                            ..Default::default()
+                        },
+                    ]),
+                    ..Default::default()
+                }),
+                ..Default::default()
+            }),
             containers: vec![Container {
                 name: format!("{}-container", COMPONENT),
                 image: Some(image.to_string()),
