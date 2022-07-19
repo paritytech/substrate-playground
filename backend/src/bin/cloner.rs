@@ -4,9 +4,11 @@ use clap::Parser;
 use k8s_openapi::api::{
     batch::v1::{Job, JobSpec},
     core::v1::{
-    Container, PersistentVolumeClaim, PersistentVolumeClaimSpec, PersistentVolumeClaimVolumeSource,
-    Pod, PodSpec, PodTemplateSpec, ResourceRequirements, Volume, VolumeMount,
-}};
+        Container, PersistentVolumeClaim, PersistentVolumeClaimSpec,
+        PersistentVolumeClaimVolumeSource, Pod, PodSpec, PodTemplateSpec, ResourceRequirements,
+        Volume, VolumeMount,
+    },
+};
 use k8s_openapi::apimachinery::pkg::{api::resource::Quantity, apis::meta::v1::ObjectMeta};
 use kube::{
     api::{Api, DeleteParams, PostParams},
@@ -14,7 +16,13 @@ use kube::{
 };
 use playground::{
     error::{Error, Result},
-    kubernetes::{repository::{get_repository, update_repository, update_repository_version_state, volume_template_name}, docker_image_name, backend_pod, client},
+    kubernetes::{
+        backend_pod, client, docker_image_name,
+        repository::{
+            get_repository, update_repository, update_repository_version_state,
+            volume_template_name,
+        },
+    },
     types::{RepositoryUpdateConfiguration, RepositoryVersionState},
     utils::{
         devcontainer::{exec, parse_devcontainer, read_devcontainer},
@@ -128,7 +136,5 @@ async fn main() {
     let args = Args::parse();
     let repository_id = args.repository_id;
     let id = args.id;
-    if let Err(err) = clone_and_build(&repository_id, &id, &args.path).await {
-
-    }
+    if let Err(err) = clone_and_build(&repository_id, &id, &args.path).await {}
 }

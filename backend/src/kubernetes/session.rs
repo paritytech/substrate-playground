@@ -98,7 +98,10 @@ fn session_to_pod(
         },
         spec: Some(PodSpec {
             service_account_name: Some(DEFAULT_SERVICE_ACCOUNT.to_string()),
-            node_selector: Some(BTreeMap::from([(NODE_POOL_LABEL.to_string(), pool_id.to_string())])),
+            node_selector: Some(BTreeMap::from([(
+                NODE_POOL_LABEL.to_string(),
+                pool_id.to_string(),
+            )])),
             containers: vec![Container {
                 name: format!("{}-container", COMPONENT),
                 image: Some(image.to_string()),

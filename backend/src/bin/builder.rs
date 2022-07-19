@@ -5,9 +5,7 @@ use playground::{
     error::{Error, Result},
     kubernetes::repository::{update_repository, update_repository_version_state},
     types::{RepositoryUpdateConfiguration, RepositoryVersionState},
-    utils::{
-        devcontainer::{exec, parse_devcontainer, read_devcontainer},
-    },
+    utils::devcontainer::{exec, parse_devcontainer, read_devcontainer},
 };
 use std::env;
 
