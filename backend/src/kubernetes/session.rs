@@ -98,43 +98,17 @@ fn session_to_pod(
         },
         spec: Some(PodSpec {
             service_account_name: Some(DEFAULT_SERVICE_ACCOUNT.to_string()),
-            affinity: Some(Affinity {
-                node_affinity: Some(NodeAffinity {
-                    preferred_during_scheduling_ignored_during_execution: Some(vec![
-                        PreferredSchedulingTerm {
-                            weight: 100,
-                            preference: NodeSelectorTerm {
-                                match_expressions: Some(vec![NodeSelectorRequirement {
-                                    key: NODE_POOL_LABEL.to_string(),
-                                    operator: "In".to_string(),
-                                    values: Some(vec![pool_id.to_string()]),
-                                }]),
-                                ..Default::default()
-                            },
-                        },
-                    ]),
-                    ..Default::default()
-                }),
-                ..Default::default()
-            }),
+            node_selector: Some(BTreeMap::from([(NODE_POOL_LABEL.to_string(), pool_id.to_string())])),
             containers: vec![Container {
                 name: format!("{}-container", COMPONENT),
                 image: Some(image.to_string()),
                 env: Some(pod_env_variables(envs, session_id)),
                 resources: Some(ResourceRequirements {
                     requests: Some(BTreeMap::from([
-                        ("memory".to_string(), Quantity("1Gi".to_string())),
+                        ("memory".to_string(), Quantity("8Gi".to_string())),
                         ("ephemeral-storage".to_string(), Quantity("5Gi".to_string())),
-                        ("cpu".to_string(), Quantity("0.5".to_string())),
                     ])),
-                    limits: Some(BTreeMap::from([
-                        ("memory".to_string(), Quantity("64Gi".to_string())),
-                        (
-                            "ephemeral-storage".to_string(),
-                            Quantity("50Gi".to_string()),
-                        ),
-                        ("cpu".to_string(), Quantity("1".to_string())),
-                    ])),
+                    ..Default::default()
                 }),
                 security_context: Some(SecurityContext {
                     allow_privilege_escalation: Some(false),
