@@ -445,13 +445,6 @@ pub async fn create_session(
             repository_id, repository_version_id
         )))
     }?;
-    // TODO
-    let image = match devcontainer.clone().image {
-        Some(image) => image,
-        None => {
-            return Err(Error::IncorrectDevContainerValue("Missing image"));
-        }
-    };
     let ports = ports(&devcontainer);
 
     // TODO deploy a new ingress matching the route
@@ -485,7 +478,7 @@ pub async fn create_session(
     pod_api
         .create(
             &PostParams::default(),
-            &session_to_pod(&user.id, id, image.as_str(), &duration, &pool_id, envs),
+            &session_to_pod(&user.id, id, devcontainer.image.as_str(), &duration, &pool_id, envs),
         )
         .await
         .map_err(Error::K8sCommunicationFailure)?;

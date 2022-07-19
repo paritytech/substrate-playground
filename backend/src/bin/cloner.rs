@@ -4,7 +4,7 @@ use clap::Parser;
 use k8s_openapi::api::{
     batch::v1::{Job, JobSpec},
     core::v1::{
-        Container, PersistentVolumeClaimVolumeSource, PodSpec, PodTemplateSpec, Volume, VolumeMount,
+        Container, PersistentVolumeClaimVolumeSource, Pod, PodSpec, PodTemplateSpec, Volume, VolumeMount,
     },
 };
 use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
@@ -16,7 +16,7 @@ use playground::{
         repository::{get_repository, update_repository_version_state, volume_template_name},
     },
     types::RepositoryVersionState,
-    utils::git::clone,
+    utils::{git::clone, devcontainer::{read_devcontainer, parse_devcontainer}},
 };
 use std::env;
 
@@ -45,6 +45,10 @@ async fn clone_and_build(repository_id: &str, id: &str, path: &str) -> Result<()
     let repository = get_repository(repository_id).await?.unwrap();
     clone(path, repository.url)?;
 
+    let devcontainer_json = read_devcontainer(path)?;
+
+    let conf = parse_devcontainer(&devcontainer_json)?;
+
     update_repository_version_state(
         repository_id,
         id,
@@ -52,17 +56,17 @@ async fn clone_and_build(repository_id: &str, id: &str, path: &str) -> Result<()
     )
     .await?;
 
-    build(repository_id, id).await?;
+    build(repository_id, id, conf.image.as_str()).await?;
 
     Ok(())
 }
 
-async fn build(repository_id: &str, id: &str) -> Result<()> {
+async fn build(repository_id: &str, id: &str, image: &str) -> Result<()> {
     let client = client()?;
     let volume_template_name = volume_template_name(repository_id, id);
-    let job = Job {
+    /*let job = Job {
         metadata: ObjectMeta {
-            generate_name: Some(format!("builder-{}", repository_id)),
+            generate_name: Some(format!("builder-{}-", repository_id)),
             ..Default::default()
         },
         spec: Some(JobSpec {
@@ -81,8 +85,8 @@ async fn build(repository_id: &str, id: &str) -> Result<()> {
                     }]),
                     restart_policy: Some("OnFailure".to_string()),
                     containers: vec![Container {
-                        name: "cloner".to_string(),
-                        image: Some(docker_image_name(&backend_pod().await?)?),
+                        name: "builder".to_string(),
+                        image: Some(image.to_string()),
                         command: Some(vec!["builder".to_string()]),
                         args: Some(vec![
                             "-r".to_string(),
@@ -91,8 +95,8 @@ async fn build(repository_id: &str, id: &str) -> Result<()> {
                             id.to_string(),
                         ]),
                         volume_mounts: Some(vec![VolumeMount {
-                            name: volume_template_name,
-                            mount_path: "/".to_string(),
+                            name: volume_template_name.clone(),
+                            mount_path: "/workspaces".to_string(),
                             ..Default::default()
                         }]),
                         ..Default::default()
@@ -104,10 +108,47 @@ async fn build(repository_id: &str, id: &str) -> Result<()> {
             ..Default::default()
         }),
         ..Default::default()
+    };*/
+    let pod = Pod {
+        metadata: ObjectMeta {
+            generate_name: Some(format!("builder-{}-", repository_id)),
+            ..Default::default()
+        },
+        spec: Some(PodSpec {
+            service_account_name: Some("backend-service-account".to_string()),
+            volumes: Some(vec![Volume {
+                name: volume_template_name.clone(),
+                persistent_volume_claim: Some(PersistentVolumeClaimVolumeSource {
+                    claim_name: volume_template_name.clone(), // TODO pass as arg?
+                    ..Default::default()
+                }),
+                ..Default::default()
+            }]),
+            restart_policy: Some("OnFailure".to_string()),
+            containers: vec![Container {
+                name: "builder".to_string(),
+                image: Some(image.to_string()),
+                command: Some(vec!["builder".to_string()]),
+                args: Some(vec![
+                    "-r".to_string(),
+                    repository_id.to_string(),
+                    "-i".to_string(),
+                    id.to_string(),
+                ]),
+                volume_mounts: Some(vec![VolumeMount {
+                    name: volume_template_name,
+                    mount_path: "/workspaces".to_string(),
+                    ..Default::default()
+                }]),
+                ..Default::default()
+            }],
+            ..Default::default()
+        }),
+        ..Default::default()
     };
-    let job_api: Api<Job> = Api::default_namespaced(client.clone());
+    let job_api: Api<Pod> = Api::default_namespaced(client.clone());
     job_api
-        .create(&PostParams::default(), &job)
+        .create(&PostParams::default(), &pod)
         .await
         .map_err(Error::K8sCommunicationFailure)?;
 
@@ -125,5 +166,9 @@ async fn main() {
     let args = Args::parse();
     let repository_id = args.repository_id;
     let id = args.id;
-    if let Err(_err) = clone_and_build(&repository_id, &id, &args.path).await {}
+    if let Err(err) = clone_and_build(&repository_id, &id, &args.path).await {
+        log::error!("{}", err);
+    }
+
+    std::io::stdin().read_line(&mut String::new()).unwrap();
 }

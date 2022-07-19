@@ -244,7 +244,7 @@ pub async fn create_repository_version(repository_id: &str, id: &str) -> Result<
     let job_api: Api<Pod> = Api::default_namespaced(client.clone());
     let pod = Pod {
         metadata: ObjectMeta {
-            generate_name: Some(format!("builder-{}-", repository_id)),
+            generate_name: Some(format!("cloner-{}-", repository_id)),
             ..Default::default()
         },
         spec: Some(PodSpec {
@@ -261,7 +261,7 @@ pub async fn create_repository_version(repository_id: &str, id: &str) -> Result<
                 }),
                 ..Default::default()
             }]),
-            //restart_policy: Some("OnFailure".to_string()),
+            restart_policy: Some("OnFailure".to_string()),
             containers: vec![Container {
                 name: "cloner".to_string(),
                 image: Some(docker_image_name(&backend_pod().await?)?),
@@ -285,7 +285,7 @@ pub async fn create_repository_version(repository_id: &str, id: &str) -> Result<
     }; /*
        let job = Job {
            metadata: ObjectMeta {
-               generate_name: Some(format!("builder-{}-", repository_id)),
+               generate_name: Some(format!("cloner-{}-", repository_id)),
                ..Default::default()
            },
            spec: Some(JobSpec {

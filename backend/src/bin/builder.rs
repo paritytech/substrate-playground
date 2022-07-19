@@ -92,4 +92,6 @@ async fn main() {
             log::error!("Failed to set current version: {}", err);
         }
     }
+
+    std::io::stdin().read_line(&mut String::new()).unwrap();
 }
