@@ -18,7 +18,7 @@
     "@mui/icons-material": "5.8.4",
     "@mui/lab": "5.0.0-alpha.90",
     "@mui/material": "5.9.0",
-    "@mui/styles": "5.9.0",
+    "@mui/styles": "5.9.1",
     "@substrate/playground-client": "1.9.15",
     "@xstate/react": "3.0.0",
     "marked": "4.0.18",
