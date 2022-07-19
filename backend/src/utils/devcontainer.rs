@@ -54,31 +54,29 @@ fn it_fails_to_parse_devcontainer() {
 
 #[test]
 fn it_parses_devcontainer() -> Result<()> {
-    parse_devcontainer("{}")?;
-    assert_eq!(parse_devcontainer("{}").is_ok(), true);
+    assert_eq!(parse_devcontainer("{}").is_ok(), false);
     assert_eq!(
-        parse_devcontainer("{/* Comment */ \"onCreateCommand\": \"//\" // test comment \n}")
+        parse_devcontainer("{/* Comment */ \"image\": \"image\",  \"onCreateCommand\": \"//\" // test comment \n}")
             .is_ok(),
         true
     );
     assert_eq!(
-        parse_devcontainer("{ \"onCreateCommand\": \"\" }").is_ok(),
+        parse_devcontainer("{ \"image\": \"image\", \"onCreateCommand\": \"\" }").is_ok(),
         true
     );
     assert_eq!(
-        parse_devcontainer("{ \"onCreateCommand\": \"1\" }")?
+        parse_devcontainer("{ \"image\": \"image\", \"onCreateCommand\": \"1\" }")?
             .on_create_command
             .unwrap(),
         "1".to_string()
     );
     assert_eq!(
         parse_devcontainer("{ \"image\": \"image\" }")?
-            .image
-            .unwrap(),
+            .image,
         "image".to_string()
     );
     assert_eq!(
-        parse_devcontainer(r#"{ "containerEnv": { "MY_VARIABLE": "${localEnv:MY_VARIABLE}" } }"#)?
+        parse_devcontainer(r#"{ "image": "image", "containerEnv": { "MY_VARIABLE": "${localEnv:MY_VARIABLE}" } }"#)?
             .container_env
             .unwrap(),
         HashMap::from([(
@@ -87,7 +85,7 @@ fn it_parses_devcontainer() -> Result<()> {
         )])
     );
     assert_eq!(
-        parse_devcontainer(r#"{ "forwardPorts": [1000] }"#)?
+        parse_devcontainer(r#"{ "image": "image", "forwardPorts": [1000] }"#)?
             .forward_ports
             .unwrap(),
         vec![1000]
