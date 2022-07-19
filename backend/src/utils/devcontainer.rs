@@ -23,13 +23,8 @@ pub struct DevContainer {
 
 // TODO add support for multiple devcontainer files (.devcontainer/FOLDER1/devcontainer.json)
 pub fn read_devcontainer(path: &str) -> Result<String> {
-    fs::read_to_string(format!("{}/.devcontainer/devcontainer.json", path)).map_err(|err| {
-        Error::Failure(format!(
-            "Failed to read devcontainer in {} : {}",
-            path,
-            err.to_string()
-        ))
-    })
+    fs::read_to_string(format!("{}/.devcontainer/devcontainer.json", path))
+        .map_err(|err| Error::Failure(format!("Failed to read devcontainer in {} : {}", path, err)))
 }
 
 pub fn exec(path: &str, command: String) -> Result<Output> {
@@ -38,14 +33,7 @@ pub fn exec(path: &str, command: String) -> Result<Output> {
         .arg("-c")
         .args(command.split_whitespace().collect::<Vec<_>>())
         .output()
-        .map_err(|err| {
-            Error::Failure(format!(
-                "Failed to exec {}/{} : {}",
-                path,
-                command,
-                err.to_string()
-            ))
-        })
+        .map_err(|err| Error::Failure(format!("Failed to exec {}/{} : {}", path, command, err)))
 }
 
 /// Parses a `devcontainer.json` file into a Configuration.
@@ -55,12 +43,8 @@ pub fn parse_devcontainer(data: &str) -> Result<DevContainer> {
     // First strip comments (valid inside devcontainer.json) so not to break JSON parsing
     // See https://code.visualstudio.com/docs/languages/json#_json-with-comments
     let data_sanitized = strip_jsonc_comments(data, true);
-    serde_json::from_str(&data_sanitized).map_err(|err| {
-        Error::Failure(format!(
-            "Failed to parse devcontainer : {}",
-            err.to_string()
-        ))
-    })
+    serde_json::from_str(&data_sanitized)
+        .map_err(|err| Error::Failure(format!("Failed to parse devcontainer : {}", err)))
 }
 
 #[test]

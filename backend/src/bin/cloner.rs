@@ -1,19 +1,15 @@
 extern crate playground;
 
 use clap::Parser;
-use k8s_openapi::api::{
-    batch::v1::{Job, JobSpec},
-    core::v1::{
-        Container, PersistentVolumeClaimVolumeSource, Pod, PodSpec, PodTemplateSpec, Volume,
-        VolumeMount,
-    },
+use k8s_openapi::api::core::v1::{
+    Container, PersistentVolumeClaimVolumeSource, Pod, PodSpec, Volume, VolumeMount,
 };
 use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
 use kube::api::{Api, PostParams};
 use playground::{
     error::{Error, Result},
     kubernetes::{
-        backend_pod, client, docker_image_name,
+        client,
         repository::{get_repository, update_repository_version_state, volume_template_name},
     },
     types::RepositoryVersionState,
