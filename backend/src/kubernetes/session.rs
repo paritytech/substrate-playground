@@ -478,7 +478,14 @@ pub async fn create_session(
     pod_api
         .create(
             &PostParams::default(),
-            &session_to_pod(&user.id, id, devcontainer.image.as_str(), &duration, &pool_id, envs),
+            &session_to_pod(
+                &user.id,
+                id,
+                devcontainer.image.as_str(),
+                &duration,
+                &pool_id,
+                envs,
+            ),
         )
         .await
         .map_err(Error::K8sCommunicationFailure)?;

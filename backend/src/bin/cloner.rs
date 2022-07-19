@@ -4,7 +4,8 @@ use clap::Parser;
 use k8s_openapi::api::{
     batch::v1::{Job, JobSpec},
     core::v1::{
-        Container, PersistentVolumeClaimVolumeSource, Pod, PodSpec, PodTemplateSpec, Volume, VolumeMount,
+        Container, PersistentVolumeClaimVolumeSource, Pod, PodSpec, PodTemplateSpec, Volume,
+        VolumeMount,
     },
 };
 use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
@@ -16,7 +17,10 @@ use playground::{
         repository::{get_repository, update_repository_version_state, volume_template_name},
     },
     types::RepositoryVersionState,
-    utils::{git::clone, devcontainer::{read_devcontainer, parse_devcontainer}},
+    utils::{
+        devcontainer::{parse_devcontainer, read_devcontainer},
+        git::clone,
+    },
 };
 use std::env;
 
