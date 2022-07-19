@@ -17,23 +17,52 @@ if (env == EnvironmentType.dev) {
 
 // Connect via Client, create others Role, feed repository
 
+async function waitForRepositoryVersionCreation(client: Client, repositoryId: string, repositoryVersionId: string) {
+    const timeout = 60 * 1000;
+    const interval = 1000;
+    const startTime = Date.now();
+    return new Promise<void>((resolve, reject) => {
+        const id = setInterval(async () => {
+            const { state } = await client.getRepositoryVersion(repositoryId, repositoryVersionId);
+            if (state.type == "Ready") {
+                clearInterval(id);
+                resolve();
+                return;
+            } else if (state.type == "Failed") {
+                clearInterval(id);
+                reject(state.message);
+                return;
+            } else if ((Date.now() - startTime) > timeout) {
+                clearInterval(id);
+                reject(`Session not deployed after ${timeout} ms`);
+            } else {
+                console.log("In progress");
+            }
+        }, interval);
+    });
+}
+
 const client = newClient(env);
 try {
     await client.login(accessToken);
 
     const repositoryId = 'node-template';
+    const repositoryVersionId = "0d2047031d8642ec5b4447e1eca9f47d00123bbe";
     try {
         await client.createRepository(repositoryId, {url: "https://github.com/jeluard/substrate-node-template"});
         console.log("Created Repository");
     } catch (e) {
         console.error(e);
     }
+
     try {
-        await client.createRepositoryVersion(repositoryId, "0d2047031d8642ec5b4447e1eca9f47d00123bbe");
+        await client.createRepositoryVersion(repositoryId, repositoryVersionId);
         console.log("Created RepositoryVersion");
     } catch (e) {
         console.error(e);
     }
+
+    await waitForRepositoryVersionCreation(client, repositoryId, repositoryVersionId);
 
     await client.createSession(mainSessionId((await client.get()).user), {repositorySource: {repositoryId: repositoryId}});
     console.log("Created Session");
