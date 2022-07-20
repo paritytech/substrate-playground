@@ -40,11 +40,15 @@ ifeq ($(filter $(ENV),$(ENVS)),)
 endif
 
 # Docker images names
+DOCKER_ORG=paritytech
 PLAYGROUND_BACKEND_API_DOCKER_IMAGE_NAME=${DOCKER_ORG}/substrate-playground-backend-api
 PLAYGROUND_BACKEND_UI_DOCKER_IMAGE_NAME=${DOCKER_ORG}/substrate-playground-backend-ui
 TEMPLATE_BASE=${DOCKER_ORG}/substrate-playground-template-base
 PLAYGROUND_ID=playground-${ENV}
+GKE_PROJECT=aerobic-factor-306517
+GKE_ZONE=us-central1-a
 GKE_CLUSTER=substrate-${PLAYGROUND_ID}
+SUBSTRATE_DOMAIN=substrate.io
 
 # Derive CONTEXT from ENV
 ifeq ($(ENV), dev)
@@ -64,11 +68,6 @@ COLOR_BOLD:= $(shell tput bold)
 COLOR_RED:= $(shell tput bold; tput setaf 1)
 COLOR_GREEN:= $(shell tput bold; tput setaf 2)
 COLOR_RESET:= $(shell tput sgr0)
-
-# Include .env for extra customisable ENV variable
-include .env
-
-# TODO check all required env are defined? GKE_PROJECT, GKE_ZONE, DOCKER_ORG
 
 help:
 	@echo "Build and publish playground components"
@@ -163,13 +162,13 @@ k8s-undeploy: requires-k8s ## Undeploy playground from kubernetes
 ##@ DNS certificates
 
 generate-challenge: requires-env
-	sudo certbot certonly --manual --preferred-challenges dns --server https://acme-v02.api.letsencrypt.org/directory --agree-tos -m admin@parity.io -d *.${DOMAIN}.substrate.dev -d ${DOMAIN}.substrate.dev --cert-name ${DOMAIN}.substrate.dev
+	sudo certbot certonly --manual --preferred-challenges dns --server https://acme-v02.api.letsencrypt.org/directory --agree-tos -m admin@parity.io -d *.${DOMAIN}.${SUBSTRATE_DOMAIN} -d ${DOMAIN}.${SUBSTRATE_DOMAIN} --cert-name ${DOMAIN}.${SUBSTRATE_DOMAIN}
 
 get-challenge: requires-env
-	dig +short TXT _acme-challenge.${DOMAIN}.substrate.dev @8.8.8.8
+	dig +short TXT _acme-challenge.${DOMAIN}.${SUBSTRATE_DOMAIN} @8.8.8.8
 
 k8s-update-certificate: requires-k8s
-	sudo kubectl create secret tls playground-tls --save-config --key /etc/letsencrypt/live/${DOMAIN}.substrate.dev/privkey.pem --cert /etc/letsencrypt/live/${DOMAIN}.substrate.dev/fullchain.pem --dry-run=client -o yaml | sudo kubectl apply -f -
+	sudo kubectl create secret tls playground-tls --save-config --key /etc/letsencrypt/live/${DOMAIN}.${SUBSTRATE_DOMAIN}/privkey.pem --cert /etc/letsencrypt/live/${DOMAIN}.${SUBSTRATE_DOMAIN}/fullchain.pem --dry-run=client -o yaml | sudo kubectl apply -f -
 
 ##@ K3d
 
