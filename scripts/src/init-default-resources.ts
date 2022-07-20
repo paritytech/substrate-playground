@@ -36,20 +36,26 @@ async function waitForRepositoryVersionCreation(client: Client, repositoryId: st
                 clearInterval(id);
                 reject(`Session not deployed after ${timeout} ms`);
             } else {
-                console.log("In progress");
+                console.log(state.type);
             }
         }, interval);
     });
+}
+
+async function latestRepositoryVersion(repo: string): Promise<string> {
+    const response = await (await fetch(`https://api.github.com/repos/${repo}/commits`)).json();
+    return response[0].sha;
 }
 
 const client = newClient(env);
 try {
     await client.login(accessToken);
 
+    const repository = "jeluard/substrate-node-template";
     const repositoryId = 'node-template';
-    const repositoryVersionId = "0d2047031d8642ec5b4447e1eca9f47d00123bbe";
+    const repositoryVersionId = await latestRepositoryVersion(repository);
     try {
-        await client.createRepository(repositoryId, {url: "https://github.com/jeluard/substrate-node-template"});
+        await client.createRepository(repositoryId, {url: `https://github.com/${repository}`});
         console.log("Created Repository");
     } catch (e) {
         console.error(e);
