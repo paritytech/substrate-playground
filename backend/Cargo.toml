@@ -20,7 +20,7 @@ k8s-openapi = { version = "0.15.0", default-features = false, features = ["v1_23
 tokio-util = "0.7.2"
 thiserror = "1.0.31"
 git2 = "0.14.4"
-clap = { version = "3.2.12", features = ["derive"] }
+clap = { version = "3.2.13", features = ["derive"] }
 futures = "0.3"
 base64 = "0.13"
 rand = { version = "0.8", default-features = false, features = ["std"] }
