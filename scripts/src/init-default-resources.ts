@@ -54,15 +54,6 @@ try {
     const repository = "jeluard/substrate-node-template";
     const repositoryId = 'node-template';
     const repositoryVersionId = await latestRepositoryVersion(repository);
-    try {
-        const repositoryIds = (await client.listRepositories()).map(repository => repository.id);
-        console.log(`Existing repositories: ${repositoryIds}`);
-        await client.createRepository(repositoryId, {url: `https://github.com/${repository}`});
-        console.log("Created Repository");
-    } catch (e) {
-        console.error(e);
-        process.exit(1);
-    }
 
     try {
         const repositoryVersionIds = (await client.listRepositoryVersions(repositoryId)).map(repositoryVersion => repositoryVersion.id);
