@@ -59,6 +59,7 @@ try {
         console.log("Created Repository");
     } catch (e) {
         console.error(e);
+        process.exit(1);
     }
 
     try {
@@ -66,6 +67,7 @@ try {
         console.log("Created RepositoryVersion");
     } catch (e) {
         console.error(e);
+        process.exit(1);
     }
 
     await waitForRepositoryVersionCreation(client, repositoryId, repositoryVersionId);
@@ -74,6 +76,7 @@ try {
     console.log("Created Session");
 } catch(e) {
     console.error(e);
+    process.exit(1);
 } finally {
     await client.logout();
 }
