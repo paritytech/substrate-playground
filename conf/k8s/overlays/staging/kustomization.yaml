@@ -18,7 +18,7 @@ patches:
 - patch: |-
     - op: replace
       path: /spec/rules/0/host
-      value: playground-staging.substrate.dev
+      value: playground-staging.substrate.io
   target:
     group: networking.k8s.io
     kind: Ingress
@@ -33,7 +33,7 @@ patchesStrategicMerge:
     name: v4-0-18-ingress-nginx-controller
     namespace: ingress-nginx
   spec:
-    loadBalancerIP: 104.198.51.62
+    loadBalancerIP: 34.123.19.162
 - |-
   apiVersion: networking.k8s.io/v1
   kind: Ingress
@@ -42,5 +42,5 @@ patchesStrategicMerge:
   spec:
     tls:
     - hosts:
-      - '*.playground-staging.substrate.dev'
+      - '*.playground-staging.substrate.io'
       secretName: playground-tls
