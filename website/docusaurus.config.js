@@ -1,7 +1,7 @@
 module.exports = {
   title: 'Substrate Playground',
   tagline: 'Start hacking your substrate runtime in a web based VSCode like IDE',
-  url: 'https://playground.substrate.dev',
+  url: 'https://playground.substrate.io',
   baseUrl: '/substrate-playground/',
   onBrokenLinks: 'throw',
   favicon: 'img/favicon.png',

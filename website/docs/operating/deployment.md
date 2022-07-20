@@ -40,7 +40,7 @@ If a new deployment environment is created, duplicate `conf/k8s/overlays/staging
 
 Make sure a Github OAuth App is [created](https://docs.github.com/en/developers/apps/creating-an-oauth-app) with following parameters:
 
-* `Homepage URL`: $BASE (e.g. https://playground.substrate.dev)
+* `Homepage URL`: $BASE (e.g. https://playground.substrate.io)
 * `Authorization callback URL`: `$BASE/api/auth/github`.
 
 During the `Configuration` step both `Client ID` and `Client secret` will be required.
@@ -77,11 +77,11 @@ Create a new [CloudDNS zone](https://console.cloud.google.com/net-services/dns/z
 
 * Public
 * Zone name: playground-*
-* DNS name: playground-*.substrate.dev
+* DNS name: playground-*.substrate.io
 * DNSSec: off
 
-Fill a DevOps [request](https://github.com/paritytech/devops/issues/732) to redirect the new substrate.dev subdomain to CloudDNS.
-Can be checked with `dig +short playground-XX.substrate.dev NS`
+Fill a DevOps [request](https://github.com/paritytech/devops/issues/732) to redirect the new substrate.io subdomain to CloudDNS.
+Can be checked with `dig +short playground-XX.substrate.io NS`
 
 Add two `A` record set (one with ``, one with `*` as DNS name) pointing to the newly created fixed IP (see previous step).
 
@@ -120,9 +120,9 @@ The new secret will be automatically picked up.
 Certificates can be checked using openssl:
 
 ```shell
-openssl s_client -connect playground.substrate.dev:443 -servername playground.substrate.dev -showcerts
+openssl s_client -connect playground.substrate.io:443 -servername playground.substrate.io -showcerts
 # Or for client with no SNI support
-openssl s_client -connect  playground.substrate.dev:443 -showcerts
+openssl s_client -connect  playground.substrate.io:443 -showcerts
 ```
 
 ### Deployment

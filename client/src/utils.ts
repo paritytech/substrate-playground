@@ -20,9 +20,9 @@ export function playgroundBaseURL(env: EnvironmentType) {
         case EnvironmentType.dev:
             return "http://playground-dev.substrate.test/api";
         case EnvironmentType.staging:
-            return "https://playground-staging.substrate.dev/api";
+            return "https://playground-staging.substrate.io/api";
         case EnvironmentType.production:
-            return "https://playground.substrate.dev/api";
+            return "https://playground.substrate.io/api";
         default:
             throw new Error(`Unrecognized env ${env}`);
     }

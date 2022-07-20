@@ -13,17 +13,17 @@ Use a URL that once accessed trigger an instance deployment and redirects to the
 * files=%2Fsome%2FfileA,%2Fsome%2FfileB opens some files
 
 
-e.g. `https://playground-staging.substrate.dev/?deploy=recipes&files=%2Fhome%2Fsubstrate%2Fworkspace%2Fpallets%2Fadding-machine%2Fsrc%2Flib.rs`
+e.g. `https://playground-staging.substrate.io/?deploy=recipes&files=%2Fhome%2Fsubstrate%2Fworkspace%2Fpallets%2Fadding-machine%2Fsrc%2Flib.rs`
 
 ## API
 
 Instances can be created and destroyed using an HTTP API.
 
 ```
-GET https://playground-staging.substrate.dev/api/
-POST https://playground-staging.substrate.dev/api/?template=node-template
-GET https://playground-staging.substrate.dev/api/$INSTANCE_UUID
-DELETE https://playground-staging.substrate.dev/api/$INSTANCE_UUID
+GET https://playground-staging.substrate.io/api/
+POST https://playground-staging.substrate.io/api/?template=node-template
+GET https://playground-staging.substrate.io/api/$INSTANCE_UUID
+DELETE https://playground-staging.substrate.io/api/$INSTANCE_UUID
 ```
 
 A local instance identified by its UUID can be manipulated:

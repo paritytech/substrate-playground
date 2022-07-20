@@ -7,7 +7,7 @@ function playgroundDomain(env: string): string {
       case "dev":
         return "https://playground-dev.substrate.test";
       case "staging":
-        return "https://playground-staging.substrate.dev";
+        return "https://playground-staging.substrate.io";
       case "production":
         return "https://playground.substrate.dev";
       default:

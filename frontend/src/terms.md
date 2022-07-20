@@ -35,7 +35,7 @@ __"Open Source Software"__ means: (a) open source software as defined by the Ope
 
 __"Parity Materials"__ has the meaning given in clause 4.2.
 
-__"Playground Site"__ means the playground.substrate.dev website operated by Parity (as such URL may be changed by Parity from time to time).
+__"Playground Site"__ means the playground.substrate.io website operated by Parity (as such URL may be changed by Parity from time to time).
 
 __"Purpose"__ has the meaning given in clause 4.1.
 __"Substrate"__ means a running implementation of Parity's proprietary technology (as may be changed by us from time to time) Substrate (https://github.com/paritytech/substrate) that can be used by users for multiple purposes including building their own custom blockchain and that operates in a test environment and is accessed via the Playground Site in accordance with these Terms.  

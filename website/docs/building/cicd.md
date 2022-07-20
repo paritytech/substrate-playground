@@ -24,4 +24,4 @@ Once manually approved on the staging environment, changes are promoted to maste
 
 A number of `secrets` must be defined:
 
-`GH_CLIENT_ID` and `GH_CLIENT_SECRET` pointing to valid OAuth credentials for `https://playground.substrate.dev`. Used for CI.
+`GH_CLIENT_ID` and `GH_CLIENT_SECRET` pointing to valid OAuth credentials for `https://playground.substrate.io`. Used for CI.

@@ -19,7 +19,7 @@ function parseCommands(command: any): Array<string> {
 }
 
 export async function conectToPlayground(id: string) {
-    const uri = vscode.Uri.parse(`vscode-remote://ssh-remote+${id}.playground.substrate.dev/`);
+    const uri = vscode.Uri.parse(`vscode-remote://ssh-remote+${id}.playground.substrate.io/`);
     await vscode.commands.executeCommand('vscode.openFolder', uri, true);
 }
 
@@ -76,7 +76,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 	});
     context.subscriptions.push(workspaceView);
 
-    const details = await new Client("https://playground.substrate.dev/api"/*apiHost()*/, 30000, {credentials: "include"}).get();
+    const details = await new Client("https://playground.substrate.io/api"/*apiHost()*/, 30000, {credentials: "include"}).get();
     console.log(details);
 
 
