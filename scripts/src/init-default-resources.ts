@@ -55,6 +55,8 @@ try {
     const repositoryId = 'node-template';
     const repositoryVersionId = await latestRepositoryVersion(repository);
     try {
+        const repositoryIds = (await client.listRepositories()).map(repository => repository.id);
+        console.log(`Existing repositories: ${repositoryIds}`);
         await client.createRepository(repositoryId, {url: `https://github.com/${repository}`});
         console.log("Created Repository");
     } catch (e) {
@@ -63,6 +65,8 @@ try {
     }
 
     try {
+        const repositoryVersionIds = (await client.listRepositoryVersions(repositoryId)).map(repositoryVersion => repositoryVersion.id);
+        console.log(`Existing repository versions: ${repositoryVersionIds}`);
         await client.createRepositoryVersion(repositoryId, repositoryVersionId);
         console.log("Created RepositoryVersion");
     } catch (e) {
