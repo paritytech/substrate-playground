@@ -40,7 +40,7 @@ async function waitForRepositoryVersionCreation(client: Client, repositoryId: st
                 clearInterval(id);
                 reject(`Session not deployed after ${timeout} ms`);
             } else {
-                console.log(state.type);
+                console.log(state);
             }
         }, interval);
     });
