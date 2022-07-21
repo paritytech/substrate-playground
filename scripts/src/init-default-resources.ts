@@ -70,9 +70,6 @@ try {
     }
 
     await waitForRepositoryVersionCreation(client, repositoryId, repositoryVersionId);
-
-    await client.createSession(mainSessionId((await client.get()).user), {repositorySource: {repositoryId: repositoryId}});
-    console.log("Created Session");
 } catch(e) {
     console.error(e);
     process.exit(1);
