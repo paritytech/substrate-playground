@@ -16,7 +16,10 @@ on:
       - 'frontend/**'
       - 'e2e/**'
       - 'scripts/**'
-  pull_request:
+  pull_request_target:
+  # This grants access to secrets even when triggered by dependency bot
+  # See https://github.blog/changelog/2021-02-19-github-actions-workflows-triggered-by-dependabot-prs-will-run-with-read-only-permissions/
+  # It's safe in our case as all secrets accessed can be leaked without introducing safety risks
     branches:
       - develop
     paths:
