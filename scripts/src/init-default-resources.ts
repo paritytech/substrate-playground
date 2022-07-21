@@ -3,6 +3,10 @@ import { Client, playgroundBaseURL, environmentTypeFromString, mainSessionId, En
 import 'cross-fetch/dist/node-polyfill.js'; // TODO remove once moving to Node18 (https://github.com/nodejs/node/pull/41749)
 
 const accessToken = process.env.ACCESS_TOKEN;
+if (!accessToken) {
+    console.error("Missing mandatory env variable ACCESS_TOKEN");
+    process.exit(1);
+}
 
 const env = environmentTypeFromString(process.env.ENV);
 
