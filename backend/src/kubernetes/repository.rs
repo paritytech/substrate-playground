@@ -89,12 +89,19 @@ fn volume_template(
         repository_version_id.to_string(),
     );
 
+    let mut annotations = BTreeMap::new();
+    annotations.insert(
+        REPOSITORY_VERSION_STATE_ANNOTATION.to_string(),
+        json!(RepositoryVersionState::Init).to_string(),
+    );
+
     let mut requests = BTreeMap::new();
     requests.insert("storage".to_string(), Quantity("5Gi".to_string()));
 
     PersistentVolumeClaim {
         metadata: ObjectMeta {
             name: Some(volume_template_name.to_string()),
+            annotations: Some(annotations),
             labels: Some(labels),
             ..Default::default()
         },
@@ -237,8 +244,6 @@ pub async fn create_repository_version(repository_id: &str, id: &str) -> Result<
 
     let volume =
         create_volume_template(&volume_api, &volume_template_name, repository_id, id).await?;
-
-    update_repository_version_state(repository_id, id, &RepositoryVersionState::Init).await?;
 
     //let job_api: Api<Job> = Api::default_namespaced(client.clone());
     let job_api: Api<Pod> = Api::default_namespaced(client.clone());
