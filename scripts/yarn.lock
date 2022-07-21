@@ -14,10 +14,10 @@
   dependencies:
     "@cspotcode/source-map-consumer" "0.8.0"
 
-"@substrate/playground-client@1.9.16":
-  version "1.9.16"
-  resolved "https://registry.yarnpkg.com/@substrate/playground-client/-/playground-client-1.9.16.tgz#bdecfb867c1565ba786fd4b86db714d4ad5d7054"
-  integrity sha512-AU7TBRQR8t835cZ8cLert/crRoL1PN9VqwvAkH8ASjG1q09wrqXypzuCaqcS5EUleiYMaqbe5OUTE1kdjZQM7Q==
+"@substrate/playground-client@1.9.17":
+  version "1.9.17"
+  resolved "https://registry.yarnpkg.com/@substrate/playground-client/-/playground-client-1.9.17.tgz#f93161174ca53e892448b4ee4e62d4c286eb7dca"
+  integrity sha512-3HWMXaN+QVt0tkHD3dsis8RLCPN0q7rkBaAxmEsPefqEz2uRDnoXR+1Fb3I/EcAFfYNnOtymCkxhM5yc1LZngQ==
   dependencies:
     uuid "8.3.2"
 
