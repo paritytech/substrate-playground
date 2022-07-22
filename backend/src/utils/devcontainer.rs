@@ -31,7 +31,7 @@ pub fn exec(path: &str, command: String) -> Result<Output> {
     Command::new("sh")
         .current_dir(path)
         .arg("-c")
-        .args(command.split_whitespace().collect::<Vec<_>>())
+        .args(vec![command.clone()])
         .output()
         .map_err(|err| Error::Failure(format!("Failed to exec {}/{} : {}", path, command, err)))
 }
