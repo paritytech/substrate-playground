@@ -238,15 +238,67 @@ pub async fn create_repository_version(repository_id: &str, id: &str) -> Result<
     let volume_api: Api<PersistentVolumeClaim> = Api::default_namespaced(client.clone());
     let volume_template_name = volume_template_name(repository_id, id);
 
+    let repository = get_repository(repository_id).await.unwrap().unwrap();
+
     if get_repository_version(repository_id, id).await?.is_some() {
         return Err(Error::Failure("AlreadyExists".to_string()));
     }
 
-    let volume =
+    let _volume =
         create_volume_template(&volume_api, &volume_template_name, repository_id, id).await?;
 
     //let job_api: Api<Job> = Api::default_namespaced(client.clone());
+    let pod = Pod {
+        metadata: ObjectMeta {
+            generate_name: Some(format!("builder-{}-", repository_id)),
+            ..Default::default()
+        },
+        spec: Some(PodSpec {
+            service_account_name: Some("backend-service-account".to_string()),
+            volumes: Some(vec![Volume {
+                name: volume_template_name.clone(),
+                persistent_volume_claim: Some(PersistentVolumeClaimVolumeSource {
+                    claim_name: volume_template_name.clone(), // TODO pass as arg?
+                    ..Default::default()
+                }),
+                ..Default::default()
+            }]),
+            restart_policy: Some("OnFailure".to_string()),
+            // An init container copy the builder command to /workspaces
+            init_containers: Some(vec![Container {
+                name: "copy-builder".to_string(),
+                image: Some(docker_image_name(&backend_pod().await?)?),
+                command: Some(vec!["sh".to_string(), "-c".to_string(), "cp /opt/target/release/builder /workspaces/builder".to_string()]),
+                volume_mounts: Some(vec![VolumeMount {
+                    name: volume_template_name.clone(),
+                    mount_path: "/workspaces".to_string(),
+                    ..Default::default()
+                }]),
+                ..Default::default()
+            }]),
+            containers: vec![Container {
+                name: "builder".to_string(),
+                image: Some("paritytech/ci-linux:staging".to_string()), // TODO fetch devcontainer from repo
+                command: Some(vec!["/workspaces/builder".to_string()]),
+                args: Some(vec![
+                    "-r".to_string(),
+                    repository_id.to_string(),
+                    "-i".to_string(),
+                    id.to_string(),
+                ]),
+                volume_mounts: Some(vec![VolumeMount {
+                    name: volume_template_name,
+                    mount_path: "/workspaces".to_string(),
+                    ..Default::default()
+                }]),
+                ..Default::default()
+            }],
+            ..Default::default()
+        }),
+        ..Default::default()
+    };
     let job_api: Api<Pod> = Api::default_namespaced(client.clone());
+    /*
     let pod = Pod {
         metadata: ObjectMeta {
             generate_name: Some(format!("cloner-{}-", repository_id)),
@@ -287,7 +339,7 @@ pub async fn create_repository_version(repository_id: &str, id: &str) -> Result<
             ..Default::default()
         }),
         ..Default::default()
-    }; /*
+    }; *//*
        let job = Job {
            metadata: ObjectMeta {
                generate_name: Some(format!("cloner-{}-", repository_id)),
