@@ -5,7 +5,10 @@ use playground::{
     error::{Error, Result},
     kubernetes::repository::{get_repository, update_repository, update_repository_version_state},
     types::{RepositoryUpdateConfiguration, RepositoryVersionState},
-    utils::{devcontainer::{exec, parse_devcontainer, read_devcontainer}, git::clone},
+    utils::{
+        devcontainer::{exec, parse_devcontainer, read_devcontainer},
+        git::clone,
+    },
 };
 use std::env;
 
@@ -61,7 +64,10 @@ async fn build(repository_id: &str, id: &str, path: &str) -> Result<()> {
         // Fail if at least a build command failed
         match exec(path, on_create_command.clone()) {
             Ok(result) if !result.status.success() => {
-                return Err(Error::Failure(format!("Failure during build {:?}: ", result)))
+                return Err(Error::Failure(format!(
+                    "Failure during build {:?}: ",
+                    result
+                )))
             }
             Err(err) => {
                 return Err(Error::Failure(format!(
@@ -71,7 +77,7 @@ async fn build(repository_id: &str, id: &str, path: &str) -> Result<()> {
             }
             Ok(result) => {
                 log::debug!("Execution result: {:?}: ", result);
-            },
+            }
         }
     }
 

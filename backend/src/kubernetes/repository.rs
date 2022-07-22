@@ -13,7 +13,7 @@ use k8s_openapi::api::core::v1::{
 use k8s_openapi::apimachinery::pkg::{api::resource::Quantity, apis::meta::v1::ObjectMeta};
 use kube::{
     api::{Api, DeleteParams, PostParams},
-    Resource, ResourceExt,
+    ResourceExt,
 };
 use log::warn;
 use serde_json::json;
@@ -238,8 +238,6 @@ pub async fn create_repository_version(repository_id: &str, id: &str) -> Result<
     let volume_api: Api<PersistentVolumeClaim> = Api::default_namespaced(client.clone());
     let volume_template_name = volume_template_name(repository_id, id);
 
-    let repository = get_repository(repository_id).await.unwrap().unwrap();
-
     if get_repository_version(repository_id, id).await?.is_some() {
         return Err(Error::Failure("AlreadyExists".to_string()));
     }
@@ -268,7 +266,11 @@ pub async fn create_repository_version(repository_id: &str, id: &str) -> Result<
             init_containers: Some(vec![Container {
                 name: "copy-builder".to_string(),
                 image: Some(docker_image_name(&backend_pod().await?)?),
-                command: Some(vec!["sh".to_string(), "-c".to_string(), "cp /opt/target/release/builder /workspaces/builder".to_string()]),
+                command: Some(vec![
+                    "sh".to_string(),
+                    "-c".to_string(),
+                    "cp /opt/target/release/builder /workspaces/builder".to_string(),
+                ]),
                 volume_mounts: Some(vec![VolumeMount {
                     name: volume_template_name.clone(),
                     mount_path: "/workspaces".to_string(),
