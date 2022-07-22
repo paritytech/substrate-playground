@@ -22,7 +22,7 @@ if (env == EnvironmentType.dev) {
 // Connect via Client, create others Role, feed repository
 
 async function waitForRepositoryVersionCreation(client: Client, repositoryId: string, repositoryVersionId: string) {
-    const timeout = 60 * 1000;
+    const timeout = 10 * 60 * 1000;
     const interval = 1000;
     const startTime = Date.now();
     return new Promise<void>((resolve, reject) => {
@@ -36,11 +36,17 @@ async function waitForRepositoryVersionCreation(client: Client, repositoryId: st
                 clearInterval(id);
                 reject(state.message);
                 return;
+            } else if (state.type == "Init") {
+                console.log("Init");
+            } else if (state.type == "Cloning") {
+                console.log(`Cloning: progress=${state.progress}`);
+            } else if (state.type == "Building") {
+                console.log(`Building: progress=${state.progress}`);
             } else if ((Date.now() - startTime) > timeout) {
                 clearInterval(id);
-                reject(`Session not deployed after ${timeout} ms`);
+                reject(`RepositoryVersion not created after ${timeout} ms`);
             } else {
-                console.log(state);
+                console.log(`Unknown state: $${state}`);
             }
         }, interval);
     });
