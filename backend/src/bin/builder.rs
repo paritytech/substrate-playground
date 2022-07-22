@@ -42,11 +42,12 @@ async fn build(repository_id: &str, id: &str, path: &str) -> Result<()> {
     .await?;
 
     let devcontainer_json = read_devcontainer(path)?;
-
     let conf = parse_devcontainer(&devcontainer_json)?;
 
     // Trigger eventual build based on Configuration
     if let Some(on_create_command) = conf.on_create_command {
+        log::debug!("Executing {}", on_create_command);
+
         update_repository_version_state(
             repository_id,
             id,
@@ -68,7 +69,9 @@ async fn build(repository_id: &str, id: &str, path: &str) -> Result<()> {
                     on_create_command, err
                 )))
             }
-            _ => (),
+            Ok(result) => {
+                log::debug!("Execution result: {:?}: ", result);
+            },
         }
     }
 
