@@ -66,16 +66,25 @@ try {
     const repositoryVersionId = await latestRepositoryVersion(repository);
 
     try {
+        await client.createRepository(repositoryId, {url: "https://github.com/jeluard/substrate-node-template"});
+    } catch (e) {
+    }
+
+    try {
         const repositoryVersionIds = (await client.listRepositoryVersions(repositoryId)).map(repositoryVersion => repositoryVersion.id);
-        console.log(`Existing repository versions: ${repositoryVersionIds}`);
+        if (repositoryVersionIds.length > 0) {
+            console.log(`Existing repository versions: ${repositoryVersionIds}`);
+        }
         await client.createRepositoryVersion(repositoryId, repositoryVersionId);
         console.log("Created RepositoryVersion");
     } catch (e) {
-        console.error(e);
-        process.exit(1);
     }
 
     await waitForRepositoryVersionCreation(client, repositoryId, repositoryVersionId);
+    console.log("RepositoryVersion ready");
+
+    await client.createSession(mainSessionId((await client.get()).user), {repositorySource: {repositoryId: repositoryId}});
+    console.log("Created Session");
 } catch(e) {
     console.error(e);
     process.exit(1);
