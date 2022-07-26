@@ -27,7 +27,7 @@
     "xstate": "4.32.1"
   },
   "devDependencies": {
-    "@mui/types": "7.1.4",
+    "@mui/types": "7.1.5",
     "@parcel/transformer-inline-string": "2.6.2",
     "@types/marked": "4.0.3",
     "@types/node": "18.6.0",
