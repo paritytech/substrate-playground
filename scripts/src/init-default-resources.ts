@@ -27,26 +27,27 @@ async function waitForRepositoryVersionCreation(client: Client, repositoryId: st
     const startTime = Date.now();
     return new Promise<void>((resolve, reject) => {
         const id = setInterval(async () => {
-            const { state } = await client.getRepositoryVersion(repositoryId, repositoryVersionId);
-            if (state.type == "Ready") {
+            const result = await client.getRepositoryVersion(repositoryId, repositoryVersionId);
+            const type = result?.state.type;
+            if (type == "Ready") {
                 clearInterval(id);
                 resolve();
                 return;
-            } else if (state.type == "Failed") {
+            } else if (type == "Failed") {
                 clearInterval(id);
-                reject(state.message);
+                reject(result.state.message);
                 return;
-            } else if (state.type == "Init") {
+            } else if (type == "Init") {
                 console.log("Init");
-            } else if (state.type == "Cloning") {
-                console.log(`Cloning: progress=${state.progress}`);
-            } else if (state.type == "Building") {
-                console.log(`Building: progress=${state.progress}`);
+            } else if (type == "Cloning") {
+                console.log(`Cloning: progress=${result.state.progress}`);
+            } else if (type == "Building") {
+                console.log(`Building: progress=${result.state.progress}`);
             } else if ((Date.now() - startTime) > timeout) {
                 clearInterval(id);
                 reject(`RepositoryVersion not created after ${timeout} ms`);
             } else {
-                console.log(`Unknown state: $${state}`);
+                console.log(`Unknown state: ${result.state}`);
             }
         }, interval);
     });
