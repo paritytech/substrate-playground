@@ -72,7 +72,7 @@ fn user_to_namespace(user: &User) -> Result<Namespace> {
 pub async fn get_user(id: &str) -> Result<Option<User>> {
     let client = client()?;
     let api: Api<Namespace> = Api::all(client.clone());
-    get_resource(api, id, namespace_to_user).await
+    get_resource(api, &user_namespace(id), namespace_to_user).await
 }
 
 pub async fn list_users() -> Result<Vec<User>> {
@@ -81,7 +81,7 @@ pub async fn list_users() -> Result<Vec<User>> {
 
 pub async fn create_user(id: &str, conf: UserConfiguration) -> Result<()> {
     if get_user(id).await?.is_some() {
-        return Err(Error::Resource(ResourceError::Unknown(
+        return Err(Error::Resource(ResourceError::IdAlreayUsed(
             ResourceType::User,
             id.to_string(),
         )));
@@ -90,7 +90,7 @@ pub async fn create_user(id: &str, conf: UserConfiguration) -> Result<()> {
     let client = client()?;
 
     let user = User {
-        id: id.to_string(),
+        id: id.to_string(), // Store
         role: conf.role,
         preferences: conf.preferences,
     };

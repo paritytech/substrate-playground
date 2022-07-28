@@ -22,7 +22,7 @@ pub async fn list_roles() -> Result<Vec<Role>> {
 
 pub async fn create_role(id: &str, conf: RoleConfiguration) -> Result<()> {
     if get_role(id).await?.is_some() {
-        return Err(Error::Resource(ResourceError::Unknown(
+        return Err(Error::Resource(ResourceError::IdAlreayUsed(
             ResourceType::Role,
             id.to_string(),
         )));

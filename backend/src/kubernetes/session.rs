@@ -421,7 +421,7 @@ pub async fn create_session(
     session_configuration: &SessionConfiguration,
 ) -> Result<()> {
     if get_session(&user.id, id).await?.is_some() {
-        return Err(Error::Resource(ResourceError::Unknown(
+        return Err(Error::Resource(ResourceError::IdAlreayUsed(
             ResourceType::Session,
             id.to_string(),
         )));

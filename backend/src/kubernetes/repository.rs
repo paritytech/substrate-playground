@@ -242,7 +242,7 @@ pub async fn list_repository_versions(repository_id: &str) -> Result<Vec<Reposit
 
 pub async fn create_repository_version(repository_id: &str, id: &str) -> Result<()> {
     if get_repository_version(repository_id, id).await?.is_some() {
-        return Err(Error::Resource(ResourceError::Unknown(
+        return Err(Error::Resource(ResourceError::IdAlreayUsed(
             ResourceType::RepositoryVersion,
             id.to_string(),
         )));
