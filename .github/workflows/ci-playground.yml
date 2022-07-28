@@ -160,6 +160,9 @@ jobs:
       - name: Deploy playground
         run: SKIP_ACK=1 make k8s-deploy && sleep 300
 
+      - name: Show cluster status
+        run: kubectl get pods -o wide
+
       - name: Initialize default resources
         run: yarn && yarn build && yarn run:init-default-resources
         working-directory: ./scripts
