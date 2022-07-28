@@ -72,19 +72,18 @@ try {
             await client.createRepository(repositoryId, {url: "https://github.com/jeluard/substrate-node-template"});
         } catch (e) {
             console.error("Failed to create repository", e);
+            throw e;
         }
     }
 
     const repositoryVersionIds = (await client.listRepositoryVersions(repositoryId)).map(repositoryVersion => repositoryVersion.id);
-    if (repositoryVersionIds.length > 0) {
-        console.log(`Existing repository versions: ${repositoryVersionIds}`);
-    }
     if (!repositoryVersionIds.includes(repositoryVersionId)) {
         console.log("Creating RepositoryVersion");
         try {
             await client.createRepositoryVersion(repositoryId, repositoryVersionId);
         } catch (e) {
             console.error("Failed to create RepositoryVersion", e);
+            throw e;
         }
     }
 
