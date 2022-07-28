@@ -66,30 +66,34 @@ try {
     const repositoryId = 'node-template';
     const repositoryVersionId = await latestRepositoryVersion(repository);
 
-    try {
-        if (! await client.getRepository(repositoryId)) {
-            console.log("Creating Repository");
+    if (! await client.getRepository(repositoryId)) {
+        console.log("Creating Repository");
+        try {
             await client.createRepository(repositoryId, {url: "https://github.com/jeluard/substrate-node-template"});
+        } catch (e) {
+            console.error("Failed to create repository", e);
         }
-    } catch (e) {
-        console.error("Failed to create repository", e);
     }
 
-    try {
-        const repositoryVersionIds = (await client.listRepositoryVersions(repositoryId)).map(repositoryVersion => repositoryVersion.id);
-        if (repositoryVersionIds.length > 0) {
-            console.log(`Existing repository versions: ${repositoryVersionIds}`);
-        }
-        await client.createRepositoryVersion(repositoryId, repositoryVersionId);
-        console.log("Created RepositoryVersion");
-    } catch (e) {
+    const repositoryVersionIds = (await client.listRepositoryVersions(repositoryId)).map(repositoryVersion => repositoryVersion.id);
+    if (repositoryVersionIds.length > 0) {
+        console.log(`Existing repository versions: ${repositoryVersionIds}`);
     }
+    if (!repositoryVersionIds.includes(repositoryVersionId)) {
+        console.log("Creating RepositoryVersion");
+        try {
+            await client.createRepositoryVersion(repositoryId, repositoryVersionId);
+        } catch (e) {
+            console.error("Failed to create RepositoryVersion", e);
+        }
+    }
+
 
     await waitForRepositoryVersionCreation(client, repositoryId, repositoryVersionId);
     console.log("RepositoryVersion ready");
 
+    console.log("Creating Session");
     await client.createSession(mainSessionId((await client.get()).user), {repositorySource: {repositoryId: repositoryId}});
-    console.log("Created Session");
 } catch(e) {
     console.error(e);
     process.exit(1);
