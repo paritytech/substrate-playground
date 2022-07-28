@@ -38,8 +38,6 @@ pub const NODE_POOL_LABEL: &str = "app.playground/pool";
 pub const NODE_POOL_TYPE_LABEL: &str = "app.playground/pool-type";
 pub const INGRESS_NAME: &str = "ingress";
 
-
-
 pub async fn get_host() -> Result<String> {
     let ingress_api: Api<Ingress> = default_namespaced_api()?;
     let ingress = ingress_api
@@ -52,10 +50,14 @@ pub async fn get_host() -> Result<String> {
         .rules
         .unwrap_or_default()
         .first()
-        .ok_or_else(|| Error::MissingConstraint("ingress".to_string(), "spec#rules[0]".to_string()))?
+        .ok_or_else(|| {
+            Error::MissingConstraint("ingress".to_string(), "spec#rules[0]".to_string())
+        })?
         .host
         .as_ref()
-        .ok_or_else(|| Error::MissingConstraint("ingress".to_string(), "spec#rules[0]#host".to_string()))?
+        .ok_or_else(|| {
+            Error::MissingConstraint("ingress".to_string(), "spec#rules[0]#host".to_string())
+        })?
         .clone())
 }
 
@@ -217,9 +219,12 @@ pub async fn add_config_map_value(
 ) -> Result<()> {
     let config_map_api: Api<ConfigMap> = Api::default_namespaced(client.to_owned());
 
+    println!("Creating config map");
     // Ensure that `data` exists, if `name` itself exists
     if let Some(config_map) = config_map_api.get_opt(name).await? {
+        println!(" config map exists");
         if config_map.data.is_none() {
+            println!("data config map empty");
             let data_patch: Patch<json_patch::Patch> =
                 Patch::Json(json_patch::Patch(vec![PatchOperation::Add(AddOperation {
                     path: "/data".to_string(),
@@ -229,6 +234,7 @@ pub async fn add_config_map_value(
                 .patch(name, &PatchParams::default(), &data_patch)
                 .await
                 .map_err(Error::K8sCommunicationFailure)?;
+            println!("Done");
         }
     }
 

@@ -1,7 +1,7 @@
+use serde::Serialize;
 ///! Error type for the whole project
 ///
 use std::{collections::BTreeMap, result};
-use serde::Serialize;
 use thiserror::Error;
 
 use crate::types::{ResourcePermission, ResourceType};

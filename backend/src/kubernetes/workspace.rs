@@ -8,9 +8,7 @@ use k8s_openapi::api::core::v1::{
     Pod, PodSpec, ResourceRequirements, TypedLocalObjectReference, Volume, VolumeMount,
 };
 use k8s_openapi::apimachinery::pkg::{api::resource::Quantity, apis::meta::v1::ObjectMeta};
-use kube::{
-    api::{Api, PostParams},
-};
+use kube::api::{Api, PostParams};
 
 use std::collections::BTreeMap;
 

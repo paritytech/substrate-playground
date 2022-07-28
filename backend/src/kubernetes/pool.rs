@@ -12,9 +12,9 @@ use kube::{api::Api, ResourceExt};
 use std::collections::BTreeMap;
 
 fn nodes_to_pool(id: String, nodes: Vec<Node>) -> Result<Pool> {
-    let node = nodes
-        .first()
-        .ok_or_else(|| Error::MissingConstraint("nodes".to_string(), "empty vec of nodes".to_string()))?;
+    let node = nodes.first().ok_or_else(|| {
+        Error::MissingConstraint("nodes".to_string(), "empty vec of nodes".to_string())
+    })?;
     let labels = node.labels();
     let instance_type = labels.get(INSTANCE_TYPE_LABEL).cloned().unwrap_or_default();
     Ok(Pool {
@@ -22,7 +22,13 @@ fn nodes_to_pool(id: String, nodes: Vec<Node>) -> Result<Pool> {
         instance_type: Some(instance_type),
         nodes: nodes
             .iter()
-            .map(|_node| crate::types::Node { hostname: node.labels().get(HOSTNAME_LABEL).cloned().unwrap_or_default() })
+            .map(|_node| crate::types::Node {
+                hostname: node
+                    .labels()
+                    .get(HOSTNAME_LABEL)
+                    .cloned()
+                    .unwrap_or_default(),
+            })
             .collect(),
     })
 }

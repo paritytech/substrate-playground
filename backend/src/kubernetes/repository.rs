@@ -322,9 +322,14 @@ pub async fn create_repository_version(repository_id: &str, id: &str) -> Result<
 pub async fn delete_repository_version(repository_id: &str, id: &str) -> Result<()> {
     let client = client()?;
 
-    get_repository_version(repository_id, id).await?.ok_or_else(|| {
-        Error::Resource(ResourceError::Unknown(ResourceType::RepositoryVersion, id.to_string()))
-    })?;
+    get_repository_version(repository_id, id)
+        .await?
+        .ok_or_else(|| {
+            Error::Resource(ResourceError::Unknown(
+                ResourceType::RepositoryVersion,
+                id.to_string(),
+            ))
+        })?;
 
     let persistent_volume_api: Api<PersistentVolumeClaim> = Api::default_namespaced(client.clone());
     persistent_volume_api

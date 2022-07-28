@@ -141,7 +141,9 @@ impl<'r> Responder<'r, 'static> for Error {
             Error::MissingConstraint(_, _) => json!({ "type": "MissingConstraint", "data": {} }),
             Error::Failure(message) => json!({ "type": "Failure", "message": message }),
             Error::Resource(resource) => json!({ "type": "Resource", "data": resource }),
-            Error::K8sCommunicationFailure(reason) => json!({ "type": "Resource", "data": reason.to_string() }),
+            Error::K8sCommunicationFailure(reason) => {
+                json!({ "type": "Resource", "data": reason.to_string() })
+            }
         };
         respond_to(&json!({ "error": error }))
     }
