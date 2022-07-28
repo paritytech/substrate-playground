@@ -25,7 +25,7 @@ ENV OPENVSCODE_VERSION=1.68.1
 RUN wget https://github.com/gitpod-io/openvscode-server/releases/download/openvscode-server-v$OPENVSCODE_VERSION/openvscode-server-v$OPENVSCODE_VERSION-linux-x64.tar.gz \
     && tar -xzf openvscode-server-v$OPENVSCODE_VERSION-linux-x64.tar.gz \
     && mv openvscode-server-v$OPENVSCODE_VERSION-linux-x64 ${OPENVSCODE_SERVER_ROOT} \
-    && cp ${OPENVSCODE_SERVER_ROOT}/bin/remote-cli/openvscode-server ${OPENVSCODE_SERVER_ROOT}/bin/remote-cli/code && \
+    && cp ${OPENVSCODE_SERVER_ROOT}/bin/remote-cli/openvscode-server ${OPENVSCODE_SERVER_ROOT}/bin/remote-cli/code \
     && rm -rf openvscode-server-v$OPENVSCODE_VERSION-linux-x64.tar.gz
 
 COPY playground-extension ${OPENVSCODE_SERVER_ROOT}/extensions/playground-extension
