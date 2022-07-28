@@ -94,7 +94,9 @@ impl<'r> FromRequest<'r> for User {
                             };
                             if let Err(err) = user::create_user(user_id, user_configuration).await {
                                 log::warn!("Error while creating user {} : {}", user_id, err);
-                            };
+                            } else {
+                                log::debug!("Created user {} with role {}", user_id, user.role);
+                            }
                             return Outcome::Success(user);
                         }
                         Err(err) => {

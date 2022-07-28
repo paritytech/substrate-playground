@@ -126,7 +126,8 @@ impl User {
     pub async fn all_permissions(&self) -> BTreeMap<ResourceType, Vec<ResourcePermission>> {
         match get_role(&self.role).await {
             Ok(Some(role)) => {
-                log::info!("Adding perms for Role {}: {:?}", role.id, role.permissions);
+                log::debug!("Adding perms for Role {}: {:?}", role.id, role.permissions);
+
                 role.permissions
             }
             Ok(None) => {
