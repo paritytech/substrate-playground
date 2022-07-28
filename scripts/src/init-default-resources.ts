@@ -67,8 +67,12 @@ try {
     const repositoryVersionId = await latestRepositoryVersion(repository);
 
     try {
-        await client.createRepository(repositoryId, {url: "https://github.com/jeluard/substrate-node-template"});
+        if (! await client.getRepository(repositoryId)) {
+            console.log("Creating Repository");
+            await client.createRepository(repositoryId, {url: "https://github.com/jeluard/substrate-node-template"});
+        }
     } catch (e) {
+        console.error("Failed to create repository", e);
     }
 
     try {
