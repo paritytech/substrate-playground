@@ -18,7 +18,7 @@ export function environmentTypeFromString(s: string): EnvironmentType {
 export function playgroundBaseURL(env: EnvironmentType) {
     switch (env) {
         case EnvironmentType.dev:
-            return "http://playground-dev.substrate.test/api";
+            return "https://playground-dev.substrate.test/api";
         case EnvironmentType.staging:
             return "https://playground-staging.substrate.io/api";
         case EnvironmentType.production:
