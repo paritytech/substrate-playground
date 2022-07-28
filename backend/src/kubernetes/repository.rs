@@ -22,7 +22,7 @@ use std::collections::BTreeMap;
 use super::{
     backend_pod, client, delete_config_map_value, docker_image_name, get_resource_from_config_map,
     list_by_selector, list_resources_from_config_map, serialize_json, store_resource_as_config_map,
-    unserialize_yaml, update_annotation_value, APP_LABEL, APP_VALUE, COMPONENT_LABEL,
+    unserialize_json, update_annotation_value, APP_LABEL, APP_VALUE, COMPONENT_LABEL,
 };
 
 const REPOSITORY_LABEL: &str = "REPOSITORY_LABEL";
@@ -78,6 +78,14 @@ pub async fn update_repository(id: &str, conf: RepositoryUpdateConfiguration) ->
 
 pub async fn delete_repository(id: &str) -> Result<()> {
     let client = client()?;
+
+    get_repository(id).await?.ok_or_else(|| {
+        Error::Resource(ResourceError::Unknown(
+            ResourceType::Repository,
+            id.to_string(),
+        ))
+    })?;
+
     delete_config_map_value(&client, CONFIG_MAP, id).await
 }
 
@@ -167,7 +175,7 @@ fn persistent_volume_to_repository_version(
     match persistent_volume
         .annotations()
         .get(REPOSITORY_VERSION_STATE_ANNOTATION)
-        .map(|s| unserialize_yaml(s))
+        .map(|s| unserialize_json(s))
     {
         Some(Ok(state)) => Ok(RepositoryVersion {
             id: persistent_volume
@@ -203,6 +211,14 @@ pub async fn get_repository_version(
     id: &str,
 ) -> Result<Option<RepositoryVersion>> {
     let client = client()?;
+
+    get_repository(repository_id).await?.ok_or_else(|| {
+        Error::Resource(ResourceError::Unknown(
+            ResourceType::Repository,
+            id.to_string(),
+        ))
+    })?;
+
     let persistent_volume_api: Api<PersistentVolumeClaim> = Api::default_namespaced(client.clone());
     let persistent_volume =
         get_persistent_volume(&persistent_volume_api, repository_id, id).await?;

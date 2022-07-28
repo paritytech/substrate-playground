@@ -1,28 +1,76 @@
-id: user
-permissions:
-    Repository:
-    - type: Read
-    RepositoryVersion:
-    - type: Create
-    - type: Read
-    - type: Update
-    - type: Delete
-    Role:
-    - type: Read
-    Session:
-    - type: Create
-    - type: Read
-    - type: Update
-    - type: Delete
-    SessionExecution:
-    - type: Create
-    - type: Read
-    - type: Update
-    - type: Delete
-    User:
-    - type: Read
-    Workspace:
-    - type: Create
-    - type: Read
-    - type: Update
-    - type: Delete
+{
+  "id": "user",
+  "permissions": {
+    "Repository": [
+      {
+        "type": "Read"
+      }
+    ],
+    "RepositoryVersion": [
+      {
+        "type": "Create"
+      },
+      {
+        "type": "Read"
+      },
+      {
+        "type": "Update"
+      },
+      {
+        "type": "Delete"
+      }
+    ],
+    "Role": [
+      {
+        "type": "Read"
+      }
+    ],
+    "Session": [
+      {
+        "type": "Create"
+      },
+      {
+        "type": "Read"
+      },
+      {
+        "type": "Update"
+      },
+      {
+        "type": "Delete"
+      }
+    ],
+    "SessionExecution": [
+      {
+        "type": "Create"
+      },
+      {
+        "type": "Read"
+      },
+      {
+        "type": "Update"
+      },
+      {
+        "type": "Delete"
+      }
+    ],
+    "User": [
+      {
+        "type": "Read"
+      }
+    ],
+    "Workspace": [
+      {
+        "type": "Create"
+      },
+      {
+        "type": "Read"
+      },
+      {
+        "type": "Update"
+      },
+      {
+        "type": "Delete"
+      }
+    ]
+  }
+}

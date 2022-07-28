@@ -25,7 +25,7 @@ use kube::{
     Api, Client, Config,
 };
 use serde::{de::DeserializeOwned, Serialize};
-use serde_json::{json, Value};
+use serde_json::Value;
 use std::{collections::BTreeMap, convert::TryFrom, fmt::Debug, time::Duration};
 
 pub const HOSTNAME_LABEL: &str = "kubernetes.io/hostname";
@@ -215,33 +215,13 @@ pub async fn add_config_map_value(
     client: &Client,
     name: &str,
     key: &str,
-    value: &str,
+    value: Value,
 ) -> Result<()> {
     let config_map_api: Api<ConfigMap> = Api::default_namespaced(client.to_owned());
-
-    println!("Creating config map");
-    // Ensure that `data` exists, if `name` itself exists
-    if let Some(config_map) = config_map_api.get_opt(name).await? {
-        println!(" config map exists");
-        if config_map.data.is_none() {
-            println!("data config map empty");
-            let data_patch: Patch<json_patch::Patch> =
-                Patch::Json(json_patch::Patch(vec![PatchOperation::Add(AddOperation {
-                    path: "/data".to_string(),
-                    value: json!(""),
-                })]));
-            config_map_api
-                .patch(name, &PatchParams::default(), &data_patch)
-                .await
-                .map_err(Error::K8sCommunicationFailure)?;
-            println!("Done");
-        }
-    }
-
     let patch: Patch<json_patch::Patch> =
         Patch::Json(json_patch::Patch(vec![PatchOperation::Add(AddOperation {
             path: format!("/data/{}", key),
-            value: json!(value),
+            value,
         })]));
     config_map_api
         .patch(name, &PatchParams::default(), &patch)
@@ -322,13 +302,6 @@ where
     serde_json::from_str(s).map_err(|err| Error::Failure(err.to_string()))
 }
 
-fn unserialize_yaml<T>(s: &str) -> Result<T>
-where
-    T: DeserializeOwned,
-{
-    serde_yaml::from_str(s).map_err(|err| Error::Failure(err.to_string()))
-}
-
 pub async fn get_resource_from_config_map<T>(
     client: &Client,
     id: &str,
@@ -338,7 +311,7 @@ where
     T: DeserializeOwned,
 {
     let resources = get_config_map(client, config_map_name).await?;
-    match resources.get(id).map(|resource| unserialize_yaml(resource)) {
+    match resources.get(id).map(|resource| unserialize_json(resource)) {
         Some(resource) => resource.map(Some),
         None => Ok(None),
     }
@@ -354,7 +327,7 @@ where
     Ok(get_config_map(client, config_map_name)
         .await?
         .into_iter()
-        .flat_map(|(_k, v)| unserialize_yaml::<T>(&v))
+        .flat_map(|(_k, v)| unserialize_json::<T>(&v))
         .collect())
 }
 
@@ -367,13 +340,11 @@ pub async fn store_resource_as_config_map<T>(
 where
     T: ?Sized + Serialize,
 {
-    // TODO if data not present, add it
-
     add_config_map_value(
         client,
         config_map_name,
         id,
-        serialize_json(resource)?.as_str(),
+        serialize_json(resource)?.into(),
     )
     .await
 }

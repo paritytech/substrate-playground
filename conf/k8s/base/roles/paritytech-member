@@ -1,42 +1,111 @@
-id: paritytech-member
-permissions:
-    Pool:
-    - type: Create
-    - type: Read
-    - type: Update
-    - type: Delete
-    Repository:
-    - type: Create
-    - type: Read
-    - type: Update
-    - type: Delete
-    RepositoryVersion:
-    - type: Create
-    - type: Read
-    - type: Update
-    - type: Delete
-    Role:
-    - type: Read
-    Session:
-    - type: Create
-    - type: Read
-    - type: Update
-    - type: Delete
-    - type: Custom
-      name: Administrate
-    - type: Custom
-      name: CustomizeSessionDuration
-    - type: Custom
-      name: CustomizeSessionPoolAffinity
-    SessionExecution:
-    - type: Create
-    - type: Read
-    - type: Update
-    - type: Delete
-    User:
-    - type: Read
-    Workspace:
-    - type: Create
-    - type: Read
-    - type: Update
-    - type: Delete
+{
+  "id": "paritytech-member",
+  "permissions": {
+    "Pool": [
+      {
+        "type": "Create"
+      },
+      {
+        "type": "Read"
+      },
+      {
+        "type": "Update"
+      },
+      {
+        "type": "Delete"
+      }
+    ],
+    "Repository": [
+      {
+        "type": "Create"
+      },
+      {
+        "type": "Read"
+      },
+      {
+        "type": "Update"
+      },
+      {
+        "type": "Delete"
+      }
+    ],
+    "RepositoryVersion": [
+      {
+        "type": "Create"
+      },
+      {
+        "type": "Read"
+      },
+      {
+        "type": "Update"
+      },
+      {
+        "type": "Delete"
+      }
+    ],
+    "Role": [
+      {
+        "type": "Read"
+      }
+    ],
+    "Session": [
+      {
+        "type": "Create"
+      },
+      {
+        "type": "Read"
+      },
+      {
+        "type": "Update"
+      },
+      {
+        "type": "Delete"
+      },
+      {
+        "type": "Custom",
+        "name": "Administrate"
+      },
+      {
+        "type": "Custom",
+        "name": "CustomizeSessionDuration"
+      },
+      {
+        "type": "Custom",
+        "name": "CustomizeSessionPoolAffinity"
+      }
+    ],
+    "SessionExecution": [
+      {
+        "type": "Create"
+      },
+      {
+        "type": "Read"
+      },
+      {
+        "type": "Update"
+      },
+      {
+        "type": "Delete"
+      }
+    ],
+    "User": [
+      {
+        "type": "Read"
+      }
+    ],
+    "Workspace": [
+      {
+        "type": "Create"
+      },
+      {
+        "type": "Read"
+      },
+      {
+        "type": "Update"
+      },
+      {
+        "type": "Delete"
+      }
+    ]
+  }
+}

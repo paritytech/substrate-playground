@@ -1333,7 +1333,6 @@ dependencies = [
  "rocket",
  "serde",
  "serde_json",
- "serde_yaml",
  "thiserror",
  "tokio-util 0.7.3",
  "url",
