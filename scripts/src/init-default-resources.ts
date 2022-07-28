@@ -62,6 +62,9 @@ const client = newClient(env);
 try {
     await client.login(accessToken);
 
+    const details = await client.get();
+    console.log(`Logged as ${details.user.id}`);
+
     const repository = "jeluard/substrate-node-template";
     const repositoryId = 'node-template';
     const repositoryVersionId = await latestRepositoryVersion(repository);
