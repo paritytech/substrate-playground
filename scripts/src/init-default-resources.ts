@@ -93,7 +93,7 @@ try {
     console.log("Creating Session");
     await client.createSession(mainSessionId((await client.get()).user), {repositorySource: {repositoryId: repositoryId}});
 } catch(e) {
-    console.error(e);
+    console.error(`Error: ${e.type}`, e.data);
     process.exit(1);
 } finally {
     await client.logout();
