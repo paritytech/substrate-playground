@@ -23,7 +23,7 @@ if (env == EnvironmentType.dev) {
 
 async function waitForRepositoryVersionCreation(client: Client, repositoryId: string, repositoryVersionId: string) {
     const timeout = 10 * 60 * 1000;
-    const interval = 1000;
+    const interval = 5000;
     const startTime = Date.now();
     return new Promise<void>((resolve, reject) => {
         const id = setInterval(async () => {
