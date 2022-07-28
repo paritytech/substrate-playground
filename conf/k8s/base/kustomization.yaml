@@ -15,6 +15,11 @@ resources:
     - node-conf-daemon-set.yaml
 
 configMapGenerator:
+- name: playground-repositories
+  files:
+    - repositories/dummy
+  options:
+    disableNameSuffixHash: true
 - name: playground-roles
   files:
     - roles/paritytech-member
