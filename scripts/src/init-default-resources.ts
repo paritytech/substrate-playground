@@ -71,7 +71,7 @@ try {
         try {
             await client.createRepository(repositoryId, {url: "https://github.com/jeluard/substrate-node-template"});
         } catch (e) {
-            console.error("Failed to create repository", e);
+            console.error("Failed to create repository");
             throw e;
         }
     }
@@ -82,11 +82,10 @@ try {
         try {
             await client.createRepositoryVersion(repositoryId, repositoryVersionId);
         } catch (e) {
-            console.error("Failed to create RepositoryVersion", e);
+            console.error("Failed to create RepositoryVersion");
             throw e;
         }
     }
-
 
     await waitForRepositoryVersionCreation(client, repositoryId, repositoryVersionId);
     console.log("RepositoryVersion ready");
