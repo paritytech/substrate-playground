@@ -37,12 +37,10 @@ spec:
         ports:
         - containerPort: 8080
         env:
-          # See https://rocket.rs/v0.4/guide/configuration/
-          - name: ROCKET_ENV
-            value: "staging"
+          # See https://rocket.rs/v0.5-rc/guide/configuration/
           - name: ROCKET_PORT
             value: "8080"
-          - name: ROCKET_LOG
+          - name: ROCKET_LOG_LEVEL
             value: "normal"
           - name: ROCKET_ADDRESS
             value: "0.0.0.0"
