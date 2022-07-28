@@ -1,6 +1,6 @@
 //! Helper methods ton interact with k8s
 use crate::{
-    error::{Error, Result},
+    error::{Error, ResourceError, Result},
     types::{
         Repository, RepositoryConfiguration, RepositoryUpdateConfiguration, RepositoryVersion,
         RepositoryVersionState, ResourceType,
@@ -42,11 +42,14 @@ pub async fn list_repositories() -> Result<Vec<Repository>> {
 }
 
 pub async fn create_repository(id: &str, conf: RepositoryConfiguration) -> Result<()> {
-    let client = client()?;
-
     if get_repository(id).await?.is_some() {
-        return Err(Error::Failure("AlreadyExists".to_string()));
+        return Err(Error::Resource(ResourceError::Unknown(
+            ResourceType::Repository,
+            id.to_string(),
+        )));
     }
+
+    let client = client()?;
 
     let repository = Repository {
         id: id.to_string(),
@@ -62,7 +65,12 @@ pub async fn update_repository(id: &str, conf: RepositoryUpdateConfiguration) ->
 
     let mut repository: Repository = get_resource_from_config_map(&client, id, CONFIG_MAP)
         .await?
-        .ok_or_else(|| Error::UnknownResource(ResourceType::Repository, id.to_string()))?;
+        .ok_or_else(|| {
+            Error::Resource(ResourceError::Unknown(
+                ResourceType::Repository,
+                id.to_string(),
+            ))
+        })?;
     repository.current_version = conf.current_version;
 
     store_resource_as_config_map(&client, &repository.id, &repository, CONFIG_MAP).await
@@ -233,14 +241,17 @@ pub async fn list_repository_versions(repository_id: &str) -> Result<Vec<Reposit
 }
 
 pub async fn create_repository_version(repository_id: &str, id: &str) -> Result<()> {
+    if get_repository_version(repository_id, id).await?.is_some() {
+        return Err(Error::Resource(ResourceError::Unknown(
+            ResourceType::RepositoryVersion,
+            id.to_string(),
+        )));
+    }
+
     let client = client()?;
     // Create volume
     let volume_api: Api<PersistentVolumeClaim> = Api::default_namespaced(client.clone());
     let volume_template_name = volume_template_name(repository_id, id);
-
-    if get_repository_version(repository_id, id).await?.is_some() {
-        return Err(Error::Failure("AlreadyExists".to_string()));
-    }
 
     let _volume =
         create_volume_template(&volume_api, &volume_template_name, repository_id, id).await?;
@@ -256,7 +267,7 @@ pub async fn create_repository_version(repository_id: &str, id: &str) -> Result<
             volumes: Some(vec![Volume {
                 name: volume_template_name.clone(),
                 persistent_volume_claim: Some(PersistentVolumeClaimVolumeSource {
-                    claim_name: volume_template_name.clone(), // TODO pass as arg?
+                    claim_name: volume_template_name.clone(),
                     ..Default::default()
                 }),
                 ..Default::default()
@@ -280,7 +291,7 @@ pub async fn create_repository_version(repository_id: &str, id: &str) -> Result<
             }]),
             containers: vec![Container {
                 name: "builder".to_string(),
-                image: Some("paritytech/ci-linux:staging".to_string()), // TODO fetch devcontainer from repo
+                image: Some("paritytech/ci-linux:staging".to_string()), // TODO fetch devcontainer from repo, https://docs.github.com/en/rest/repos/contents
                 command: Some(vec!["/workspaces/builder".to_string()]),
                 args: Some(vec![
                     "-r".to_string(),
@@ -300,97 +311,6 @@ pub async fn create_repository_version(repository_id: &str, id: &str) -> Result<
         ..Default::default()
     };
     let job_api: Api<Pod> = Api::default_namespaced(client.clone());
-    /*
-    let pod = Pod {
-        metadata: ObjectMeta {
-            generate_name: Some(format!("cloner-{}-", repository_id)),
-            ..Default::default()
-        },
-        spec: Some(PodSpec {
-            service_account_name: Some("backend-service-account".to_string()),
-            volumes: Some(vec![Volume {
-                name: volume_template_name.clone(),
-                persistent_volume_claim: Some(PersistentVolumeClaimVolumeSource {
-                    claim_name: volume
-                        .meta()
-                        .clone()
-                        .name
-                        .ok_or(Error::MissingData("meta#name"))?,
-                    ..Default::default()
-                }),
-                ..Default::default()
-            }]),
-            restart_policy: Some("OnFailure".to_string()),
-            containers: vec![Container {
-                name: "cloner".to_string(),
-                image: Some(docker_image_name(&backend_pod().await?)?),
-                command: Some(vec!["cloner".to_string()]),
-                args: Some(vec![
-                    "-r".to_string(),
-                    repository_id.to_string(),
-                    "-i".to_string(),
-                    id.to_string(),
-                ]),
-                volume_mounts: Some(vec![VolumeMount {
-                    name: volume_template_name,
-                    mount_path: "/workspaces".to_string(),
-                    ..Default::default()
-                }]),
-                ..Default::default()
-            }],
-            ..Default::default()
-        }),
-        ..Default::default()
-    }; *//*
-       let job = Job {
-           metadata: ObjectMeta {
-               generate_name: Some(format!("cloner-{}-", repository_id)),
-               ..Default::default()
-           },
-           spec: Some(JobSpec {
-               ttl_seconds_after_finished: Some(10000),
-               backoff_limit: Some(1),
-               template: PodTemplateSpec {
-                   spec: Some(PodSpec {
-                       service_account_name: Some("backend-service-account".to_string()),
-                       volumes: Some(vec![Volume {
-                           name: volume_template_name.clone(),
-                           persistent_volume_claim: Some(PersistentVolumeClaimVolumeSource {
-                               claim_name: volume
-                                   .meta()
-                                   .clone()
-                                   .name
-                                   .ok_or(Error::MissingData("meta#name"))?,
-                               ..Default::default()
-                           }),
-                           ..Default::default()
-                       }]),
-                       restart_policy: Some("OnFailure".to_string()),
-                       containers: vec![Container {
-                           name: "cloner".to_string(),
-                           image: Some(docker_image_name(&backend_pod().await?)?),
-                           command: Some(vec!["cloner".to_string()]),
-                           args: Some(vec![
-                               "-r".to_string(),
-                               repository_id.to_string(),
-                               "-i".to_string(),
-                               id.to_string(),
-                           ]),
-                           volume_mounts: Some(vec![VolumeMount {
-                               name: volume_template_name,
-                               mount_path: "/".to_string(),
-                               ..Default::default()
-                           }]),
-                           ..Default::default()
-                       }],
-                       ..Default::default()
-                   }),
-                   ..Default::default()
-               },
-               ..Default::default()
-           }),
-           ..Default::default()
-       };*/
     job_api
         .create(&PostParams::default(), &pod)
         .await
@@ -401,6 +321,11 @@ pub async fn create_repository_version(repository_id: &str, id: &str) -> Result<
 
 pub async fn delete_repository_version(repository_id: &str, id: &str) -> Result<()> {
     let client = client()?;
+
+    get_repository_version(repository_id, id).await?.ok_or_else(|| {
+        Error::Resource(ResourceError::Unknown(ResourceType::RepositoryVersion, id.to_string()))
+    })?;
+
     let persistent_volume_api: Api<PersistentVolumeClaim> = Api::default_namespaced(client.clone());
     persistent_volume_api
         .delete(

@@ -125,10 +125,6 @@ impl<'r> FromRequest<'r> for User {
     }
 }
 
-fn create_jsonrpc_error(_type: &str, message: String) -> Value {
-    json!({ "error": { "type": _type, "message": message } })
-}
-
 // Responder implementations dealing with `Result` type
 
 fn respond_to(value: &Value) -> rocket::response::Result<'static> {
@@ -141,11 +137,13 @@ fn respond_to(value: &Value) -> rocket::response::Result<'static> {
 
 impl<'r> Responder<'r, 'static> for Error {
     fn respond_to(self, _: &'r Request<'_>) -> rocket::response::Result<'static> {
-        // TODO make generic for all errors
-        respond_to(&create_jsonrpc_error(
-            "RepositoryVersionNotReady",
-            self.to_string(),
-        ))
+        let error = match self {
+            Error::MissingConstraint(_, _) => json!({ "type": "MissingConstraint", "data": {} }),
+            Error::Failure(message) => json!({ "type": "Failure", "message": message }),
+            Error::Resource(resource) => json!({ "type": "Resource", "data": resource }),
+            Error::K8sCommunicationFailure(reason) => json!({ "type": "Resource", "data": reason.to_string() }),
+        };
+        respond_to(&json!({ "error": error }))
     }
 }
 

@@ -1,7 +1,7 @@
 /// Abstracts k8s interaction by handling permissions, logging, etc..
 ///
 use crate::{
-    error::{Error, Result},
+    error::{Error, ResourceError, Result},
     kubernetes::{
         get_configuration,
         pool::{get_pool, list_pools},
@@ -117,7 +117,10 @@ async fn ensure_permission(
         .has_permission(&resource_type, &resource_permission)
         .await
     {
-        return Err(Error::Unauthorized(resource_type, resource_permission));
+        return Err(Error::Resource(ResourceError::UnauthorizedAccess(
+            resource_type,
+            resource_permission,
+        )));
     }
 
     Ok(())
@@ -383,15 +386,15 @@ impl Manager {
                 return Ok(session);
             }
 
-            Err(Error::ResourceNotOwned(
+            Err(Error::Resource(ResourceError::NotOwned(
                 ResourceType::Session,
                 session_id.to_string(),
-            ))
+            )))
         } else {
-            Err(Error::UnknownResource(
+            Err(Error::Resource(ResourceError::Unknown(
                 ResourceType::Session,
                 session_id.to_string(),
-            ))
+            )))
         }
     }
 
@@ -425,8 +428,9 @@ impl Manager {
     ) -> Result<()> {
         ensure_permission(caller, ResourceType::Session, ResourcePermission::Create).await?;
 
-        // Session name must match user name, unless User has a specific permission
-        if caller.id.to_ascii_lowercase() != id {
+        // Default permission only allows a single concurrent session per user.
+        // Session name must match user name.
+        if user_id.to_ascii_lowercase() != id {
             ensure_permission(
                 caller,
                 ResourceType::Session,
@@ -458,11 +462,6 @@ impl Manager {
                 },
             )
             .await?;
-        }
-
-        // Check that the session doesn't already exists
-        if self.get_session(caller, user_id, id).await?.is_some() {
-            return Err(Error::SessionIdAlreayUsed);
         }
 
         let repository_source = session_configuration.clone().repository_source;

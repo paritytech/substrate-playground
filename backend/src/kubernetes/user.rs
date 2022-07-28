@@ -9,7 +9,7 @@ use super::{
     update_annotation_value, user_namespace, APP_LABEL, APP_VALUE, COMPONENT_LABEL,
 };
 use crate::{
-    error::{Error, Result},
+    error::{Error, ResourceError, Result},
     types::{ResourceType, User, UserConfiguration, UserUpdateConfiguration},
 };
 use k8s_openapi::api::core::v1::{Namespace, ServiceAccount};
@@ -80,6 +80,13 @@ pub async fn list_users() -> Result<Vec<User>> {
 }
 
 pub async fn create_user(id: &str, conf: UserConfiguration) -> Result<()> {
+    if get_user(id).await?.is_some() {
+        return Err(Error::Resource(ResourceError::Unknown(
+            ResourceType::User,
+            id.to_string(),
+        )));
+    }
+
     let client = client()?;
 
     let user = User {
@@ -116,9 +123,9 @@ pub async fn create_user(id: &str, conf: UserConfiguration) -> Result<()> {
 pub async fn update_user(id: &str, conf: UserUpdateConfiguration) -> Result<()> {
     let client = client()?;
 
-    let user = get_user(id)
-        .await?
-        .ok_or_else(|| Error::UnknownResource(ResourceType::User, id.to_string()))?;
+    let user = get_user(id).await?.ok_or_else(|| {
+        Error::Resource(ResourceError::Unknown(ResourceType::User, id.to_string()))
+    })?;
 
     let namespace_api: Api<Namespace> = Api::namespaced(client.clone(), &user_namespace(id));
     if conf.role != user.role {
@@ -139,6 +146,10 @@ pub async fn update_user(id: &str, conf: UserUpdateConfiguration) -> Result<()> 
 }
 
 pub async fn delete_user(id: &str) -> Result<()> {
+    get_user(id).await?.ok_or_else(|| {
+        Error::Resource(ResourceError::Unknown(ResourceType::User, id.to_string()))
+    })?;
+
     let client = client()?;
     let api: Api<Namespace> = Api::all(client.clone());
     delete_resource(api, &user_namespace(id)).await

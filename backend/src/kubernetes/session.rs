@@ -1,6 +1,6 @@
 //! Helper methods ton interact with k8s
 use crate::{
-    error::{Error, Result},
+    error::{Error, ResourceError, Result},
     kubernetes::get_host,
     types::{
         self, Configuration, NameValuePair, Port, RepositoryVersionState, ResourceType, Session,
@@ -12,8 +12,9 @@ use crate::{
 use futures::StreamExt;
 use k8s_openapi::api::{
     core::v1::{
-        Affinity, Container, EnvVar, Pod, PodAffinityTerm, PodAntiAffinity, PodSpec,
-        ResourceRequirements, SecurityContext, Service, ServicePort, ServiceSpec,
+        Affinity, Container, EnvVar, PersistentVolumeClaimVolumeSource, Pod, PodAffinityTerm,
+        PodAntiAffinity, PodSpec, ResourceRequirements, SecurityContext, Service, ServicePort,
+        ServiceSpec, Volume, VolumeMount,
     },
     networking::v1::{HTTPIngressPath, HTTPIngressRuleValue, Ingress, IngressRule},
 };
@@ -32,7 +33,7 @@ use std::{
 use super::{
     client, env_var, get_owned_resource, ingress_path, list_all_resources, list_owned_resources,
     pool::get_pool,
-    repository::{get_repository, get_repository_version},
+    repository::{get_repository, get_repository_version, volume_template_name},
     update_annotation_value,
     user::DEFAULT_SERVICE_ACCOUNT,
     user_namespace, APP_LABEL, APP_VALUE, COMPONENT_LABEL, INGRESS_NAME, NODE_POOL_LABEL,
@@ -79,6 +80,7 @@ fn pod_annotations(duration: &Duration) -> BTreeMap<String, String> {
 fn session_to_pod(
     user_id: &str,
     session_id: &str,
+    volume_name: &str,
     image: &str,
     duration: &Duration,
     pool_id: &str,
@@ -90,6 +92,7 @@ fn session_to_pod(
     labels.insert(RESOURCE_ID.to_string(), session_id.to_string());
     labels.insert(OWNER_LABEL.to_string(), user_id.to_string());
 
+    let openvscode_version = "1.69.2";
     Pod {
         metadata: ObjectMeta {
             name: Some(session_id.to_string()),
@@ -103,6 +106,14 @@ fn session_to_pod(
                 NODE_POOL_LABEL.to_string(),
                 pool_id.to_string(),
             )])),
+            volumes: Some(vec![Volume {
+                name: volume_name.to_string(),
+                persistent_volume_claim: Some(PersistentVolumeClaimVolumeSource {
+                    claim_name: volume_name.to_string(),
+                    ..Default::default()
+                }),
+                ..Default::default()
+            }]),
             affinity: Some(Affinity {
                 pod_anti_affinity: Some(PodAntiAffinity {
                     required_during_scheduling_ignored_during_execution: Some(vec![
@@ -122,10 +133,34 @@ fn session_to_pod(
                 }),
                 ..Default::default()
             }),
+            init_containers: Some(vec![Container {
+                name: "copy-openvscode".to_string(),
+                image: Some("busybox:1.34.1".to_string()),
+                command: Some(vec![
+                    "sh".to_string(),
+                    "-c".to_string(),
+                    "curl https://github.com/gitpod-io/openvscode-server/releases/download/openvscode-server-v{{VERSION}}/openvscode-server-v{{VERSION}}-linux-x64.tar.gz
+                     && tar -xzf openvscode-server-v{{VERSION}}-linux-x64.tar.gz
+                     && mv openvscode-server-v{{VERSION}}-linux-x64 /opt/openvscode
+                     && cp /opt/openvscode/bin/remote-cli/openvscode-server /opt/openvscode/bin/remote-cli/code".to_string().replace("{{VERSION}}", openvscode_version),
+                ]),
+                volume_mounts: Some(vec![VolumeMount {
+                    name: volume_name.to_string(),
+                    mount_path: "/opt".to_string(),
+                    ..Default::default()
+                }]),
+                ..Default::default()
+            }]),
             containers: vec![Container {
                 name: format!("{}-container", COMPONENT),
                 image: Some(image.to_string()),
                 env: Some(pod_env_variables(envs, session_id)),
+                command: Some(vec!["/opt/openvscode/bin/openvscode-server".to_string()]),
+                args: Some(vec![
+                    "--host".to_string(),
+                    "0.0.0.0".to_string(),
+                    "--without-connection-token".to_string(),
+                ]),
                 resources: Some(ResourceRequirements {
                     requests: Some(BTreeMap::from([
                         ("memory".to_string(), Quantity("8Gi".to_string())),
@@ -133,6 +168,11 @@ fn session_to_pod(
                     ])),
                     ..Default::default()
                 }),
+                volume_mounts: Some(vec![VolumeMount {
+                    name: volume_name.to_string(),
+                    mount_path: "/opt".to_string(),
+                    ..Default::default()
+                }]),
                 security_context: Some(SecurityContext {
                     allow_privilege_escalation: Some(false),
                     run_as_non_root: Some(false), // TODO Reinvestigate, should provide guidance for image creation
@@ -326,7 +366,7 @@ pub async fn patch_ingress(runtimes: &BTreeMap<String, Vec<Port>>) -> Result<()>
     let mut spec = ingress
         .clone()
         .spec
-        .ok_or(Error::MissingData("ingress#spec"))?;
+        .ok_or_else(|| Error::MissingConstraint("ingress".to_string(), "spec".to_string()))?;
     let mut rules: Vec<IngressRule> = spec.rules.unwrap_or_default();
     let host = get_host().await?;
     for (session_id, ports) in runtimes {
@@ -380,6 +420,13 @@ pub async fn create_session(
     configuration: &Configuration,
     session_configuration: &SessionConfiguration,
 ) -> Result<()> {
+    if get_session(&user.id, id).await?.is_some() {
+        return Err(Error::Resource(ResourceError::Unknown(
+            ResourceType::Session,
+            id.to_string(),
+        )));
+    }
+
     // Make sure some node on the right pools still have rooms
     // Find pool affinity, lookup corresponding pool and capacity based on nodes, figure out if there is room left
     // TODO: replace with custom scheduler
@@ -394,16 +441,21 @@ pub async fn create_session(
                 .unwrap_or(&configuration.clone().session.pool_affinity)
                 .to_string()
         });
-    let pool = get_pool(&pool_id)
-        .await?
-        .ok_or_else(|| Error::UnknownResource(ResourceType::Pool, pool_id.clone()))?;
+    let pool = get_pool(&pool_id).await?.ok_or_else(|| {
+        Error::Resource(ResourceError::Unknown(ResourceType::Pool, pool_id.clone()))
+    })?;
     let max_sessions_allowed = pool.nodes.len() * configuration.session.max_sessions_per_pod;
     let user_id = &user.id;
     let sessions = list_all_sessions().await?;
     if sessions.len() >= max_sessions_allowed {
-        // TODO Should trigger pool dynamic scalability. Right now this will only consider the pool lower bound.
-        // "Reached maximum number of concurrent sessions allowed: {}"
-        return Err(Error::ConcurrentSessionsLimitBreached(sessions.len()));
+        return Err(Error::Resource(ResourceError::Misconfiguration(
+            ResourceType::Session,
+            "ConcurrentSessionsLimit".to_string(),
+            BTreeMap::from([
+                ("sessions".to_string(), sessions.len().to_string()),
+                ("maxSessions".to_string(), max_sessions_allowed.to_string()),
+            ]),
+        )));
     }
 
     let repository_id = session_configuration
@@ -411,9 +463,12 @@ pub async fn create_session(
         .repository_id
         .as_str();
 
-    let repository = get_repository(repository_id)
-        .await?
-        .ok_or_else(|| Error::Failure(format!("No matching repository: {}", repository_id)))?;
+    let repository = get_repository(repository_id).await?.ok_or_else(|| {
+        Error::Resource(ResourceError::Unknown(
+            ResourceType::RepositoryVersion,
+            id.to_string(),
+        ))
+    })?;
     let repository_version_id = match &session_configuration
         .repository_source
         .repository_version_id
@@ -454,7 +509,7 @@ pub async fn create_session(
 
     let mut sessions = BTreeMap::new();
     sessions.insert(id.to_string(), ports.clone());
-    patch_ingress(&sessions).await?;
+    //  patch_ingress(&sessions).await?;
 
     // Now create the session itself
     let client = client()?;
@@ -473,6 +528,8 @@ pub async fn create_session(
         })
         .collect();
 
+    // TODO clone per user
+    let volume_name = volume_template_name(repository_id, repository_version_id);
     // Deploy a new pod for this image
     let pod_api: Api<Pod> = Api::namespaced(client.clone(), &user_namespace(user_id));
     pod_api
@@ -481,6 +538,7 @@ pub async fn create_session(
             &session_to_pod(
                 &user.id,
                 id,
+                &volume_name,
                 devcontainer.image.as_str(),
                 &duration,
                 &pool_id,
@@ -518,16 +576,29 @@ pub async fn update_session(
     configuration: Configuration,
     session_configuration: SessionUpdateConfiguration,
 ) -> Result<()> {
-    let session = get_session(user_id, id)
-        .await?
-        .ok_or_else(|| Error::UnknownResource(ResourceType::Session, id.to_string()))?;
+    let session = get_session(user_id, id).await?.ok_or_else(|| {
+        Error::Resource(ResourceError::Unknown(
+            ResourceType::Session,
+            id.to_string(),
+        ))
+    })?;
 
     let duration = session_configuration
         .duration
         .unwrap_or(configuration.session.duration);
     let max_duration = configuration.session.max_duration;
     if duration >= max_duration {
-        return Err(Error::DurationLimitBreached(max_duration.as_millis()));
+        return Err(Error::Resource(ResourceError::Misconfiguration(
+            ResourceType::Session,
+            "DurationLimit".to_string(),
+            BTreeMap::from([
+                ("duration".to_string(), duration.as_millis().to_string()),
+                (
+                    "maxDuration".to_string(),
+                    max_duration.as_millis().to_string(),
+                ),
+            ]),
+        )));
     }
     if duration != session.max_duration {
         let client = client()?;
@@ -546,9 +617,13 @@ pub async fn update_session(
 
 pub async fn delete_session(user_id: &str, id: &str) -> Result<()> {
     let client = client()?;
-    get_session(user_id, id)
-        .await?
-        .ok_or_else(|| Error::UnknownResource(ResourceType::Session, id.to_string()))?;
+
+    get_session(user_id, id).await?.ok_or_else(|| {
+        Error::Resource(ResourceError::Unknown(
+            ResourceType::Session,
+            id.to_string(),
+        ))
+    })?;
 
     // Undeploy the ingress local service
     let service_local_api: Api<Service> = Api::default_namespaced(client.clone());
@@ -586,7 +661,7 @@ pub async fn delete_session(user_id: &str, id: &str) -> Result<()> {
     let mut spec = ingress
         .clone()
         .spec
-        .ok_or(Error::MissingData("spec"))?
+        .ok_or_else(|| Error::MissingConstraint("ingress".to_string(), "spec".to_string()))?
         .clone();
     let rules: Vec<IngressRule> = spec
         .clone()

@@ -14,23 +14,15 @@ use std::collections::BTreeMap;
 fn nodes_to_pool(id: String, nodes: Vec<Node>) -> Result<Pool> {
     let node = nodes
         .first()
-        .ok_or(Error::MissingData("empty vec of nodes"))?;
-    let local = "local".to_string();
-    let unknown = "unknown".to_string();
-    let instance_type = node.labels().get(INSTANCE_TYPE_LABEL).unwrap_or(&local);
-
+        .ok_or_else(|| Error::MissingConstraint("nodes".to_string(), "empty vec of nodes".to_string()))?;
+    let labels = node.labels();
+    let instance_type = labels.get(INSTANCE_TYPE_LABEL).cloned().unwrap_or_default();
     Ok(Pool {
         id,
-        instance_type: Some(instance_type.clone()),
+        instance_type: Some(instance_type),
         nodes: nodes
             .iter()
-            .map(|node| crate::types::Node {
-                hostname: node
-                    .labels()
-                    .get(HOSTNAME_LABEL)
-                    .unwrap_or(&unknown)
-                    .clone(),
-            })
+            .map(|_node| crate::types::Node { hostname: node.labels().get(HOSTNAME_LABEL).cloned().unwrap_or_default() })
             .collect(),
     })
 }
@@ -52,16 +44,15 @@ pub async fn list_pools() -> Result<Vec<Pool>> {
 
     let nodes = list_by_selector(
         &node_api,
-        format!("{}={}", NODE_POOL_TYPE_LABEL, &"user").as_str(),
+        format!("{}={}", NODE_POOL_TYPE_LABEL, "user").as_str(),
     )
     .await?;
 
-    let missing = "<missing>".to_string();
     let nodes_by_pool: BTreeMap<String, Vec<Node>> =
         nodes.iter().fold(BTreeMap::new(), |mut acc, node| {
             let labels = node.labels();
-            let key = labels.get(NODE_POOL_LABEL).unwrap_or(&missing);
-            let nodes = acc.entry(key.clone()).or_insert_with(Vec::new);
+            let key = labels.get(NODE_POOL_LABEL).cloned().unwrap_or_default();
+            let nodes = acc.entry(key).or_insert_with(Vec::new);
             nodes.push(node.clone());
             acc
         });

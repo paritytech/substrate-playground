@@ -2,9 +2,9 @@ extern crate playground;
 
 use clap::Parser;
 use playground::{
-    error::{Error, Result},
+    error::{Error, Result, ResourceError},
     kubernetes::repository::{get_repository, update_repository, update_repository_version_state},
-    types::{RepositoryUpdateConfiguration, RepositoryVersionState},
+    types::{RepositoryUpdateConfiguration, RepositoryVersionState, ResourceType},
     utils::{
         devcontainer::{exec, parse_devcontainer, read_devcontainer},
         git::clone,
@@ -34,7 +34,10 @@ async fn build(repository_id: &str, id: &str, path: &str) -> Result<()> {
     )
     .await?;
 
-    let repository = get_repository(repository_id).await?.unwrap();
+    let repository = match get_repository(repository_id).await? {
+        Some(repository) => repository,
+        None => return Err(Error::Resource(ResourceError::Unknown(ResourceType::Repository, repository_id.to_string()))),
+    };
     clone(path, repository.url)?;
 
     update_repository_version_state(

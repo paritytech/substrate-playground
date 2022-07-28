@@ -10,7 +10,6 @@ use k8s_openapi::api::core::v1::{
 use k8s_openapi::apimachinery::pkg::{api::resource::Quantity, apis::meta::v1::ObjectMeta};
 use kube::{
     api::{Api, PostParams},
-    Resource,
 };
 
 use std::collections::BTreeMap;
@@ -127,7 +126,7 @@ pub async fn get_or_create_volume(
 pub fn create_workspace_pod(
     _conf: &Configuration,
     workspace_id: &str,
-    volume: &PersistentVolumeClaim,
+    _volume: &PersistentVolumeClaim,
 ) -> Result<Pod> {
     let volume_name = "repo".to_string();
     Ok(Pod {
@@ -149,13 +148,9 @@ pub fn create_workspace_pod(
             }],
             termination_grace_period_seconds: Some(1),
             volumes: Some(vec![Volume {
-                name: volume_name,
+                name: volume_name.clone(),
                 persistent_volume_claim: Some(PersistentVolumeClaimVolumeSource {
-                    claim_name: volume
-                        .meta()
-                        .clone()
-                        .name
-                        .ok_or(Error::MissingData("meta#name"))?,
+                    claim_name: volume_name,
                     ..Default::default()
                 }),
                 ..Default::default()

@@ -38,6 +38,8 @@ pub const NODE_POOL_LABEL: &str = "app.playground/pool";
 pub const NODE_POOL_TYPE_LABEL: &str = "app.playground/pool-type";
 pub const INGRESS_NAME: &str = "ingress";
 
+
+
 pub async fn get_host() -> Result<String> {
     let ingress_api: Api<Ingress> = default_namespaced_api()?;
     let ingress = ingress_api
@@ -46,14 +48,14 @@ pub async fn get_host() -> Result<String> {
         .map_err(Error::K8sCommunicationFailure)?;
     Ok(ingress
         .spec
-        .ok_or(Error::MissingData("spec"))?
+        .ok_or_else(|| Error::MissingConstraint("ingress".to_string(), "spec".to_string()))?
         .rules
         .unwrap_or_default()
         .first()
-        .ok_or(Error::MissingData("spec#rules[0]"))?
+        .ok_or_else(|| Error::MissingConstraint("ingress".to_string(), "spec#rules[0]".to_string()))?
         .host
         .as_ref()
-        .ok_or(Error::MissingData("spec#rules[0]#host"))?
+        .ok_or_else(|| Error::MissingConstraint("ingress".to_string(), "spec#rules[0]#host".to_string()))?
         .clone())
 }
 
@@ -214,6 +216,22 @@ pub async fn add_config_map_value(
     value: &str,
 ) -> Result<()> {
     let config_map_api: Api<ConfigMap> = Api::default_namespaced(client.to_owned());
+
+    // Ensure that `data` exists, if `name` itself exists
+    if let Some(config_map) = config_map_api.get_opt(name).await? {
+        if config_map.data.is_none() {
+            let data_patch: Patch<json_patch::Patch> =
+                Patch::Json(json_patch::Patch(vec![PatchOperation::Add(AddOperation {
+                    path: "/data".to_string(),
+                    value: json!(value),
+                })]));
+            config_map_api
+                .patch(name, &PatchParams::default(), &data_patch)
+                .await
+                .map_err(Error::K8sCommunicationFailure)?;
+        }
+    }
+
     let patch: Patch<json_patch::Patch> =
         Patch::Json(json_patch::Patch(vec![PatchOperation::Add(AddOperation {
             path: format!("/data/{}", key),
@@ -343,6 +361,8 @@ pub async fn store_resource_as_config_map<T>(
 where
     T: ?Sized + Serialize,
 {
+    // TODO if data not present, add it
+
     add_config_map_value(
         client,
         config_map_name,
