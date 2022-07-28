@@ -228,7 +228,7 @@ pub async fn add_config_map_value(
             let data_patch: Patch<json_patch::Patch> =
                 Patch::Json(json_patch::Patch(vec![PatchOperation::Add(AddOperation {
                     path: "/data".to_string(),
-                    value: json!(value),
+                    value: json!(""),
                 })]));
             config_map_api
                 .patch(name, &PatchParams::default(), &data_patch)
