@@ -5,7 +5,7 @@ use hyper::{
     http::request::Builder,
     Body, Client,
 };
-use hyper_tls::HttpsConnector;
+use hyper_rustls::{HttpsConnector, HttpsConnectorBuilder};
 use serde::de::DeserializeOwned;
 use serde_json::from_reader;
 
@@ -13,7 +13,12 @@ use crate::error::{Error, Result};
 
 /// Create a new `Client`
 pub fn create_client() -> Client<HttpsConnector<HttpConnector>> {
-    Client::builder().build(HttpsConnector::new())
+    let https_connector = HttpsConnectorBuilder::new()
+        .with_native_roots()
+        .https_or_http()
+        .enable_http1()
+        .build();
+    Client::builder().build(https_connector)
 }
 
 // Send a fresh `Request` created from a `Builder`, sends it and return the object `T` parsed from JSON.
