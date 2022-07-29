@@ -257,6 +257,13 @@ pub async fn list_repository_versions(repository_id: &str) -> Result<Vec<Reposit
 }
 
 pub async fn create_repository_version(repository_id: &str, id: &str) -> Result<()> {
+    let repository = get_repository(repository_id).await?.ok_or_else(|| {
+        Error::Resource(ResourceError::Unknown(
+            ResourceType::Repository,
+            id.to_string(),
+        ))
+    })?;
+
     if get_repository_version(repository_id, id).await?.is_some() {
         return Err(Error::Resource(ResourceError::IdAlreayUsed(
             ResourceType::RepositoryVersion,
@@ -288,7 +295,7 @@ pub async fn create_repository_version(repository_id: &str, id: &str) -> Result<
                 }),
                 ..Default::default()
             }]),
-            restart_policy: Some("OnFailure".to_string()),
+            restart_policy: Some("Never".to_string()),
             // An init container copy the builder command to /workspaces
             init_containers: Some(vec![Container {
                 name: "copy-builder".to_string(),
@@ -296,7 +303,7 @@ pub async fn create_repository_version(repository_id: &str, id: &str) -> Result<
                 command: Some(vec![
                     "sh".to_string(),
                     "-c".to_string(),
-                    "cp /opt/target/release/builder /workspaces/builder".to_string(),
+                    format!("cp /opt/target/release/builder /workspaces/builder && git clone --depth 1 {} /workspaces/.clone", repository.url),
                 ]),
                 volume_mounts: Some(vec![VolumeMount {
                     name: volume_template_name.clone(),

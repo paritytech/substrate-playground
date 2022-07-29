@@ -2,12 +2,11 @@ extern crate playground;
 
 use clap::Parser;
 use playground::{
-    error::{Error, ResourceError, Result},
-    kubernetes::repository::{get_repository, update_repository, update_repository_version_state},
-    types::{RepositoryUpdateConfiguration, RepositoryVersionState, ResourceType},
+    error::{Error, Result},
+    kubernetes::repository::{update_repository, update_repository_version_state},
+    types::{RepositoryUpdateConfiguration, RepositoryVersionState},
     utils::{
         devcontainer::{exec, parse_devcontainer, read_devcontainer},
-        git::clone,
     },
 };
 use std::env;
@@ -20,31 +19,9 @@ struct Args {
 
     #[clap(short, long)]
     id: String,
-
-    /// Number of times to greet
-    #[clap(short, long, default_value_t = String::from(".clone"))]
-    path: String,
 }
 
 async fn build(repository_id: &str, id: &str, path: &str) -> Result<()> {
-    update_repository_version_state(
-        repository_id,
-        id,
-        &RepositoryVersionState::Cloning { progress: 0 },
-    )
-    .await?;
-
-    let repository = match get_repository(repository_id).await? {
-        Some(repository) => repository,
-        None => {
-            return Err(Error::Resource(ResourceError::Unknown(
-                ResourceType::Repository,
-                repository_id.to_string(),
-            )))
-        }
-    };
-    clone(path, repository.url)?;
-
     update_repository_version_state(
         repository_id,
         id,
@@ -121,7 +98,7 @@ async fn main() {
     let args = Args::parse();
     let repository_id = args.repository_id;
     let id = args.id;
-    if let Err(err) = build(&repository_id, &id, &args.path).await {
+    if let Err(err) = build(&repository_id, &id, "/workspaces/.clone").await {
         // Build failed, update the version accordingly
         if let Err(err) = update_repository_version_state(
             &repository_id,
