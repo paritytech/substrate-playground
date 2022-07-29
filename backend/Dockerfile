@@ -9,7 +9,7 @@ WORKDIR /opt
 COPY . .
 
 ENV DEBIAN_FRONTEND=noninteractive
-RUN apt update && apt upgrade -y && apt install -y musl-tools
+RUN apt update && apt upgrade -y && apt install -y musl-tools git
 RUN rustup target add x86_64-unknown-linux-musl && RUST_BACKTRACE=1 cargo build --release --target x86_64-unknown-linux-musl --out-dir /opt/target/release -Z unstable-options
 
 ENV PATH=$PATH:/opt/target/release\
