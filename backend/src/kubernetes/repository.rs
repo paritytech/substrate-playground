@@ -112,7 +112,7 @@ fn volume_template(
     );
 
     let mut requests = BTreeMap::new();
-    requests.insert("storage".to_string(), Quantity("5Gi".to_string()));
+    requests.insert("storage".to_string(), Quantity("15Gi".to_string()));
 
     PersistentVolumeClaim {
         metadata: ObjectMeta {
