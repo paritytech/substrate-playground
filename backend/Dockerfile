@@ -1,9 +1,6 @@
-# The server Dockerfile.
-#
-# A multi-stage docker image (https://docs.docker.com/develop/develop-images/multistage-build/)
-# Based on https://github.com/bjornmolin/rust-minimal-docker
+# The backend Dockerfile.
 
-FROM rust:1.31
+FROM rust:1.62-slim
 
 ARG GITHUB_SHA
 
@@ -11,7 +8,9 @@ WORKDIR /opt
 
 COPY . .
 
-RUN cargo build --release
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt update && apt upgrade -y && apt install -y musl-tools
+RUN rustup target add x86_64-unknown-linux-musl && RUST_BACKTRACE=1 cargo build --release --target x86_64-unknown-linux-musl --out-dir /opt/target/release -Z unstable-options
 
 ENV PATH=$PATH:/opt/target/release\
     SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt\
