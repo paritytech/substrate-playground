@@ -33,7 +33,7 @@ async function waitForRepositoryVersionCreation(client: Client, repositoryId: st
                 return;
             } else if (type == "Failed") {
                 clearInterval(id);
-                reject(result.state.message);
+                reject({type: "Failure", data: result.state.message});
                 return;
             } else if (type == "Init") {
                 console.log("Init");
