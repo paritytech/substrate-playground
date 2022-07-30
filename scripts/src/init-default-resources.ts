@@ -22,9 +22,7 @@ if (env == EnvironmentType.dev) {
 // Connect via Client, create others Role, feed repository
 
 async function waitForRepositoryVersionCreation(client: Client, repositoryId: string, repositoryVersionId: string) {
-    const timeout = 60 * 60 * 1000;
     const interval = 5000;
-    const startTime = Date.now();
     return new Promise<void>((resolve, reject) => {
         const id = setInterval(async () => {
             const result = await client.getRepositoryVersion(repositoryId, repositoryVersionId);
@@ -43,9 +41,6 @@ async function waitForRepositoryVersionCreation(client: Client, repositoryId: st
                 console.log(`Cloning: progress=${result.state.progress}`);
             } else if (type == "Building") {
                 console.log(`Building: progress=${result.state.progress}`);
-            } else if ((Date.now() - startTime) > timeout) {
-                clearInterval(id);
-                reject(`RepositoryVersion not created after ${timeout} ms`);
             } else {
                 console.log(`Unknown state: ${result.state}`);
             }
