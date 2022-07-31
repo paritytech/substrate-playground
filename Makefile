@@ -73,15 +73,6 @@ help:
 	@echo "Build and publish playground components"
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n \033[36m\033[0m\n"} /^[0-9a-zA-Z_-]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
 
-clean-frontend:
-	cd frontend; yarn clean
-
-clean-backend:
-	cd backend; cargo clean
-
-clean: clean-frontend clean-backend ## Clean all generated files
-	@:
-
 ##@ Docker images
 
 build-template-base:
@@ -92,29 +83,6 @@ build-template-base:
 push-template-base: build-template-base ## Push a newly built image on docker.io
 	docker push ${TEMPLATE_BASE}:sha-${DOCKER_IMAGE_VERSION}
 
-build-openvscode-template:
-	@if test "$(TEMPLATE)" = "" ; then \
-		echo "Environment variable TEMPLATE not set"; \
-		exit 1; \
-	fi
-	$(eval BASE_TEMPLATE_VERSION=$(shell grep BASE_TEMPLATE_VERSION conf/templates/.env | cut -d '=' -f2))
-	$(eval REPOSITORY=$(shell cat conf/templates/${TEMPLATE} | yq -r .repository))
-	$(eval REF=$(shell cat conf/templates/${TEMPLATE} | yq -r .ref))
-	$(eval REPOSITORY_CLONE=.clone)
-	@mkdir -p templates/${REPOSITORY_CLONE}; cd templates/${REPOSITORY_CLONE}; git init; git remote add origin https://github.com/${REPOSITORY}.git; git fetch --all \
-    && git checkout ${REF} \
-    $(eval REV = $(shell git rev-parse --short HEAD))
-
-	$(eval TAG=paritytech/substrate-playground-template-${TEMPLATE}:sha-${REV})
-	$(eval TAG_OPENVSCODE=paritytech/substrate-playground-template-${TEMPLATE}-openvscode:sha-${REV})
-	@cd templates; docker buildx build --load --force-rm --build-arg BASE_TEMPLATE_VERSION=${BASE_TEMPLATE_VERSION} -t ${TAG} -f Dockerfile.template ${REPOSITORY_CLONE} \
-	&& docker buildx build --load --force-rm --build-arg TEMPLATE_IMAGE=${TAG} -t ${TAG_OPENVSCODE} -f Dockerfile.openvscode-template .
-	@rm -rf templates/${REPOSITORY_CLONE}
-
-push-template: build-openvscode-template
-	docker push ${TAG}
-	docker push ${TAG_OPENVSCODE}
-
 build-backend-docker-images: ## Build backend docker images
 	$(eval PLAYGROUND_DOCKER_IMAGE_VERSION=$(shell git rev-parse --short HEAD))
 	@cd frontend; docker buildx build --load -f Dockerfile --build-arg GITHUB_SHA="${PLAYGROUND_DOCKER_IMAGE_VERSION}" --label org.opencontainers.image.version=${PLAYGROUND_DOCKER_IMAGE_VERSION} -t ${PLAYGROUND_BACKEND_UI_DOCKER_IMAGE_NAME}:sha-${PLAYGROUND_DOCKER_IMAGE_VERSION} .
@@ -124,10 +92,10 @@ push-backend-docker-images: build-backend-docker-images ## Push newly built back
 	docker push ${PLAYGROUND_BACKEND_API_DOCKER_IMAGE_NAME}:sha-${PLAYGROUND_DOCKER_IMAGE_VERSION}
 	docker push ${PLAYGROUND_BACKEND_UI_DOCKER_IMAGE_NAME}:sha-${PLAYGROUND_DOCKER_IMAGE_VERSION}
 
+##@ Kubernetes deployment
+
 requires-env:
 	@echo "You are about to interact with the ${COLOR_GREEN}${ENV}${COLOR_RESET} environment. (Modify the environment by setting the ${COLOR_BOLD}'ENV'${COLOR_RESET} variable)"
-
-##@ Kubernetes deployment
 
 requires-k8s: requires-env
 	$(eval CURRENT_CONTEXT=$(shell kubectl config current-context))
