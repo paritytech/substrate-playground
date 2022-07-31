@@ -1,5 +1,5 @@
 
-import { Client, playgroundBaseURL, environmentTypeFromString, mainSessionId, EnvironmentType } from '@substrate/playground-client';
+import { Client, playgroundBaseURL, environmentTypeFromString, mainSessionId, EnvironmentType, RepositoryVersion } from '@substrate/playground-client';
 import 'cross-fetch/dist/node-polyfill.js'; // TODO remove once moving to Node18 (https://github.com/nodejs/node/pull/41749)
 
 const accessToken = process.env.ACCESS_TOKEN;
@@ -21,20 +21,18 @@ if (env == EnvironmentType.dev) {
 
 // Connect via Client, create others Role, feed repository
 
-async function waitForRepositoryVersionCreation(client: Client, repositoryId: string, repositoryVersionId: string) {
+async function waitForRepositoryVersionCreation(client: Client, repositoryId: string, repositoryVersionId: string): Promise<RepositoryVersion> {
     const interval = 5000;
-    return new Promise<void>((resolve, reject) => {
+    return new Promise<RepositoryVersion>((resolve, reject) => {
         const id = setInterval(async () => {
             const result = await client.getRepositoryVersion(repositoryId, repositoryVersionId);
             const type = result?.state.type;
             if (type == "Ready") {
                 clearInterval(id);
-                resolve();
-                return;
+                resolve(result);
             } else if (type == "Failed") {
                 clearInterval(id);
                 reject({type: "Failure", data: result.state.message});
-                return;
             } else if (type == "Init") {
                 console.log("Init");
             } else if (type == "Cloning") {
