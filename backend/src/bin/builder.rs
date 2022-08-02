@@ -98,7 +98,12 @@ async fn main() {
             )
             .await
             {
-                log::error!("Failed to set current version for {}/{}: {}", repository_id, id, err);
+                log::error!(
+                    "Failed to set current version for {}/{}: {}",
+                    repository_id,
+                    id,
+                    err
+                );
             }
         } else {
             log::info!("Succesfully built {}/{}", repository_id, id);
