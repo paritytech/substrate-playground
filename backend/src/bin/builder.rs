@@ -85,6 +85,8 @@ async fn main() {
     let args: Vec<String> = env::args().collect();
     if let (Some(repository_id), Some(id), Some(path)) = (args.get(0), args.get(1), args.get(2)) {
         if let Err(err) = build(repository_id, id, path).await {
+            log::error!("Error during build for {}/{}: {}", repository_id, id, err);
+
             // Build failed, update the version accordingly
             if let Err(err) = update_repository_version_state(
                 repository_id,
@@ -95,8 +97,10 @@ async fn main() {
             )
             .await
             {
-                log::error!("Failed to set current version: {}", err);
+                log::error!("Failed to set current version for {}/{}: {}", repository_id, id, err);
             }
+        } else {
+            log::info!("Succesfully built {}/{}", repository_id, id);
         }
     } else {
         log::error!("Incorrect args, must be <bin> ID REPOSITORY_ID PATH");
