@@ -21,7 +21,7 @@ async fn build(repository_id: &str, id: &str, path: &str) -> Result<()> {
 
     // Trigger eventual build based on Configuration
     if let Some(on_create_command) = conf.on_create_command {
-        log::debug!("Executing {}", on_create_command);
+        log::info!("Executing {}", on_create_command);
 
         update_repository_version_state(
             repository_id,
@@ -84,6 +84,7 @@ async fn main() {
 
     let args: Vec<String> = env::args().collect();
     if let (Some(repository_id), Some(id), Some(path)) = (args.get(1), args.get(2), args.get(3)) {
+        log::info!("About to build {}/{} in {}", repository_id, id, path);
         if let Err(err) = build(repository_id, id, path).await {
             log::error!("Error during build for {}/{}: {}", repository_id, id, err);
 
