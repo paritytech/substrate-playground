@@ -12,7 +12,7 @@
     "clean": "rm -rf node_modules/ dist/ .cache/ .docusaurus/ build/ yarn.lock"
   },
   "dependencies": {
-    "@docusaurus/core": "2.0.0-rc.1",
+    "@docusaurus/core": "2.0.1",
     "@docusaurus/preset-classic": "2.0.1",
     "clsx": "1.2.1",
     "mermaid": "9.1.3",
