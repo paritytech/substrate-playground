@@ -83,7 +83,7 @@ async fn main() {
     env_logger::init();
 
     let args: Vec<String> = env::args().collect();
-    if let (Some(repository_id), Some(id), Some(path)) = (args.get(0), args.get(1), args.get(2)) {
+    if let (Some(repository_id), Some(id), Some(path)) = (args.get(1), args.get(2), args.get(3)) {
         if let Err(err) = build(repository_id, id, path).await {
             log::error!("Error during build for {}/{}: {}", repository_id, id, err);
 
