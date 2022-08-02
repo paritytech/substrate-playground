@@ -305,7 +305,10 @@ pub async fn create_repository_version(repository_id: &str, id: &str) -> Result<
                 command: Some(vec![
                     "sh".to_string(),
                     "-c".to_string(),
-                    format!("cp /opt/target/release/builder {}/builder && git clone --depth 1 {} {}", folder, repository.url, path),
+                    format!(
+                        "cp /opt/target/release/builder {}/builder && git clone --depth 1 {} {}",
+                        folder, repository.url, path
+                    ),
                 ]),
                 // TODO aloso install vscode conf
                 // And optional user .dotfile
@@ -323,7 +326,7 @@ pub async fn create_repository_version(repository_id: &str, id: &str) -> Result<
                 args: Some(vec![
                     repository_id.to_string(),
                     id.to_string(),
-                    path.to_string()
+                    path.to_string(),
                 ]),
                 volume_mounts: Some(vec![VolumeMount {
                     name: volume_template_name,
