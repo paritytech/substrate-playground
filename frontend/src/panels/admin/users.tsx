@@ -108,9 +108,9 @@ function UserUpdateDialog({ client, user, show, onUpdate, onHide }: { client: Cl
                         autoFocus
                         >
                     {pools &&
-                    Object.keys(pools).map(id => (
-                        <MenuItem key={id} value={id}>
-                        {id}
+                     pools.map(pool => (
+                        <MenuItem key={pool.id} value={pool.id}>
+                        {pool.id}
                         </MenuItem>))
                     }
                     </TextField>
