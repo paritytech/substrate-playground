@@ -279,6 +279,8 @@ pub async fn create_repository_version(repository_id: &str, id: &str) -> Result<
     let _volume =
         create_volume_template(&volume_api, &volume_template_name, repository_id, id).await?;
 
+    let folder = "/workspaces";
+    let path = format!("{}/.clone", folder);
     //let job_api: Api<Job> = Api::default_namespaced(client.clone());
     let pod = Pod {
         metadata: ObjectMeta {
@@ -296,18 +298,20 @@ pub async fn create_repository_version(repository_id: &str, id: &str) -> Result<
                 ..Default::default()
             }]),
             restart_policy: Some("Never".to_string()),
-            // An init container copy the builder command to /workspaces
+            // An init container copy the builder command to `folder`
             init_containers: Some(vec![Container {
                 name: "copy-builder".to_string(),
                 image: Some(docker_image_name(&backend_pod().await?)?),
                 command: Some(vec![
                     "sh".to_string(),
                     "-c".to_string(),
-                    format!("cp /opt/target/release/builder /workspaces/builder && git clone --depth 1 {} /workspaces/.clone", repository.url),
+                    format!("cp /opt/target/release/builder {}/builder && git clone --depth 1 {} {}", folder, repository.url, path),
                 ]),
+                // TODO aloso install vscode conf
+                // And optional user .dotfile
                 volume_mounts: Some(vec![VolumeMount {
                     name: volume_template_name.clone(),
-                    mount_path: "/workspaces".to_string(),
+                    mount_path: folder.to_string(),
                     ..Default::default()
                 }]),
                 ..Default::default()
@@ -315,16 +319,15 @@ pub async fn create_repository_version(repository_id: &str, id: &str) -> Result<
             containers: vec![Container {
                 name: "builder".to_string(),
                 image: Some("paritytech/ci-linux:staging".to_string()), // TODO fetch devcontainer from repo, https://docs.github.com/en/rest/repos/contents
-                command: Some(vec!["/workspaces/builder".to_string()]),
+                command: Some(vec![format!("{}/builder", folder)]),
                 args: Some(vec![
-                    "-r".to_string(),
                     repository_id.to_string(),
-                    "-i".to_string(),
                     id.to_string(),
+                    path.to_string()
                 ]),
                 volume_mounts: Some(vec![VolumeMount {
                     name: volume_template_name,
-                    mount_path: "/workspaces".to_string(),
+                    mount_path: folder.to_string(),
                     ..Default::default()
                 }]),
                 ..Default::default()

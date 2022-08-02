@@ -1,6 +1,5 @@
 extern crate playground;
 
-use clap::Parser;
 use playground::{
     error::{Error, Result},
     kubernetes::repository::{update_repository, update_repository_version_state},
@@ -8,16 +7,6 @@ use playground::{
     utils::devcontainer::{exec, parse_devcontainer, read_devcontainer},
 };
 use std::env;
-
-#[derive(Parser, Debug)]
-#[clap(about, version, author)]
-struct Args {
-    #[clap(short, long)]
-    repository_id: String,
-
-    #[clap(short, long)]
-    id: String,
-}
 
 async fn build(repository_id: &str, id: &str, path: &str) -> Result<()> {
     update_repository_version_state(
@@ -93,21 +82,23 @@ async fn main() {
     }
     env_logger::init();
 
-    let args = Args::parse();
-    let repository_id = args.repository_id;
-    let id = args.id;
-    if let Err(err) = build(&repository_id, &id, "/workspaces/.clone").await {
-        // Build failed, update the version accordingly
-        if let Err(err) = update_repository_version_state(
-            &repository_id,
-            &id,
-            &RepositoryVersionState::Failed {
-                message: err.to_string(),
-            },
-        )
-        .await
-        {
-            log::error!("Failed to set current version: {}", err);
+    let args: Vec<String> = env::args().collect();
+    if let (Some(repository_id), Some(id), Some(path)) = (args.get(0), args.get(1), args.get(2)) {
+        if let Err(err) = build(repository_id, id, "/workspaces/.clone").await {
+            // Build failed, update the version accordingly
+            if let Err(err) = update_repository_version_state(
+                repository_id,
+                id,
+                &RepositoryVersionState::Failed {
+                    message: err.to_string(),
+                },
+            )
+            .await
+            {
+                log::error!("Failed to set current version: {}", err);
+            }
         }
+    } else {
+        log::error!("Incorrect args, must be <bin> ID REPOSITORY_ID PATH");
     }
 }
