@@ -84,7 +84,7 @@ async fn main() {
 
     let args: Vec<String> = env::args().collect();
     if let (Some(repository_id), Some(id), Some(path)) = (args.get(0), args.get(1), args.get(2)) {
-        if let Err(err) = build(repository_id, id, "/workspaces/.clone").await {
+        if let Err(err) = build(repository_id, id, path).await {
             // Build failed, update the version accordingly
             if let Err(err) = update_repository_version_state(
                 repository_id,
