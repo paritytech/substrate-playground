@@ -243,7 +243,7 @@ export function Repositories({ client, user }: { client: Client, user: User }): 
                         try {
                             await client.createRepository(id, conf);
                         } catch (e: any) {
-                            setErrorMessage(`Error during Repository creation: ${e.message}`);
+                            setErrorMessage(`Error during Repository creation: : ${JSON.stringify(e.data)}`);
                         }
                     }}
                     onHide={() => setShowCreationDialog(false)} />}
@@ -256,7 +256,7 @@ export function Repositories({ client, user }: { client: Client, user: User }): 
                         try {
                             await client.updateRepository(id, conf);
                         } catch (e: any) {
-                            setErrorMessage(`Error during creation: ${e.message}`);
+                            setErrorMessage(`Error during creation: : ${JSON.stringify(e.data)}`);
                         }
                     }}
                     onHide={() => setShowSetVersionDialog(false)} />}

@@ -1,9 +1,9 @@
 import React, { Dispatch, SetStateAction, useState } from "react";
 import Button from '@mui/material/Button';
-import ButtonGroup from '@mui/material/ButtonGroup';
 import Checkbox from '@mui/material/Checkbox';
 import Container from '@mui/material/Container';
 import Dialog from '@mui/material/Dialog';
+import DialogActions from "@mui/material/DialogActions";
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
 import MenuItem from '@mui/material/MenuItem';
@@ -19,7 +19,8 @@ import { Client, Configuration, Pool, ResourceType, User, UserConfiguration, Use
 import { ErrorSnackbar } from '../../components';
 import { useInterval } from '../../hooks';
 import { useStyles, EnhancedTableToolbar, Resources } from '.';
-import { find } from "../../utils";
+import { find, remove } from "../../utils";
+
 
 const defaultRole = 'user';
 
@@ -72,10 +73,10 @@ function UserCreationDialog({ client, conf, users, show, onCreate, onHide }: { c
                         required
                         label="Role"
                         />
-                    <ButtonGroup style={{alignSelf: "flex-end", marginTop: 20}} size="small">
+                    <DialogActions>
                         <Button disabled={!id || find(users, id) != null || !poolAffinity} onClick={() => {onCreate(id, {role: role, preferences: {poolAffinity: poolAffinity}}); onHide();}}>CREATE</Button>
                         <Button onClick={onHide}>CLOSE</Button>
-                    </ButtonGroup>
+                    </DialogActions>
                 </Container>
             </DialogContent>
         </Dialog>
@@ -121,10 +122,10 @@ function UserUpdateDialog({ client, user, show, onUpdate, onHide }: { client: Cl
                         required
                         label="Role"
                         />
-                    <ButtonGroup style={{alignSelf: "flex-end", marginTop: 20}} size="small">
+                    <DialogActions>
                         <Button disabled={ poolAffinity == user.preferences["poolAffinity"] && role == user.role } onClick={() => {onUpdate(user.id, {role: role, preferences: {poolAffinity: poolAffinity}}); onHide();}}>UPDATE</Button>
                         <Button onClick={onHide}>CLOSE</Button>
-                    </ButtonGroup>
+                    </DialogActions>
                 </Container>
             </DialogContent>
         </Dialog>
@@ -149,18 +150,16 @@ export function Users({ client, user, conf }: { client: Client, user: User, conf
     async function onCreate(id: string, conf: UserConfiguration, setUsers: Dispatch<SetStateAction<User[] | null>>): Promise<void> {
         try {
             await client.createUser(id, conf);
-        } catch (e) {
-            console.error(e);
-            setErrorMessage("Failed to create user");
+        } catch (e: any) {
+            setErrorMessage(`Failed to create user: ${JSON.stringify(e.data)}`);
         }
     }
 
     async function onUpdate(id: string, conf: UserUpdateConfiguration, setUsers: Dispatch<SetStateAction<User[] | null>>): Promise<void> {
         try {
             await client.updateUser(id, conf);
-        } catch (e) {
-            console.error(e);
-            setErrorMessage("Failed to update user");
+        } catch (e: any) {
+            setErrorMessage(`Failed to update user: ${JSON.stringify(e.data)}`);
         }
     }
 
@@ -169,9 +168,14 @@ export function Users({ client, user, conf }: { client: Client, user: User, conf
             try {
                 await client.deleteUser(selected.id);
                 setSelected(null);
-            } catch (e) {
-                console.error(e);
-                setErrorMessage("Failed to delete user");
+                setUsers((users: User[] | null) => {
+                    if (users) {
+                        return remove(users, user.id);
+                    }
+                    return users;
+                });
+            } catch (e: any) {
+                setErrorMessage(`Failed to delete user: ${JSON.stringify(e.data)}`);
             }
         } else {
             setErrorMessage("Can't delete currently logged user");

@@ -205,7 +205,7 @@ export function Sessions({ client, conf, user }: { client: Client, conf: Configu
                 return sessions;
             });
         } catch (e: any) {
-            setErrorMessage(`Failed to create session: ${e.toString()}`);
+            setErrorMessage(`Failed to create session: ${JSON.stringify(e.data)}`);
         }
     }
 
@@ -238,9 +238,8 @@ export function Sessions({ client, conf, user }: { client: Client, conf: Configu
                     return sessions;
                 });
                 setSelected(null);
-            } catch (e) {
-                console.error(e);
-                setErrorMessage("Failed to delete session");
+            } catch (e: any) {
+                setErrorMessage(`Failed to delete session: ${JSON.stringify(e.data)}`);
             }
         } else {
             // Can't happen
