@@ -1,20 +1,22 @@
 import React, { Dispatch, SetStateAction, useEffect, useState } from "react";
 import Button from '@mui/material/Button';
-import ButtonGroup from "@mui/material/ButtonGroup";
 import Container from "@mui/material/Container";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
 import MenuItem from '@mui/material/MenuItem';
 import Paper from '@mui/material/Paper';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import TableContainer from '@mui/material/TableContainer';
+import TableFooter from '@mui/material/TableFooter';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import { Client, Configuration, Session, SessionConfiguration, Pool, User, SessionUpdateConfiguration, Repository, ResourceType, RepositoryVersion, mainSessionId, SessionState } from '@substrate/playground-client';
-import { Checkbox, Dialog, DialogContent, DialogTitle, IconButton, Link, TableFooter, TablePagination, TextField } from "@mui/material";
-import { FirstPage, KeyboardArrowLeft, KeyboardArrowRight, LastPage } from "@mui/icons-material";
+import { Checkbox, Link, TablePagination, TextField } from "@mui/material";
 import { EnhancedTableToolbar, NoResourcesContainer, Resources } from ".";
-import { useTheme } from "@mui/styles";
 import { ErrorSnackbar } from "../../components";
 import { useInterval } from "../../hooks";
 import { canCustomizeSessionDuration, canCustomizeSessionPoolAffinity, find, formatDuration, remove } from "../../utils";
@@ -109,10 +111,10 @@ export function SessionCreationDialog({ client, conf, user, repository, reposito
                         type="number"
                         label="Duration"
                         />}
-                    <ButtonGroup style={{alignSelf: "flex-end", marginTop: 20}} size="small">
+                    <DialogActions>
                         <Button disabled={selection == null} onClick={onCreateClick}>CREATE</Button>
                         <Button onClick={onHide}>CLOSE</Button>
-                    </ButtonGroup>
+                    </DialogActions>
                 </Container>
             </DialogContent>
         </Dialog>
@@ -144,74 +146,15 @@ function SessionUpdateDialog({ session, duration, show, onUpdate, onHide }: { se
                         label="Duration"
                         autoFocus
                         />
-                    <ButtonGroup style={{alignSelf: "flex-end", marginTop: 20}} size="small">
+                    <DialogActions>
                         <Button disabled={ newDuration <= 0 || duration == newDuration} onClick={() => {onUpdate(session, {duration: newDuration}); onHide();}}>UPDATE</Button>
                         <Button onClick={onHide}>CLOSE</Button>
-                    </ButtonGroup>
+                    </DialogActions>
                 </Container>
             </DialogContent>
         </Dialog>
     );
 }
-interface TablePaginationActionsProps {
-    count: number;
-    page: number;
-    rowsPerPage: number;
-    onPageChange: (
-      event: React.MouseEvent<HTMLButtonElement>,
-      newPage: number,
-    ) => void;
-  }
-
-  function TablePaginationActions(props: TablePaginationActionsProps) {
-    const theme = useTheme();
-    const { count, page, rowsPerPage, onPageChange } = props;
-
-    const handleFirstPageButtonClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-        onPageChange(event, 0);
-    };
-
-    const handleBackButtonClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-        onPageChange(event, page - 1);
-    };
-
-    const handleNextButtonClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-        onPageChange(event, page + 1);
-    };
-
-    const handleLastPageButtonClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-        onPageChange(event, Math.max(0, Math.ceil(count / rowsPerPage) - 1));
-    };
-
-    return (
-      <div>
-        <IconButton
-          onClick={handleFirstPageButtonClick}
-          disabled={page === 0}
-          aria-label="first page"
-        >
-          {theme.direction === 'rtl' ? <LastPage /> : <FirstPage />}
-        </IconButton>
-        <IconButton onClick={handleBackButtonClick} disabled={page === 0} aria-label="previous page">
-          {theme.direction === 'rtl' ? <KeyboardArrowRight /> : <KeyboardArrowLeft />}
-        </IconButton>
-        <IconButton
-          onClick={handleNextButtonClick}
-          disabled={page >= Math.ceil(count / rowsPerPage) - 1}
-          aria-label="next page"
-        >
-          {theme.direction === 'rtl' ? <KeyboardArrowLeft /> : <KeyboardArrowRight />}
-        </IconButton>
-        <IconButton
-          onClick={handleLastPageButtonClick}
-          disabled={page >= Math.ceil(count / rowsPerPage) - 1}
-          aria-label="last page"
-        >
-          {theme.direction === 'rtl' ? <FirstPage /> : <LastPage />}
-        </IconButton>
-      </div>
-    );
-  }
 
 function SessionStateElement({ state }: { state: SessionState }): JSX.Element {
     switch (state.type) {
@@ -279,7 +222,7 @@ export function Sessions({ client, conf, user }: { client: Client, conf: Configu
                 return sessions;
             });
         } catch (e: any) {
-            setErrorMessage(`Failed to update session: ${e.toString()}`);
+            setErrorMessage(`Failed to update session: ${JSON.stringify(e.data)}`);
         }
     }
 
@@ -330,7 +273,7 @@ export function Sessions({ client, conf, user }: { client: Client, conf: Configu
                         <>
                             <EnhancedTableToolbar client={client} user={user} label="Sessions" selected={selected?.id} onCreate={() => setShowCreationDialog(true)} onUpdate={() => setShowUpdateDialog(true)} onDelete={() => deleteSession(setSessions, selected?.userId, selected?.id)} resourceType={ResourceType.Session} />
                             <TableContainer component={Paper}>
-                                <Table aria-label="simple table">
+                                <Table stickyHeader aria-label="sessions table">
                                     <TableHead>
                                         <TableRow>
                                             <TableCell></TableCell>
@@ -368,26 +311,17 @@ export function Sessions({ client, conf, user }: { client: Client, conf: Configu
                                             </TableRow>
                                         )})}
                                     </TableBody>
-                                    <TableFooter>
-                                        <TableRow>
-                                            <TablePagination
-                                                rowsPerPageOptions={[5, 10, 25, { label: 'All', value: -1 }]}
-                                                colSpan={3}
-                                                count={Object.entries(resources).length}
-                                                rowsPerPage={rowsPerPage}
-                                                page={page}
-                                                SelectProps={{
-                                                    inputProps: { 'aria-label': 'rows per page' },
-                                                    native: true,
-                                                }}
-                                                onPageChange={handleChangePage}
-                                                onRowsPerPageChange={handleChangeRowsPerPage}
-                                                ActionsComponent={TablePaginationActions}
-                                                />
-                                        </TableRow>
-                                    </TableFooter>
                                 </Table>
                             </TableContainer>
+                            <TablePagination
+                                style={{width: "100%", float: "left"}}
+                                rowsPerPageOptions={[10, 25, { label: 'All', value: -1 }]}
+                                count={resources.length}
+                                rowsPerPage={rowsPerPage}
+                                page={page}
+                                onPageChange={handleChangePage}
+                                onRowsPerPageChange={handleChangeRowsPerPage}
+                                />
                         </>
                         : <NoResourcesContainer client={client} user={user} label="No sessions" action={() => setShowCreationDialog(true)} resourceType={ResourceType.Session} />}
                         {errorMessage &&
