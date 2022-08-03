@@ -48,13 +48,6 @@ export function SessionCreationDialog({ client, conf, user, repository, reposito
     };
     const handlePoolAffinityChange = (event: React.ChangeEvent<HTMLInputElement>) => setPoolAffinity(event.target.value);
 
-    function valid(): boolean {
-        if (!selection) {
-            return false;
-        }
-        return true;
-    }
-
     function onCreateClick() {
         const repositoryWithVersion = selection && repositories?.at(selection);
         if (repositoryWithVersion) {
@@ -117,7 +110,7 @@ export function SessionCreationDialog({ client, conf, user, repository, reposito
                         label="Duration"
                         />}
                     <ButtonGroup style={{alignSelf: "flex-end", marginTop: 20}} size="small">
-                        <Button disabled={!valid()} onClick={onCreateClick}>CREATE</Button>
+                        <Button disabled={selection == null} onClick={onCreateClick}>CREATE</Button>
                         <Button onClick={onHide}>CLOSE</Button>
                     </ButtonGroup>
                 </Container>
@@ -237,7 +230,7 @@ export function Sessions({ client, conf, user }: { client: Client, conf: Configu
     const [showUpdateDialog, setShowUpdateDialog] = useState(false);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [repositories, setRepositories] = useState<[Repository, RepositoryVersion][]>();
-    const isSelected = (name: string) => selected?.id == name;
+    const isSelected = (id: string) => selected?.id == id;
     const handleClick = (session: Session) => {
         if (isSelected(session.id)) {
             setSelected(null);
@@ -329,8 +322,7 @@ export function Sessions({ client, conf, user }: { client: Client, conf: Configu
     return (
         <Resources<Session> callback={async () => await client.listAllSessions()}>
             {(resources: Session[], setSessions: Dispatch<SetStateAction<Session[] | null>>) => {
-                const allResources = Object.entries(resources);
-                const filteredResources = rowsPerPage > 0 ? allResources.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage) : allResources;
+                const filteredResources = rowsPerPage > 0 ? resources.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage) : resources;
                 return (
                     <>
                         {filteredResources.length > 0
@@ -349,12 +341,12 @@ export function Sessions({ client, conf, user }: { client: Client, conf: Configu
                                         </TableRow>
                                     </TableHead>
                                     <TableBody>
-                                    {filteredResources.map(([id, session]: [id: string, session: Session], index: number) => {
-                                        const isItemSelected = isSelected(id);
+                                    {filteredResources.map((session: Session, index: number) => {
+                                        const isItemSelected = isSelected(session.id);
                                         const labelId = `enhanced-table-checkbox-${index}`;
                                         return (
                                             <TableRow
-                                                key={id}
+                                                key={session.id}
                                                 hover
                                                 onClick={() => handleClick(session)}
                                                 role="checkbox"
