@@ -18,7 +18,6 @@ use kube::{
     api::{Api, PostParams},
     ResourceExt,
 };
-use serde_json::json;
 use std::collections::BTreeMap;
 
 const RESOURCE_ID: &str = "RESOURCE_ID";
@@ -129,7 +128,7 @@ pub async fn update_user(id: &str, conf: UserUpdateConfiguration) -> Result<()> 
 
     let namespace_api: Api<Namespace> = Api::namespaced(client.clone(), &user_namespace(id));
     if conf.role != user.role {
-        update_annotation_value(&namespace_api, &user.id, ROLE_ANNOTATION, json!(conf.role))
+        update_annotation_value(&namespace_api, &user.id, ROLE_ANNOTATION, conf.role.into())
             .await?;
     }
     if conf.preferences != user.preferences {
@@ -137,7 +136,7 @@ pub async fn update_user(id: &str, conf: UserUpdateConfiguration) -> Result<()> 
             &namespace_api,
             &user.id,
             PREFERENCES_ANNOTATION,
-            json!(serialize_json(&conf.preferences)?),
+            serialize_json(&conf.preferences)?.into(),
         )
         .await?;
     }

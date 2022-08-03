@@ -24,7 +24,6 @@ use k8s_openapi::apimachinery::pkg::{
     util::intstr::IntOrString,
 };
 use kube::api::{Api, AttachParams, AttachedProcess, DeleteParams, PostParams, ResourceExt};
-use serde_json::json;
 use std::{
     collections::BTreeMap,
     time::{Duration, SystemTime},
@@ -528,6 +527,25 @@ pub async fn create_session(
         })
         .collect();
 
+    // Deploy the associated service
+    let service_api: Api<Service> = Api::namespaced(client.clone(), &user_namespace(user_id));
+    let service_name = service_name(id);
+    let service = service(id, &service_name, ports);
+    service_api
+        .create(&PostParams::default(), &service)
+        .await
+        .map_err(Error::K8sCommunicationFailure)?;
+
+    // Deploy the ingress local service
+    let service_local_api: Api<Service> = Api::default_namespaced(client.clone());
+    service_local_api
+        .create(
+            &PostParams::default(),
+            &external_service(&local_service_name(id), &service_name, id),
+        )
+        .await
+        .map_err(Error::K8sCommunicationFailure)?;
+
     // TODO clone per user
     let volume_name = volume_template_name(repository_id, repository_version_id);
     // Deploy a new pod for this image
@@ -544,25 +562,6 @@ pub async fn create_session(
                 &pool_id,
                 envs,
             ),
-        )
-        .await
-        .map_err(Error::K8sCommunicationFailure)?;
-
-    // Deploy the associated service
-    let service_api: Api<Service> = Api::namespaced(client.clone(), &user_namespace(user_id));
-    let service_name = service_name(id);
-    let service = service(id, &service_name, ports);
-    service_api
-        .create(&PostParams::default(), &service)
-        .await
-        .map_err(Error::K8sCommunicationFailure)?;
-
-    // Deploy the ingress local service
-    let service_local_api: Api<Service> = Api::default_namespaced(client.clone());
-    service_local_api
-        .create(
-            &PostParams::default(),
-            &external_service(&local_service_name(id), &service_name, id),
         )
         .await
         .map_err(Error::K8sCommunicationFailure)?;
@@ -607,7 +606,7 @@ pub async fn update_session(
             &pod_api,
             id,
             SESSION_DURATION_ANNOTATION,
-            json!(duration_to_string(duration)),
+            duration_to_string(duration).into(),
         )
         .await?
     }

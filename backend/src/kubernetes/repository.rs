@@ -159,12 +159,11 @@ pub async fn update_repository_version_state(
     let client = client()?;
     let persistent_volume_api: Api<PersistentVolumeClaim> = Api::default_namespaced(client.clone());
     let volume_template_name = volume_template_name(repository_id, repository_version_id);
-    let state = serialize_json(repository_version_state)?;
     update_annotation_value(
         &persistent_volume_api,
         &volume_template_name,
         REPOSITORY_VERSION_STATE_ANNOTATION,
-        json!(state),
+        serialize_json(repository_version_state)?.into(),
     )
     .await
 }
