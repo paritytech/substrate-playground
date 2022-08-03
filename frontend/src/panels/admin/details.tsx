@@ -13,7 +13,7 @@ import { useStyles } from '.';
 
 export function Details({ conf }: { conf: Configuration }): JSX.Element {
     const classes = useStyles();
-    const { duration, maxSessionsPerPod, poolAffinity } = conf.session;
+    const { duration, maxDuration, maxSessionsPerPod, poolAffinity } = conf.session;
     return (
         <Container>
             <Typography variant="h6" id="tableTitle" component="div">
@@ -31,6 +31,10 @@ export function Details({ conf }: { conf: Configuration }): JSX.Element {
                         <TableRow key="duration">
                             <TableCell>Duration</TableCell>
                             <TableCell>{duration}</TableCell>
+                        </TableRow>
+                        <TableRow key="duration">
+                            <TableCell>Max duration</TableCell>
+                            <TableCell>{maxDuration}</TableCell>
                         </TableRow>
                         <TableRow key="maxSessionsPerPod">
                             <TableCell>Max sessions per Pod</TableCell>
