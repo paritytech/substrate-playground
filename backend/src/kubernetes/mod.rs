@@ -351,7 +351,7 @@ where
 
 /// Resources
 
-fn all_namespaces_api<T>() -> Result<Api<T>>
+pub fn all_namespaces_api<T>() -> Result<Api<T>>
 where
     T: Clone + std::fmt::Debug + DeserializeOwned + Metadata,
     T: Default,
@@ -361,7 +361,7 @@ where
     Ok(Api::all(client))
 }
 
-fn default_namespaced_api<T>() -> Result<Api<T>>
+pub fn default_namespaced_api<T>() -> Result<Api<T>>
 where
     T: Clone + std::fmt::Debug + DeserializeOwned + Metadata,
     T: Default,
@@ -371,7 +371,7 @@ where
     Ok(Api::default_namespaced(client))
 }
 
-fn user_namespaced_api<T>(owner_id: &str) -> Result<Api<T>>
+pub fn user_namespaced_api<T>(owner_id: &str) -> Result<Api<T>>
 where
     T: Clone + std::fmt::Debug + DeserializeOwned + Metadata,
     T: Default,
