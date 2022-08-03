@@ -18,12 +18,11 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
-import PushPinIcon from '@mui/icons-material/PushPin';
 import { Client, User, Repository, RepositoryConfiguration, RepositoryVersion, ResourceType, RepositoryUpdateConfiguration } from "@substrate/playground-client";
 import { useStyles, EnhancedTableToolbar, Resources } from '.';
 import { ErrorSnackbar } from '../../components';
-import { find, hasPermission } from "../../utils";
-import { Checkbox, DialogActions, MenuItem, Tooltip } from "@mui/material";
+import { find } from "../../utils";
+import { Checkbox, DialogActions, MenuItem } from "@mui/material";
 
 function RepositoryCreationDialog({ repositories, show, onCreate, onHide }: { repositories: Repository[], show: boolean, onCreate: (id: string, conf: RepositoryConfiguration) => void, onHide: () => void }): JSX.Element {
 
