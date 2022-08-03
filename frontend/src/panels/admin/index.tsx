@@ -1,4 +1,4 @@
-import React, { Dispatch, SetStateAction, useState } from "react";
+import React, { Dispatch, SetStateAction, useEffect, useState } from "react";
 import { lighten, useTheme, Theme } from '@mui/material/styles';
 import createStyles from '@mui/styles/createStyles';
 import makeStyles from '@mui/styles/makeStyles';
@@ -197,19 +197,32 @@ function DeleteConfirmationDialog({ open, onClose, onConfirmation }: { open: boo
 }
 
 function EditToolbar({ client, user, resourceType, selected, onCreate, onUpdate, onDelete }: { client: Client, user: User, resourceType: ResourceType, selected?: string | null, onCreate?: () => void, onUpdate?: () => void, onDelete?: () => void }): JSX.Element {
-  // TODO need to await hasPermission
+  const [canCreate, setCanCreate] = React.useState(false);
+  const [canUpdate, setCanUpdate] = React.useState(false);
+  const [canDelete, setCanDelete] = React.useState(false);
+  const [open, setOpen] = React.useState(false);
+
+  useEffect(() => {
+    async function fetchData() {
+        setCanCreate(await hasPermission(client, user, resourceType, {type: "Create"}));
+        setCanUpdate(await hasPermission(client, user, resourceType, {type: "Update"}));
+        setCanDelete(await hasPermission(client, user, resourceType, {type: "Delete"}));
+    }
+
+    fetchData();
+  }, []);
+
   if (selected) {
-    const [open, setOpen] = React.useState(false);
     return <>
       {onUpdate &&
         <Tooltip title="Update">
-          <IconButton disabled={!hasPermission(client, user, resourceType, {type: "Update"})} aria-label="update" onClick={onUpdate} size="large">
+          <IconButton disabled={!canUpdate} aria-label="update" onClick={onUpdate} size="large">
             <EditIcon />
           </IconButton>
         </Tooltip>}
       {onDelete &&
         <Tooltip title="Delete">
-          <IconButton disabled={!hasPermission(client, user, resourceType, {type: "Delete"})} aria-label="delete" onClick={() => setOpen(true)} size="large">
+          <IconButton disabled={!canDelete} aria-label="delete" onClick={() => setOpen(true)} size="large">
             <DeleteIcon />
           </IconButton>
         </Tooltip>}
@@ -219,7 +232,7 @@ function EditToolbar({ client, user, resourceType, selected, onCreate, onUpdate,
     return <>
       {onCreate &&
         <Tooltip title="Create">
-          <IconButton disabled={!hasPermission(client, user, resourceType, {type: "Create"})} aria-label="create" onClick={onCreate} size="large">
+          <IconButton disabled={!canCreate} aria-label="create" onClick={onCreate} size="large">
             <AddIcon />
           </IconButton>
         </Tooltip>}
