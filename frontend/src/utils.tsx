@@ -56,7 +56,10 @@ export async function hasPermission(client: Client, user: User, resourceType: Re
     const permissions = (await client.getRole(user.role))?.permissions;
     if (permissions) {
         return permissions[resourceType]?.find(permission => {
-            return permission.type == resourcePermission.type && (permission.type == customPermission && resourcePermission.type == customPermission) ? permission.name == resourcePermission.name : true;
+            if (permission.type == customPermission) {
+                return resourcePermission.type == customPermission && permission.name == resourcePermission.name;
+            }
+            return permission.type == resourcePermission.type;
         }) != null;
     } else {
         return false;
