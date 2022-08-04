@@ -17,7 +17,7 @@ serde_json = "1.0.82"
 kube = { version = "0.74.0", default-features = false, features = ["client", "jsonpatch", "ws", "rustls-tls"] }
 k8s-openapi = { version = "0.15.0", default-features = false, features = ["v1_23"] }
 tokio-util = "0.7.2"
-thiserror = "1.0.31"
+thiserror = "1.0.32"
 futures = "0.3"
 base64 = "0.13"
 rand = { version = "0.8", default-features = false, features = ["std"] }
