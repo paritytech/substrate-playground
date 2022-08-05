@@ -11,7 +11,6 @@ import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import TableContainer from '@mui/material/TableContainer';
-import TableFooter from '@mui/material/TableFooter';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import { Client, Configuration, Session, SessionConfiguration, Pool, User, SessionUpdateConfiguration, Repository, ResourceType, RepositoryVersion, mainSessionId, SessionState } from '@substrate/playground-client';
@@ -23,7 +22,7 @@ import { canCustomizeSessionDuration, canCustomizeSessionPoolAffinity, find, for
 import { fetchRepositoriesWithLatestVersions } from "../session";
 
 export function SessionCreationDialog({ client, conf, user, repository, repositories, show, onCreate, onHide }: { client: Client, conf: Configuration, user: User, repository?: string, repositories: [Repository, RepositoryVersion][] | undefined, show: boolean, onCreate: (id: string, userId: string, conf: SessionConfiguration ) => void, onHide: () => void }): JSX.Element {
-    const [selection, setSelection] = React.useState<number | null>(null);
+    const [selection, setSelection] = React.useState<string | null>(null);
     const [canCustomizeDuration, setCanCustomizeDuration] = React.useState(false);
     const [duration, setDuration] = React.useState(conf.session.duration);
     const [canCustomizePoolAffinity, setCanCustomizePoolAffinity] = React.useState(false);
@@ -43,7 +42,7 @@ export function SessionCreationDialog({ client, conf, user, repository, reposito
         fetchData();
     }, []);
 
-    const handleRepositoryChange = (event: React.ChangeEvent<HTMLInputElement>) => setSelection(Number.parseInt(event.target.value));
+    const handleRepositoryChange = (event: React.ChangeEvent<HTMLInputElement>) => setSelection(event.target.value);
     const handleDurationChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const duration = Number.parseInt(event.target.value);
         setDuration(Number.isNaN(duration)? 0 : duration);
@@ -51,7 +50,7 @@ export function SessionCreationDialog({ client, conf, user, repository, reposito
     const handlePoolAffinityChange = (event: React.ChangeEvent<HTMLInputElement>) => setPoolAffinity(event.target.value);
 
     function onCreateClick() {
-        const repositoryWithVersion = selection && repositories?.at(selection);
+        const repositoryWithVersion = selection && repositories?.find((pair) => pair[0].id == selection);
         if (repositoryWithVersion) {
             const repositorySource = {repositoryId: repositoryWithVersion[0].id, repositoryVersionId: repositoryWithVersion[1].id};
             const sessionConfiguration = {repositorySource: repositorySource, duration: duration, poolAffinity: poolAffinity};
@@ -74,8 +73,7 @@ export function SessionCreationDialog({ client, conf, user, repository, reposito
                         required
                         label="Repository"
                         >
-                    {repositories &&
-                      repositories.map((repository, index) => {
+                    {repositories?.map((repository, index) => {
                         const id = repository[0].id;
                         return (
                           <MenuItem key={index} value={index}>
@@ -112,7 +110,7 @@ export function SessionCreationDialog({ client, conf, user, repository, reposito
                         label="Duration"
                         />}
                     <DialogActions>
-                        <Button disabled={selection == null} onClick={onCreateClick}>CREATE</Button>
+                        <Button disabled={!selection} onClick={onCreateClick}>CREATE</Button>
                         <Button onClick={onHide}>CLOSE</Button>
                     </DialogActions>
                 </Container>
@@ -233,7 +231,7 @@ export function Sessions({ client, conf, user }: { client: Client, conf: Configu
 
                 setSessions((sessions: Session[] | null) => {
                     if (sessions) {
-                        return remove(sessions, userId);
+                        return remove(sessions, sessionId);
                     }
                     return sessions;
                 });
