@@ -1,5 +1,5 @@
 import React, { Dispatch, SetStateAction, useEffect, useState } from "react";
-import { lighten, useTheme, Theme } from '@mui/material/styles';
+import { lighten, Theme } from '@mui/material/styles';
 import createStyles from '@mui/styles/createStyles';
 import makeStyles from '@mui/styles/makeStyles';
 import Button from '@mui/material/Button';
@@ -19,10 +19,6 @@ import Tabs from '@mui/material/Tabs';
 import Tooltip from '@mui/material/Tooltip';
 import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
-import FirstPageIcon from '@mui/icons-material/FirstPage';
-import KeyboardArrowLeft from '@mui/icons-material/KeyboardArrowLeft';
-import KeyboardArrowRight from '@mui/icons-material/KeyboardArrowRight';
-import LastPageIcon from '@mui/icons-material/LastPage';
 import { Client, Configuration, ResourceType, User } from '@substrate/playground-client';
 import { CenteredContainer, ErrorSnackbar, LoadingPanel } from '../../components';
 import { useInterval } from '../../hooks';
@@ -32,6 +28,7 @@ import { Repositories } from './repositories';
 import { Sessions } from './sessions';
 import { Users } from './users';
 import { hasPermission } from "../../utils";
+import { Roles } from "./roles";
 
 export const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -84,68 +81,6 @@ export function Resources<T>({ children, callback }: { children: (resources: T[]
       </Container>
     );
   }
-}
-
-export interface TablePaginationActionsProps {
-  count: number;
-  page: number;
-  rowsPerPage: number;
-  onChangePage: (event: React.MouseEvent<HTMLButtonElement>, newPage: number) => void;
-}
-
-export function TablePaginationActions(props: TablePaginationActionsProps) {
-  const classes = useStyles();
-  const theme = useTheme();
-  const { count, page, rowsPerPage, onChangePage } = props;
-
-  const handleFirstPageButtonClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-    onChangePage(event, 0);
-  };
-
-  const handleBackButtonClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-    onChangePage(event, page - 1);
-  };
-
-  const handleNextButtonClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-    onChangePage(event, page + 1);
-  };
-
-  const handleLastPageButtonClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-    onChangePage(event, Math.max(0, Math.ceil(count / rowsPerPage) - 1));
-  };
-
-  return (
-    <div className={classes.root}>
-      <IconButton
-        onClick={handleFirstPageButtonClick}
-        disabled={page === 0}
-        aria-label="first page"
-        size="large">
-        {theme.direction === 'rtl' ? <LastPageIcon /> : <FirstPageIcon />}
-      </IconButton>
-      <IconButton
-        onClick={handleBackButtonClick}
-        disabled={page === 0}
-        aria-label="previous page"
-        size="large">
-        {theme.direction === 'rtl' ? <KeyboardArrowRight /> : <KeyboardArrowLeft />}
-      </IconButton>
-      <IconButton
-        onClick={handleNextButtonClick}
-        disabled={page >= Math.ceil(count / rowsPerPage) - 1}
-        aria-label="next page"
-        size="large">
-        {theme.direction === 'rtl' ? <KeyboardArrowLeft /> : <KeyboardArrowRight />}
-      </IconButton>
-      <IconButton
-        onClick={handleLastPageButtonClick}
-        disabled={page >= Math.ceil(count / rowsPerPage) - 1}
-        aria-label="last page"
-        size="large">
-        {theme.direction === 'rtl' ? <FirstPageIcon /> : <LastPageIcon />}
-      </IconButton>
-    </div>
-  );
 }
 
 const useToolbarStyles = makeStyles((theme: Theme) =>
@@ -258,6 +193,7 @@ export function EnhancedTableToolbar({ client, user, label, selected = null, onC
 const panels = {
     Details: (_client: Client, conf: Configuration, _user: User) => <Details conf={conf} /> ,
     Repositories: (client: Client, _conf: Configuration, user: User) => <Repositories client={client} user={user} />,
+    Roles: (client: Client, conf: Configuration, user: User) => <Roles client={client} user={user} conf={conf} />,
     Users: (client: Client, conf: Configuration, user: User) => <Users client={client} user={user} conf={conf} />,
     Pools: (client: Client, _conf: Configuration, user: User) => <Pools client={client} user={user} />,
     Sessions: (client: Client, conf: Configuration, user: User) => <Sessions client={client} conf={conf} user={user} />
