@@ -21,7 +21,6 @@ import { useInterval } from '../../hooks';
 import { useStyles, EnhancedTableToolbar, Resources } from '.';
 import { find, remove } from "../../utils";
 
-
 const defaultRole = 'user';
 
 function UserCreationDialog({ client, conf, users, show, onCreate, onHide }: { client: Client, conf: Configuration, users: User[], show: boolean, onCreate: (id: string, conf: UserConfiguration) => void, onHide: () => void }): JSX.Element {
@@ -170,7 +169,7 @@ export function Users({ client, user, conf }: { client: Client, user: User, conf
                 setSelected(null);
                 setUsers((users: User[] | null) => {
                     if (users) {
-                        return remove(users, user.id);
+                        return remove(users, selected.id);
                     }
                     return users;
                 });
