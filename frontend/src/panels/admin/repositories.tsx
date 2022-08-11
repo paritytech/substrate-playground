@@ -25,7 +25,6 @@ import { find } from "../../utils";
 import { Checkbox, DialogActions, MenuItem } from "@mui/material";
 
 function RepositoryCreationDialog({ repositories, show, onCreate, onHide }: { repositories: Repository[], show: boolean, onCreate: (id: string, conf: RepositoryConfiguration) => void, onHide: () => void }): JSX.Element {
-
     const [id, setID] = React.useState('');
     const [url, setURL] = React.useState('');
 
@@ -56,7 +55,7 @@ function RepositoryCreationDialog({ repositories, show, onCreate, onHide }: { re
                         variant="standard"
                         />
                     <DialogActions>
-                        <Button disabled={!id || find(repositories, id) != null|| !url} onClick={() => {onCreate(id.toLowerCase(), {url: url}); onHide();}}>CREATE</Button>
+                        <Button disabled={id.length == 0 || find(repositories, id) != null || url.length == 0} onClick={() => {onCreate(id.toLowerCase(), {url: url}); onHide();}}>CREATE</Button>
                         <Button onClick={onHide}>CLOSE</Button>
                     </DialogActions>
                 </Container>
