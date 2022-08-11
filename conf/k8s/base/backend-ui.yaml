@@ -22,11 +22,10 @@ spec:
         - containerPort: 80
         resources:
           requests:
-            memory: "128Mi"
+            memory: "512Mi"
             cpu: "0.125"
           limits:
             memory: "512Mi"
-            cpu: "0.5"
         readinessProbe:
           httpGet:
             path: /

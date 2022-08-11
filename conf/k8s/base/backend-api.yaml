@@ -86,11 +86,10 @@ spec:
                 key: rocket.secretKey
         resources:
           requests:
-            memory: "1Gi"
+            memory: "2Gi"
             cpu: "0.5"
           limits:
             memory: "2Gi"
-            cpu: "1"
 ---
 apiVersion: v1
 kind: Service
