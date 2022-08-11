@@ -398,6 +398,19 @@ where
 
 // Introduce Resource trait, rely on creation_timestamp
 
+pub async fn get_all_resource<T, U>(
+    resource_id: &str,
+    f: fn(t: &T) -> Result<U>,
+) -> Result<Option<U>>
+where
+    T: Clone + std::fmt::Debug + DeserializeOwned + Metadata,
+    T: Default,
+    T: Metadata<Ty = ObjectMeta>,
+{
+    let api: Api<T> = all_namespaces_api()?;
+    get_resource(api, resource_id, f).await
+}
+
 pub async fn get_owned_resource<T, U>(
     owner_id: &str,
     resource_id: &str,
@@ -505,6 +518,16 @@ where
 }
 
 // Delete
+
+pub async fn delete_all_resource<T>(resource_id: &str) -> Result<()>
+where
+    T: Clone + std::fmt::Debug + DeserializeOwned + Metadata,
+    T: Default,
+    T: Metadata<Ty = ObjectMeta>,
+{
+    let api: Api<T> = all_namespaces_api()?;
+    delete_resource(api, resource_id).await
+}
 
 pub async fn delete_default_resource<T>(resource_id: &str) -> Result<()>
 where

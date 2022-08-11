@@ -5,8 +5,9 @@
 //!
 
 use super::{
-    client, delete_resource, get_resource, list_all_resources, serialize_json, unserialize_json,
-    update_annotation_value, user_namespace, APP_LABEL, APP_VALUE, COMPONENT_LABEL,
+    all_namespaces_api, delete_all_resource, get_all_resource, list_all_resources, serialize_json,
+    unserialize_json, update_annotation_value, user_namespace, user_namespaced_api, APP_LABEL,
+    APP_VALUE, COMPONENT_LABEL,
 };
 use crate::{
     error::{Error, ResourceError, Result},
@@ -69,9 +70,7 @@ fn user_to_namespace(user: &User) -> Result<Namespace> {
 }
 
 pub async fn get_user(id: &str) -> Result<Option<User>> {
-    let client = client()?;
-    let api: Api<Namespace> = Api::all(client.clone());
-    get_resource(api, &user_namespace(id), namespace_to_user).await
+    get_all_resource::<Namespace, User>(&user_namespace(id), namespace_to_user).await
 }
 
 pub async fn list_users() -> Result<Vec<User>> {
@@ -86,22 +85,20 @@ pub async fn create_user(id: &str, conf: UserConfiguration) -> Result<()> {
         )));
     }
 
-    let client = client()?;
-
     let user = User {
         id: id.to_string(), // Store
         role: conf.role,
         preferences: conf.preferences,
     };
 
-    let namespace_api: Api<Namespace> = Api::all(client.clone());
+    let namespace_api: Api<Namespace> = all_namespaces_api()?;
     namespace_api
         .create(&PostParams::default(), &user_to_namespace(&user)?)
         .await
         .map_err(Error::K8sCommunicationFailure)?;
 
-    let service_account_api: Api<ServiceAccount> =
-        Api::namespaced(client.clone(), &user_namespace(id));
+    // Create the ServiceAccount that will be used for all user's Sessions
+    let service_account_api: Api<ServiceAccount> = user_namespaced_api(id)?;
     service_account_api
         .create(
             &PostParams::default(),
@@ -120,13 +117,11 @@ pub async fn create_user(id: &str, conf: UserConfiguration) -> Result<()> {
 }
 
 pub async fn update_user(id: &str, conf: UserUpdateConfiguration) -> Result<()> {
-    let client = client()?;
-
     let user = get_user(id).await?.ok_or_else(|| {
         Error::Resource(ResourceError::Unknown(ResourceType::User, id.to_string()))
     })?;
 
-    let namespace_api: Api<Namespace> = Api::namespaced(client.clone(), &user_namespace(id));
+    let namespace_api: Api<Namespace> = all_namespaces_api()?;
     if conf.role != user.role {
         update_annotation_value(&namespace_api, &user.id, ROLE_ANNOTATION, conf.role.into())
             .await?;
@@ -149,7 +144,5 @@ pub async fn delete_user(id: &str) -> Result<()> {
         Error::Resource(ResourceError::Unknown(ResourceType::User, id.to_string()))
     })?;
 
-    let client = client()?;
-    let api: Api<Namespace> = Api::all(client.clone());
-    delete_resource(api, &user_namespace(id)).await
+    delete_all_resource::<Namespace>(&user_namespace(id)).await
 }
