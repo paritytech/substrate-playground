@@ -165,7 +165,9 @@ fn session_to_pod(
                         ("memory".to_string(), Quantity("8Gi".to_string())),
                         ("ephemeral-storage".to_string(), Quantity("5Gi".to_string())),
                     ])),
-                    ..Default::default()
+                    limits: Some(BTreeMap::from([
+                        ("memory".to_string(), Quantity("8Gi".to_string())),
+                    ]))
                 }),
                 volume_mounts: Some(vec![VolumeMount {
                     name: volume_name.to_string(),
