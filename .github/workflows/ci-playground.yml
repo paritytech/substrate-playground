@@ -114,8 +114,14 @@ jobs:
         with:
           install: true
 
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
       - name: Build backend images
-        run: make build-backend-docker-images
+        run: make push-backend-docker-images
 
       - name: Show images
         run: docker images
