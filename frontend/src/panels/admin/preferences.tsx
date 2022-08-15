@@ -11,7 +11,7 @@ import Typography from '@mui/material/Typography';
 import { Configuration } from "@substrate/playground-client";
 import { useStyles } from '.';
 
-export function Details({ conf }: { conf: Configuration }): JSX.Element {
+export function Preferences({ conf }: { conf: Configuration }): JSX.Element {
     const classes = useStyles();
     const { duration, maxDuration, maxSessionsPerPod, poolAffinity } = conf.session;
     return (

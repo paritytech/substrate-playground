@@ -25,7 +25,6 @@ test('unauthenticated - should be able to get details', async (t) => {
     try {
         const client = newClient();
         const details = await client.get();
-        details.configuration
         t.is(details.user, null);
         t.not(details.configuration, null);
     } catch {

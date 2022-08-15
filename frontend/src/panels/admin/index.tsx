@@ -22,7 +22,7 @@ import Typography from '@mui/material/Typography';
 import { Client, Configuration, ResourceType, User } from '@substrate/playground-client';
 import { CenteredContainer, ErrorSnackbar, LoadingPanel } from '../../components';
 import { useInterval } from '../../hooks';
-import { Details } from './details';
+import { Preferences } from './preferences';
 import { Pools } from './pools';
 import { Repositories } from './repositories';
 import { Sessions } from './sessions';
@@ -191,7 +191,7 @@ export function EnhancedTableToolbar({ client, user, label, selected = null, onC
 }
 
 const panels = {
-    Details: (_client: Client, conf: Configuration, _user: User) => <Details conf={conf} /> ,
+    Preferences: (_client: Client, conf: Configuration, _user: User) => <Preferences conf={conf} /> ,
     Repositories: (client: Client, _conf: Configuration, user: User) => <Repositories client={client} user={user} />,
     Roles: (client: Client, conf: Configuration, user: User) => <Roles client={client} user={user} conf={conf} />,
     Users: (client: Client, conf: Configuration, user: User) => <Users client={client} user={user} conf={conf} />,

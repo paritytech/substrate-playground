@@ -309,7 +309,7 @@ pub async fn create_repository_version(repository_id: &str, id: &str) -> Result<
                         folder, repository.url, path
                     ),
                 ]),
-                // TODO aloso install vscode conf
+                // TODO also install vscode conf
                 // And optional user .dotfile
                 volume_mounts: Some(vec![VolumeMount {
                     name: volume_template_name.clone(),

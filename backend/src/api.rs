@@ -6,12 +6,14 @@ use std::{
 
 use crate::{
     error::{Error, Result},
-    kubernetes::{get_configuration, user},
+    kubernetes::{parse_user_roles, preference, user},
     types::{
-        Playground, Pool, Repository, RepositoryConfiguration, RepositoryUpdateConfiguration,
-        RepositoryVersion, Role, RoleConfiguration, RoleUpdateConfiguration, Session,
-        SessionConfiguration, SessionExecutionConfiguration, SessionUpdateConfiguration, User,
-        UserConfiguration, UserUpdateConfiguration,
+        Playground, Pool, Preference, PreferenceConfiguration, PreferenceUpdateConfiguration,
+        Preferences, Profile, ProfileConfiguration, ProfileUpdateConfiguration, Repository,
+        RepositoryConfiguration, RepositoryUpdateConfiguration, RepositoryVersion, Role,
+        RoleConfiguration, RoleUpdateConfiguration, Session, SessionConfiguration,
+        SessionExecutionConfiguration, SessionUpdateConfiguration, User, UserConfiguration,
+        UserUpdateConfiguration,
     },
     utils::github::{authorization_uri, current_user, exchange_code, orgs, GitHubUser},
     Context,
@@ -39,10 +41,15 @@ async fn is_paritytech_member(token: &str, user: &GitHubUser) -> bool {
 }
 
 async fn get_user_roles() -> BTreeMap<String, String> {
-    match get_configuration().await {
-        Ok(conf) => conf.user_roles,
+    match preference::get_preference(&Preferences::UserDefaultRoles.to_string()).await {
+        Ok(Some(pref)) => parse_user_roles(pref.value),
+        Ok(None) => {
+            log::warn!("Preference UserDefaultRoles undefined");
+
+            BTreeMap::new()
+        }
         Err(err) => {
-            log::warn!("Error while accessing configuration: {}", err);
+            log::warn!("Error while accessing UserDefaultRoles preference: {}", err);
 
             BTreeMap::new()
         }
@@ -50,6 +57,7 @@ async fn get_user_roles() -> BTreeMap<String, String> {
 }
 
 // Extract a User from cookies
+// If User doesn't Exist yet it will be created
 #[rocket::async_trait]
 impl<'r> FromRequest<'r> for User {
     type Error = Error;
@@ -79,6 +87,13 @@ impl<'r> FromRequest<'r> for User {
                                 "user"
                             }
                             .to_string();
+                            let profiles = request.headers().get("profile").collect::<Vec<&str>>();
+                            if !profiles.is_empty() {
+                                if profiles.len() > 1 {
+                                    log::warn!("Multiple profile headers found: {:?}", profiles);
+                                }
+                                log::debug!("Using profile {:?}", profiles.get(0));
+                            }
                             // Create a new User
                             let user = User {
                                 id: user_id.to_string(),
@@ -86,11 +101,13 @@ impl<'r> FromRequest<'r> for User {
                                     .get(user_id)
                                     .unwrap_or(&default_user_role)
                                     .to_string(),
+                                profile: profiles.get(0).map(|s| s.to_string()),
                                 preferences: BTreeMap::new(),
                             };
                             let user_configuration = UserConfiguration {
                                 role: user.clone().role,
                                 preferences: user.clone().preferences,
+                                profile: user.clone().profile,
                             };
                             if let Err(err) = user::create_user(user_id, user_configuration).await {
                                 log::warn!("Error while creating user {} : {}", user_id, err);
@@ -166,6 +183,125 @@ impl<'r> Responder<'r, 'static> for EmptyJsonRPC {
 pub struct EmptyJsonRPC();
 pub struct JsonRPC<T>(pub T);
 
+// GitHub login logic
+
+fn query_segment(origin: &Origin) -> String {
+    origin.query().map_or("".to_string(), |query| {
+        let v: Vec<String> = query
+            .segments()
+            .filter(|(k, _)| *k != "code" && *k != "state")
+            .map(|(k, v)| format!("{}={}", k, v))
+            .collect();
+        if v.is_empty() {
+            "".to_string()
+        } else {
+            format!("?{}", v.join("&"))
+        }
+    })
+}
+
+const STATE_COOKIE_NAME: &str = "rocket_oauth2_state";
+
+// Random generation of state for defense against CSRF.
+// See RFC 6749 §10.12 for more details.
+fn generate_state(rng: &mut impl rand::RngCore) -> Result<String> {
+    let mut buf = [0; 16]; // 128 bits
+    rng.try_fill_bytes(&mut buf)
+        .map_err(|_| Error::Failure("Failed to generate random data".to_string()))?;
+    Ok(base64::encode_config(&buf, base64::URL_SAFE_NO_PAD))
+}
+
+// Gets called from UI. Then redirects to the GitHub `auth_uri` which itself redirects to `/auth/github`
+#[get("/login/github")]
+pub fn github_login(context: &State<Context>, cookies: &CookieJar<'_>) -> Result<Redirect> {
+    let client_id = context.configuration.github_client_id.clone();
+    let state = generate_state(&mut rand::thread_rng())?;
+    let uri = authorization_uri(&client_id, &state);
+    cookies.add_private(
+        Cookie::build(STATE_COOKIE_NAME, state)
+            .same_site(SameSite::Lax)
+            .finish(),
+    );
+    Ok(Redirect::to(uri))
+}
+
+/// Callback to handle the authenticated token received from GitHub
+/// and store it as a cookie
+#[get("/auth/github")]
+pub async fn post_install_callback(
+    origin: &Origin<'_>,
+    context: &State<Context>,
+    cookies: &CookieJar<'_>,
+) -> Result<Redirect> {
+    let query = match origin.query() {
+        Some(q) => q,
+        None => return Err(Error::Failure("Failed to access query".to_string())),
+    };
+    let segments = query.segments().collect::<HashMap<&str, &str>>();
+    // Make sure that the 'state' value provided matches the generated one
+    if let Some(state) = segments.get("state") {
+        if let Some(cookie) = cookies.get_private(STATE_COOKIE_NAME) {
+            if cookie.value() == *state {
+                if let Some(code) = segments.get("code") {
+                    add_access_token(
+                        cookies,
+                        exchange_code(
+                            &context.configuration.github_client_id,
+                            &context.secrets.github_client_secret,
+                            *code,
+                        )
+                        .await?,
+                    );
+
+                    Ok(Redirect::to(format!("/{}", query_segment(origin))))
+                } else {
+                    Err(Error::Failure("Missing code".to_string()))
+                }
+            } else {
+                Err(Error::Failure("No matching state".to_string()))
+            }
+        } else {
+            Err(Error::Failure("No state cookie".to_string()))
+        }
+    } else {
+        Err(Error::Failure("Missing state".to_string()))
+    }
+}
+
+fn add_access_token(cookies: &CookieJar<'_>, access_token: String) {
+    cookies.add_private(
+        Cookie::build(COOKIE_TOKEN, access_token)
+            .same_site(SameSite::Lax)
+            .finish(),
+    )
+}
+
+#[get("/login?<bearer>")]
+pub fn login(cookies: &CookieJar<'_>, bearer: String) {
+    add_access_token(cookies, bearer)
+}
+
+#[get("/logout")]
+pub fn logout(cookies: &CookieJar<'_>) {
+    clear(cookies)
+}
+
+// Utils
+
+fn clear(cookies: &CookieJar<'_>) {
+    cookies.remove_private(
+        Cookie::build(COOKIE_TOKEN, "")
+            .same_site(SameSite::Lax)
+            .finish(),
+    );
+}
+
+#[allow(dead_code)]
+#[catch(401)]
+pub fn bad_request_catcher(_req: &Request<'_>) {
+    clear(_req.cookies())
+}
+
 /// Endpoints
 
 #[get("/")]
@@ -178,273 +314,128 @@ pub async fn get_unlogged(state: &State<Context>) -> Result<JsonRPC<Playground>>
     state.manager.get_unlogged().await.map(JsonRPC)
 }
 
-// Users
+// Pools
 
-#[get("/users/<id>")]
-pub async fn get_user(
+#[get("/pools/<id>")]
+pub async fn get_pool(
     state: &State<Context>,
     caller: User,
     id: String,
-) -> Result<JsonRPC<Option<User>>> {
-    state.manager.get_user(&caller, &id).await.map(JsonRPC)
+) -> Result<JsonRPC<Option<Pool>>> {
+    state.manager.get_pool(&caller, &id).await.map(JsonRPC)
 }
 
-#[get("/users")]
-pub async fn list_users(state: &State<Context>, caller: User) -> Result<JsonRPC<Vec<User>>> {
-    state.manager.list_users(&caller).await.map(JsonRPC)
+#[get("/pools")]
+pub async fn list_pools(state: &State<Context>, caller: User) -> Result<JsonRPC<Vec<Pool>>> {
+    state.manager.list_pools(&caller).await.map(JsonRPC)
 }
 
-#[put("/users/<id>", data = "<conf>")]
-pub async fn create_user(
+// Preferences
+
+#[get("/preferences/<id>")]
+pub async fn get_preference(
     state: &State<Context>,
     caller: User,
     id: String,
-    conf: Json<UserConfiguration>,
-) -> Result<EmptyJsonRPC> {
+) -> Result<JsonRPC<Option<Preference>>> {
     state
         .manager
-        .clone()
-        .create_user(&caller, id, conf.0)
-        .await?;
-    Ok(EmptyJsonRPC())
-}
-
-#[patch("/users/<id>", data = "<conf>")]
-pub async fn update_user(
-    state: &State<Context>,
-    caller: User,
-    id: String,
-    conf: Json<UserUpdateConfiguration>,
-) -> Result<EmptyJsonRPC> {
-    state
-        .manager
-        .clone()
-        .update_user(&caller, id, conf.0)
-        .await?;
-    Ok(EmptyJsonRPC())
-}
-
-#[delete("/users/<id>")]
-pub async fn delete_user(state: &State<Context>, caller: User, id: String) -> Result<EmptyJsonRPC> {
-    state.manager.clone().delete_user(&caller, id).await?;
-    Ok(EmptyJsonRPC())
-}
-
-// Sessions
-
-#[get("/users/<user_id>/sessions/<id>")]
-pub async fn get_user_session(
-    state: &State<Context>,
-    caller: User,
-    user_id: String,
-    id: String,
-) -> Result<JsonRPC<Option<Session>>> {
-    state
-        .manager
-        .get_session(&caller, &user_id, &id)
+        .get_preference(&caller, &id)
         .await
         .map(JsonRPC)
 }
 
-#[get("/user/sessions/<id>")]
-pub async fn get_session(
+#[get("/preferences")]
+pub async fn list_preferences(
+    state: &State<Context>,
+    caller: User,
+) -> Result<JsonRPC<Vec<Preference>>> {
+    state.manager.list_preferences(&caller).await.map(JsonRPC)
+}
+
+#[put("/preferences/<id>", data = "<conf>")]
+pub async fn create_preference(
     state: &State<Context>,
     caller: User,
     id: String,
-) -> Result<JsonRPC<Option<Session>>> {
-    state
-        .manager
-        .get_session(&caller, &caller.id, &id)
-        .await
-        .map(JsonRPC)
-}
-
-#[get("/users/<user_id>/sessions")]
-pub async fn list_user_sessions(
-    state: &State<Context>,
-    user_id: String,
-    caller: User,
-) -> Result<JsonRPC<Vec<Session>>> {
-    state
-        .manager
-        .list_sessions(&caller, &user_id)
-        .await
-        .map(JsonRPC)
-}
-
-#[get("/user/sessions")]
-pub async fn list_sessions(state: &State<Context>, caller: User) -> Result<JsonRPC<Vec<Session>>> {
-    state
-        .manager
-        .list_sessions(&caller, &caller.id)
-        .await
-        .map(JsonRPC)
-}
-
-#[put("/users/<user_id>/sessions/<id>", data = "<conf>")]
-pub async fn create_user_session(
-    state: &State<Context>,
-    caller: User,
-    user_id: String,
-    id: String,
-    conf: Json<SessionConfiguration>,
+    conf: Json<PreferenceConfiguration>,
 ) -> Result<EmptyJsonRPC> {
     state
         .manager
-        .create_session(&caller, &user_id, &id, &conf.0)
+        .create_preference(&caller, &id, conf.0)
         .await?;
     Ok(EmptyJsonRPC())
 }
 
-#[put("/user/sessions/<id>", data = "<conf>")]
-pub async fn create_session(
+#[patch("/preferences/<id>", data = "<conf>")]
+pub async fn update_preference(
     state: &State<Context>,
     caller: User,
     id: String,
-    conf: Json<SessionConfiguration>,
+    conf: Json<PreferenceUpdateConfiguration>,
 ) -> Result<EmptyJsonRPC> {
     state
         .manager
-        .create_session(&caller, &caller.id, &id, &conf.0)
+        .update_preference(&caller, &id, conf.0)
         .await?;
     Ok(EmptyJsonRPC())
 }
 
-#[patch("/users/<user_id>/sessions/<id>", data = "<conf>")]
-pub async fn update_user_session(
-    state: &State<Context>,
-    caller: User,
-    user_id: String,
-    id: String,
-    conf: Json<SessionUpdateConfiguration>,
-) -> Result<EmptyJsonRPC> {
-    state
-        .manager
-        .update_session(&caller, &user_id, &id, conf.0)
-        .await?;
-    Ok(EmptyJsonRPC())
-}
-
-#[patch("/user/sessions/<id>", data = "<conf>")]
-pub async fn update_session(
-    state: &State<Context>,
-    caller: User,
-    id: String,
-    conf: Json<SessionUpdateConfiguration>,
-) -> Result<EmptyJsonRPC> {
-    state
-        .manager
-        .update_session(&caller, &caller.id, &id, conf.0)
-        .await?;
-    Ok(EmptyJsonRPC())
-}
-
-#[delete("/users/<user_id>/sessions/<id>")]
-pub async fn delete_user_session(
-    state: &State<Context>,
-    caller: User,
-    user_id: String,
-    id: String,
-) -> Result<EmptyJsonRPC> {
-    state.manager.delete_session(&caller, &user_id, &id).await?;
-    Ok(EmptyJsonRPC())
-}
-
-#[delete("/user/sessions/<id>")]
-pub async fn delete_session(
+#[delete("/preferences/<id>")]
+pub async fn delete_preference(
     state: &State<Context>,
     caller: User,
     id: String,
 ) -> Result<EmptyJsonRPC> {
-    state
-        .manager
-        .delete_session(&caller, &caller.id, &id)
-        .await?;
+    state.manager.delete_preference(&caller, &id).await?;
     Ok(EmptyJsonRPC())
 }
 
-// Session executions
+// Profiles
 
-#[put("/users/<user_id>/sessions/<id>/executions", data = "<conf>")]
-pub async fn create_user_session_execution(
+#[get("/profiles/<id>")]
+pub async fn get_profile(
     state: &State<Context>,
     caller: User,
-    user_id: String,
     id: String,
-    conf: Json<SessionExecutionConfiguration>,
+) -> Result<JsonRPC<Option<Profile>>> {
+    state.manager.get_profile(&caller, &id).await.map(JsonRPC)
+}
+
+#[get("/profiles")]
+pub async fn list_profiles(state: &State<Context>, caller: User) -> Result<JsonRPC<Vec<Profile>>> {
+    state.manager.list_profiles(&caller).await.map(JsonRPC)
+}
+
+#[put("/profiles/<id>", data = "<conf>")]
+pub async fn create_profile(
+    state: &State<Context>,
+    caller: User,
+    id: String,
+    conf: Json<ProfileConfiguration>,
 ) -> Result<EmptyJsonRPC> {
-    state
-        .manager
-        .create_session_execution(&caller, &user_id, &id, conf.0)
-        .await?;
+    state.manager.create_profile(&caller, &id, conf.0).await?;
     Ok(EmptyJsonRPC())
 }
 
-#[put("/user/sessions/<id>/executions", data = "<conf>")]
-pub async fn create_session_execution(
+#[patch("/profiles/<id>", data = "<conf>")]
+pub async fn update_profile(
     state: &State<Context>,
     caller: User,
     id: String,
-    conf: Json<SessionExecutionConfiguration>,
+    conf: Json<ProfileUpdateConfiguration>,
 ) -> Result<EmptyJsonRPC> {
-    state
-        .manager
-        .create_session_execution(&caller, &caller.id, &id, conf.0)
-        .await?;
+    state.manager.update_profile(&caller, &id, conf.0).await?;
     Ok(EmptyJsonRPC())
 }
 
-// All sessions
-
-#[get("/sessions")]
-pub async fn list_all_sessions(
-    state: &State<Context>,
-    caller: User,
-) -> Result<JsonRPC<Vec<Session>>> {
-    state.manager.list_all_sessions(&caller).await.map(JsonRPC)
-}
-
-// Roles
-
-#[get("/roles/<id>")]
-pub async fn get_role(
+#[delete("/profiles/<id>")]
+pub async fn delete_profile(
     state: &State<Context>,
     caller: User,
     id: String,
-) -> Result<JsonRPC<Option<Role>>> {
-    state.manager.get_role(&caller, &id).await.map(JsonRPC)
-}
-
-#[get("/roles")]
-pub async fn list_roles(state: &State<Context>, caller: User) -> Result<JsonRPC<Vec<Role>>> {
-    state.manager.list_roles(&caller).await.map(JsonRPC)
-}
-
-#[put("/roles/<id>", data = "<conf>")]
-pub async fn create_role(
-    state: &State<Context>,
-    caller: User,
-    id: String,
-    conf: Json<RoleConfiguration>,
 ) -> Result<EmptyJsonRPC> {
-    state.manager.create_role(&caller, &id, conf.0).await?;
-    Ok(EmptyJsonRPC())
-}
-
-#[patch("/roles/<id>", data = "<conf>")]
-pub async fn update_role(
-    state: &State<Context>,
-    caller: User,
-    id: String,
-    conf: Json<RoleUpdateConfiguration>,
-) -> Result<EmptyJsonRPC> {
-    state.manager.update_role(&caller, &id, conf.0).await?;
-    Ok(EmptyJsonRPC())
-}
-
-#[delete("/roles/<id>")]
-pub async fn delete_role(state: &State<Context>, caller: User, id: String) -> Result<EmptyJsonRPC> {
-    state.manager.delete_role(&caller, &id).await?;
+    state.manager.delete_profile(&caller, &id).await?;
     Ok(EmptyJsonRPC())
 }
 
@@ -566,135 +557,195 @@ pub async fn delete_repository_version(
     Ok(EmptyJsonRPC())
 }
 
-// Pools
+// Roles
 
-#[get("/pools/<id>")]
-pub async fn get_pool(
+#[get("/roles/<id>")]
+pub async fn get_role(
     state: &State<Context>,
     caller: User,
     id: String,
-) -> Result<JsonRPC<Option<Pool>>> {
-    state.manager.get_pool(&caller, &id).await.map(JsonRPC)
+) -> Result<JsonRPC<Option<Role>>> {
+    state.manager.get_role(&caller, &id).await.map(JsonRPC)
 }
 
-#[get("/pools")]
-pub async fn list_pools(state: &State<Context>, caller: User) -> Result<JsonRPC<Vec<Pool>>> {
-    state.manager.list_pools(&caller).await.map(JsonRPC)
+#[get("/roles")]
+pub async fn list_roles(state: &State<Context>, caller: User) -> Result<JsonRPC<Vec<Role>>> {
+    state.manager.list_roles(&caller).await.map(JsonRPC)
 }
 
-// GitHub login logic
-
-fn query_segment(origin: &Origin) -> String {
-    origin.query().map_or("".to_string(), |query| {
-        let v: Vec<String> = query
-            .segments()
-            .filter(|(k, _)| *k != "code" && *k != "state")
-            .map(|(k, v)| format!("{}={}", k, v))
-            .collect();
-        if v.is_empty() {
-            "".to_string()
-        } else {
-            format!("?{}", v.join("&"))
-        }
-    })
+#[put("/roles/<id>", data = "<conf>")]
+pub async fn create_role(
+    state: &State<Context>,
+    caller: User,
+    id: String,
+    conf: Json<RoleConfiguration>,
+) -> Result<EmptyJsonRPC> {
+    state.manager.create_role(&caller, &id, conf.0).await?;
+    Ok(EmptyJsonRPC())
 }
 
-const STATE_COOKIE_NAME: &str = "rocket_oauth2_state";
-
-// Random generation of state for defense against CSRF.
-// See RFC 6749 §10.12 for more details.
-fn generate_state(rng: &mut impl rand::RngCore) -> Result<String> {
-    let mut buf = [0; 16]; // 128 bits
-    rng.try_fill_bytes(&mut buf)
-        .map_err(|_| Error::Failure("Failed to generate random data".to_string()))?;
-    Ok(base64::encode_config(&buf, base64::URL_SAFE_NO_PAD))
+#[patch("/roles/<id>", data = "<conf>")]
+pub async fn update_role(
+    state: &State<Context>,
+    caller: User,
+    id: String,
+    conf: Json<RoleUpdateConfiguration>,
+) -> Result<EmptyJsonRPC> {
+    state.manager.update_role(&caller, &id, conf.0).await?;
+    Ok(EmptyJsonRPC())
 }
 
-// Gets called from UI. Then redirects to the GitHub `auth_uri` which itself redirects to `/auth/github`
-#[get("/login/github")]
-pub fn github_login(context: &State<Context>, cookies: &CookieJar<'_>) -> Result<Redirect> {
-    let client_id = context.configuration.github_client_id.clone();
-    let state = generate_state(&mut rand::thread_rng())?;
-    let uri = authorization_uri(&client_id, &state);
-    cookies.add_private(
-        Cookie::build(STATE_COOKIE_NAME, state)
-            .same_site(SameSite::Lax)
-            .finish(),
-    );
-    Ok(Redirect::to(uri))
+#[delete("/roles/<id>")]
+pub async fn delete_role(state: &State<Context>, caller: User, id: String) -> Result<EmptyJsonRPC> {
+    state.manager.delete_role(&caller, &id).await?;
+    Ok(EmptyJsonRPC())
 }
 
-/// Callback to handle the authenticated token received from GitHub
-/// and store it as a cookie
-#[get("/auth/github")]
-pub async fn post_install_callback(
-    origin: &Origin<'_>,
-    context: &State<Context>,
-    cookies: &CookieJar<'_>,
-) -> Result<Redirect> {
-    let query = match origin.query() {
-        Some(q) => q,
-        None => return Err(Error::Failure("Failed to access query".to_string())),
-    };
-    let segments = query.segments().collect::<HashMap<&str, &str>>();
-    // Make sure that the 'state' value provided matches the generated one
-    if let Some(state) = segments.get("state") {
-        if let Some(cookie) = cookies.get_private(STATE_COOKIE_NAME) {
-            if cookie.value() == *state {
-                if let Some(code) = segments.get("code") {
-                    add_access_token(
-                        cookies,
-                        exchange_code(
-                            &context.configuration.github_client_id,
-                            &context.secrets.github_client_secret,
-                            *code,
-                        )
-                        .await?,
-                    );
+// Sessions
 
-                    Ok(Redirect::to(format!("/{}", query_segment(origin))))
-                } else {
-                    Err(Error::Failure("Missing code".to_string()))
-                }
-            } else {
-                Err(Error::Failure("No matching state".to_string()))
-            }
-        } else {
-            Err(Error::Failure("No state cookie".to_string()))
-        }
-    } else {
-        Err(Error::Failure("Missing state".to_string()))
-    }
+#[get("/sessions")]
+pub async fn list_sessions(state: &State<Context>, caller: User) -> Result<JsonRPC<Vec<Session>>> {
+    state.manager.list_sessions(&caller).await.map(JsonRPC)
 }
 
-fn add_access_token(cookies: &CookieJar<'_>, access_token: String) {
-    cookies.add_private(
-        Cookie::build(COOKIE_TOKEN, access_token)
-            .same_site(SameSite::Lax)
-            .finish(),
-    )
+// Users
+
+#[get("/users/<id>")]
+pub async fn get_user(
+    state: &State<Context>,
+    caller: User,
+    id: String,
+) -> Result<JsonRPC<Option<User>>> {
+    state.manager.get_user(&caller, &id).await.map(JsonRPC)
 }
 
-#[get("/login?<bearer>")]
-pub fn login(cookies: &CookieJar<'_>, bearer: String) {
-    add_access_token(cookies, bearer)
+#[get("/users")]
+pub async fn list_users(state: &State<Context>, caller: User) -> Result<JsonRPC<Vec<User>>> {
+    state.manager.list_users(&caller).await.map(JsonRPC)
 }
 
-#[get("/logout")]
-pub fn logout(cookies: &CookieJar<'_>) {
-    clear(cookies)
+#[put("/users/<id>", data = "<conf>")]
+pub async fn create_user(
+    state: &State<Context>,
+    caller: User,
+    id: String,
+    conf: Json<UserConfiguration>,
+) -> Result<EmptyJsonRPC> {
+    state
+        .manager
+        .clone()
+        .create_user(&caller, id, conf.0)
+        .await?;
+    Ok(EmptyJsonRPC())
 }
 
-fn clear(cookies: &CookieJar<'_>) {
-    cookies.remove_private(
-        Cookie::build(COOKIE_TOKEN, "")
-            .same_site(SameSite::Lax)
-            .finish(),
-    );
+#[patch("/users/<id>", data = "<conf>")]
+pub async fn update_user(
+    state: &State<Context>,
+    caller: User,
+    id: String,
+    conf: Json<UserUpdateConfiguration>,
+) -> Result<EmptyJsonRPC> {
+    state
+        .manager
+        .clone()
+        .update_user(&caller, id, conf.0)
+        .await?;
+    Ok(EmptyJsonRPC())
 }
 
-#[allow(dead_code)]
-#[catch(401)]
-pub fn bad_request_catcher(_req: &Request<'_>) {
-    clear(_req.cookies())
+#[delete("/users/<id>")]
+pub async fn delete_user(state: &State<Context>, caller: User, id: String) -> Result<EmptyJsonRPC> {
+    state.manager.clone().delete_user(&caller, id).await?;
+    Ok(EmptyJsonRPC())
+}
+
+// User sessions
+
+#[get("/users/<user_id>/sessions/<id>")]
+pub async fn get_user_session(
+    state: &State<Context>,
+    caller: User,
+    user_id: String,
+    id: String,
+) -> Result<JsonRPC<Option<Session>>> {
+    state
+        .manager
+        .get_user_session(&caller, &user_id, &id)
+        .await
+        .map(JsonRPC)
+}
+
+#[get("/users/<user_id>/sessions")]
+pub async fn list_user_sessions(
+    state: &State<Context>,
+    user_id: String,
+    caller: User,
+) -> Result<JsonRPC<Vec<Session>>> {
+    state
+        .manager
+        .list_user_sessions(&caller, &user_id)
+        .await
+        .map(JsonRPC)
+}
+
+#[put("/users/<user_id>/sessions/<id>", data = "<conf>")]
+pub async fn create_user_session(
+    state: &State<Context>,
+    caller: User,
+    user_id: String,
+    id: String,
+    conf: Json<SessionConfiguration>,
+) -> Result<EmptyJsonRPC> {
+    state
+        .manager
+        .create_user_session(&caller, &user_id, &id, &conf.0)
+        .await?;
+    Ok(EmptyJsonRPC())
+}
+
+#[patch("/users/<user_id>/sessions/<id>", data = "<conf>")]
+pub async fn update_user_session(
+    state: &State<Context>,
+    caller: User,
+    user_id: String,
+    id: String,
+    conf: Json<SessionUpdateConfiguration>,
+) -> Result<EmptyJsonRPC> {
+    state
+        .manager
+        .update_user_session(&caller, &user_id, &id, conf.0)
+        .await?;
+    Ok(EmptyJsonRPC())
+}
+
+#[delete("/users/<user_id>/sessions/<id>")]
+pub async fn delete_user_session(
+    state: &State<Context>,
+    caller: User,
+    user_id: String,
+    id: String,
+) -> Result<EmptyJsonRPC> {
+    state
+        .manager
+        .delete_user_session(&caller, &user_id, &id)
+        .await?;
+    Ok(EmptyJsonRPC())
+}
+
+// User session executions
+
+#[put("/users/<user_id>/sessions/<id>/executions", data = "<conf>")]
+pub async fn create_user_session_execution(
+    state: &State<Context>,
+    caller: User,
+    user_id: String,
+    id: String,
+    conf: Json<SessionExecutionConfiguration>,
+) -> Result<EmptyJsonRPC> {
+    state
+        .manager
+        .create_user_session_execution(&caller, &user_id, &id, conf.0)
+        .await?;
+    Ok(EmptyJsonRPC())
 }

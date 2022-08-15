@@ -25,6 +25,16 @@
         "type": "Read"
       }
     ],
+    "Profile": [
+      {
+        "type": "Read"
+      }
+    ],
+    "Preference": [
+      {
+        "type": "Read"
+      }
+    ],
     "Session": [
       {
         "type": "Create"

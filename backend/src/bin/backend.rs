@@ -38,36 +38,28 @@ async fn main() {
         .mount(
             "/api",
             routes![
+                // Login
+                playground::api::github_login,
+                playground::api::post_install_callback,
+                playground::api::login,
+                playground::api::logout,
                 playground::api::get,
                 playground::api::get_unlogged,
-                // Users
-                playground::api::get_user,
-                playground::api::list_users,
-                playground::api::create_user,
-                playground::api::update_user,
-                playground::api::delete_user,
-                // Sessions
-                playground::api::get_session,
-                playground::api::get_user_session,
-                playground::api::list_sessions,
-                playground::api::list_user_sessions,
-                playground::api::create_session,
-                playground::api::create_user_session,
-                playground::api::update_session,
-                playground::api::update_user_session,
-                playground::api::delete_session,
-                playground::api::delete_user_session,
-                // Session Executions
-                playground::api::create_session_execution,
-                playground::api::create_user_session_execution,
-                // All Sessions
-                playground::api::list_all_sessions,
-                // Roles
-                playground::api::get_role,
-                playground::api::list_roles,
-                playground::api::create_role,
-                playground::api::update_role,
-                playground::api::delete_role,
+                // Preferences
+                playground::api::get_preference,
+                playground::api::list_preferences,
+                playground::api::create_preference,
+                playground::api::update_preference,
+                playground::api::delete_preference,
+                // Pools
+                playground::api::get_pool,
+                playground::api::list_pools,
+                // Profiles
+                playground::api::get_profile,
+                playground::api::list_profiles,
+                playground::api::create_profile,
+                playground::api::update_profile,
+                playground::api::delete_profile,
                 // Repositories
                 playground::api::get_repository,
                 playground::api::list_repositories,
@@ -79,14 +71,28 @@ async fn main() {
                 playground::api::list_repository_versions,
                 playground::api::create_repository_version,
                 playground::api::delete_repository_version,
-                // Pools
-                playground::api::get_pool,
-                playground::api::list_pools,
-                // Login
-                playground::api::github_login,
-                playground::api::post_install_callback,
-                playground::api::login,
-                playground::api::logout,
+                // Roles
+                playground::api::get_role,
+                playground::api::list_roles,
+                playground::api::create_role,
+                playground::api::update_role,
+                playground::api::delete_role,
+                // Sessions
+                playground::api::list_sessions,
+                // Users
+                playground::api::get_user,
+                playground::api::list_users,
+                playground::api::create_user,
+                playground::api::update_user,
+                playground::api::delete_user,
+                // User sessions
+                playground::api::get_user_session,
+                playground::api::list_user_sessions,
+                playground::api::create_user_session,
+                playground::api::update_user_session,
+                playground::api::delete_user_session,
+                // User session Executions
+                playground::api::create_user_session_execution,
             ],
         )
         .mount("/metrics", prometheus)

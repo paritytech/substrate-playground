@@ -54,31 +54,6 @@ spec:
               secretKeyRef:
                 name: playground-secrets
                 key: github.clientSecret
-          - name: SESSION_DEFAULT_DURATION
-            valueFrom:
-              configMapKeyRef:
-                name: playground-config
-                key: session.defaultDuration
-          - name: SESSION_MAX_DURATION
-            valueFrom:
-              configMapKeyRef:
-                name: playground-config
-                key: session.maxDuration
-          - name: SESSION_DEFAULT_POOL_AFFINITY
-            valueFrom:
-              configMapKeyRef:
-                name: playground-config
-                key: session.defaultPoolAffinity
-          - name: SESSION_DEFAULT_MAX_PER_NODE
-            valueFrom:
-              configMapKeyRef:
-                name: playground-config
-                key: session.defaultMaxPerNode
-          - name: USER_ROLES
-            valueFrom:
-              configMapKeyRef:
-                name: playground-config
-                key: userRoles
           - name: ROCKET_SECRET_KEY
             valueFrom:
               secretKeyRef:

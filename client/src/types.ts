@@ -12,75 +12,55 @@ export interface Playground {
 
 export interface Configuration {
     githubClientId: string,
-    session: SessionDefaults,
-    userRoles: Record<string, string>,
 }
 
-export interface SessionDefaults {
-    /* The default number of minutes sessions can last */
-    duration: number,
-    maxDuration: number,
-    poolAffinity: string,
-    maxSessionsPerPod: string,
+export interface Node {
+    hostname: string,
 }
 
-export interface Session extends IdentifiedResource, OwnedResource {
-    state: SessionState;
-    /* The maximum number of minutes this session can last */
-    maxDuration: number,
+export interface Pool extends IdentifiedResource {
+    instanceType?: string,
+    nodes: Node[],
 }
 
-export type SessionState =
-    | {type: "Deploying" }
-    | {type: "Running", startTime: number/* in seconds */ , node: Node }
-    | {type: "Failed", message: string, reason: string };
-
-export interface RepositorySource {
-    repositoryId: Repository['id'],
-    repositoryVersionId?: RepositoryVersion['id'],
+export enum Preferences {
+    SessionDefaultDuration = "SessionDefaultDuration",
+    SessionMaxDuration = "SessionMaxDuration",
+    SessionPoolAffinity = "SessionPoolAffinity",
+    UserDefaultRoles = "UserDefaultRoles"
+}
+export interface Preference extends IdentifiedResource {
+    value: string,
 }
 
-export interface SessionConfiguration {
-    repositorySource: RepositorySource,
-    /* The number of minutes this session will be able to last */
-    duration?: number,
-    poolAffinity?: string,
+export interface PreferenceConfiguration {
+    value: string,
 }
 
-export interface SessionUpdateConfiguration {
-    /* The number of minutes this session will be able to last */
-    duration?: number,
+export interface PreferenceUpdateConfiguration {
+    value?: string,
 }
 
-export interface SessionExecution {
-    stdout: string,
+export interface Profile extends IdentifiedResource {
+    preferences: Record<Preferences, string>,
 }
 
-export interface SessionExecutionConfiguration {
-    command: Array<string>,
+export interface ProfileConfiguration {
+    preferences: Record<Preferences, string>,
+}
+
+export interface ProfileUpdateConfiguration {
+    preferences?: Record<Preferences, string>,
 }
 
 export interface RepositoryDetails extends IdentifiedResource {
     reference: string,
 }
 
-export interface User extends IdentifiedResource {
-    role: string,
-    preferences: Record<string, string>,
-}
-
-export interface UserConfiguration {
-    role: string,
-    preferences: Record<string, string>,
-}
-
-export interface UserUpdateConfiguration {
-    role: string,
-    preferences: Record<string, string>,
-}
-
 export enum ResourceType {
     Pool = "Pool",
+    Preference = "Preference",
+    Profile = "Profile",
     Repository = "Repository",
     RepositoryVersion = "RepositoryVersion",
     Role = "Role",
@@ -106,7 +86,7 @@ export interface RoleConfiguration {
 }
 
 export interface RoleUpdateConfiguration {
-    permissions: Record<ResourceType, Array<ResourcePermission>>,
+    permissions?: Record<ResourceType, Array<ResourcePermission>>,
 }
 
 export interface Repository extends IdentifiedResource {
@@ -136,12 +116,6 @@ export type RepositoryVersionState =
     | {type: "Ready", devcontainerJson: string }
     | {type: "Failed", message: string };
 
-export interface RepositoryRuntimeConfiguration {
-    baseImage?: string,
-    env?: NameValuePair[],
-    ports?: Port[],
-}
-
 export interface NameValuePair {
     name: string,
     value: string,
@@ -155,11 +129,63 @@ export interface Port {
     target?: number
 }
 
-export interface Pool extends IdentifiedResource {
-    instanceType?: string,
-    nodes: Node[],
+export interface Session extends IdentifiedResource, OwnedResource {
+    state: SessionState;
+    /* The maximum number of minutes this session can last */
+    maxDuration: number,
 }
 
-export interface Node {
-    hostname: string,
+export interface SessionRuntimeConfiguration {
+    env: NameValuePair[],
+    ports: Port[],
+}
+
+export type SessionState =
+    | {type: "Deploying" }
+    | {type: "Running", startTime: number/* in seconds */ , node: Node, runtimeConfiguration: SessionRuntimeConfiguration }
+    | {type: "Failed", message: string, reason: string };
+
+export interface RepositorySource {
+    repositoryId: Repository['id'],
+    repositoryVersionId?: RepositoryVersion['id'],
+}
+
+export interface SessionConfiguration {
+    repositorySource: RepositorySource,
+    /* The number of minutes this session will be able to last */
+    duration?: number,
+    poolAffinity?: string,
+    runtimeConfiguration?: SessionRuntimeConfiguration,
+}
+
+export interface SessionUpdateConfiguration {
+    /* The number of minutes this session will be able to last */
+    duration?: number,
+    runtimeConfiguration?: SessionRuntimeConfiguration,
+}
+
+export interface SessionExecution {
+    stdout: string,
+}
+
+export interface SessionExecutionConfiguration {
+    command: Array<string>,
+}
+
+export interface User extends IdentifiedResource {
+    role: string,
+    profile?: string,
+    preferences: Record<Preferences, string>,
+}
+
+export interface UserConfiguration {
+    role: string,
+    profile?: string,
+    preferences: Record<Preferences, string>,
+}
+
+export interface UserUpdateConfiguration {
+    role?: string,
+    profile?: string,
+    preferences?: Record<Preferences, string>,
 }

@@ -5,6 +5,11 @@ use crate::{
     kubernetes::{
         get_configuration,
         pool::{get_pool, list_pools},
+        preference::{
+            create_preference, delete_preference, get_preference, list_preferences,
+            update_preference,
+        },
+        profile::{create_profile, delete_profile, get_profile, list_profiles, update_profile},
         repository::{
             create_repository, create_repository_version, delete_repository,
             delete_repository_version, get_repository, get_repository_version, list_repositories,
@@ -12,14 +17,16 @@ use crate::{
         },
         role::{create_role, delete_role, get_role, list_roles, update_role},
         session::{
-            create_session, create_session_execution, delete_session, get_session,
-            list_all_sessions, list_sessions, patch_ingress, update_session,
+            create_user_session, create_user_session_execution, delete_user_session,
+            get_user_session, list_sessions, list_user_sessions, patch_ingress,
+            update_user_session,
         },
         user::{create_user, delete_user, get_user, list_users, update_user},
     },
     metrics::Metrics,
     types::{
-        Playground, Pool, Repository, RepositoryConfiguration, RepositoryUpdateConfiguration,
+        Playground, Pool, Preference, PreferenceConfiguration, Preferences, Profile,
+        ProfileConfiguration, Repository, RepositoryConfiguration, RepositoryUpdateConfiguration,
         RepositoryVersion, ResourcePermission, ResourceType, Role, RoleConfiguration, Session,
         SessionConfiguration, SessionExecution, SessionExecutionConfiguration, SessionState,
         SessionUpdateConfiguration, User, UserConfiguration, UserUpdateConfiguration,
@@ -27,6 +34,7 @@ use crate::{
 };
 use log::{error, info, warn};
 use std::{
+    convert::TryInto,
     thread::{self, JoinHandle},
     time::Duration,
 };
@@ -43,7 +51,7 @@ impl Manager {
         let metrics = Metrics::new()?;
         // Go through all existing sessions and update the ingress
         // TODO remove once migrated to per session nginx
-        match list_all_sessions().await {
+        match list_sessions().await {
             Ok(sessions) => {
                 let running = sessions
                     .iter()
@@ -78,7 +86,7 @@ impl Manager {
             thread::sleep(Manager::SLEEP_TIME);
 
             // Go through all Running pods and figure out if they have to be undeployed
-            if let Ok(sessions) = list_all_sessions().await {
+            if let Ok(sessions) = list_sessions().await {
                 for session in sessions {
                     if let SessionState::Running { start_time, .. } = session.state {
                         if let Ok(duration) = start_time.elapsed() {
@@ -94,7 +102,7 @@ impl Manager {
                                 let session = session.clone();
                                 let sid = session.id;
                                 let id = sid.as_str();
-                                if let Err(err) = delete_session(&session.user_id, id).await {
+                                if let Err(err) = delete_user_session(&session.user_id, id).await {
                                     warn!("Error while undeploying {}: {}", id, err)
                                 }
                             }
@@ -126,6 +134,14 @@ async fn ensure_permission(
     Ok(())
 }
 
+/// Return `Err` if ``is not a valid `Preferences`
+fn ensure_valid_preference(id: &str) -> Result<()> {
+    // Force id into a Preferences
+    let _: Preferences = id.try_into()?;
+
+    Ok(())
+}
+
 impl Manager {
     pub async fn get(self, user: User) -> Result<Playground> {
         Ok(Playground {
@@ -141,106 +157,124 @@ impl Manager {
         })
     }
 
-    // Users
+    // Pools
 
-    pub async fn get_user(&self, caller: &User, id: &str) -> Result<Option<User>> {
-        // Users can get details about themselves
-        if caller.id != id {
-            ensure_permission(caller, ResourceType::User, ResourcePermission::Read).await?;
-        }
+    pub async fn get_pool(&self, caller: &User, pool_id: &str) -> Result<Option<Pool>> {
+        ensure_permission(caller, ResourceType::Pool, ResourcePermission::Read).await?;
 
-        get_user(id).await
+        get_pool(pool_id).await
     }
 
-    pub async fn list_users(&self, caller: &User) -> Result<Vec<User>> {
-        ensure_permission(caller, ResourceType::User, ResourcePermission::Read).await?;
+    pub async fn list_pools(&self, caller: &User) -> Result<Vec<Pool>> {
+        ensure_permission(caller, ResourceType::Pool, ResourcePermission::Read).await?;
 
-        list_users().await
+        list_pools().await
     }
 
-    pub async fn create_user(
-        self,
-        caller: &User,
-        id: String,
-        conf: UserConfiguration,
-    ) -> Result<()> {
-        ensure_permission(caller, ResourceType::User, ResourcePermission::Create).await?;
+    // Preferences
 
-        create_user(&id, conf).await
+    pub async fn get_preference(&self, caller: &User, id: &str) -> Result<Option<Preference>> {
+        ensure_permission(caller, ResourceType::Preference, ResourcePermission::Read).await?;
+
+        get_preference(id).await
     }
 
-    pub async fn update_user(
-        self,
-        caller: &User,
-        id: String,
-        conf: UserUpdateConfiguration,
-    ) -> Result<()> {
-        // Users can edit themselves
-        if caller.id != id {
-            ensure_permission(caller, ResourceType::User, ResourcePermission::Update).await?;
-        }
-
-        update_user(&id, conf).await
-    }
-
-    pub async fn delete_user(self, caller: &User, id: String) -> Result<()> {
-        // Users can delete themselves
-        if caller.id != id {
-            ensure_permission(caller, ResourceType::User, ResourcePermission::Delete).await?;
-        }
-
-        delete_user(&id).await
-    }
-    // Roles
-
-    pub async fn get_role(&self, caller: &User, id: &str) -> Result<Option<Role>> {
-        ensure_permission(caller, ResourceType::Role, ResourcePermission::Read).await?;
-
-        get_role(id).await
-    }
-
-    pub async fn list_roles(&self, caller: &User) -> Result<Vec<Role>> {
+    pub async fn list_preferences(&self, caller: &User) -> Result<Vec<Preference>> {
         ensure_permission(
             caller,
-            ResourceType::Role,
+            ResourceType::Preference,
             crate::types::ResourcePermission::Read,
         )
         .await?;
 
-        list_roles().await
+        list_preferences().await
     }
 
-    pub async fn create_role(
+    pub async fn create_preference(
         &self,
         caller: &User,
         id: &str,
-        conf: RoleConfiguration,
+        conf: PreferenceConfiguration,
     ) -> Result<()> {
+        ensure_valid_preference(id)?;
+
         ensure_permission(
             caller,
-            ResourceType::Role,
+            ResourceType::Preference,
             crate::types::ResourcePermission::Create,
         )
         .await?;
 
-        create_role(id, conf).await
+        create_preference(id, conf).await
     }
 
-    pub async fn update_role(
+    pub async fn update_preference(
         &self,
         caller: &User,
         id: &str,
-        conf: crate::types::RoleUpdateConfiguration,
+        conf: crate::types::PreferenceUpdateConfiguration,
     ) -> Result<()> {
-        ensure_permission(caller, ResourceType::Role, ResourcePermission::Update).await?;
+        ensure_permission(caller, ResourceType::Preference, ResourcePermission::Update).await?;
 
-        update_role(id, conf).await
+        update_preference(id, conf).await
     }
 
-    pub async fn delete_role(&self, caller: &User, id: &str) -> Result<()> {
-        ensure_permission(caller, ResourceType::Role, ResourcePermission::Delete).await?;
+    pub async fn delete_preference(&self, caller: &User, id: &str) -> Result<()> {
+        ensure_permission(caller, ResourceType::Preference, ResourcePermission::Delete).await?;
 
-        delete_role(id).await
+        delete_preference(id).await
+    }
+
+    // Profiles
+
+    pub async fn get_profile(&self, caller: &User, id: &str) -> Result<Option<Profile>> {
+        ensure_permission(caller, ResourceType::Profile, ResourcePermission::Read).await?;
+
+        get_profile(id).await
+    }
+
+    pub async fn list_profiles(&self, caller: &User) -> Result<Vec<Profile>> {
+        ensure_permission(
+            caller,
+            ResourceType::Profile,
+            crate::types::ResourcePermission::Read,
+        )
+        .await?;
+
+        list_profiles().await
+    }
+
+    pub async fn create_profile(
+        &self,
+        caller: &User,
+        id: &str,
+        conf: ProfileConfiguration,
+    ) -> Result<()> {
+        ensure_permission(
+            caller,
+            ResourceType::Profile,
+            crate::types::ResourcePermission::Create,
+        )
+        .await?;
+
+        create_profile(id, conf).await
+    }
+
+    pub async fn update_profile(
+        &self,
+        caller: &User,
+        id: &str,
+        conf: crate::types::ProfileUpdateConfiguration,
+    ) -> Result<()> {
+        ensure_permission(caller, ResourceType::Profile, ResourcePermission::Update).await?;
+
+        update_profile(id, conf).await
+    }
+
+    pub async fn delete_profile(&self, caller: &User, id: &str) -> Result<()> {
+        ensure_permission(caller, ResourceType::Profile, ResourcePermission::Delete).await?;
+
+        delete_profile(id).await
     }
 
     // Repositories
@@ -285,7 +319,7 @@ impl Manager {
         delete_repository(id).await
     }
 
-    //Repository versions
+    // Repository versions
 
     pub async fn get_repository_version(
         &self,
@@ -350,21 +384,118 @@ impl Manager {
         delete_repository_version(repository_id, id).await
     }
 
-    // Pools
+    // Roles
 
-    pub async fn get_pool(&self, caller: &User, pool_id: &str) -> Result<Option<Pool>> {
-        ensure_permission(caller, ResourceType::Pool, ResourcePermission::Read).await?;
+    pub async fn get_role(&self, caller: &User, id: &str) -> Result<Option<Role>> {
+        ensure_permission(caller, ResourceType::Role, ResourcePermission::Read).await?;
 
-        get_pool(pool_id).await
+        get_role(id).await
     }
 
-    pub async fn list_pools(&self, caller: &User) -> Result<Vec<Pool>> {
-        ensure_permission(caller, ResourceType::Pool, ResourcePermission::Read).await?;
+    pub async fn list_roles(&self, caller: &User) -> Result<Vec<Role>> {
+        ensure_permission(
+            caller,
+            ResourceType::Role,
+            crate::types::ResourcePermission::Read,
+        )
+        .await?;
 
-        list_pools().await
+        list_roles().await
+    }
+
+    pub async fn create_role(
+        &self,
+        caller: &User,
+        id: &str,
+        conf: RoleConfiguration,
+    ) -> Result<()> {
+        ensure_permission(
+            caller,
+            ResourceType::Role,
+            crate::types::ResourcePermission::Create,
+        )
+        .await?;
+
+        create_role(id, conf).await
+    }
+
+    pub async fn update_role(
+        &self,
+        caller: &User,
+        id: &str,
+        conf: crate::types::RoleUpdateConfiguration,
+    ) -> Result<()> {
+        ensure_permission(caller, ResourceType::Role, ResourcePermission::Update).await?;
+
+        update_role(id, conf).await
+    }
+
+    pub async fn delete_role(&self, caller: &User, id: &str) -> Result<()> {
+        ensure_permission(caller, ResourceType::Role, ResourcePermission::Delete).await?;
+
+        delete_role(id).await
     }
 
     // Sessions
+
+    pub async fn list_sessions(&self, caller: &User) -> Result<Vec<Session>> {
+        ensure_permission(caller, ResourceType::Session, ResourcePermission::Read).await?;
+
+        list_sessions().await
+    }
+
+    // Users
+
+    pub async fn get_user(&self, caller: &User, id: &str) -> Result<Option<User>> {
+        // Users can get details about themselves
+        if caller.id != id {
+            ensure_permission(caller, ResourceType::User, ResourcePermission::Read).await?;
+        }
+
+        get_user(id).await
+    }
+
+    pub async fn list_users(&self, caller: &User) -> Result<Vec<User>> {
+        ensure_permission(caller, ResourceType::User, ResourcePermission::Read).await?;
+
+        list_users().await
+    }
+
+    pub async fn create_user(
+        self,
+        caller: &User,
+        id: String,
+        conf: UserConfiguration,
+    ) -> Result<()> {
+        ensure_permission(caller, ResourceType::User, ResourcePermission::Create).await?;
+
+        create_user(&id, conf).await
+    }
+
+    pub async fn update_user(
+        self,
+        caller: &User,
+        id: String,
+        conf: UserUpdateConfiguration,
+    ) -> Result<()> {
+        // Users can edit themselves
+        if caller.id != id {
+            ensure_permission(caller, ResourceType::User, ResourcePermission::Update).await?;
+        }
+
+        update_user(&id, conf).await
+    }
+
+    pub async fn delete_user(self, caller: &User, id: String) -> Result<()> {
+        // Users can delete themselves
+        if caller.id != id {
+            ensure_permission(caller, ResourceType::User, ResourcePermission::Delete).await?;
+        }
+
+        delete_user(&id).await
+    }
+
+    // User sessions
 
     async fn ensure_session_ownership(
         &self,
@@ -372,7 +503,7 @@ impl Manager {
         user_id: &str,
         session_id: &str,
     ) -> Result<Session> {
-        if let Some(session) = get_session(user_id, session_id).await? {
+        if let Some(session) = get_user_session(user_id, session_id).await? {
             if user_id == session.user_id
                 || caller
                     .has_permission(
@@ -398,7 +529,7 @@ impl Manager {
         }
     }
 
-    pub async fn get_session(
+    pub async fn get_user_session(
         &self,
         caller: &User,
         user_id: &str,
@@ -413,13 +544,13 @@ impl Manager {
         }
     }
 
-    pub async fn list_sessions(&self, caller: &User, user_id: &str) -> Result<Vec<Session>> {
+    pub async fn list_user_sessions(&self, caller: &User, user_id: &str) -> Result<Vec<Session>> {
         ensure_permission(caller, ResourceType::Session, ResourcePermission::Read).await?;
 
-        list_sessions(user_id).await
+        list_user_sessions(user_id).await
     }
 
-    pub async fn create_session(
+    pub async fn create_user_session(
         &self,
         caller: &User,
         user_id: &str,
@@ -465,8 +596,7 @@ impl Manager {
         }
 
         let repository_source = session_configuration.clone().repository_source;
-        let configuration = get_configuration().await?;
-        let result = create_session(caller, id, &configuration, session_configuration).await;
+        let result = create_user_session(caller, id, session_configuration).await;
 
         info!(
             "Created session {} with repository_source {}:{:?}",
@@ -485,7 +615,7 @@ impl Manager {
         result
     }
 
-    pub async fn update_session(
+    pub async fn update_user_session(
         &self,
         caller: &User,
         user_id: &str,
@@ -496,16 +626,15 @@ impl Manager {
 
         self.ensure_session_ownership(caller, user_id, id).await?;
 
-        let configuration = get_configuration().await?;
-        update_session(&caller.id, id, configuration, session_update_configuration).await
+        update_user_session(caller, id, session_update_configuration).await
     }
 
-    pub async fn delete_session(&self, caller: &User, user_id: &str, id: &str) -> Result<()> {
+    pub async fn delete_user_session(&self, caller: &User, user_id: &str, id: &str) -> Result<()> {
         ensure_permission(caller, ResourceType::Session, ResourcePermission::Delete).await?;
 
         self.ensure_session_ownership(caller, user_id, id).await?;
 
-        let result = delete_session(&caller.id, id).await;
+        let result = delete_user_session(&caller.id, id).await;
         match &result {
             Ok(_) => {
                 self.metrics.inc_undeploy_counter();
@@ -518,9 +647,9 @@ impl Manager {
         result
     }
 
-    // Session executions
+    // User session executions
 
-    pub async fn create_session_execution(
+    pub async fn create_user_session_execution(
         &self,
         caller: &User,
         user_id: &str,
@@ -537,14 +666,6 @@ impl Manager {
         self.ensure_session_ownership(caller, user_id, session_id)
             .await?;
 
-        create_session_execution(&caller.id, session_id, session_execution_configuration).await
-    }
-
-    // All Sessions
-
-    pub async fn list_all_sessions(&self, caller: &User) -> Result<Vec<Session>> {
-        ensure_permission(caller, ResourceType::Session, ResourcePermission::Read).await?;
-
-        list_all_sessions().await
+        create_user_session_execution(&caller.id, session_id, session_execution_configuration).await
     }
 }

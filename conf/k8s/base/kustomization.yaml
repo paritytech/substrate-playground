@@ -15,15 +15,25 @@ resources:
     - node-conf-daemon-set.yaml
 
 configMapGenerator:
+- name: playground-preferences
+  files:
+    - resources/dummy
+  options:
+    disableNameSuffixHash: true
+- name: playground-profiles
+  files:
+    - resources/dummy
+  options:
+    disableNameSuffixHash: true
 - name: playground-repositories
   files:
-    - repositories/dummy
+    - resources/dummy
   options:
     disableNameSuffixHash: true
 - name: playground-roles
   files:
-    - roles/paritytech-member
-    - roles/super-admin
-    - roles/user
+    - resources/roles/paritytech-member
+    - resources/roles/super-admin
+    - resources/roles/user
   options:
     disableNameSuffixHash: true

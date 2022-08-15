@@ -62,7 +62,7 @@ function ExtraTheiaNav({ client, user, conf, restartAction }: { client: Client, 
                 // Increase duration
                 if (remaining < 10 && maxDuration < maxConfDuration) {
                     const newDuration = Math.min(maxConfDuration, maxDuration + 10);
-                    await client.updateSession(sessionId, {duration: newDuration});
+                    await client.updateUserSession(user.id, sessionId, {duration: newDuration});
                 }
             }
         }

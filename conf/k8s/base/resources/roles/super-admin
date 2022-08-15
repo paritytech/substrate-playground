@@ -57,6 +57,34 @@
         "type": "Delete"
       }
     ],
+    "Profile": [
+        {
+          "type": "Create"
+        },
+        {
+          "type": "Read"
+        },
+        {
+          "type": "Update"
+        },
+        {
+          "type": "Delete"
+        }
+      ],
+      "Preference": [
+        {
+          "type": "Create"
+        },
+        {
+          "type": "Read"
+        },
+        {
+          "type": "Update"
+        },
+        {
+          "type": "Delete"
+        }
+      ],
     "Session": [
       {
         "type": "Create"

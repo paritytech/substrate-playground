@@ -1,4 +1,6 @@
 pub mod pool;
+pub mod preference;
+pub mod profile;
 pub mod repository;
 pub mod role;
 pub mod session;
@@ -7,7 +9,7 @@ pub mod workspace;
 
 use crate::{
     error::{Error, Result},
-    types::{Configuration, Secrets, SessionDefaults},
+    types::{Configuration, Secrets},
     utils::var,
 };
 use json_patch::{AddOperation, PatchOperation, RemoveOperation};
@@ -61,7 +63,7 @@ pub async fn get_host() -> Result<String> {
         .clone())
 }
 
-fn parse_user_roles(s: String) -> BTreeMap<String, String> {
+pub fn parse_user_roles(s: String) -> BTreeMap<String, String> {
     s.split(';')
         .map(|s| {
             let pair = s.split('=').collect::<Vec<&str>>();
@@ -73,18 +75,16 @@ fn parse_user_roles(s: String) -> BTreeMap<String, String> {
         .collect()
 }
 
+pub fn get_preference(preferences: &BTreeMap<String, String>, key: &str) -> Result<String> {
+    preferences
+        .get(key)
+        .cloned()
+        .ok_or_else(|| Error::MissingConstraint("preference".to_string(), key.to_string()))
+}
+
 pub async fn get_configuration() -> Result<Configuration> {
     Ok(Configuration {
         github_client_id: var("GITHUB_CLIENT_ID")?,
-        session: SessionDefaults {
-            duration: str_minutes_to_duration(&var("SESSION_DEFAULT_DURATION")?)?,
-            max_duration: str_minutes_to_duration(&var("SESSION_MAX_DURATION")?)?,
-            pool_affinity: var("SESSION_DEFAULT_POOL_AFFINITY")?,
-            max_sessions_per_pod: var("SESSION_DEFAULT_MAX_PER_NODE")?
-                .parse()
-                .map_err(|_err| Error::Failure("Failed to parse variable".to_string()))?,
-        },
-        user_roles: parse_user_roles(var("USER_ROLES")?),
     })
 }
 
@@ -268,6 +268,22 @@ pub async fn update_label_value<K: Clone + DeserializeOwned + Debug>(
     update_value(api, id, format!("/metadata/labels/{}", name), value).await
 }
 
+pub async fn delete_annotation_value<K: Clone + DeserializeOwned + Debug>(
+    api: &Api<K>,
+    id: &str,
+    name: &str,
+) -> Result<()> {
+    delete_value(api, id, format!("/metadata/annotations/{}", name)).await
+}
+
+pub async fn delete_label_value<K: Clone + DeserializeOwned + Debug>(
+    api: &Api<K>,
+    id: &str,
+    name: &str,
+) -> Result<()> {
+    delete_value(api, id, format!("/metadata/labels/{}", name)).await
+}
+
 pub async fn update_value<K: Clone + DeserializeOwned + Debug>(
     api: &Api<K>,
     id: &str,
@@ -279,6 +295,22 @@ pub async fn update_value<K: Clone + DeserializeOwned + Debug>(
             path,
             value,
         })]));
+    api.patch(id, &PatchParams::default(), &patch)
+        .await
+        .map_err(Error::K8sCommunicationFailure)?;
+
+    Ok(())
+}
+
+pub async fn delete_value<K: Clone + DeserializeOwned + Debug>(
+    api: &Api<K>,
+    id: &str,
+    path: String,
+) -> Result<()> {
+    let patch: Patch<json_patch::Patch> =
+        Patch::Json(json_patch::Patch(vec![PatchOperation::Remove(
+            RemoveOperation { path },
+        )]));
     api.patch(id, &PatchParams::default(), &patch)
         .await
         .map_err(Error::K8sCommunicationFailure)?;

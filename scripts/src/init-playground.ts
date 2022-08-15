@@ -62,6 +62,11 @@ try {
     const repositoryId = 'node-template';
     const repositoryVersionId = await latestRepositoryVersion(repository);
 
+    await client.createPreference('SessionDefaultDuration', {value: "45"});
+    await client.createPreference('SessionMaxDuration', {value: "1440"});
+    await client.createPreference('SessionPoolAffinity', {value: "default"});
+    await client.createPreference('UserDefaultRoles', {value: "TestUppercase=super-admin"});
+
     if (! await client.getRepository(repositoryId)) {
         console.log("Creating Repository");
         try {

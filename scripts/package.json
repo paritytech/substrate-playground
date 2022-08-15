@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "tsc",
-    "run:init-default-resources": "node dist/init-default-resources.js",
+    "run:init-playground": "node dist/init-playground.js",
     "clean": "rm -rf dist/ node_modules/ yarn.lock"
   },
   "engines": {

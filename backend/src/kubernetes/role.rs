@@ -42,7 +42,10 @@ pub async fn update_role(id: &str, conf: RoleUpdateConfiguration) -> Result<()> 
     let mut role: Role = get_role(id).await?.ok_or_else(|| {
         Error::Resource(ResourceError::Unknown(ResourceType::Role, id.to_string()))
     })?;
-    role.permissions = conf.permissions;
+
+    if let Some(permissions) = conf.permissions {
+        role.permissions = permissions;
+    }
 
     store_resource_as_config_map(&client, &role.id, &role, CONFIG_MAP).await
 }

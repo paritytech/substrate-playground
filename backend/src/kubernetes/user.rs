@@ -5,9 +5,9 @@
 //!
 
 use super::{
-    all_namespaces_api, delete_all_resource, get_all_resource, list_all_resources, serialize_json,
-    unserialize_json, update_annotation_value, user_namespace, user_namespaced_api, APP_LABEL,
-    APP_VALUE, COMPONENT_LABEL,
+    all_namespaces_api, delete_all_resource, delete_annotation_value, get_all_resource,
+    list_all_resources, serialize_json, unserialize_json, update_annotation_value, user_namespace,
+    user_namespaced_api, APP_LABEL, APP_VALUE, COMPONENT_LABEL,
 };
 use crate::{
     error::{Error, ResourceError, Result},
@@ -24,6 +24,7 @@ use std::collections::BTreeMap;
 const RESOURCE_ID: &str = "RESOURCE_ID";
 const COMPONENT: &str = "user";
 const ROLE_ANNOTATION: &str = "ROLE";
+const PROFILE_ANNOTATION: &str = "PROFILE";
 const PREFERENCES_ANNOTATION: &str = "PREFERENCES";
 pub const DEFAULT_SERVICE_ACCOUNT: &str = "default-service-account";
 
@@ -39,6 +40,7 @@ fn namespace_to_user(namespace: &Namespace) -> Result<User> {
             .get(ROLE_ANNOTATION)
             .ok_or_else(|| Error::Failure(format!("Missing annotation {}", ROLE_ANNOTATION)))?
             .to_string(),
+        profile: annotations.get(PROFILE_ANNOTATION).cloned(),
         preferences: unserialize_json(annotations.get(PREFERENCES_ANNOTATION).ok_or_else(
             || Error::Failure(format!("Missing annotation {}", PREFERENCES_ANNOTATION)),
         )?)?,
@@ -51,13 +53,16 @@ fn user_to_namespace(user: &User) -> Result<Namespace> {
         (COMPONENT_LABEL.to_string(), COMPONENT.to_string()),
         (RESOURCE_ID.to_string(), user.id.clone()),
     ]);
-    let annotations = BTreeMap::from([
+    let mut annotations = BTreeMap::from([
         (
             PREFERENCES_ANNOTATION.to_string(),
             serialize_json(&user.preferences)?,
         ),
         (ROLE_ANNOTATION.to_string(), user.role.clone()),
     ]);
+    if let Some(profile) = user.profile.clone() {
+        annotations.insert(PROFILE_ANNOTATION.to_string(), profile);
+    }
     Ok(Namespace {
         metadata: ObjectMeta {
             name: Some(user_namespace(&user.id)),
@@ -88,6 +93,7 @@ pub async fn create_user(id: &str, conf: UserConfiguration) -> Result<()> {
     let user = User {
         id: id.to_string(), // Store
         role: conf.role,
+        profile: conf.profile,
         preferences: conf.preferences,
     };
 
@@ -122,18 +128,36 @@ pub async fn update_user(id: &str, conf: UserUpdateConfiguration) -> Result<()> 
     })?;
 
     let namespace_api: Api<Namespace> = all_namespaces_api()?;
-    if conf.role != user.role {
-        update_annotation_value(&namespace_api, &user.id, ROLE_ANNOTATION, conf.role.into())
-            .await?;
+    if let Some(role) = conf.role {
+        if user.role != role {
+            update_annotation_value(&namespace_api, &user.id, ROLE_ANNOTATION, role.into()).await?;
+        }
     }
-    if conf.preferences != user.preferences {
-        update_annotation_value(
-            &namespace_api,
-            &user.id,
-            PREFERENCES_ANNOTATION,
-            serialize_json(&conf.preferences)?.into(),
-        )
-        .await?;
+
+    if conf.profile != user.profile {
+        if conf.profile.is_some() {
+            update_annotation_value(
+                &namespace_api,
+                &user.id,
+                PROFILE_ANNOTATION,
+                conf.profile.into(),
+            )
+            .await?;
+        } else {
+            delete_annotation_value(&namespace_api, &user.id, PROFILE_ANNOTATION).await?;
+        }
+    }
+
+    if let Some(preferences) = conf.preferences {
+        if preferences != user.preferences {
+            update_annotation_value(
+                &namespace_api,
+                &user.id,
+                PREFERENCES_ANNOTATION,
+                serialize_json(&preferences)?.into(),
+            )
+            .await?;
+        }
     }
 
     Ok(())

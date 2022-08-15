@@ -3,7 +3,7 @@ use crate::{
     error::{Error, ResourceError, Result},
     kubernetes::get_host,
     types::{
-        self, Configuration, NameValuePair, Port, RepositoryVersionState, ResourceType, Session,
+        self, NameValuePair, Port, Preferences, RepositoryVersionState, ResourceType, Session,
         SessionConfiguration, SessionExecution, SessionExecutionConfiguration,
         SessionRuntimeConfiguration, SessionUpdateConfiguration, User,
     },
@@ -30,13 +30,14 @@ use std::{
 };
 
 use super::{
-    client, env_var, get_owned_resource, ingress_path, list_all_resources, list_owned_resources,
+    client, env_var, get_owned_resource, get_preference, ingress_path, list_all_resources,
+    list_owned_resources,
     pool::get_pool,
     repository::{get_repository, get_repository_version, volume_template_name},
-    update_annotation_value,
+    str_minutes_to_duration, update_annotation_value,
     user::DEFAULT_SERVICE_ACCOUNT,
-    user_namespace, APP_LABEL, APP_VALUE, COMPONENT_LABEL, INGRESS_NAME, NODE_POOL_LABEL,
-    OWNER_LABEL,
+    user_namespace, user_namespaced_api, APP_LABEL, APP_VALUE, COMPONENT_LABEL, INGRESS_NAME,
+    NODE_POOL_LABEL, OWNER_LABEL,
 };
 
 const RESOURCE_ID: &str = "RESOURCE_ID";
@@ -342,17 +343,17 @@ fn pod_to_session(pod: &Pod) -> Result<Session> {
     })
 }
 
-pub async fn get_session(user_id: &str, session_id: &str) -> Result<Option<Session>> {
+pub async fn get_user_session(user_id: &str, session_id: &str) -> Result<Option<Session>> {
     get_owned_resource(user_id, session_id, pod_to_session).await
 }
 
 /// Lists all currently running sessions for `user_id`
-pub async fn list_sessions(user_id: &str) -> Result<Vec<Session>> {
+pub async fn list_user_sessions(user_id: &str) -> Result<Vec<Session>> {
     list_owned_resources(user_id, COMPONENT, pod_to_session).await
 }
 
 /// Lists all currently running sessions for `user_id`
-pub async fn list_all_sessions() -> Result<Vec<Session>> {
+pub async fn list_sessions() -> Result<Vec<Session>> {
     list_all_resources(COMPONENT, pod_to_session).await
 }
 
@@ -415,13 +416,12 @@ fn ports(devcontainer: &DevContainer) -> Vec<Port> {
         .collect::<Vec<Port>>()
 }
 
-pub async fn create_session(
+pub async fn create_user_session(
     user: &User,
     id: &str,
-    configuration: &Configuration,
     session_configuration: &SessionConfiguration,
 ) -> Result<()> {
-    if get_session(&user.id, id).await?.is_some() {
+    if get_user_session(&user.id, id).await?.is_some() {
         return Err(Error::Resource(ResourceError::IdAlreayUsed(
             ResourceType::Session,
             id.to_string(),
@@ -433,22 +433,20 @@ pub async fn create_session(
     // TODO: replace with custom scheduler
     // * https://kubernetes.io/docs/tasks/extend-kubernetes/configure-multiple-schedulers/
     // * https://kubernetes.io/blog/2017/03/advanced-scheduling-in-kubernetes/
-    let pool_id = session_configuration
-        .clone()
-        .pool_affinity
-        .unwrap_or_else(|| {
-            user.preferences
-                .get(&"pool_affinity".to_string())
-                .unwrap_or(&configuration.clone().session.pool_affinity)
-                .to_string()
-        });
+
+    let preferences = user.all_preferences().await?;
+    let pool_id = match session_configuration.pool_affinity.clone() {
+        Some(pool_affinity) => pool_affinity,
+        None => get_preference(&preferences, &Preferences::SessionPoolAffinity.to_string())?,
+    };
     let pool = get_pool(&pool_id).await?.ok_or_else(|| {
         Error::Resource(ResourceError::Unknown(ResourceType::Pool, pool_id.clone()))
     })?;
-    let max_sessions_allowed = pool.nodes.len() * configuration.session.max_sessions_per_pod;
+    let max_sessions_allowed = pool.nodes.len();
     let user_id = &user.id;
-    let sessions = list_all_sessions().await?;
+    let sessions = list_sessions().await?;
     if sessions.len() >= max_sessions_allowed {
+        // 1 session == 1 node
         return Err(Error::Resource(ResourceError::Misconfiguration(
             ResourceType::Session,
             "ConcurrentSessionsLimit".to_string(),
@@ -513,11 +511,6 @@ pub async fn create_session(
     //  patch_ingress(&sessions).await?;
 
     // Now create the session itself
-    let client = client()?;
-
-    let duration = session_configuration
-        .duration
-        .unwrap_or(configuration.session.duration);
 
     let envs = devcontainer
         .container_env
@@ -528,6 +521,8 @@ pub async fn create_session(
             value: v.to_string(),
         })
         .collect();
+
+    let client = client()?;
 
     // Deploy the associated service
     let service_api: Api<Service> = Api::namespaced(client.clone(), &user_namespace(user_id));
@@ -548,6 +543,10 @@ pub async fn create_session(
         .await
         .map_err(Error::K8sCommunicationFailure)?;
 
+    let duration = str_minutes_to_duration(&get_preference(
+        &preferences,
+        &Preferences::SessionDefaultDuration.to_string(),
+    )?)?;
     // TODO clone per user
     let volume_name = volume_template_name(repository_id, repository_version_id);
     // Deploy a new pod for this image
@@ -571,23 +570,32 @@ pub async fn create_session(
     Ok(())
 }
 
-pub async fn update_session(
-    user_id: &str,
+pub async fn update_user_session(
+    user: &User,
     id: &str,
-    configuration: Configuration,
     session_configuration: SessionUpdateConfiguration,
 ) -> Result<()> {
-    let session = get_session(user_id, id).await?.ok_or_else(|| {
+    let session = get_user_session(&user.id, id).await?.ok_or_else(|| {
         Error::Resource(ResourceError::Unknown(
             ResourceType::Session,
             id.to_string(),
         ))
     })?;
 
-    let duration = session_configuration
-        .duration
-        .unwrap_or(configuration.session.duration);
-    let max_duration = configuration.session.max_duration;
+    let preferences = user.all_preferences().await?;
+
+    let duration = match session_configuration.duration {
+        Some(duration) => duration,
+        None => str_minutes_to_duration(&get_preference(
+            &preferences,
+            &Preferences::SessionDefaultDuration.to_string(),
+        )?)?,
+    };
+
+    let max_duration = str_minutes_to_duration(&get_preference(
+        &preferences,
+        &Preferences::SessionMaxDuration.to_string(),
+    )?)?;
     if duration >= max_duration {
         return Err(Error::Resource(ResourceError::Misconfiguration(
             ResourceType::Session,
@@ -602,8 +610,7 @@ pub async fn update_session(
         )));
     }
     if duration != session.max_duration {
-        let client = client()?;
-        let pod_api: Api<Pod> = Api::namespaced(client.clone(), &user_namespace(user_id));
+        let pod_api: Api<Pod> = user_namespaced_api(&user.id)?;
         update_annotation_value(
             &pod_api,
             id,
@@ -616,10 +623,10 @@ pub async fn update_session(
     Ok(())
 }
 
-pub async fn delete_session(user_id: &str, id: &str) -> Result<()> {
+pub async fn delete_user_session(user_id: &str, id: &str) -> Result<()> {
     let client = client()?;
 
-    get_session(user_id, id).await?.ok_or_else(|| {
+    get_user_session(user_id, id).await?.ok_or_else(|| {
         Error::Resource(ResourceError::Unknown(
             ResourceType::Session,
             id.to_string(),
@@ -693,7 +700,7 @@ async fn get_output(mut attached: AttachedProcess) -> String {
     out
 }
 
-pub async fn create_session_execution(
+pub async fn create_user_session_execution(
     user_id: &str,
     session_id: &str,
     execution_configuration: SessionExecutionConfiguration,
