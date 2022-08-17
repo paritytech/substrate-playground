@@ -54,11 +54,3 @@ updates:
     timezone: Europe/Berlin
   open-pull-requests-limit: 20
   rebase-strategy: disabled
-- package-ecosystem: npm
-  directory: "/website"
-  schedule:
-    interval: daily
-    time: "03:00"
-    timezone: Europe/Berlin
-  open-pull-requests-limit: 20
-  rebase-strategy: disabled
