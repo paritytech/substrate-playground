@@ -1,6 +1,5 @@
 import test from 'ava';
 import { chromium } from 'playwright';
-import 'cross-fetch/dist/node-polyfill.js'; // TODO remove once moving to Node18 (https://github.com/nodejs/node/pull/41749)
 
 function playgroundDomain(env: string): string {
     switch (env) {

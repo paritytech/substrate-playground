@@ -15,19 +15,18 @@
       "ts": "module"
     },
     "nodeArguments": [
-      "--loader=esbuild-node-loader",
-      "--experimental-specifier-resolution=node"
+      "--loader=@esbuild-kit/esm-loader"
     ]
   },
   "engines": {
     "node": ">=16.0.0"
   },
   "dependencies": {
-    "@substrate/playground-client": "1.9.18",
-    "cross-fetch": "3.1.5",
-    "esbuild-node-loader": "^0.8.0"
+    "@substrate/playground-client": "1.9.19",
+    "cross-fetch": "3.1.5"
   },
   "devDependencies": {
+    "@esbuild-kit/esm-loader": "^2.4.2",
     "@types/node": "18.6.0",
     "ava": "4.3.1",
     "playwright": "1.24.0",
