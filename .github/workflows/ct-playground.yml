@@ -31,7 +31,7 @@ jobs:
         with:
           node-version: "16"
 
-      - uses: microsoft/playwright-github-action@v1.5.1
+      - uses: microsoft/playwright-github-action@v1.5.2
 
 #
 # Disable API tests for now as latest client is incompatible
