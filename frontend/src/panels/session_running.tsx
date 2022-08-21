@@ -25,11 +25,11 @@ export function RunningSessionPanel({ client, user, autoDeployRepository, onMiss
 
     useEffect(() => {
         async function createSession(repository: Repository): Promise<void> {
-            client.createSession(sessionId, {repositorySource: {repositoryId: repository.id}}).then(fetchData);
+            client.createUserSession(user.id, sessionId, {repositorySource: {repositoryId: repository.id}}).then(fetchData);
         }
 
         async function fetchData() {
-            const session = await client.getSession(sessionId);
+            const session = await client.getUserSession(user.id, sessionId);
             if (session) {
                 const { type }  = session.state;
                 if (type == 'Running') {
@@ -70,16 +70,16 @@ export function RunningSessionPanel({ client, user, autoDeployRepository, onMiss
                 }
 
                 try {
-                    client.getSession(sessionId).then(session => {
+                    client.getUserSession(user.id, sessionId).then(session => {
                         if (session) {
                             setError({reason: "You can only have one active substrate playground session open at a time. \n Please close all other sessions to open a new one",
                                       action: () => {
                                           // Trigger current session deletion, wait for deletion then re-create a new one
-                                          return client.deleteSession(sessionId)
+                                          return client.deleteUserSession(user.id, sessionId)
                                             .then(function() {
                                                 return new Promise<void>(function(resolve) {
                                                     const id = setInterval(async function() {
-                                                        const session = await client.getSession(sessionId);
+                                                        const session = await client.getUserSession(user.id, sessionId);
                                                         if (!session) {
                                                             clearInterval(id);
                                                             resolve();

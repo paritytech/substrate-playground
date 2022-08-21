@@ -42,15 +42,15 @@ export interface PreferenceUpdateConfiguration {
 }
 
 export interface Profile extends IdentifiedResource {
-    preferences: Record<Preferences, string>,
+    preferences: Record<string, string>,
 }
 
 export interface ProfileConfiguration {
-    preferences: Record<Preferences, string>,
+    preferences: Record<string, string>,
 }
 
 export interface ProfileUpdateConfiguration {
-    preferences?: Record<Preferences, string>,
+    preferences?: Record<string, string>,
 }
 
 export interface RepositoryDetails extends IdentifiedResource {
@@ -175,17 +175,17 @@ export interface SessionExecutionConfiguration {
 export interface User extends IdentifiedResource {
     role: string,
     profile?: string,
-    preferences: Record<Preferences, string>,
+    preferences: Record<string, string>,
 }
 
 export interface UserConfiguration {
     role: string,
     profile?: string,
-    preferences: Record<Preferences, string>,
+    preferences: Record<string, string>,
 }
 
 export interface UserUpdateConfiguration {
     role?: string,
     profile?: string,
-    preferences?: Record<Preferences, string>,
+    preferences?: Record<string, string>,
 }

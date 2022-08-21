@@ -1,5 +1,5 @@
 import test from 'ava';
-import { Client, EnvironmentType, playgroundBaseURL, environmentTypeFromString, mainSessionId } from '@substrate/playground-client';
+import { Client, EnvironmentType, playgroundBaseAPIURL, environmentTypeFromString, mainSessionId } from '@substrate/playground-client';
 
 import 'cross-fetch/dist/node-polyfill.js'; // TODO remove once moving to Node18 (https://github.com/nodejs/node/pull/41749)
 
@@ -7,17 +7,12 @@ const env = environmentTypeFromString(process.env.ENV);
 const accessToken = process.env.ACCESS_TOKEN;
 
 function newClient(): Client {
-    return new Client(playgroundBaseURL(env), 30000, {credentials: "include"});
+    return new Client(playgroundBaseAPIURL(env), 30000, {credentials: "include"});
 }
 
-// Disable certificate checking for 'dev' env
-if (env == EnvironmentType.dev) {
-    process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
-}
-
-async function createSession(client: Client): Promise<string> {
+async function createSession(userId: string, client: Client): Promise<string> {
     const sessionId = await mainSessionId((await client.get()).user);
-    await client.createSession(sessionId, {repositorySource: {repositoryId: 'node-template'}});
+    await client.createUserSession(userId, sessionId, {repositorySource: {repositoryId: 'node-template'}});
     return sessionId;
 }
 
@@ -48,7 +43,7 @@ async function waitForSessionDeletion(client: Client, sessionId: string) {
     const startTime = Date.now();
     return new Promise<void>((resolve, reject) => {
         const id = setInterval(async () => {
-            const session = await client.getSession(sessionId);
+            const session = await client.getUserSession(sessionId);
             if (session == null) {
                 clearInterval(id);
                 resolve();
@@ -81,11 +76,11 @@ if (accessToken) {
 
     test('authenticated - should be able to get current session', async (t) => {
         const client = newClient();
-        await client.login(accessToken);
+        const user = await client.login(accessToken);
         try {
-            const sessionId = await createSession(client);
-            t.not(await client.getSession(sessionId), null);
-            await client.deleteSession(sessionId);
+            const sessionId = await createSession(user.id, client);
+            t.not(await client.getUserSession(user.id, sessionId), null);
+            await client.deleteUserSession(user.id, sessionId);
             await waitForSessionDeletion(client, sessionId);
         } catch(e) {
             t.fail(`Failed to create a session ${e.message}`);
@@ -96,20 +91,20 @@ if (accessToken) {
 
     test('authenticated - should not be able to get current session when unlogged', async (t) => {
         const client = newClient();
-        await client.login(accessToken);
+        const user = await client.login(accessToken);
 
-        const sessionId = await createSession(client);
-        t.not(await client.getSession(sessionId), null);
+        const sessionId = await createSession(user.id, client);
+        t.not(await client.getUserSession(user.id, sessionId), null);
 
         await client.logout();
 
         try {
-            t.is(await client.getSession(sessionId), null);
+            t.is(await client.getUserSession(user.id, sessionId), null);
         } catch {
             t.pass();
         } finally {
             await client.login(accessToken);
-            await client.deleteSession(sessionId);
+            await client.deleteUserSession(user.id, sessionId);
             await waitForSessionDeletion(client, sessionId);
             await client.logout();
         }
@@ -118,15 +113,15 @@ if (accessToken) {
     if (env == EnvironmentType.staging) { // TODO Not deployed on prod yet
         test('authenticated - should be able to execute in session', async (t) => {
             const client = newClient();
-            await client.login(accessToken);
+            const user = await client.login(accessToken);
 
-            const sessionId = await createSession(client);
+            const sessionId = await createSession(user.id, client);
             try {
-                const { stdout } = await client.createSessionExecution(sessionId, {command: ["ls"]});
+                const { stdout } = await client.createUserSessionExecution(user.id, sessionId, {command: ["ls"]});
                 console.log(stdout);
                 t.not(stdout, null);
             } finally {
-                client.deleteSession(sessionId);
+                client.deleteUserSession(user.id, sessionId);
                 await waitForSessionDeletion(client, sessionId);
                 await client.logout();
             }

@@ -16,7 +16,6 @@ export class Client {
     private readonly base: string;
     private readonly defaultTimeout: number;
     private readonly defaultInit: RequestInit;
-    private user?: User;
 
     constructor(base: string, defaultTimeout: number = 10000, defaultInit: RequestInit = {}) {
         this.base = base;
@@ -30,11 +29,7 @@ export class Client {
 
     // Login
 
-    public get loggedAs(): User | undefined {
-        return this.user;
-    }
-
-    async login(bearer: string, timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit) {
+    async login(bearer: string, timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<User> {
         const response = await fetchWithTimeout(`${this.path('login')}?bearer=${bearer}`, init, timeout);
         const headers = this.defaultInit.headers;
         if (headers instanceof Headers) {
@@ -44,7 +39,7 @@ export class Client {
             cookie: response.headers.get('set-cookie'),
             ...headers
         };
-        this.user = (await this.get()).user;
+        return (await this.get()).user;
     }
 
     async logout(timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit) {

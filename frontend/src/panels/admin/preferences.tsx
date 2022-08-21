@@ -8,19 +8,18 @@ import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
-import { Configuration } from "@substrate/playground-client";
+import { Preference } from "@substrate/playground-client";
 import { useStyles } from '.';
 
-export function Preferences({ conf }: { conf: Configuration }): JSX.Element {
+export function Preferences({ preferences }: { preferences: Preference[] }): JSX.Element {
     const classes = useStyles();
-    const { duration, maxDuration, maxSessionsPerPod, poolAffinity } = conf.session;
     return (
         <Container>
             <Typography variant="h6" id="tableTitle" component="div">
-            Session defaults
+            Preferences
             </Typography>
             <TableContainer component={Paper}>
-                <Table className={classes.table} aria-label="simple table">
+                <Table className={classes.table} aria-label="preferences">
                     <TableHead>
                         <TableRow>
                             <TableCell>Name</TableCell>
@@ -28,22 +27,12 @@ export function Preferences({ conf }: { conf: Configuration }): JSX.Element {
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        <TableRow key="duration">
-                            <TableCell>Duration</TableCell>
-                            <TableCell>{duration}</TableCell>
-                        </TableRow>
-                        <TableRow key="duration">
-                            <TableCell>Max duration</TableCell>
-                            <TableCell>{maxDuration}</TableCell>
-                        </TableRow>
-                        <TableRow key="maxSessionsPerPod">
-                            <TableCell>Max sessions per Pod</TableCell>
-                            <TableCell>{maxSessionsPerPod}</TableCell>
-                        </TableRow>
-                        <TableRow key="poolAffinity">
-                            <TableCell>Pool affinity</TableCell>
-                            <TableCell>{poolAffinity}</TableCell>
-                        </TableRow>
+                    {preferences.map(preference =>
+                        <TableRow key={preference.id}>
+                            <TableCell>{preference.id}</TableCell>
+                            <TableCell>{preference.value}</TableCell>
+                        </TableRow>)
+                    }
                     </TableBody>
                 </Table>
             </TableContainer>

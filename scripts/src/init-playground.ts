@@ -1,5 +1,5 @@
 
-import { Client, playgroundBaseURL, environmentTypeFromString, mainSessionId, EnvironmentType, RepositoryVersion } from '@substrate/playground-client';
+import { Client, playgroundBaseAPIURL, environmentTypeFromString, EnvironmentType, RepositoryVersion } from '@substrate/playground-client';
 import 'cross-fetch/dist/node-polyfill.js'; // TODO remove once moving to Node18 (https://github.com/nodejs/node/pull/41749)
 
 const accessToken = process.env.ACCESS_TOKEN;
@@ -11,12 +11,7 @@ if (!accessToken) {
 const env = environmentTypeFromString(process.env.ENV);
 
 function newClient(env: EnvironmentType): Client {
-    return new Client(playgroundBaseURL(env), 30000, {credentials: "include"});
-}
-
-// Disable certificate checking for 'dev' env
-if (env == EnvironmentType.dev) {
-    process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+    return new Client(playgroundBaseAPIURL(env), 30000, {credentials: "include"});
 }
 
 // Connect via Client, create others Role, feed repository
@@ -25,22 +20,27 @@ async function waitForRepositoryVersionCreation(client: Client, repositoryId: st
     const interval = 5000;
     return new Promise<RepositoryVersion>((resolve, reject) => {
         const id = setInterval(async () => {
-            const result = await client.getRepositoryVersion(repositoryId, repositoryVersionId);
-            const type = result?.state.type;
-            if (type == "Ready") {
+            try {
+                const result = await client.getRepositoryVersion(repositoryId, repositoryVersionId);
+                const type = result?.state.type;
+                if (type == "Ready") {
+                    clearInterval(id);
+                    resolve(result);
+                } else if (type == "Failed") {
+                    clearInterval(id);
+                    reject({type: "Failure", data: result.state.message});
+                } else if (type == "Init") {
+                    console.log("Init");
+                } else if (type == "Cloning") {
+                    console.log(`Cloning: progress=${result.state.progress}`);
+                } else if (type == "Building") {
+                    console.log(`Building: progress=${result.state.progress}`);
+                } else {
+                    console.log(`Unknown state: ${result.state}`);
+                }
+            } catch (e) {
                 clearInterval(id);
-                resolve(result);
-            } else if (type == "Failed") {
-                clearInterval(id);
-                reject({type: "Failure", data: result.state.message});
-            } else if (type == "Init") {
-                console.log("Init");
-            } else if (type == "Cloning") {
-                console.log(`Cloning: progress=${result.state.progress}`);
-            } else if (type == "Building") {
-                console.log(`Building: progress=${result.state.progress}`);
-            } else {
-                console.log(`Unknown state: ${result.state}`);
+                reject({type: "Failure", data: `Error during version access: ${JSON.stringify(e)}`});
             }
         }, interval);
     });
@@ -65,7 +65,7 @@ try {
     await client.createPreference('SessionDefaultDuration', {value: "45"});
     await client.createPreference('SessionMaxDuration', {value: "1440"});
     await client.createPreference('SessionPoolAffinity', {value: "default"});
-    await client.createPreference('UserDefaultRoles', {value: "TestUppercase=super-admin"});
+    await client.createPreference('UserDefaultRoles', {value: "jeluard=super-admin,TestUppercase=super-admin"});
 
     if (! await client.getRepository(repositoryId)) {
         console.log("Creating Repository");
@@ -95,9 +95,6 @@ try {
         process.exit(1);
     });
     console.log("RepositoryVersion ready");
-
-    console.log("Creating Session");
-    await client.createSession(mainSessionId((await client.get()).user), {repositorySource: {repositoryId: repositoryId}});
 } catch(e) {
     console.error(`Error: ${e.type}`, e.data);
     process.exit(1);

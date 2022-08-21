@@ -15,7 +15,7 @@ import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import TextField from '@mui/material/TextField';
-import { Client, Configuration, Pool, ResourceType, User, UserConfiguration, UserUpdateConfiguration } from '@substrate/playground-client';
+import { Client, Pool, Preference, Preferences, ResourceType, User, UserConfiguration, UserUpdateConfiguration } from '@substrate/playground-client';
 import { ErrorSnackbar } from '../../components';
 import { useInterval } from '../../hooks';
 import { useStyles, EnhancedTableToolbar, Resources } from '.';
@@ -23,9 +23,9 @@ import { find, remove } from "../../utils";
 
 const defaultRole = 'user';
 
-function UserCreationDialog({ client, conf, users, show, onCreate, onHide }: { client: Client, conf: Configuration, users: User[], show: boolean, onCreate: (id: string, conf: UserConfiguration) => void, onHide: () => void }): JSX.Element {
+function UserCreationDialog({ client, preferences, users, show, onCreate, onHide }: { client: Client, preferences: Preference[], users: User[], show: boolean, onCreate: (id: string, conf: UserConfiguration) => void, onHide: () => void }): JSX.Element {
     const [id, setID] = React.useState('');
-    const [poolAffinity, setPoolAffinity] = React.useState<string>(conf.session.poolAffinity);
+    const [poolAffinity, setPoolAffinity] = React.useState<string>(find(preferences, Preferences.SessionPoolAffinity));
     const [role, setRole] = React.useState(defaultRole);
     const [pools, setPools] = useState<Pool[] | null>(null);
 
@@ -131,7 +131,7 @@ function UserUpdateDialog({ client, user, show, onUpdate, onHide }: { client: Cl
     );
 }
 
-export function Users({ client, user, conf }: { client: Client, user: User, conf: Configuration }): JSX.Element {
+export function Users({ client, user, preferences }: { client: Client, user: User, preferences: Preference[] }): JSX.Element {
     const classes = useStyles();
     const [selected, setSelected] = useState<User | null>(null);
     const [showCreationDialog, setShowCreationDialog] = useState(false);
@@ -228,7 +228,7 @@ export function Users({ client, user, conf }: { client: Client, user: User, conf
                 {errorMessage &&
                 <ErrorSnackbar open={true} message={errorMessage} onClose={() => setErrorMessage(null)} />}
                 {showCreationDialog &&
-                <UserCreationDialog client={client} conf={conf} users={resources} show={showCreationDialog} onCreate={(id, conf) => onCreate(id, conf, setUsers)} onHide={() => setShowCreationDialog(false)} />}
+                <UserCreationDialog client={client} preferences={preferences} users={resources} show={showCreationDialog} onCreate={(id, conf) => onCreate(id, conf, setUsers)} onHide={() => setShowCreationDialog(false)} />}
                 {(selected && showUpdateDialog) &&
                 <UserUpdateDialog client={client} user={selected} show={showUpdateDialog} onUpdate={(id, conf) => onUpdate(id, conf, setUsers)} onHide={() => setShowUpdateDialog(false)} />}
             </>

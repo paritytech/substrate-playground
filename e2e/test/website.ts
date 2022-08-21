@@ -1,18 +1,6 @@
+import { environmentTypeFromString, playgroundBaseURL } from '@substrate/playground-client';
 import test from 'ava';
 import { chromium } from 'playwright';
-
-function playgroundDomain(env: string): string {
-    switch (env) {
-      case "dev":
-        return "https://playground-dev.substrate.test";
-      case "staging":
-        return "https://playground-staging.substrate.io";
-      case "production":
-        return "https://playground.substrate.dev";
-      default:
-        throw new Error(`Unrecognized env ${env}`);
-    }
-  }
 
 test('should return 200', async function (t) {
 
@@ -29,7 +17,7 @@ test('should return 200', async function (t) {
     route.continue();
   });
 
-  const res = await page.goto(playgroundDomain(env));
+  const res = await page.goto(playgroundBaseURL(environmentTypeFromString(env)));
   t.is(res.status(), 200);
 
   return browser.close();

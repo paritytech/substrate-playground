@@ -14,16 +14,16 @@ import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import TextField from '@mui/material/TextField';
-import { Client, Configuration, ResourceType, Role, RoleConfiguration, RoleUpdateConfiguration, User } from '@substrate/playground-client';
+import { Client, Configuration, Preference, Preferences, ResourceType, Role, RoleConfiguration, RoleUpdateConfiguration, User } from '@substrate/playground-client';
 import { ErrorSnackbar } from '../../components';
 import { useStyles, EnhancedTableToolbar, Resources } from '.';
 import { find } from "../../utils";
 
 const defaultRole = 'user';
 
-function RoleCreationDialog({ client, conf, roles, show, onCreate, onHide }: { client: Client, conf: Configuration, roles: Role[], show: boolean, onCreate: (id: string, conf: RoleConfiguration) => void, onHide: () => void }): JSX.Element {
+function RoleCreationDialog({ client, preferences, roles, show, onCreate, onHide }: { client: Client, preferences: Preference[], roles: Role[], show: boolean, onCreate: (id: string, conf: RoleConfiguration) => void, onHide: () => void }): JSX.Element {
     const [id, setID] = React.useState('');
-    const [permissions, setPermissions] = React.useState<string>(conf.session.poolAffinity);
+    const [permissions, setPermissions] = React.useState<string>(find(preferences, Preferences.SessionPoolAffinity));
 
     const handleIDChange = (event: React.ChangeEvent<HTMLInputElement>) => setID(event.target.value);
     const handlePermissionsChange = (event: React.ChangeEvent<HTMLInputElement>) => setPermissions(event.target.value);
@@ -57,7 +57,7 @@ function RoleCreationDialog({ client, conf, roles, show, onCreate, onHide }: { c
     );
 }
 
-export function Roles({ client, user, conf }: { client: Client, user: User, conf: Configuration }): JSX.Element {
+export function Roles({ client, user, preferences }: { client: Client, user: User, preferences: Preference[] }): JSX.Element {
     const classes = useStyles();
     const [selected, setSelected] = useState<Role | null>(null);
     const [showCreationDialog, setShowCreationDialog] = useState(false);
@@ -146,7 +146,7 @@ export function Roles({ client, user, conf }: { client: Client, user: User, conf
                 {errorMessage &&
                 <ErrorSnackbar open={true} message={errorMessage} onClose={() => setErrorMessage(null)} />}
                 {showCreationDialog &&
-                <RoleCreationDialog client={client} conf={conf} roles={resources} show={showCreationDialog} onCreate={(id, conf) => onCreate(id, conf, setRoles)} onHide={() => setShowCreationDialog(false)} />}
+                <RoleCreationDialog client={client} preferences={preferences} roles={resources} show={showCreationDialog} onCreate={(id, conf) => onCreate(id, conf, setRoles)} onHide={() => setShowCreationDialog(false)} />}
             </>
         )}
         </Resources>

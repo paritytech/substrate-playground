@@ -23,7 +23,7 @@ import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
-import { Client, Configuration, NameValuePair, User, Port, Session, SessionConfiguration, Repository, RepositoryVersion, mainSessionId } from '@substrate/playground-client';
+import { Client, NameValuePair, User, Port, Session, SessionConfiguration, Repository, RepositoryVersion, mainSessionId, Preference } from '@substrate/playground-client';
 import { CenteredContainer, ErrorMessage, ErrorSnackbar, LoadingPanel } from "../components";
 import { useInterval } from "../hooks";
 import { canCustomizeSession, formatDuration } from "../utils";
@@ -135,7 +135,7 @@ function getDescription(devcontainer: any): string {
     return getPlaygroundCustomizations(devcontainer)?.description || "";
 }
 
-function RepositorySelector({client, conf, user, onDeployed, onRetry}: {client: Client, conf: Configuration, user: User, onDeployed: (conf: SessionConfiguration) => Promise<void>, onRetry: () => void}): JSX.Element {
+function RepositorySelector({client, preferences, user, onDeployed, onRetry}: {client: Client, preferences: Preference[], user: User, onDeployed: (conf: SessionConfiguration) => Promise<void>, onRetry: () => void}): JSX.Element {
     const [repositories, setRepositories] = useState<[Repository, RepositoryVersion][]>();
     const [deploying, setDeploying] = useState(false);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -228,7 +228,7 @@ function RepositorySelector({client, conf, user, onDeployed, onRetry}: {client: 
                 {errorMessage &&
                 <ErrorSnackbar open={true} message={errorMessage} onClose={() => setErrorMessage(null)} />}
                 {openCustom &&
-                <SessionCreationDialog client={client} user={user} repository={selectedRepository[0].id} conf={conf} repositories={repositories} show={openCustom} onCreate={() => onCreateClick(selectedRepository[0].id, selectedRepository[1].id)} onHide={() => setOpenCustom(false)} />}
+                <SessionCreationDialog client={client} user={user} repository={selectedRepository[0].id} preferences={preferences} repositories={repositories} show={openCustom} onCreate={() => onCreateClick(selectedRepository[0].id, selectedRepository[1].id)} onHide={() => setOpenCustom(false)} />}
             </>
         );
     } else {
@@ -370,10 +370,10 @@ function ExistingSession({session, onStop, onConnect}: {session: Session, onStop
     );
 }
 
-export function SessionPanel({ client, conf, user, onDeployed, onConnect, onRetry, onStop }: {client: Client, conf: Configuration, user: User, onStop: () => Promise<void>, onConnect: (session: Session) => void, onDeployed: (conf: SessionConfiguration) => Promise<void>, onRetry: () => void}): JSX.Element {
+export function SessionPanel({ client, preferences, user, onDeployed, onConnect, onRetry, onStop }: {client: Client, preferences: Preference[], user: User, onStop: () => Promise<void>, onConnect: (session: Session) => void, onDeployed: (conf: SessionConfiguration) => Promise<void>, onRetry: () => void}): JSX.Element {
     const [session, setSession] = useState<Session | null | undefined>(undefined);
 
-    useInterval(async () => setSession(await client.getSession(mainSessionId(user))), 1000);
+    useInterval(async () => setSession(await client.getUserSession(user.id, mainSessionId(user))), 1000);
 
     return (
         <Container style={{ display: "flex", flex: 1, justifyContent: "center", alignItems: "center" }}>
@@ -382,7 +382,7 @@ export function SessionPanel({ client, conf, user, onDeployed, onConnect, onRetr
                  ? <LoadingPanel />
                  : session
                  ?<ExistingSession session={session} onConnect={onConnect} onStop={onStop} />
-                 : <RepositorySelector client={client} conf={conf} user={user} onRetry={onRetry} onDeployed={onDeployed} />}
+                 : <RepositorySelector client={client} preferences={preferences} user={user} onRetry={onRetry} onDeployed={onDeployed} />}
             </Paper>
         </Container>
     );

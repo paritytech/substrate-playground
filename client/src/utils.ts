@@ -18,14 +18,18 @@ export function environmentTypeFromString(s: string): EnvironmentType {
 export function playgroundBaseURL(env: EnvironmentType) {
     switch (env) {
         case EnvironmentType.dev:
-            return "https://playground-dev.substrate.test/api";
+            return "https://playground-dev.substrate.test";
         case EnvironmentType.staging:
-            return "https://playground-staging.substrate.io/api";
+            return "https://playground-staging.substrate.io";
         case EnvironmentType.production:
-            return "https://playground.substrate.io/api";
+            return "https://playground.substrate.io";
         default:
             throw new Error(`Unrecognized env ${env}`);
     }
+}
+
+export function playgroundBaseAPIURL(env: EnvironmentType) {
+    return `${playgroundBaseURL(env)}/api`
 }
 
 // Return a normalized session ID that is valid with regards to Playground constraints

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom";
-import { Client, Configuration, User, Session, ResourceType, mainSessionId } from '@substrate/playground-client';
+import { Client, Configuration, User, Session, ResourceType, mainSessionId, Preference, Preferences } from '@substrate/playground-client';
+import { CssBaseline } from "@mui/material";
 import { createTheme, ThemeProvider, Theme, StyledEngineProvider, adaptV4Theme } from '@mui/material/styles';
 import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
@@ -14,43 +15,42 @@ import { StatsPanel } from './panels/stats';
 import { TermsPanel } from './panels/terms';
 import { RunningSessionPanel } from './panels/session_running';
 import { SessionPanel } from './panels/session';
-import { terms } from "./terms";
-import { hasPermission } from "./utils";
 import { SubstrateLight } from './themes';
-import { CssBaseline } from "@mui/material";
+import { terms } from "./terms";
+import { find, hasPermission } from "./utils";
 
 declare module '@mui/styles/defaultTheme' {
   // eslint-disable-next-line @typescript-eslint/no-empty-interface
   interface DefaultTheme extends Theme {}
 }
 
-function MainPanel({ client, params, conf, user, panel, onRetry, onConnect, onAfterDeployed }: { client: Client, params: Params, conf: Configuration, user: User, panel: PanelId, onRetry: () => void, onConnect: () => void, onAfterDeployed: () => void }): JSX.Element {
+function MainPanel({ client, params, preferences, user, panel, onRetry, onConnect, onAfterDeployed }: { client: Client, params: Params, preferences: Preference[], user: User, panel: PanelId, onRetry: () => void, onConnect: () => void, onAfterDeployed: () => void }): JSX.Element {
     switch(panel) {
         case PanelId.SessionSelection:
-          return <SessionPanel client={client} conf={conf} user={user} onRetry={onRetry}
+          return <SessionPanel client={client} preferences={preferences} user={user} onRetry={onRetry}
                     onStop={async () => {
-                        await client.deleteSession(mainSessionId(user));
+                        await client.deleteUserSession(user.id, mainSessionId(user));
                     }}
                     onDeployed={async conf => {
-                        await client.createSession(mainSessionId(user), conf);
+                        await client.createUserSession(user.id, mainSessionId(user), conf);
                         onAfterDeployed();
                     }}
                     onConnect={onConnect} />;
         case PanelId.Stats:
           return <StatsPanel />;
         case PanelId.Admin:
-          return <AdminPanel client={client} conf={conf} user={user} />;
+          return <AdminPanel client={client} preferences={preferences} user={user} />;
         case PanelId.RunningSession:
           return <RunningSessionPanel client={client} user={user} autoDeployRepository={params.autoDeployRepository} onMissingSession={onRetry} onSessionFailing={onRetry} onSessionTimeout={onRetry} />;
     }
 }
 
-function ExtraTheiaNav({ client, user, conf, restartAction }: { client: Client, user: User, conf: Configuration, restartAction: () => void }): JSX.Element {
+function ExtraTheiaNav({ client, user, preferences, restartAction }: { client: Client, user: User, preferences: Preference[], restartAction: () => void }): JSX.Element {
     const [session, setSession] = useState<Session | null | undefined>(undefined);
     const sessionId = mainSessionId(user);
 
     useInterval(async () => {
-        const session = await client.getSession(sessionId);
+        const session = await client.getUserSession(user.id, sessionId);
         setSession(session);
 
         // Periodically extend duration of running sessions
@@ -58,7 +58,7 @@ function ExtraTheiaNav({ client, user, conf, restartAction }: { client: Client, 
             const { state, maxDuration } = session;
             if (state.type == 'Running') {
                 const remaining = maxDuration - (state.startTime || 0) / 60; // In minutes
-                const maxConfDuration = conf.session.maxDuration;
+                const maxConfDuration = Number.parseInt(find(preferences, Preferences.SessionMaxDuration) || "600");
                 // Increase duration
                 if (remaining < 10 && maxDuration < maxConfDuration) {
                     const newDuration = Math.min(maxConfDuration, maxDuration + 10);
@@ -95,7 +95,7 @@ function restart(send: (event: Events) => void) { send(Events.RESTART)}
 
 function selectPanel(send: (event: Events, payload: Record<string, unknown>) => void, id: PanelId) { send(Events.SELECT, {panel: id})}
 
-function CustomLoggedNav({ client, send, conf, user, panel }: { client: Client, send: (event: Events) => void, conf: Configuration, user: User, panel: PanelId }): JSX.Element  {
+function CustomLoggedNav({ client, send, conf, preferences, user, panel }: { client: Client, send: (event: Events) => void, conf: Configuration, preferences: Preference[], user: User, panel: PanelId }): JSX.Element  {
     const [canAdministrate, setCanAdministrate] = React.useState(false);
 
     useEffect(() => {
@@ -110,7 +110,7 @@ function CustomLoggedNav({ client, send, conf, user, panel }: { client: Client, 
         <Nav onPlayground={() => selectPanel(send, PanelId.SessionSelection)}>
             <>
               {(panel == PanelId.RunningSession) &&
-                <ExtraTheiaNav client={client} user={user} conf={conf} restartAction={() => restart(send)} />}
+                <ExtraTheiaNav client={client} user={user} preferences={preferences} restartAction={() => restart(send)} />}
               <div style={{display: "flex", alignItems: "center"}}>
                   {canAdministrate &&
                   <NavSecondMenuAdmin onAdminClick={() => selectPanel(send, PanelId.Admin)} onStatsClick={() => selectPanel(send, PanelId.Stats)} />}
@@ -133,6 +133,7 @@ const theme = createTheme(adaptV4Theme(SubstrateLight));
 
 function App({ params }: { params: Params }): JSX.Element {
     const client = new Client(params.base, 30000, {credentials: "include"});
+    const [preferences, setPreferences] = useState<Preference[]>([]);
     const { autoDeployRepository } = params;
     const [state, send] = useMachine(newMachine(client, autoDeployRepository? PanelId.RunningSession: PanelId.SessionSelection), { devTools: true });
     const { panel, error } = state.context;
@@ -145,6 +146,10 @@ function App({ params }: { params: Params }): JSX.Element {
         }
     }, [state]);
 
+    useInterval(async () => {
+        setPreferences(await client.listPreferences());
+    }, 30000);
+
     return (
         <StyledEngineProvider injectFirst>
             <ThemeProvider theme={theme}>
@@ -152,10 +157,10 @@ function App({ params }: { params: Params }): JSX.Element {
                 <div style={{ display: "flex", width: "100vw", height: "100vh", alignItems: "center", justifyContent: "center" }}>
                     <div style={{display: "flex", flexDirection: "column", width: "inherit", height: "inherit"}}>
                        {logged
-                       ? <CustomLoggedNav client={client} send={send} conf={state.context.conf} user={state.context.user} panel={panel} />
+                       ? <CustomLoggedNav client={client} send={send} conf={state.context.conf} preferences={preferences} user={state.context.user} panel={panel} />
                        : <CustomNav send={send} />}
                        {logged
-                       ? <MainPanel client={client} params={params} conf={state.context.conf} user={state.context.user} panel={panel}
+                       ? <MainPanel client={client} params={params} preferences={preferences} user={state.context.user} panel={panel}
                                  onRetry={() => restart(send)}
                                  onAfterDeployed={() => selectPanel(send, PanelId.RunningSession)}
                                  onConnect={() => selectPanel(send, PanelId.RunningSession)} />
