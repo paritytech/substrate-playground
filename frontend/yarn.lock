@@ -1078,10 +1078,10 @@
   resolved "https://registry.yarnpkg.com/@popperjs/core/-/core-2.11.5.tgz#db5a11bf66bdab39569719555b0f76e138d7bd64"
   integrity sha512-9X2obfABZuDVLCgPK9aX0a/x4jaOEweTTWE2+9sr0Qqqevj2Uv5XorvusThmc9XGYpS9yI+fhh8RTafBtGposw==
 
-"@substrate/playground-client@1.9.19":
-  version "1.9.19"
-  resolved "https://registry.yarnpkg.com/@substrate/playground-client/-/playground-client-1.9.19.tgz#cfb5051afe79b8f89c330fef9d3dcd569c5842f5"
-  integrity sha512-IC34kO1viJHPmyu3p8ZrQm7j5XdLfB6eSPA7qWBvlt1Zrt6xhHBbKqXj1z4UcIdYz8E6UUF9ynDFyjhaUpVVvA==
+"@substrate/playground-client@1.9.21":
+  version "1.9.21"
+  resolved "https://registry.yarnpkg.com/@substrate/playground-client/-/playground-client-1.9.21.tgz#6908dd77b969085abe6a3bad53651b59745f0485"
+  integrity sha512-o/tJwl7+8jLC4rZ2OUgVOOIioMMYYvODpJ03iEqL9QZyHDJ9Rmz0OJ0h6Op0+MhOg7K5bruffxWBZKblEuwgcw==
   dependencies:
     uuid "8.3.2"
 
