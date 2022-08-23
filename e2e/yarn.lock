@@ -996,17 +996,17 @@ pkg-conf@^4.0.0:
     find-up "^6.0.0"
     load-json-file "^7.0.0"
 
-playwright-core@1.24.0:
-  version "1.24.0"
-  resolved "https://registry.yarnpkg.com/playwright-core/-/playwright-core-1.24.0.tgz#ece821ceaf241bb7206329b1242b0cf6c1c60bdb"
-  integrity sha512-BkDWdVsoEEC8m2glQlfNu1EN2qvjBsLIg5bD0wjrfwv9zVHktIsp80yYFObAcWreLNYhfRP4PlXE04lr5R4DFQ==
+playwright-core@1.25.0:
+  version "1.25.0"
+  resolved "https://registry.yarnpkg.com/playwright-core/-/playwright-core-1.25.0.tgz#54dc867c6c2cc5e4233905e249206a02914d14f1"
+  integrity sha512-kZ3Jwaf3wlu0GgU0nB8UMQ+mXFTqBIFz9h1svTlNduNKjnbPXFxw7mJanLVjqxHJRn62uBfmgBj93YHidk2N5Q==
 
-playwright@1.24.0:
-  version "1.24.0"
-  resolved "https://registry.yarnpkg.com/playwright/-/playwright-1.24.0.tgz#b1599b992bad4221e87b19a430817316fef644db"
-  integrity sha512-oA9HzuYhskm9iEm9DeiWoLuJps+yzZ35zwR0EHhGFUd9ikUVMN5NqNAORvq+JesgoMlEu4IUdKK9jigFWm7olA==
+playwright@1.25.0:
+  version "1.25.0"
+  resolved "https://registry.yarnpkg.com/playwright/-/playwright-1.25.0.tgz#a5e317c8c207b921e7da17507ef9ec2983367970"
+  integrity sha512-Z+pQNWI17Qx/tHhnmgMmPsptsisXpKgAnUvYv98kctlHUJaqMt2400P8kTw9vEPoC0xdxqu0JhxO7pDTmaaIKw==
   dependencies:
-    playwright-core "1.24.0"
+    playwright-core "1.25.0"
 
 plur@^5.1.0:
   version "5.1.0"
