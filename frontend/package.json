@@ -38,7 +38,7 @@
     "eslint": "8.20.0",
     "eslint-plugin-react": "7.30.1",
     "parcel": "2.6.2",
-    "typescript": "4.7.4"
+    "typescript": "4.8.2"
   },
   "browserslist": [
     "last 5 and_chr versions",
