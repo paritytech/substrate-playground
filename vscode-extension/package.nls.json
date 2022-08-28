@@ -1,0 +1,6 @@
+{
+    "extension.substrate-playground.displayName": "Substrate Playground",
+    "extension.substrate-playground.description": "Your instant dev environment",
+    "extension.substrate-playground.remoteViewExplorer": "Substrate Playground",
+    "extension.substrate-playground.welcomeSignIn": "Substrate Playground is good for you.\nSign in to view your workspaces or [learn more](https://docs.github.com/codespaces/about-codespaces).\n[Sign in to GitHub](command:github.codespaces.signIn)"
+}

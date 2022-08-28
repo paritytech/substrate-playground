@@ -1,0 +1,3 @@
+FROM gitpod/openvscode-server:latest
+
+#COPY out/

@@ -1,0 +1,152 @@
+{
+    "name": "@substrate/playground-extension",
+    "displayName": "playground",
+    "description": "Substrate Playground extension",
+    "version": "0.0.1",
+    "publisher": "Parity",
+    "repository": "https://github.com/paritytech/substrate-playground",
+    "engines": {
+        "vscode": "^1.57.0"
+    },
+    "extensionKind": [
+        "ui",
+        "workspace"
+    ],
+    "capabilities": {
+        "untrustedWorkspaces": {
+            "supported": true
+        }
+    },
+    "categories": [
+        "Other"
+    ],
+    "activationEvents": [
+        "onView:substrate-playground.explorer",
+        "onCommand:substrate-playground.navigate",
+        "onCommand:substrate-playground.newSession",
+        "*"
+    ],
+    "enabledApiProposals": [
+        "resolvers",
+        "terminalDataWriteEvent",
+        "notebookEditor",
+        "contribViewsRemote"
+    ],
+    "contributes": {
+        "commands": [
+            {
+                "command": "substrate-playground.navigate",
+                "title": "Go to playground",
+                "category": "Substrate Playground",
+                "icon": "$(link-external)"
+            },
+            {
+                "command": "substrate-playground.newSession",
+                "title": "Create a new session",
+                "category": "Substrate Playground",
+                "icon": "$(add)"
+            }
+        ],
+        "menus": {
+            "view/item/context": [
+                {
+                    "command": "substrate-playground.navigate",
+                    "when": "view == substrate-playground.explorer && viewItem == session",
+                    "group": "inline"
+                },
+                {
+                    "command": "substrate-playground.navigate",
+                    "when": "view == substrate-playground.explorer && viewItem == session"
+                }
+            ],
+            "view/title": [
+                {
+                    "command": "substrate-playground.newSession",
+                    "group": "navigation@1",
+                    "when": "view == substrate-playground.explorer"
+                }
+            ]
+        },
+        "configuration": [
+			{
+				"id": "substrate-playground",
+				"title": "Substrate Playground",
+				"properties": {
+					"conf.substrate-playground.environment": {
+						"type": "string",
+						"enum": [
+							"development",
+							"staging",
+							"production"
+						],
+						"default": "staging",
+						"description": "Environment to connect to",
+						"scope": "window"
+					}
+				}
+			}
+        ],
+        "remoteHelp": {
+            "getStarted": "github.codespaces.getStartedLink",
+            "feedback": "github.codespaces.feedbackLink",
+            "documentation": "github.codespaces.documentationLink",
+            "issues": "github.codespaces.feedbackLink"
+        },
+        "views": {
+            "remote": [
+                {
+                    "id": "substrate-playground.explorer",
+                    "name": "%extension.substrate-playground.remoteViewExplorer%",
+                    "group": "targets@2",
+                    "remoteName": "substrate-playground"
+                }
+            ]
+        },
+        "viewsWelcome": [
+            {
+                "view": "substrate-playground.explorer",
+                "contents": "%extension.substrate-playground.welcomeSignIn%",
+                "when": "substrate-playground:views-welcome:not-signed-in == true"
+            }
+        ],
+        "walkthroughs": [
+            {
+				"id": "substrate-playground.welcome",
+				"title": "Get Started with Substrate Playground",
+				"description": "Discover and personalize features that supercharge your Git experience",
+				"steps": [
+					{
+						"id": "substrate-playground.welcome2.tutorial",
+						"title": "Watch Tutorial",
+						"description": "Sit back and watch the Getting Started video.\n\n[Watch Tutorial Video](https://www.youtube.com/watch?v=UQPb73Zz9qk \"Watch the Getting Started video\")",
+						"media": {
+							"markdown": "walkthroughs/getting-started/0-tutorial.md"
+						}
+					}
+                ]
+            }
+        ]
+    },
+    "main": "./out/extension.js",
+    "scripts": {
+        "vscode:prepublish": "npm run compile",
+        "build": "tsc -p ./",
+        "lint": "eslint src --ext ts",
+        "watch": "tsc -watch -p ./",
+        "pretest": "npm run compile && npm run lint",
+        "test": "node ./out/test/runTest.js"
+    },
+    "dependencies": {
+        "@substrate/playground-client": "1.9.21",
+        "cross-fetch": "3.1.5",
+        "@octokit/rest": "18.0.0"
+    },
+    "devDependencies": {
+        "@types/node": "16.11.1",
+        "@types/vscode": "1.61.0",
+        "@typescript-eslint/eslint-plugin": "5.0.0",
+        "@typescript-eslint/parser": "5.0.0",
+        "eslint": "8.0.1",
+        "typescript": "4.4.4"
+    }
+}

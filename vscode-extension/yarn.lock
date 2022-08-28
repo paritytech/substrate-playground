@@ -160,10 +160,10 @@
   dependencies:
     "@octokit/openapi-types" "^12.7.0"
 
-"@substrate/playground-client@1.9.18":
-  version "1.9.18"
-  resolved "https://registry.yarnpkg.com/@substrate/playground-client/-/playground-client-1.9.18.tgz#97de4f5c8c9e54560abc2627cff08360f942d05c"
-  integrity sha512-+5Hb0DEVOPHmr+9sl2QPG8lW/MbuoctWg++k2OUITM29uFPV2Fvd919TaCMOO9T2RRD0U9WBoFN4NnLuiwv6zQ==
+"@substrate/playground-client@1.9.21":
+  version "1.9.21"
+  resolved "https://registry.yarnpkg.com/@substrate/playground-client/-/playground-client-1.9.21.tgz#6908dd77b969085abe6a3bad53651b59745f0485"
+  integrity sha512-o/tJwl7+8jLC4rZ2OUgVOOIioMMYYvODpJ03iEqL9QZyHDJ9Rmz0OJ0h6Op0+MhOg7K5bruffxWBZKblEuwgcw==
   dependencies:
     uuid "8.3.2"
 
