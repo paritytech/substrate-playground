@@ -126,7 +126,7 @@ jobs:
       - name: Show images
         run: docker images
 
-      - uses: AbsaOSS/k3d-action@v2
+      - uses: AbsaOSS/k3d-action@b176c2a6dcae72e3e64e3e4d61751904ec314002 # v2.3.0
         with:
           cluster-name: "pg-cluster"
           args: >-
