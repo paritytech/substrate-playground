@@ -43,7 +43,7 @@ async function call<T>(input: RequestInfo, init: RequestInit, timeout: number): 
             return Promise.reject({code: RpcErrorCode.SERVER_ERROR, message: response.statusText});
         }
     } catch (e) {
-        return Promise.reject({code: RpcErrorCode.TIMEOUT_ERROR, message: e.message || 'Failed to fetch'});
+        return Promise.reject({code: RpcErrorCode.TIMEOUT_ERROR, message: e.message || `Failed to fetch in ${timeout} ms`});
     }
 }
 

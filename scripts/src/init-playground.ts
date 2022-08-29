@@ -96,7 +96,7 @@ try {
     });
     console.log("RepositoryVersion ready");
 } catch(e) {
-    console.error(`Error: ${e.type}`, e.data);
+    console.error(`Error: ${e.message}`, e.data);
     process.exit(1);
 } finally {
     await client.logout();
