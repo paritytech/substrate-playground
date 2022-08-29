@@ -157,9 +157,13 @@ fn respond_to(value: &Value) -> rocket::response::Result<'static> {
 impl<'r> Responder<'r, 'static> for Error {
     fn respond_to(self, _: &'r Request<'_>) -> rocket::response::Result<'static> {
         let error = match self {
-            Error::MissingConstraint(_, _) => json!({ "message": "Missing constraint", "data": {"type": "MissingConstraint"} }),
+            Error::MissingConstraint(_, _) => {
+                json!({ "message": "Missing constraint", "data": {"type": "MissingConstraint"} })
+            }
             Error::Failure(message) => json!({ "message": message, "data": {"type": "Failure"} }),
-            Error::Resource(resource) => json!({ "message": resource, "data": {"type": "Resource"} }),
+            Error::Resource(resource) => {
+                json!({ "message": resource, "data": {"type": "Resource"} })
+            }
             Error::K8sCommunicationFailure(reason) => {
                 json!({ "message": reason.to_string(), "data": {"type": "K8sCommunicationFailure"} })
             }
