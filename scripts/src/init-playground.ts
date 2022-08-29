@@ -10,6 +10,11 @@ if (!accessToken) {
 
 const env = environmentTypeFromString(process.env.ENV);
 
+// Disable certificate checking for 'dev' env, as certificates are self signed
+if (env == EnvironmentType.dev) {
+    process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+}
+
 function newClient(env: EnvironmentType): Client {
     return new Client(playgroundBaseAPIURL(env), 30000, {credentials: "include"});
 }
