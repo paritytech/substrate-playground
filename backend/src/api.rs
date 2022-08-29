@@ -162,7 +162,7 @@ impl<'r> Responder<'r, 'static> for Error {
             }
             Error::Failure(message) => json!({ "message": message, "data": {"type": "Failure"} }),
             Error::Resource(resource) => {
-                json!({ "message": resource, "data": {"type": "Resource"} })
+                json!({ "message": resource.to_string(), "data": {"type": "Resource"} })
             }
             Error::K8sCommunicationFailure(reason) => {
                 json!({ "message": reason.to_string(), "data": {"type": "K8sCommunicationFailure"} })
