@@ -12,13 +12,13 @@ hyper = "0.14.20"
 hyper-rustls = "0.23.0"
 json-patch = "0.2.6"
 rocket = { version = "0.5.0-rc.2", features = ["json", "secrets"] }
-serde = { version = "1.0.139", features = ["derive"] }
-serde_json = "1.0.82"
+serde = { version = "1.0.144", features = ["derive"] }
+serde_json = "1.0.85"
 kube = { version = "0.74.0", default-features = false, features = ["client", "jsonpatch", "ws", "rustls-tls"] }
 k8s-openapi = { version = "0.15.0", default-features = false, features = ["v1_23"] }
 tokio-util = "0.7.2"
-thiserror = "1.0.31"
-futures = "0.3"
+thiserror = "1.0.32"
+futures = "0.3.24"
 base64 = "0.13"
 rand = { version = "0.8", default-features = false, features = ["std"] }
 url = "2.0"
