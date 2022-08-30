@@ -70,7 +70,6 @@ try {
     await client.createPreference('SessionDefaultDuration', {value: "45"});
     await client.createPreference('SessionMaxDuration', {value: "1440"});
     await client.createPreference('SessionPoolAffinity', {value: "default"});
-    await client.createPreference('UserDefaultRoles', {value: "jeluard=super-admin,TestUppercase=super-admin"});
 
     if (! await client.getRepository(repositoryId)) {
         console.log("Creating Repository");

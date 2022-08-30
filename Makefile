@@ -116,7 +116,8 @@ endif
 k8s-setup-env: requires-k8s
 	@read -p "GH client ID?" CLIENT_ID; \
 	read -p "GH client secret?" CLIENT_SECRET; \
-	kubectl create configmap playground-config --from-literal=github.clientId="$${CLIENT_ID}" --dry-run=client -o yaml | kubectl apply -f - && \
+	read -p "User roles?" USER_ROLES; \
+	kubectl create configmap playground-config --from-literal=user.roles="$${USER_ROLES}" --from-literal=github.clientId="$${CLIENT_ID}" --dry-run=client -o yaml | kubectl apply -f - && \
 	kubectl create secret generic playground-secrets --from-literal=github.clientSecret="$${CLIENT_SECRET}" --from-literal=rocket.secretKey=`openssl rand -base64 32` --dry-run=client -o yaml | kubectl apply -f -
 
 k8s-deploy: requires-k8s ## Deploy playground on kubernetes

@@ -44,6 +44,11 @@ spec:
             value: "normal"
           - name: ROCKET_ADDRESS
             value: "0.0.0.0"
+          - name: USER_ROLES
+            valueFrom:
+              configMapKeyRef:
+                name: playground-config
+                key: user.roles
           - name: GITHUB_CLIENT_ID
             valueFrom:
               configMapKeyRef:

@@ -1,15 +1,16 @@
 //! HTTP endpoints exposed in /api context
 use std::{
     collections::{BTreeMap, HashMap},
+    env::var,
     io::Cursor,
 };
 
 use crate::{
     error::{Error, Result},
-    kubernetes::{parse_user_roles, preference, user},
+    kubernetes::{parse_user_roles, user},
     types::{
         Playground, Pool, Preference, PreferenceConfiguration, PreferenceUpdateConfiguration,
-        Preferences, Profile, ProfileConfiguration, ProfileUpdateConfiguration, Repository,
+        Profile, ProfileConfiguration, ProfileUpdateConfiguration, Repository,
         RepositoryConfiguration, RepositoryUpdateConfiguration, RepositoryVersion, Role,
         RoleConfiguration, RoleUpdateConfiguration, Session, SessionConfiguration,
         SessionExecutionConfiguration, SessionUpdateConfiguration, User, UserConfiguration,
@@ -40,14 +41,9 @@ async fn is_paritytech_member(token: &str, user: &GitHubUser) -> bool {
         .any(|organization| organization == *"paritytech".to_string())
 }
 
-async fn get_user_roles() -> BTreeMap<String, String> {
-    match preference::get_preference(&Preferences::UserDefaultRoles.to_string()).await {
-        Ok(Some(pref)) => parse_user_roles(pref.value),
-        Ok(None) => {
-            log::warn!("Preference UserDefaultRoles undefined");
-
-            BTreeMap::new()
-        }
+fn get_user_roles() -> BTreeMap<String, String> {
+    match var("USER_ROLES") {
+        Ok(pref) => parse_user_roles(pref),
         Err(err) => {
             log::warn!("Error while accessing UserDefaultRoles preference: {}", err);
 
