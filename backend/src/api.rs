@@ -74,7 +74,7 @@ impl<'r> FromRequest<'r> for User {
                             return Outcome::Success(user);
                         }
                         Ok(None) => {
-                            let user_roles = get_user_roles().await;
+                            let user_roles = get_user_roles();
                             let is_paritytech_member =
                                 is_paritytech_member(token_value, &gh_user).await;
                             let default_user_role = if is_paritytech_member {
