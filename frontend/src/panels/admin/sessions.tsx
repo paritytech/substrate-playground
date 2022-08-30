@@ -24,9 +24,9 @@ import { fetchRepositoriesWithLatestVersions } from "../session";
 export function SessionCreationDialog({ client, preferences, user, repository, repositories, show, onCreate, onHide }: { client: Client, preferences: Preference[], user: User, repository?: string, repositories: [Repository, RepositoryVersion][] | undefined, show: boolean, onCreate: (id: string, userId: string, conf: SessionConfiguration ) => void, onHide: () => void }): JSX.Element {
     const [selection, setSelection] = React.useState<string | null>(null);
     const [canCustomizeDuration, setCanCustomizeDuration] = React.useState(false);
-    const [duration, setDuration] = React.useState(find(preferences, Preferences.SessionDefaultDuration) || 60);
+    const [duration, setDuration] = React.useState(Number.parseInt(find(preferences, Preferences.SessionDefaultDuration)?.value || "60"));
     const [canCustomizePoolAffinity, setCanCustomizePoolAffinity] = React.useState(false);
-    const [poolAffinity, setPoolAffinity] = React.useState(find(preferences, Preferences.SessionPoolAffinity));
+    const [poolAffinity, setPoolAffinity] = React.useState(find(preferences, Preferences.SessionPoolAffinity)?.value);
     const [pools, setPools] = useState<Pool[] | null>(null);
 
     useInterval(async () => {

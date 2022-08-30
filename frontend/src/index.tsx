@@ -58,7 +58,7 @@ function ExtraTheiaNav({ client, user, preferences, restartAction }: { client: C
             const { state, maxDuration } = session;
             if (state.type == 'Running') {
                 const remaining = maxDuration - (state.startTime || 0) / 60; // In minutes
-                const maxConfDuration = Number.parseInt(find(preferences, Preferences.SessionMaxDuration) || "600");
+                const maxConfDuration = Number.parseInt(find(preferences, Preferences.SessionMaxDuration)?.value || "600");
                 // Increase duration
                 if (remaining < 10 && maxDuration < maxConfDuration) {
                     const newDuration = Math.min(maxConfDuration, maxDuration + 10);

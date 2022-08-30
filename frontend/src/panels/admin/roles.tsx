@@ -14,16 +14,29 @@ import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import TextField from '@mui/material/TextField';
-import { Client, Configuration, Preference, Preferences, ResourceType, Role, RoleConfiguration, RoleUpdateConfiguration, User } from '@substrate/playground-client';
+import { Client, Preference, Preferences, ResourcePermission, ResourceType, Role, RoleConfiguration, RoleUpdateConfiguration, User } from '@substrate/playground-client';
 import { ErrorSnackbar } from '../../components';
 import { useStyles, EnhancedTableToolbar, Resources } from '.';
 import { find } from "../../utils";
 
-const defaultRole = 'user';
+function createPermissions(): Record<ResourceType, Array<ResourcePermission>> {
+    return {
+        Pool: [],
+        Preference: [],
+        Profile: [],
+        Repository: [],
+        RepositoryVersion: [],
+        Role: [],
+        Session: [],
+        SessionExecution: [],
+        User: [],
+        Workspace: []
+    };
+}
 
 function RoleCreationDialog({ client, preferences, roles, show, onCreate, onHide }: { client: Client, preferences: Preference[], roles: Role[], show: boolean, onCreate: (id: string, conf: RoleConfiguration) => void, onHide: () => void }): JSX.Element {
     const [id, setID] = React.useState('');
-    const [permissions, setPermissions] = React.useState<string>(find(preferences, Preferences.SessionPoolAffinity));
+    const [permissions, setPermissions] = React.useState(find(preferences, Preferences.SessionPoolAffinity)?.value);
 
     const handleIDChange = (event: React.ChangeEvent<HTMLInputElement>) => setID(event.target.value);
     const handlePermissionsChange = (event: React.ChangeEvent<HTMLInputElement>) => setPermissions(event.target.value);
@@ -48,7 +61,7 @@ function RoleCreationDialog({ client, preferences, roles, show, onCreate, onHide
                         label="Permissions"
                         />
                     <DialogActions>
-                        <Button disabled={!id || find(roles, id) != null || !permissions} onClick={() => {onCreate(id, {permissions: {}}); onHide();}}>CREATE</Button>
+                        <Button disabled={!id || find(roles, id) != null || !permissions} onClick={() => {onCreate(id, {permissions: createPermissions()}); onHide();}}>CREATE</Button>
                         <Button onClick={onHide}>CLOSE</Button>
                     </DialogActions>
                 </Container>

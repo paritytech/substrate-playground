@@ -23,9 +23,16 @@ import { find, remove } from "../../utils";
 
 const defaultRole = 'user';
 
+function createPreferences(poolAffinity?: string): Record<string, string> {
+    if (poolAffinity) {
+        return {poolAffinity: poolAffinity};
+    }
+    return {};
+}
+
 function UserCreationDialog({ client, preferences, users, show, onCreate, onHide }: { client: Client, preferences: Preference[], users: User[], show: boolean, onCreate: (id: string, conf: UserConfiguration) => void, onHide: () => void }): JSX.Element {
     const [id, setID] = React.useState('');
-    const [poolAffinity, setPoolAffinity] = React.useState<string>(find(preferences, Preferences.SessionPoolAffinity));
+    const [poolAffinity, setPoolAffinity] = React.useState<string | undefined>(find(preferences, Preferences.SessionPoolAffinity)?.value);
     const [role, setRole] = React.useState(defaultRole);
     const [pools, setPools] = useState<Pool[] | null>(null);
 
@@ -73,7 +80,7 @@ function UserCreationDialog({ client, preferences, users, show, onCreate, onHide
                         label="Role"
                         />
                     <DialogActions>
-                        <Button disabled={!id || find(users, id) != null || !poolAffinity} onClick={() => {onCreate(id, {role: role, preferences: {poolAffinity: poolAffinity}}); onHide();}}>CREATE</Button>
+                        <Button disabled={!id || find(users, id) != null || !poolAffinity} onClick={() => {onCreate(id, {role: role, preferences: createPreferences(poolAffinity)}); onHide();}}>CREATE</Button>
                         <Button onClick={onHide}>CLOSE</Button>
                     </DialogActions>
                 </Container>
