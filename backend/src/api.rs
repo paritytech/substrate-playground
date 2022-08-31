@@ -1,7 +1,6 @@
 //! HTTP endpoints exposed in /api context
 use std::{
     collections::{BTreeMap, HashMap},
-    env::var,
     io::Cursor,
 };
 
@@ -16,7 +15,10 @@ use crate::{
         SessionExecutionConfiguration, SessionUpdateConfiguration, User, UserConfiguration,
         UserUpdateConfiguration,
     },
-    utils::github::{authorization_uri, current_user, exchange_code, orgs, GitHubUser},
+    utils::{
+        github::{authorization_uri, current_user, exchange_code, orgs, GitHubUser},
+        var,
+    },
     Context,
 };
 use rocket::{
@@ -41,15 +43,8 @@ async fn is_paritytech_member(token: &str, user: &GitHubUser) -> bool {
         .any(|organization| organization == *"paritytech".to_string())
 }
 
-fn get_user_roles() -> BTreeMap<String, String> {
-    match var("USER_ROLES") {
-        Ok(pref) => parse_user_roles(pref),
-        Err(err) => {
-            log::warn!("Error while accessing UserDefaultRoles preference: {}", err);
-
-            BTreeMap::new()
-        }
-    }
+fn get_user_roles() -> Result<BTreeMap<String, String>> {
+    var("USER_ROLES").map(parse_user_roles)
 }
 
 // Extract a User from cookies
@@ -74,43 +69,71 @@ impl<'r> FromRequest<'r> for User {
                             return Outcome::Success(user);
                         }
                         Ok(None) => {
-                            let user_roles = get_user_roles();
-                            let is_paritytech_member =
-                                is_paritytech_member(token_value, &gh_user).await;
-                            let default_user_role = if is_paritytech_member {
-                                "paritytech-member"
-                            } else {
-                                "user"
-                            }
-                            .to_string();
-                            let profiles = request.headers().get("profile").collect::<Vec<&str>>();
-                            if !profiles.is_empty() {
-                                if profiles.len() > 1 {
-                                    log::warn!("Multiple profile headers found: {:?}", profiles);
+                            match get_user_roles() {
+                                Ok(user_roles) => {
+                                    let is_paritytech_member =
+                                        is_paritytech_member(token_value, &gh_user).await;
+                                    let default_user_role = if is_paritytech_member {
+                                        "paritytech-member"
+                                    } else {
+                                        "user"
+                                    }
+                                    .to_string();
+                                    let profiles =
+                                        request.headers().get("profile").collect::<Vec<&str>>();
+                                    if !profiles.is_empty() {
+                                        if profiles.len() > 1 {
+                                            log::warn!(
+                                                "Multiple profile headers found: {:?}",
+                                                profiles
+                                            );
+                                        }
+                                        log::debug!("Using profile {:?}", profiles.get(0));
+                                    }
+                                    // Create a new User
+                                    let user = User {
+                                        id: user_id.to_string(),
+                                        role: user_roles
+                                            .get(user_id)
+                                            .unwrap_or(&default_user_role)
+                                            .to_string(),
+                                        profile: profiles.get(0).map(|s| s.to_string()),
+                                        preferences: BTreeMap::new(),
+                                    };
+                                    let user_configuration = UserConfiguration {
+                                        role: user.clone().role,
+                                        preferences: user.clone().preferences,
+                                        profile: user.clone().profile,
+                                    };
+                                    if let Err(err) =
+                                        user::create_user(user_id, user_configuration).await
+                                    {
+                                        log::warn!(
+                                            "Error while creating user {} : {}",
+                                            user_id,
+                                            err
+                                        );
+                                    } else {
+                                        log::debug!(
+                                            "Created user {} with role {}",
+                                            user_id,
+                                            user.role
+                                        );
+                                    }
+                                    return Outcome::Success(user);
                                 }
-                                log::debug!("Using profile {:?}", profiles.get(0));
+                                Err(err) => {
+                                    log::error!(
+                                        "Error while accessing USER_ROLES env variable: {}",
+                                        err
+                                    );
+
+                                    return Outcome::Failure((
+                                        Status::ExpectationFailed,
+                                        Error::Failure(err.to_string()),
+                                    ));
+                                }
                             }
-                            // Create a new User
-                            let user = User {
-                                id: user_id.to_string(),
-                                role: user_roles
-                                    .get(user_id)
-                                    .unwrap_or(&default_user_role)
-                                    .to_string(),
-                                profile: profiles.get(0).map(|s| s.to_string()),
-                                preferences: BTreeMap::new(),
-                            };
-                            let user_configuration = UserConfiguration {
-                                role: user.clone().role,
-                                preferences: user.clone().preferences,
-                                profile: user.clone().profile,
-                            };
-                            if let Err(err) = user::create_user(user_id, user_configuration).await {
-                                log::warn!("Error while creating user {} : {}", user_id, err);
-                            } else {
-                                log::debug!("Created user {} with role {}", user_id, user.role);
-                            }
-                            return Outcome::Success(user);
                         }
                         Err(err) => {
                             // Failed to access user details
