@@ -4,7 +4,11 @@ import { Client, EnvironmentType, playgroundBaseAPIURL, environmentTypeFromStrin
 import 'cross-fetch/dist/node-polyfill.js'; // TODO remove once moving to Node18 (https://github.com/nodejs/node/pull/41749)
 
 const env = environmentTypeFromString(process.env.ENV);
-const accessToken = process.env.ACCESS_TOKEN;
+
+// Disable certificate checking for 'dev' env, as certificates are self signed
+if (env == EnvironmentType.dev) {
+    process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+}
 
 function newClient(): Client {
     return new Client(playgroundBaseAPIURL(env), 30000, {credentials: "include"});
@@ -56,6 +60,7 @@ async function waitForSessionDeletion(client: Client, userId: string, sessionId:
     });
 }
 
+const accessToken = process.env.ACCESS_TOKEN;
 if (accessToken) {
 
     test('authenticated - should be able to list users', async (t) => {
