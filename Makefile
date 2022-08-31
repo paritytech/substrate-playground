@@ -114,20 +114,20 @@ ifeq ($(SKIP_ACK), )
 endif
 
 k8s-setup-env: requires-k8s
-	@if test "$(CLIENT_ID)" = "" ; then \
-		echo "Environment variable CLIENT_ID not set"; \
+	@if test "$(GH_CLIENT_ID)" = "" ; then \
+		echo "Environment variable GH_CLIENT_ID not set"; \
 		exit 1; \
 	fi
-	@if test "$(CLIENT_SECRET)" = "" ; then \
-		echo "Environment variable CLIENT_SECRET not set"; \
+	@if test "$(GH_CLIENT_SECRET)" = "" ; then \
+		echo "Environment variable GH_CLIENT_SECRET not set"; \
 		exit 1; \
 	fi
 	@if test "$(USER_ROLES)" = "" ; then \
 		echo "Environment variable USER_ROLES not set"; \
 		exit 1; \
 	fi
-	@kubectl create configmap playground-config --from-literal=user.roles="$${USER_ROLES}" --from-literal=github.clientId="$${CLIENT_ID}" --dry-run=client -o yaml | kubectl apply -f - && \
-	kubectl create secret generic playground-secrets --from-literal=github.clientSecret="$${CLIENT_SECRET}" --from-literal=rocket.secretKey=`openssl rand -base64 32` --dry-run=client -o yaml | kubectl apply -f -
+	@kubectl create configmap playground-config --from-literal=user.roles="$${USER_ROLES}" --from-literal=github.clientId="$${GH_CLIENT_ID}" --dry-run=client -o yaml | kubectl apply -f - && \
+	kubectl create secret generic playground-secrets --from-literal=github.clientSecret="$${GH_CLIENT_SECRET}" --from-literal=rocket.secretKey=`openssl rand -base64 32` --dry-run=client -o yaml | kubectl apply -f -
 
 k8s-deploy: requires-k8s ## Deploy playground on kubernetes
 	kustomize build --enable-helm conf/k8s/overlays/${ENV}/ | kubectl apply -f -
