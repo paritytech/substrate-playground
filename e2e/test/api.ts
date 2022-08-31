@@ -30,20 +30,20 @@ test('unauthenticated - should be able to get details', async (t) => {
 test('unauthenticated - should not be able to create a new session', async (t) => {
     try {
         const client = newClient();
-        await createSession(client);
+        await createSession("", client);
         t.fail('Can create a session w/o login');
     } catch {
         t.pass();
     }
 });
 
-async function waitForSessionDeletion(client: Client, sessionId: string) {
+async function waitForSessionDeletion(client: Client, userId: string, sessionId: string) {
     const timeout = 60 * 1000;
     const interval = 1000;
     const startTime = Date.now();
     return new Promise<void>((resolve, reject) => {
         const id = setInterval(async () => {
-            const session = await client.getUserSession(sessionId);
+            const session = await client.getUserSession(userId, sessionId);
             if (session == null) {
                 clearInterval(id);
                 resolve();
@@ -81,7 +81,7 @@ if (accessToken) {
             const sessionId = await createSession(user.id, client);
             t.not(await client.getUserSession(user.id, sessionId), null);
             await client.deleteUserSession(user.id, sessionId);
-            await waitForSessionDeletion(client, sessionId);
+            await waitForSessionDeletion(client, user.id, sessionId);
         } catch(e) {
             t.fail(`Failed to create a session ${e.message}`);
         } finally {
@@ -105,7 +105,7 @@ if (accessToken) {
         } finally {
             await client.login(accessToken);
             await client.deleteUserSession(user.id, sessionId);
-            await waitForSessionDeletion(client, sessionId);
+            await waitForSessionDeletion(client, user.id, sessionId);
             await client.logout();
         }
     });
@@ -122,7 +122,7 @@ if (accessToken) {
                 t.not(stdout, null);
             } finally {
                 client.deleteUserSession(user.id, sessionId);
-                await waitForSessionDeletion(client, sessionId);
+                await waitForSessionDeletion(client, user.id, sessionId);
                 await client.logout();
             }
         });
