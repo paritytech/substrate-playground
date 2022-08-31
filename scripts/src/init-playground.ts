@@ -95,7 +95,7 @@ try {
     }
 
     await waitForRepositoryVersionCreation(client, repositoryId, repositoryVersionId).catch(e => {
-        console.error(`Error while waiting for RepositoryVersion creation: ${e}`);
+        console.error('Error while waiting for RepositoryVersion creation', e);
         process.exit(1);
     });
     console.log("RepositoryVersion ready");
