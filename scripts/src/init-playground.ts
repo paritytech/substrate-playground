@@ -26,6 +26,10 @@ async function latestRepositoryVersion(repo: string): Promise<string> {
     return response[0].sha;
 }
 
+const repositoryId = process.argv[2];
+const repository = process.argv[3];
+const repositoryUrl = `https://github.com/${repository}`;
+
 const client = newClient(env);
 try {
     await client.login(accessToken);
@@ -33,8 +37,6 @@ try {
     const details = await client.get();
     console.log(`Logged as ${details.user.id} (${details.user.role})`);
 
-    const repository = "jeluard/substrate-node-template";
-    const repositoryId = 'node-template';
     const repositoryVersionId = await latestRepositoryVersion(repository);
 
     await client.createPreference('SessionDefaultDuration', {value: "45"});
@@ -44,7 +46,7 @@ try {
     if (! await client.getRepository(repositoryId)) {
         console.log("Creating Repository");
         try {
-            await client.createRepository(repositoryId, {url: "https://github.com/jeluard/substrate-node-template"});
+            await client.createRepository(repositoryId, {url: repositoryUrl});
         } catch (e) {
             console.error("Failed to create repository");
             throw e;

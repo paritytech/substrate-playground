@@ -173,7 +173,7 @@ jobs:
         run: kubectl get pods -o wide
 
       - name: Initialize default resources
-        run: yarn && yarn build && yarn run:init-playground
+        run: yarn && yarn build && yarn run:init-playground repository substrate-developer-hub/substrate-front-end-template
         working-directory: ./scripts
         env:
           ENV: dev
