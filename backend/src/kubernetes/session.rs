@@ -486,8 +486,8 @@ pub async fn create_user_session(
 
     let repository = get_repository(repository_id).await?.ok_or_else(|| {
         Error::Resource(ResourceError::Unknown(
-            ResourceType::RepositoryVersion,
-            id.to_string(),
+            ResourceType::Repository,
+            repository_id.to_string(),
         ))
     })?;
     let repository_version_id = match &session_configuration
