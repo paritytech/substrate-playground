@@ -40,6 +40,7 @@ use super::{
     NODE_POOL_LABEL, OWNER_LABEL,
 };
 
+const DEFAULT_DOCKER_IMAGE: &str = "ubuntu";
 const RESOURCE_ID: &str = "RESOURCE_ID";
 const COMPONENT: &str = "session";
 const SESSION_DURATION_ANNOTATION: &str = "app.playground/session_duration";
@@ -55,17 +56,21 @@ fn string_to_duration(str: &str) -> Duration {
 
 // Model
 
-fn pod_env_variables(envs: Vec<NameValuePair>, session_id: &str) -> Vec<EnvVar> {
-    let mut envs = envs
-        .iter()
-        .map(|env| env_var(&env.name, &env.value))
-        .collect::<Vec<EnvVar>>();
-    // Add default variables
-    envs.append(&mut vec![
+fn pod_env_variables(envs: Option<Vec<NameValuePair>>, session_id: &str) -> Vec<EnvVar> {
+    let mut all_envs = Vec::from([
         env_var("SUBSTRATE_PLAYGROUND", ""),
         env_var("SUBSTRATE_PLAYGROUND_SESSION", session_id),
     ]);
-    envs
+    // Add default variables
+    if let Some(envs) = envs {
+        all_envs.append(
+            &mut envs
+                .iter()
+                .map(|env| env_var(&env.name, &env.value))
+                .collect::<Vec<EnvVar>>(),
+        );
+    }
+    all_envs
 }
 
 fn pod_annotations(duration: &Duration) -> BTreeMap<String, String> {
@@ -84,7 +89,7 @@ fn session_to_pod(
     image: &str,
     duration: &Duration,
     pool_id: &str,
-    envs: Vec<NameValuePair>,
+    envs: Option<Vec<NameValuePair>>,
 ) -> Pod {
     let mut labels = BTreeMap::new();
     labels.insert(APP_LABEL.to_string(), APP_VALUE.to_string());
@@ -190,7 +195,7 @@ fn session_to_pod(
     }
 }
 
-fn service(session_id: &str, service_name: &str, ports: Vec<Port>) -> Service {
+fn service(session_id: &str, service_name: &str, ports: Option<Vec<Port>>) -> Service {
     let mut labels = BTreeMap::new();
     labels.insert(APP_LABEL.to_string(), APP_VALUE.to_string());
     labels.insert(COMPONENT_LABEL.to_string(), COMPONENT.to_string());
@@ -205,17 +210,21 @@ fn service(session_id: &str, service_name: &str, ports: Vec<Port>) -> Service {
         port: THEIA_WEB_PORT,
         ..Default::default()
     }];
-    let mut extra_service_ports = ports
-        .iter()
-        .map(|port| ServicePort {
-            name: Some(port.clone().name),
-            protocol: port.clone().protocol,
-            port: port.port,
-            target_port: port.clone().target.map(IntOrString::Int),
-            ..Default::default()
-        })
-        .collect::<Vec<ServicePort>>();
-    service_ports.append(&mut extra_service_ports);
+
+    // Optional extra ports are converted and appended
+    if let Some(ports) = ports {
+        let mut extra_service_ports = ports
+            .iter()
+            .map(|port| ServicePort {
+                name: Some(port.clone().name),
+                protocol: port.clone().protocol,
+                port: port.port,
+                target_port: port.clone().target.map(IntOrString::Int),
+                ..Default::default()
+            })
+            .collect::<Vec<ServicePort>>();
+        service_ports.append(&mut extra_service_ports);
+    }
 
     Service {
         metadata: ObjectMeta {
@@ -416,6 +425,19 @@ fn ports(devcontainer: &DevContainer) -> Vec<Port> {
         .collect::<Vec<Port>>()
 }
 
+fn envs(devcontainer: &DevContainer) -> Vec<NameValuePair> {
+    devcontainer
+        .container_env
+        .clone()
+        .unwrap_or_default()
+        .iter()
+        .map(|(k, v)| NameValuePair {
+            name: k.to_string(),
+            value: v.to_string(),
+        })
+        .collect()
+}
+
 pub async fn create_user_session(
     user: &User,
     id: &str,
@@ -486,7 +508,14 @@ pub async fn create_user_session(
     {
         match repository_version.state {
             RepositoryVersionState::Ready { devcontainer_json } => {
-                parse_devcontainer(devcontainer_json.as_str())
+                devcontainer_json
+                    .map(|json| parse_devcontainer(&json))
+                    .transpose()
+                /*match devcontainer_json.map(|json| parse_devcontainer(&json)) {
+                    Some(Ok(devcontainer_json)) => Ok(Some(devcontainer_json)),
+                    Some(Err(err)) => Error(err),
+                    None => Ok(None)
+                }*/
             }
             _ => Err(Error::Failure(format!(
                 "Repository version {} is not in Ready state",
@@ -499,28 +528,20 @@ pub async fn create_user_session(
             repository_id, repository_version_id
         )))
     }?;
-    let ports = ports(&devcontainer);
 
+    let ports = devcontainer
+        .clone()
+        .map(|devcontainer| ports(&devcontainer));
     // TODO deploy a new ingress matching the route
     // With the proper mapping
     // Define the correct route
     // Also deploy proper tcp mapping configmap https://kubernetes.github.io/ingress-nginx/user-guide/exposing-tcp-udp-services/
 
-    let mut sessions = BTreeMap::new();
-    sessions.insert(id.to_string(), ports.clone());
+    // let mut sessions = BTreeMap::new();
+    // sessions.insert(id.to_string(), ports.clone());
     //  patch_ingress(&sessions).await?;
 
     // Now create the session itself
-
-    let envs = devcontainer
-        .container_env
-        .unwrap_or_default()
-        .iter()
-        .map(|(k, v)| NameValuePair {
-            name: k.to_string(),
-            value: v.to_string(),
-        })
-        .collect();
 
     let client = client()?;
 
@@ -558,10 +579,14 @@ pub async fn create_user_session(
                 &user.id,
                 id,
                 &volume_name,
-                devcontainer.image.as_str(),
+                devcontainer
+                    .clone()
+                    .map(|devcontainer| devcontainer.image)
+                    .unwrap_or_else(|| DEFAULT_DOCKER_IMAGE.to_string())
+                    .as_str(),
                 &duration,
                 &pool_id,
-                envs,
+                devcontainer.map(|devcontainer| envs(&devcontainer)),
             ),
         )
         .await

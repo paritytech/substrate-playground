@@ -16,51 +16,61 @@ async fn build(repository_id: &str, id: &str, path: &str) -> Result<()> {
     )
     .await?;
 
-    let devcontainer_json = read_devcontainer(path)?;
-    let conf = parse_devcontainer(&devcontainer_json)?;
+    if let Ok(devcontainer_json) = read_devcontainer(path) {
+        let conf = parse_devcontainer(&devcontainer_json)?;
 
-    // Trigger eventual build based on Configuration
-    if let Some(on_create_command) = conf.on_create_command {
-        log::info!("Executing {}", on_create_command);
+        // Trigger eventual build based on Configuration
+        if let Some(on_create_command) = conf.on_create_command {
+            log::info!("Executing {}", on_create_command);
+
+            update_repository_version_state(
+                repository_id,
+                id,
+                &RepositoryVersionState::Building {
+                    progress: 0,
+                    devcontainer_json: devcontainer_json.clone(),
+                },
+            )
+            .await?;
+
+            // Fail if at least a build command failed
+            match exec(path, on_create_command.clone()) {
+                Ok(result) if !result.status.success() => {
+                    return Err(Error::Failure(format!(
+                        "Failure during build {:?}: ",
+                        result
+                    )))
+                }
+                Err(err) => {
+                    return Err(Error::Failure(format!(
+                        "Failed to execute {}: {}",
+                        on_create_command, err
+                    )))
+                }
+                Ok(result) => {
+                    log::debug!("Execution result: {:?}: ", result);
+                }
+            }
+        }
 
         update_repository_version_state(
             repository_id,
             id,
-            &RepositoryVersionState::Building {
-                progress: 0,
-                devcontainer_json: devcontainer_json.clone(),
+            &RepositoryVersionState::Ready {
+                devcontainer_json: Some(devcontainer_json.clone()),
             },
         )
         .await?;
-
-        // Fail if at least a build command failed
-        match exec(path, on_create_command.clone()) {
-            Ok(result) if !result.status.success() => {
-                return Err(Error::Failure(format!(
-                    "Failure during build {:?}: ",
-                    result
-                )))
-            }
-            Err(err) => {
-                return Err(Error::Failure(format!(
-                    "Failed to execute {}: {}",
-                    on_create_command, err
-                )))
-            }
-            Ok(result) => {
-                log::debug!("Execution result: {:?}: ", result);
-            }
-        }
+    } else {
+        update_repository_version_state(
+            repository_id,
+            id,
+            &RepositoryVersionState::Ready {
+                devcontainer_json: None,
+            },
+        )
+        .await?;
     }
-
-    update_repository_version_state(
-        repository_id,
-        id,
-        &RepositoryVersionState::Ready {
-            devcontainer_json: devcontainer_json.clone(),
-        },
-    )
-    .await?;
 
     // Update current version so that it matches this newly created version
     update_repository(

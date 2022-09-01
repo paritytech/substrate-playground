@@ -232,7 +232,7 @@ pub enum RepositoryVersionState {
     },
     Ready {
         #[serde(rename = "devcontainerJson")]
-        devcontainer_json: String,
+        devcontainer_json: Option<String>,
     },
     Failed {
         message: String,
