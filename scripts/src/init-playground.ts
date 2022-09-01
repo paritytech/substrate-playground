@@ -74,7 +74,7 @@ try {
     await client.createPreference('SessionPoolAffinity', {value: "default"});
 
     if (! await client.getRepository(repositoryId)) {
-        console.log("Creating Repository");
+        console.log(`Creating Repository ${repositoryId}`);
         try {
             await client.createRepository(repositoryId, {url: repositoryUrl});
         } catch (e) {
@@ -87,7 +87,7 @@ try {
 
     const repositoryVersionIds = (await client.listRepositoryVersions(repositoryId)).map(repositoryVersion => repositoryVersion.id);
     if (!repositoryVersionIds.includes(repositoryVersionId)) {
-        console.log("Creating RepositoryVersion");
+        console.log(`Creating RepositoryVersion ${repositoryVersionId}`);
         try {
             await client.createRepositoryVersion(repositoryId, repositoryVersionId);
         } catch (e) {
