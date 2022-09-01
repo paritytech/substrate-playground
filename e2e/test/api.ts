@@ -4,6 +4,7 @@ import { Client, EnvironmentType, playgroundBaseAPIURL, environmentTypeFromStrin
 import 'cross-fetch/dist/node-polyfill.js'; // TODO remove once moving to Node18 (https://github.com/nodejs/node/pull/41749)
 
 const env = environmentTypeFromString(process.env.ENV);
+const repositoryId = 'node-template';
 
 // Disable certificate checking for 'dev' env, as certificates are self signed
 if (env == EnvironmentType.dev) {
@@ -16,7 +17,7 @@ function newClient(): Client {
 
 async function createSession(userId: string, client: Client): Promise<string> {
     const sessionId = await mainSessionId((await client.get()).user);
-    await client.createUserSession(userId, sessionId, {repositorySource: {repositoryId: 'node-template'}});
+    await client.createUserSession(userId, sessionId, {repositorySource: {repositoryId: repositoryId}});
     return sessionId;
 }
 
