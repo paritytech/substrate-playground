@@ -19,6 +19,36 @@ function newClient(env: EnvironmentType): Client {
     return new Client(playgroundBaseAPIURL(env), 30000, {credentials: "include"});
 }
 
+async function waitForRepositoryVersionCreation(client: Client, repositoryId: string, repositoryVersionId: string): Promise<RepositoryVersion> {
+    const interval = 5000;
+    return new Promise<RepositoryVersion>((resolve, reject) => {
+        const id = setInterval(async () => {
+            try {
+                const result = await client.getRepositoryVersion(repositoryId, repositoryVersionId);
+                const type = result?.state.type;
+                if (type == "Ready") {
+                    clearInterval(id);
+                    resolve(result);
+                } else if (type == "Failed") {
+                    clearInterval(id);
+                    reject({type: "Failure", data: result.state.message});
+                } else if (type == "Init") {
+                    console.log("Init");
+                } else if (type == "Cloning") {
+                    console.log(`Cloning: progress=${result.state.progress}`);
+                } else if (type == "Building") {
+                    console.log(`Building: progress=${result.state.progress}`);
+                } else {
+                    console.log(`Unknown state: ${result.state}`);
+                }
+            } catch (e) {
+                clearInterval(id);
+                reject({type: "Failure", data: `Error during version access: ${JSON.stringify(e)}`});
+            }
+        }, interval);
+    });
+}
+
 // Connect via Client, feed repository
 
 async function latestRepositoryVersion(repo: string): Promise<string> {
@@ -65,6 +95,12 @@ try {
             throw e;
         }
     }
+
+    await waitForRepositoryVersionCreation(client, repositoryId, repositoryVersionId).catch(e => {
+        console.error('Error while waiting for RepositoryVersion creation', e);
+        process.exit(1);
+    });
+    console.log("RepositoryVersion ready");
 } catch(e) {
     console.error(`Error: ${e.message}`, e.data);
     process.exit(1);
