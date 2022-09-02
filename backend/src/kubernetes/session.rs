@@ -417,7 +417,7 @@ fn ports(devcontainer: &DevContainer) -> Vec<Port> {
         .unwrap_or_default()
         .into_iter()
         .map(|port| Port {
-            name: format!("PORT-{}", port),
+            name: format!("port-{}", port),
             port,
             protocol: Some("TCP".to_string()),
             target: None,
