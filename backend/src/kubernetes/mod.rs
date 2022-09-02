@@ -104,9 +104,9 @@ pub fn env_var(name: &str, value: &str) -> EnvVar {
     }
 }
 
-pub fn ingress_path(path: &str, service_name: &str, service_port: i32) -> HTTPIngressPath {
+pub fn ingress_path(service_name: &str, service_port: i32) -> HTTPIngressPath {
     HTTPIngressPath {
-        path: Some(path.to_string()),
+        path: Some("/".to_string()),
         path_type: "Prefix".to_string(),
         backend: IngressBackend {
             service: Some(IngressServiceBackend {

@@ -265,10 +265,10 @@ fn external_service(
 }
 
 fn ingress_paths(service_name: String, ports: &[Port]) -> Vec<HTTPIngressPath> {
-    let mut all_paths = vec![ingress_path("/", &service_name, THEIA_WEB_PORT)];
+    let mut all_paths = vec![ingress_path(&service_name, THEIA_WEB_PORT)];
     let mut paths = ports
         .iter()
-        .map(|port| ingress_path(&port.clone().path, &service_name.clone(), port.port))
+        .map(|port| ingress_path(&service_name.clone(), port.port))
         .collect();
     all_paths.append(&mut paths);
     all_paths
@@ -417,7 +417,7 @@ fn ports(devcontainer: &DevContainer) -> Vec<Port> {
         .unwrap_or_default()
         .into_iter()
         .map(|port| Port {
-            name: format!("PORT-{}",port),
+            name: format!("PORT-{}", port),
             port,
             protocol: Some("TCP".to_string()),
             target: None,
