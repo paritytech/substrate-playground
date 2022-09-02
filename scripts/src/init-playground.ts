@@ -15,6 +15,11 @@ if (env == EnvironmentType.dev) {
     process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 }
 
+if (process.argv.length < 4) {
+    console.error("Invalid arguments; Example usage: yarn run:init-playground node-template jeluard/substrate-node-template");
+    process.exit(1);
+}
+
 function newClient(env: EnvironmentType): Client {
     return new Client(playgroundBaseAPIURL(env), 30000, {credentials: "include"});
 }
