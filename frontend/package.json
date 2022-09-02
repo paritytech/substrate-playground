@@ -24,7 +24,7 @@
     "marked": "4.1.0",
     "react": "18.2.0",
     "react-dom": "18.2.0",
-    "xstate": "4.33.4"
+    "xstate": "4.33.5"
   },
   "devDependencies": {
     "@mui/types": "7.2.0",
