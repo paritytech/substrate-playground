@@ -105,5 +105,6 @@ try {
     console.error(`Error: ${e.message}`, e.data);
     process.exit(1);
 } finally {
+    console.log("Logged out");
     await client.logout();
 }
