@@ -249,7 +249,6 @@ pub struct NameValuePair {
 pub struct Port {
     pub name: String,
     pub protocol: Option<String>,
-    pub path: String,
     pub port: i32,
     pub target: Option<i32>,
 }

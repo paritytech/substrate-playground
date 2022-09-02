@@ -410,15 +410,15 @@ fn local_service_name(session_id: &str) -> String {
 }
 
 fn ports(devcontainer: &DevContainer) -> Vec<Port> {
+    // TODO add support to https://code.visualstudio.com/docs/remote/devcontainerjson-reference#_port-attributes
     devcontainer
         .forward_ports
         .clone()
         .unwrap_or_default()
         .into_iter()
         .map(|port| Port {
-            name: "".to_string(),
+            name: format!("PORT-{}",port),
             port,
-            path: "".to_string(),
             protocol: Some("TCP".to_string()),
             target: None,
         })

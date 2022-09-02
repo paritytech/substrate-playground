@@ -124,7 +124,6 @@ export interface NameValuePair {
 export interface Port {
     name: string,
     protocol?: string,
-    path: string,
     port: number,
     target?: number
 }
