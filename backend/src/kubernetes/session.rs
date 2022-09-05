@@ -280,7 +280,6 @@ fn subdomain(host: &str, id: &str) -> String {
 
 fn pod_to_state(pod: &Pod) -> types::SessionState {
     let status = pod.status.clone().unwrap_or_default();
-    // TODO also inspect status.conditions
     println!("{:?}", status.conditions);
     let container_statuses = status.container_statuses.unwrap_or_default();
     // Only inspect the first container as it's the only one defined
@@ -331,6 +330,8 @@ fn pod_to_state(pod: &Pod) -> types::SessionState {
         }
         types::SessionState::Deploying
     } else {
+        // Container not yet deployed, inspect conditions
+        // See https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#pod-conditions
         if let Some(conditions) = status.conditions {
             if let Some(condition) = conditions.get(0) {
                 let reason = condition.clone().reason.unwrap_or_default();
@@ -528,11 +529,6 @@ pub async fn create_user_session(
                 devcontainer_json
                     .map(|json| parse_devcontainer(&json))
                     .transpose()
-                /*match devcontainer_json.map(|json| parse_devcontainer(&json)) {
-                    Some(Ok(devcontainer_json)) => Ok(Some(devcontainer_json)),
-                    Some(Err(err)) => Error(err),
-                    None => Ok(None)
-                }*/
             }
             _ => Err(Error::Failure(format!(
                 "Repository version {} is not in Ready state",
