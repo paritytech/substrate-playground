@@ -1,5 +1,5 @@
 import test from 'ava';
-import { Client, EnvironmentType, playgroundBaseAPIURL, environmentTypeFromString, mainSessionId } from '@substrate/playground-client';
+import { Client, EnvironmentType, playgroundBaseAPIURL, environmentTypeFromString, mainSessionId, SessionState, Session } from '@substrate/playground-client';
 
 import 'cross-fetch/dist/node-polyfill.js'; // TODO remove once moving to Node18 (https://github.com/nodejs/node/pull/41749)
 
@@ -61,6 +61,25 @@ async function waitForSessionDeletion(client: Client, userId: string, sessionId:
     });
 }
 
+async function waitForSession(client: Client, userId: string, sessionId: string): Promise<Session> {
+    const interval = 5000;
+    return new Promise<Session>((resolve, reject) => {
+        const id = setInterval(async () => {
+            try {
+                const session = await client.getUserSession(userId, sessionId);
+                const type = session?.state.type;
+                if (type == "Running") {
+                    clearInterval(id);
+                    resolve(session);
+                }
+            } catch (e) {
+                clearInterval(id);
+                reject({type: "Failure", data: `Error during version access: ${JSON.stringify(e)}`});
+            }
+        }, interval);
+    });
+}
+
 const accessToken = process.env.ACCESS_TOKEN;
 if (accessToken) {
 
@@ -85,7 +104,20 @@ if (accessToken) {
         const user = await client.login(accessToken);
         try {
             const sessionId = await createSession(user.id, client);
-            t.not(await client.getUserSession(user.id, sessionId), null);
+
+            const session = await waitForSession(client, user.id, sessionId);
+            t.not(session, null);
+            const { state } = session;
+            if (state.type == "Running") {
+                const port = state.runtimeConfiguration.ports.find(port => port.port == 80);
+                t.not(port, null, "Can't find corresponding port");
+                client.path();
+                const url = `https://${sessionId}.${client.path()}`;
+                console.log(url);
+                const response = await fetch(url);
+                t.is(response.ok, true, "Failed to access URL");
+            }
+
             await client.deleteUserSession(user.id, sessionId);
             await waitForSessionDeletion(client, user.id, sessionId);
         } catch(e) {
@@ -99,20 +131,24 @@ if (accessToken) {
         const client = newClient();
         const user = await client.login(accessToken);
 
-        const sessionId = await createSession(user.id, client);
-        t.not(await client.getUserSession(user.id, sessionId), null);
-
-        await client.logout();
-
         try {
-            t.is(await client.getUserSession(user.id, sessionId), null);
-        } catch {
-            t.pass();
-        } finally {
-            await client.login(accessToken);
-            await client.deleteUserSession(user.id, sessionId);
-            await waitForSessionDeletion(client, user.id, sessionId);
+            const sessionId = await createSession(user.id, client);
+            t.not(await client.getUserSession(user.id, sessionId), null);
+
             await client.logout();
+
+            try {
+                t.is(await client.getUserSession(user.id, sessionId), null);
+            } catch {
+                t.pass();
+            } finally {
+                await client.login(accessToken);
+                await client.deleteUserSession(user.id, sessionId);
+                await waitForSessionDeletion(client, user.id, sessionId);
+                await client.logout();
+            }
+        } catch(e) {
+            t.fail(`Failed to create a session ${e.message}`);
         }
     });
 
@@ -121,11 +157,13 @@ if (accessToken) {
             const client = newClient();
             const user = await client.login(accessToken);
 
-            const sessionId = await createSession(user.id, client);
             try {
+                const sessionId = await createSession(user.id, client);
                 const { stdout } = await client.createUserSessionExecution(user.id, sessionId, {command: ["ls"]});
                 console.log(stdout);
                 t.not(stdout, null);
+            } catch(e) {
+                t.fail(`Failed to create a session ${e.message}`);
             } finally {
                 client.deleteUserSession(user.id, sessionId);
                 await waitForSessionDeletion(client, user.id, sessionId);
