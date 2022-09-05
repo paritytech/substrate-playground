@@ -123,7 +123,7 @@ if (accessToken) {
             await client.deleteUserSession(user.id, sessionId);
             await waitForSessionDeletion(client, user.id, sessionId);
         } catch(e) {
-            t.fail(`Failed to create a session ${e.message}`);
+            t.fail(`Failed to create a session: ${e.message}`);
         } finally {
             await client.deleteUserSession(user.id, sessionId);
             await waitForSessionDeletion(client, user.id, sessionId);
