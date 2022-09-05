@@ -280,8 +280,12 @@ fn subdomain(host: &str, id: &str) -> String {
 
 fn pod_to_state(pod: &Pod) -> types::SessionState {
     let status = pod.status.clone().unwrap_or_default();
+    // TODO also inspect status.conditions
+    println!("{:?}", status.conditions);
     let container_statuses = status.container_statuses.unwrap_or_default();
+    // Only inspect the first container as it's the only one defined
     if let Some(container_status) = container_statuses.get(0) {
+        println!("{:?}", container_status.state);
         if let Some(state) = &container_status.state {
             if let Some(running) = &state.running {
                 return types::SessionState::Running {
@@ -325,8 +329,21 @@ fn pod_to_state(pod: &Pod) -> types::SessionState {
                 }
             }
         }
+        types::SessionState::Deploying
+    } else {
+        if let Some(conditions) = status.conditions {
+            if let Some(condition) = conditions.get(0) {
+                let reason = condition.clone().reason.unwrap_or_default();
+                if reason == "Unschedulable" {
+                    return types::SessionState::Failed {
+                        message: condition.clone().message.unwrap_or_default(),
+                        reason,
+                    };
+                }
+            }
+        }
+        types::SessionState::Deploying
     }
-    types::SessionState::Deploying
 }
 
 // Creates a Session from a Pod annotations
