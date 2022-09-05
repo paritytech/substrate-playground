@@ -55,7 +55,7 @@ async function waitForSessionDeletion(client: Client, userId: string, sessionId:
                 return;
             } else if ((Date.now() - startTime) > timeout) {
                 clearInterval(id);
-                reject(`Session not deployed after ${timeout} ms`);
+                reject({type: "Failure", message: `Session not deployed after ${timeout} ms`});
             }
         }, interval);
     });
@@ -71,10 +71,13 @@ async function waitForSession(client: Client, userId: string, sessionId: string)
                 if (type == "Running") {
                     clearInterval(id);
                     resolve(session);
+                } else if (type == 'Failed') {
+                    clearInterval(id);
+                    reject({type: "Failure", message: session.state.message});
                 }
             } catch (e) {
                 clearInterval(id);
-                reject({type: "Failure", data: `Error during version access: ${JSON.stringify(e)}`});
+                reject({type: "Failure", message: `Error during version access: ${JSON.stringify(e)}`});
             }
         }, interval);
     });
@@ -102,9 +105,8 @@ if (accessToken) {
     test('authenticated - should be able to get current session', async (t) => {
         const client = newClient();
         const user = await client.login(accessToken);
+        const sessionId = await createSession(user.id, client);
         try {
-            const sessionId = await createSession(user.id, client);
-
             const session = await waitForSession(client, user.id, sessionId);
             t.not(session, null);
             const { state } = session;
@@ -123,6 +125,8 @@ if (accessToken) {
         } catch(e) {
             t.fail(`Failed to create a session ${e.message}`);
         } finally {
+            await client.deleteUserSession(user.id, sessionId);
+            await waitForSessionDeletion(client, user.id, sessionId);
             await client.logout();
         }
     });
@@ -148,7 +152,7 @@ if (accessToken) {
                 await client.logout();
             }
         } catch(e) {
-            t.fail(`Failed to create a session ${e.message}`);
+            t.fail(`Failed to create a session: ${e.message}`);
         }
     });
 
@@ -156,15 +160,14 @@ if (accessToken) {
         test('authenticated - should be able to execute in session', async (t) => {
             const client = newClient();
             const user = await client.login(accessToken);
-
+            const sessionId = await createSession(user.id, client);
             try {
-                const sessionId = await createSession(user.id, client);
                 const { stdout } = await client.createUserSessionExecution(user.id, sessionId, {command: ["ls"]});
                 console.log(stdout);
                 t.not(stdout, null);
             } catch(e) {
-                t.fail(`Failed to create a session ${e.message}`);
-            } finally {
+                t.fail(`Failed to create a session execution: ${e.message}`);
+            }  finally {
                 client.deleteUserSession(user.id, sessionId);
                 await waitForSessionDeletion(client, user.id, sessionId);
                 await client.logout();

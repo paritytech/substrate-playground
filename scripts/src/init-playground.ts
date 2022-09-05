@@ -36,7 +36,7 @@ async function waitForRepositoryVersionCreation(client: Client, repositoryId: st
                     resolve(result);
                 } else if (type == "Failed") {
                     clearInterval(id);
-                    reject({type: "Failure", data: result.state.message});
+                    reject({type: "Failure", message: result.state.message});
                 } else if (type == "Init") {
                     console.log("Init");
                 } else if (type == "Cloning") {
@@ -48,7 +48,7 @@ async function waitForRepositoryVersionCreation(client: Client, repositoryId: st
                 }
             } catch (e) {
                 clearInterval(id);
-                reject({type: "Failure", data: `Error during version access: ${JSON.stringify(e)}`});
+                reject({type: "Failure", message: `Error during version access: ${JSON.stringify(e)}`});
             }
         }, interval);
     });
