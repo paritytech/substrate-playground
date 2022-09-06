@@ -33,7 +33,8 @@ use super::{
     client, env_var, get_owned_resource, get_preference, ingress_path, list_all_resources,
     list_owned_resources,
     pool::get_pool,
-    repository::{get_repository, get_repository_version, volume_template_name},
+    repository::get_repository,
+    repository_version::{get_repository_version, volume_template_name},
     str_minutes_to_duration, update_annotation_value,
     user::DEFAULT_SERVICE_ACCOUNT,
     user_namespace, user_namespaced_api, APP_LABEL, APP_VALUE, COMPONENT_LABEL, INGRESS_NAME,
@@ -525,11 +526,9 @@ pub async fn create_user_session(
         get_repository_version(repository_id, repository_version_id).await?
     {
         match repository_version.state {
-            RepositoryVersionState::Ready { devcontainer_json } => {
-                devcontainer_json
-                    .map(|json| parse_devcontainer(&json))
-                    .transpose()
-            }
+            RepositoryVersionState::Ready { devcontainer_json } => devcontainer_json
+                .map(|json| parse_devcontainer(&json))
+                .transpose(),
             _ => Err(Error::Failure(format!(
                 "Repository version {} is not in Ready state",
                 repository_version_id

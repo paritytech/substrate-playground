@@ -2,6 +2,7 @@ pub mod pool;
 pub mod preference;
 pub mod profile;
 pub mod repository;
+pub mod repository_version;
 pub mod role;
 pub mod session;
 pub mod user;

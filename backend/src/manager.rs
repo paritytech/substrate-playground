@@ -11,9 +11,12 @@ use crate::{
         },
         profile::{create_profile, delete_profile, get_profile, list_profiles, update_profile},
         repository::{
-            create_repository, create_repository_version, delete_repository,
-            delete_repository_version, get_repository, get_repository_version, list_repositories,
-            list_repository_versions, update_repository,
+            create_repository, delete_repository, get_repository, list_repositories,
+            update_repository,
+        },
+        repository_version::{
+            create_repository_version, delete_repository_version, get_repository_version,
+            list_repository_versions,
         },
         role::{create_role, delete_role, get_role, list_roles, update_role},
         session::{
