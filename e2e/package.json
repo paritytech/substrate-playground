@@ -29,7 +29,7 @@
     "@esbuild-kit/esm-loader": "2.4.2",
     "@types/node": "18.7.15",
     "ava": "4.3.3",
-    "playwright": "1.25.1",
+    "playwright": "1.25.2",
     "typescript": "4.8.2"
   }
 }
