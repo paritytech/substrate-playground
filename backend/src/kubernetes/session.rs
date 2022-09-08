@@ -12,9 +12,9 @@ use crate::{
 use futures::StreamExt;
 use k8s_openapi::api::{
     core::v1::{
-        Affinity, Container, ContainerStatus, EnvVar, Pod, PodAffinityTerm,
-        PodAntiAffinity, PodSpec, ResourceRequirements, SecurityContext, Service, ServicePort,
-        ServiceSpec, Toleration,
+        Affinity, Container, ContainerStatus, EnvVar, Pod, PodAffinityTerm, PodAntiAffinity,
+        PodSpec, ResourceRequirements, SecurityContext, Service, ServicePort, ServiceSpec,
+        Toleration,
     },
     networking::v1::{HTTPIngressPath, HTTPIngressRuleValue, Ingress, IngressRule},
 };
@@ -23,7 +23,11 @@ use k8s_openapi::apimachinery::pkg::{
     apis::meta::v1::{LabelSelector, ObjectMeta},
     util::intstr::IntOrString,
 };
-use kube::api::{Api, AttachParams, AttachedProcess, DeleteParams, PostParams, ResourceExt};
+use kube::runtime::events::{Event, EventType, Recorder};
+use kube::{
+    api::{Api, AttachParams, AttachedProcess, DeleteParams, PostParams, ResourceExt},
+    Resource,
+};
 use std::{
     collections::BTreeMap,
     time::{Duration, SystemTime},
@@ -315,7 +319,10 @@ fn container_status_to_session_state(
             };
         } else if let Some(terminated) = &state.terminated {
             return types::SessionState::Failed {
-                message: terminated.message.clone().unwrap_or("TerminatedMessage".to_string()),
+                message: terminated
+                    .message
+                    .clone()
+                    .unwrap_or_else(|| "TerminatedMessage".to_string()),
                 reason: terminated.reason.clone().unwrap_or_default(),
             };
         } else if let Some(waiting) = &state.waiting {
@@ -327,7 +334,10 @@ fn container_status_to_session_state(
                 // https://github.com/kubernetes/kubernetes/blob/master/pkg/kubelet/events/event.go
                 "CreateContainerConfigError" | "ImagePullBackOff" | "CrashLoopBackOff" => {
                     return types::SessionState::Failed {
-                        message: waiting.message.clone().unwrap_or("WaitingMessage".to_string()),
+                        message: waiting
+                            .message
+                            .clone()
+                            .unwrap_or_else(|| "WaitingMessage".to_string()),
                         reason,
                     };
                 }
@@ -493,18 +503,7 @@ pub async fn create_user_session(
     // TODO: replace with custom scheduler
     // * https://kubernetes.io/docs/tasks/extend-kubernetes/configure-multiple-schedulers/
     // * https://kubernetes.io/blog/2017/03/advanced-scheduling-in-kubernetes/
-/*  let recorder = Recorder::new(client.clone(), reporter, self.object_ref(&()));
-    recorder
-        .publish(Event {
-            type_: EventType::Normal,
-            reason: "HiddenDoc".into(),
-            note: Some(format!("Hiding `{}`", name)),
-            action: "Reconciling".into(),
-            secondary: None,
-        })
-        .await?;
-*/
-        let preferences = user.all_preferences().await?;
+    let preferences = user.all_preferences().await?;
     let pool_id = match session_configuration.pool_affinity.clone() {
         Some(pool_affinity) => pool_affinity,
         None => get_preference(&preferences, &Preferences::SessionPoolAffinity.to_string())?,
@@ -590,10 +589,7 @@ pub async fn create_user_session(
     let service_api: Api<Service> = Api::namespaced(client.clone(), &user_namespace(user_id));
     let service_name = service_name(id);
     let service = service(id, &service_name, ports);
-    service_api
-        .create(&PostParams::default(), &service)
-        .await
-        .map_err(Error::K8sCommunicationFailure)?;
+    service_api.create(&PostParams::default(), &service).await?;
 
     // Deploy the ingress local service
     let service_local_api: Api<Service> = Api::default_namespaced(client.clone());
@@ -613,7 +609,7 @@ pub async fn create_user_session(
     let volume_name = volume_template_name(repository_id, repository_version_id);
     // Deploy a new pod for this image
     let pod_api: Api<Pod> = Api::namespaced(client.clone(), &user_namespace(user_id));
-    pod_api
+    let pod = pod_api
         .create(
             &PostParams::default(),
             &session_to_pod(
@@ -632,6 +628,17 @@ pub async fn create_user_session(
         )
         .await
         .map_err(Error::K8sCommunicationFailure)?;
+
+    let recorder = Recorder::new(client.clone(), "test".into(), pod.object_ref(&()));
+    recorder
+        .publish(Event {
+            type_: EventType::Normal,
+            reason: "HiddenDoc".into(),
+            note: Some("Some note".to_string()),
+            action: "Reconciling".into(),
+            secondary: None,
+        })
+        .await?;
 
     Ok(())
 }
