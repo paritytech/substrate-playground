@@ -146,7 +146,7 @@ fn session_to_pod(
             restart_policy: Some("Never".to_string()),
             init_containers: Some(vec![Container {
                 name: "copy-openvscode".to_string(),
-                image: Some("busybox:1.34.1".to_string()),
+                image: Some("ubuntu".to_string()),
                 command: Some(vec![
                     "sh".to_string(),
                     "-c".to_string(),
