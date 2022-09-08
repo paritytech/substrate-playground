@@ -139,13 +139,14 @@ fn session_to_pod(
                 }),
                 ..Default::default()
             }),
+            restart_policy: Some("Never".to_string()),
             init_containers: Some(vec![Container {
                 name: "copy-openvscode".to_string(),
                 image: Some("busybox:1.34.1".to_string()),
                 command: Some(vec![
                     "sh".to_string(),
                     "-c".to_string(),
-                    "curl https://github.com/gitpod-io/openvscode-server/releases/download/openvscode-server-v{{VERSION}}/openvscode-server-v{{VERSION}}-linux-x64.tar.gz
+                    "wget https://github.com/gitpod-io/openvscode-server/releases/download/openvscode-server-v{{VERSION}}/openvscode-server-v{{VERSION}}-linux-x64.tar.gz
                      && tar -xzf openvscode-server-v{{VERSION}}-linux-x64.tar.gz
                      && mv openvscode-server-v{{VERSION}}-linux-x64 /opt/openvscode
                      && cp /opt/openvscode/bin/remote-cli/openvscode-server /opt/openvscode/bin/remote-cli/code".to_string().replace("{{VERSION}}", openvscode_version),
@@ -314,19 +315,20 @@ fn container_status_to_session_state(
             };
         } else if let Some(terminated) = &state.terminated {
             return types::SessionState::Failed {
-                message: terminated.message.clone().unwrap_or_default(),
+                message: terminated.message.clone().unwrap_or("TerminatedMessage".to_string()),
                 reason: terminated.reason.clone().unwrap_or_default(),
             };
         } else if let Some(waiting) = &state.waiting {
-            match waiting.reason.clone().unwrap_or_default().as_str() {
+            let reason = waiting.reason.clone().unwrap_or_default();
+            match reason.as_str() {
                 // https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#container-state-waiting
                 // https://kubernetes.io/docs/concepts/containers/images/#imagepullbackoff
                 // https://github.com/kubernetes/kubernetes/blob/master/pkg/kubelet/images/types.go
                 // https://github.com/kubernetes/kubernetes/blob/master/pkg/kubelet/events/event.go
-                "CreateContainerConfigError" | "ImagePullBackOff" => {
+                "CreateContainerConfigError" | "ImagePullBackOff" | "CrashLoopBackOff" => {
                     return types::SessionState::Failed {
-                        message: waiting.message.clone().unwrap_or_default(),
-                        reason: waiting.reason.clone().unwrap_or_default(),
+                        message: waiting.message.clone().unwrap_or("WaitingMessage".to_string()),
+                        reason,
                     };
                 }
                 _ => (),
@@ -491,8 +493,18 @@ pub async fn create_user_session(
     // TODO: replace with custom scheduler
     // * https://kubernetes.io/docs/tasks/extend-kubernetes/configure-multiple-schedulers/
     // * https://kubernetes.io/blog/2017/03/advanced-scheduling-in-kubernetes/
-
-    let preferences = user.all_preferences().await?;
+/*  let recorder = Recorder::new(client.clone(), reporter, self.object_ref(&()));
+    recorder
+        .publish(Event {
+            type_: EventType::Normal,
+            reason: "HiddenDoc".into(),
+            note: Some(format!("Hiding `{}`", name)),
+            action: "Reconciling".into(),
+            secondary: None,
+        })
+        .await?;
+*/
+        let preferences = user.all_preferences().await?;
     let pool_id = match session_configuration.pool_affinity.clone() {
         Some(pool_affinity) => pool_affinity,
         None => get_preference(&preferences, &Preferences::SessionPoolAffinity.to_string())?,
