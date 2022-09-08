@@ -21,4 +21,4 @@ thiserror = "1.0.34"
 futures = "0.3.24"
 base64 = "0.13"
 rand = { version = "0.8", default-features = false, features = ["std"] }
-url = "2.0"
+url = "2.3"
