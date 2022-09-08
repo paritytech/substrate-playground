@@ -12,9 +12,9 @@ use crate::{
 use futures::StreamExt;
 use k8s_openapi::api::{
     core::v1::{
-        Affinity, Container, EnvVar, PersistentVolumeClaimVolumeSource, Pod, PodAffinityTerm,
+        Affinity, Container, ContainerStatus, EnvVar, Pod, PodAffinityTerm,
         PodAntiAffinity, PodSpec, ResourceRequirements, SecurityContext, Service, ServicePort,
-        ServiceSpec, Volume, VolumeMount,
+        ServiceSpec, Toleration,
     },
     networking::v1::{HTTPIngressPath, HTTPIngressRuleValue, Ingress, IngressRule},
 };
@@ -38,7 +38,7 @@ use super::{
     str_minutes_to_duration, update_annotation_value,
     user::DEFAULT_SERVICE_ACCOUNT,
     user_namespace, user_namespaced_api, APP_LABEL, APP_VALUE, COMPONENT_LABEL, INGRESS_NAME,
-    NODE_POOL_LABEL, OWNER_LABEL,
+    NODE_POOL_LABEL, NODE_POOL_TYPE_LABEL, OWNER_LABEL,
 };
 
 const DEFAULT_DOCKER_IMAGE: &str = "ubuntu";
@@ -86,7 +86,7 @@ fn pod_annotations(duration: &Duration) -> BTreeMap<String, String> {
 fn session_to_pod(
     user_id: &str,
     session_id: &str,
-    volume_name: &str,
+    _volume_name: &str,
     image: &str,
     duration: &Duration,
     pool_id: &str,
@@ -112,14 +112,14 @@ fn session_to_pod(
                 NODE_POOL_LABEL.to_string(),
                 pool_id.to_string(),
             )])),
-            volumes: Some(vec![Volume {
+            /*volumes: Some(vec![Volume {
                 name: volume_name.to_string(),
                 persistent_volume_claim: Some(PersistentVolumeClaimVolumeSource {
                     claim_name: volume_name.to_string(),
                     ..Default::default()
                 }),
                 ..Default::default()
-            }]),
+            }]),*/
             affinity: Some(Affinity {
                 pod_anti_affinity: Some(PodAntiAffinity {
                     required_during_scheduling_ignored_during_execution: Some(vec![
@@ -150,11 +150,11 @@ fn session_to_pod(
                      && mv openvscode-server-v{{VERSION}}-linux-x64 /opt/openvscode
                      && cp /opt/openvscode/bin/remote-cli/openvscode-server /opt/openvscode/bin/remote-cli/code".to_string().replace("{{VERSION}}", openvscode_version),
                 ]),
-                volume_mounts: Some(vec![VolumeMount {
+                /*volume_mounts: Some(vec![VolumeMount {
                     name: volume_name.to_string(),
                     mount_path: "/opt".to_string(),
                     ..Default::default()
-                }]),
+                }]),*/
                 ..Default::default()
             }]),
             containers: vec![Container {
@@ -176,11 +176,11 @@ fn session_to_pod(
                         ("memory".to_string(), Quantity("8Gi".to_string())),
                     ]))
                 }),
-                volume_mounts: Some(vec![VolumeMount {
+                /*volume_mounts: Some(vec![VolumeMount {
                     name: volume_name.to_string(),
                     mount_path: "/opt".to_string(),
                     ..Default::default()
-                }]),
+                }]),*/
                 security_context: Some(SecurityContext {
                     allow_privilege_escalation: Some(false),
                     run_as_non_root: Some(false), // TODO Reinvestigate, should provide guidance for image creation
@@ -188,6 +188,13 @@ fn session_to_pod(
                 }),
                 ..Default::default()
             }],
+            // Must match available Node Pools
+            tolerations: Some(vec![Toleration {
+                key: Some(NODE_POOL_TYPE_LABEL.to_string()),
+                operator: Some("Equal".to_string()),
+                value: Some("user".to_string()),
+                ..Default::default()
+            }]),
             termination_grace_period_seconds: Some(0),
             automount_service_account_token: Some(false),
             ..Default::default()
@@ -279,57 +286,67 @@ fn subdomain(host: &str, id: &str) -> String {
     format!("{}.{}", id, host)
 }
 
+fn container_status_to_session_state(
+    pod: &Pod,
+    container_status: &ContainerStatus,
+) -> types::SessionState {
+    if let Some(state) = &container_status.state {
+        if let Some(running) = &state.running {
+            return types::SessionState::Running {
+                start_time: running
+                    .started_at
+                    .as_ref()
+                    .map(|dt| dt.0.into())
+                    .unwrap_or(SystemTime::UNIX_EPOCH),
+                node: types::Node {
+                    hostname: pod
+                        .spec
+                        .clone()
+                        .unwrap_or_default()
+                        .node_name
+                        .unwrap_or_default(),
+                },
+                runtime_configuration: SessionRuntimeConfiguration {
+                    // TODO
+                    env: vec![],
+                    ports: vec![],
+                },
+            };
+        } else if let Some(terminated) = &state.terminated {
+            return types::SessionState::Failed {
+                message: terminated.message.clone().unwrap_or_default(),
+                reason: terminated.reason.clone().unwrap_or_default(),
+            };
+        } else if let Some(waiting) = &state.waiting {
+            match waiting.reason.clone().unwrap_or_default().as_str() {
+                // https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#container-state-waiting
+                // https://kubernetes.io/docs/concepts/containers/images/#imagepullbackoff
+                // https://github.com/kubernetes/kubernetes/blob/master/pkg/kubelet/images/types.go
+                // https://github.com/kubernetes/kubernetes/blob/master/pkg/kubelet/events/event.go
+                "CreateContainerConfigError" | "ImagePullBackOff" => {
+                    return types::SessionState::Failed {
+                        message: waiting.message.clone().unwrap_or_default(),
+                        reason: waiting.reason.clone().unwrap_or_default(),
+                    };
+                }
+                _ => (),
+            }
+        }
+    }
+    types::SessionState::Deploying
+}
+
 fn pod_to_state(pod: &Pod) -> types::SessionState {
     let status = pod.status.clone().unwrap_or_default();
     println!("{:?}", status.conditions);
+    let init_container_statuses = status.init_container_statuses.unwrap_or_default();
     let container_statuses = status.container_statuses.unwrap_or_default();
-    // Only inspect the first container as it's the only one defined
-    if let Some(container_status) = container_statuses.get(0) {
-        println!("{:?}", container_status.state);
-        if let Some(state) = &container_status.state {
-            if let Some(running) = &state.running {
-                return types::SessionState::Running {
-                    start_time: running
-                        .started_at
-                        .as_ref()
-                        .map(|dt| dt.0.into())
-                        .unwrap_or(SystemTime::UNIX_EPOCH),
-                    node: types::Node {
-                        hostname: pod
-                            .spec
-                            .clone()
-                            .unwrap_or_default()
-                            .node_name
-                            .unwrap_or_default(),
-                    },
-                    runtime_configuration: SessionRuntimeConfiguration {
-                        // TODO
-                        env: vec![],
-                        ports: vec![],
-                    },
-                };
-            } else if let Some(terminated) = &state.terminated {
-                return types::SessionState::Failed {
-                    message: terminated.message.clone().unwrap_or_default(),
-                    reason: terminated.reason.clone().unwrap_or_default(),
-                };
-            } else if let Some(waiting) = &state.waiting {
-                match waiting.reason.clone().unwrap_or_default().as_str() {
-                    // https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#container-state-waiting
-                    // https://kubernetes.io/docs/concepts/containers/images/#imagepullbackoff
-                    // https://github.com/kubernetes/kubernetes/blob/master/pkg/kubelet/images/types.go
-                    // https://github.com/kubernetes/kubernetes/blob/master/pkg/kubelet/events/event.go
-                    "CreateContainerConfigError" | "ImagePullBackOff" => {
-                        return types::SessionState::Failed {
-                            message: waiting.message.clone().unwrap_or_default(),
-                            reason: waiting.reason.clone().unwrap_or_default(),
-                        };
-                    }
-                    _ => (),
-                }
-            }
-        }
-        types::SessionState::Deploying
+    if let Some(init_container_status) = init_container_statuses.get(0) {
+        // Only inspect the first init_container as it's the only one defined
+        container_status_to_session_state(pod, init_container_status)
+    } else if let Some(container_status) = container_statuses.get(0) {
+        // Only inspect the first container as it's the only one defined
+        container_status_to_session_state(pod, container_status)
     } else {
         // Container not yet deployed, inspect conditions
         // See https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#pod-conditions
