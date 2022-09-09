@@ -102,7 +102,7 @@ fn session_to_pod(
     labels.insert(RESOURCE_ID.to_string(), session_id.to_string());
     labels.insert(OWNER_LABEL.to_string(), user_id.to_string());
 
-    let openvscode_version = "1.69.2";
+    let openvscode_version = "1.71.0";
     Pod {
         metadata: ObjectMeta {
             name: Some(session_id.to_string()),
