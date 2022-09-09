@@ -150,10 +150,7 @@ fn session_to_pod(
                 command: Some(vec![
                     "sh".to_string(),
                     "-c".to_string(),
-                    "wget https://github.com/gitpod-io/openvscode-server/releases/download/openvscode-server-v{{VERSION}}/openvscode-server-v{{VERSION}}-linux-x64.tar.gz
-                     && tar -xzf openvscode-server-v{{VERSION}}-linux-x64.tar.gz
-                     && mv openvscode-server-v{{VERSION}}-linux-x64 /opt/openvscode
-                     && cp /opt/openvscode/bin/remote-cli/openvscode-server /opt/openvscode/bin/remote-cli/code".to_string().replace("{{VERSION}}", openvscode_version),
+                    "apt-get update; apt-get install -y curl; curl https://github.com/gitpod-io/openvscode-server/releases/download/openvscode-server-v{{VERSION}}/openvscode-server-v{{VERSION}}-linux-x64.tar.gz;tar -xzf openvscode-server-v{{VERSION}}-linux-x64.tar.gz; mv openvscode-server-v{{VERSION}}-linux-x64 /opt/openvscode;cp /opt/openvscode/bin/remote-cli/openvscode-server /opt/openvscode/bin/remote-cli/code".to_string().replace("{{VERSION}}", openvscode_version),
                 ]),
                 /*volume_mounts: Some(vec![VolumeMount {
                     name: volume_name.to_string(),
@@ -322,7 +319,7 @@ fn container_status_to_session_state(
                 message: terminated
                     .message
                     .clone()
-                    .unwrap_or_else(|| "TerminatedMessage".to_string()),
+                    .unwrap_or_else(|| "Terminated with an error".to_string()),
                 reason: terminated.reason.clone().unwrap_or_default(),
             };
         } else if let Some(waiting) = &state.waiting {
@@ -337,7 +334,7 @@ fn container_status_to_session_state(
                         message: waiting
                             .message
                             .clone()
-                            .unwrap_or_else(|| "WaitingMessage".to_string()),
+                            .unwrap_or_default(),
                         reason,
                     };
                 }
