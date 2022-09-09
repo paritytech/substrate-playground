@@ -331,10 +331,7 @@ fn container_status_to_session_state(
                 // https://github.com/kubernetes/kubernetes/blob/master/pkg/kubelet/events/event.go
                 "CreateContainerConfigError" | "ImagePullBackOff" | "CrashLoopBackOff" => {
                     return types::SessionState::Failed {
-                        message: waiting
-                            .message
-                            .clone()
-                            .unwrap_or_default(),
+                        message: waiting.message.clone().unwrap_or_default(),
                         reason,
                     };
                 }
