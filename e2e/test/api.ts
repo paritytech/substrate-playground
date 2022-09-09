@@ -1,5 +1,5 @@
 import test from 'ava';
-import { Client, EnvironmentType, playgroundBaseAPIURL, environmentTypeFromString, mainSessionId, SessionState, Session } from '@substrate/playground-client';
+import { Client, EnvironmentType, playgroundBaseAPIURL, environmentTypeFromString, mainSessionId, SessionState, Session, User } from '@substrate/playground-client';
 
 import 'cross-fetch/dist/node-polyfill.js'; // TODO remove once moving to Node18 (https://github.com/nodejs/node/pull/41749)
 
@@ -83,6 +83,19 @@ async function waitForSession(client: Client, userId: string, sessionId: string)
     });
 }
 
+export function playgroundUserBaseURL(env: EnvironmentType, user: User) {
+    switch (env) {
+        case EnvironmentType.dev:
+            return `https://${user.id}.playground-dev.substrate.test`;
+        case EnvironmentType.staging:
+            return `https://${user.id}.playground-staging.substrate.io`;
+        case EnvironmentType.production:
+            return `https://${user.id}.playground.substrate.io`;
+        default:
+            throw new Error(`Unrecognized env ${env}`);
+    }
+}
+
 const accessToken = process.env.ACCESS_TOKEN;
 if (accessToken) {
 
@@ -90,13 +103,11 @@ if (accessToken) {
         const client = newClient();
         await client.login(accessToken);
 
-        const details = await client.get();
-        console.log(`Logged as ${details.user?.id}`);
-        console.log(`Repositories: ${JSON.stringify(await client.listRepositories())}`);
-
         try {
             const users = await client.listUsers();
             t.not(users.length, 0);
+        } catch(e) {
+            t.fail(`Failed to list users: ${e.message}`);
         } finally {
             await client.logout();
         }
@@ -113,15 +124,11 @@ if (accessToken) {
             if (state.type == "Running") {
                 const port = state.runtimeConfiguration.ports.find(port => port.port == 80);
                 t.not(port, null, "Can't find corresponding port");
-                client.path();
-                const url = `https://${sessionId}.${client.path()}`;
+                const url = playgroundUserBaseURL(env, user);
                 console.log(url);
                 const response = await fetch(url);
                 t.is(response.ok, true, "Failed to access URL");
             }
-
-            await client.deleteUserSession(user.id, sessionId);
-            await waitForSessionDeletion(client, user.id, sessionId);
         } catch(e) {
             t.fail(`Failed to create a session: ${e.message}`);
         } finally {
