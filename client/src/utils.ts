@@ -28,6 +28,19 @@ export function playgroundBaseURL(env: EnvironmentType) {
     }
 }
 
+export function playgroundUserBaseURL(env: EnvironmentType, user: User) {
+    switch (env) {
+        case EnvironmentType.dev:
+            return `https://${user.id}.playground-dev.substrate.test`;
+        case EnvironmentType.staging:
+            return `https://${user.id}.playground-staging.substrate.io`;
+        case EnvironmentType.production:
+            return `https://${user.id}.playground.substrate.io`;
+        default:
+            throw new Error(`Unrecognized env ${env}`);
+    }
+}
+
 export function playgroundBaseAPIURL(env: EnvironmentType) {
     return `${playgroundBaseURL(env)}/api`
 }
