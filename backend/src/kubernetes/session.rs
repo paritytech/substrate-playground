@@ -150,7 +150,7 @@ fn session_to_pod(
                 command: Some(vec![
                     "sh".to_string(),
                     "-c".to_string(),
-                    "apt-get update; apt-get install -y curl; curl -L https://github.com/gitpod-io/openvscode-server/releases/download/openvscode-server-v{{VERSION}}/openvscode-server-v{{VERSION}}-linux-x64.tar.gz --output openvscode-server.tar.gz ;tar -xzf openvscode-server.tar.gz; mv openvscode-server /opt/openvscode;cp /opt/openvscode/bin/remote-cli/openvscode-server /opt/openvscode/bin/remote-cli/code".to_string().replace("{{VERSION}}", openvscode_version),
+                    "apt-get update; apt-get install -y curl; curl -L https://github.com/gitpod-io/openvscode-server/releases/download/openvscode-server-v{{VERSION}}/openvscode-server-v{{VERSION}}-linux-x64.tar.gz --output openvscode-server.tar.gz ;tar -xzf openvscode-server.tar.gz; mv openvscode-server-v{{VERSION}}-linux-x64 /opt/openvscode;cp /opt/openvscode/bin/remote-cli/openvscode-server /opt/openvscode/bin/remote-cli/code".to_string().replace("{{VERSION}}", openvscode_version),
                 ]),
                 /*volume_mounts: Some(vec![VolumeMount {
                     name: volume_name.to_string(),
