@@ -171,7 +171,7 @@ fn session_to_pod(
                 ]),
                 resources: Some(ResourceRequirements {
                     requests: Some(BTreeMap::from([
-                        ("memory".to_string(), Quantity("8Gi".to_string())),
+                        ("memory".to_string(), Quantity("6Gi".to_string())),
                         ("ephemeral-storage".to_string(), Quantity("5Gi".to_string())),
                     ])),
                     limits: Some(BTreeMap::from([
@@ -357,6 +357,8 @@ fn pod_to_state(pod: &Pod) -> types::SessionState {
         // Container not yet deployed, inspect conditions
         // See https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#pod-conditions
         if let Some(conditions) = status.conditions {
+            // TODO Loop over conditions and figure out current state: PodScheduled, Initialized, ContainersReady, Ready, ..
+            // Based on that, inspect container or initContainer statuses
             if let Some(condition) = conditions.get(0) {
                 let reason = condition.clone().reason.unwrap_or_default();
                 if reason == "Unschedulable" {
