@@ -289,88 +289,100 @@ fn subdomain(host: &str, id: &str) -> String {
 }
 
 fn container_status_to_session_state(
-    pod: &Pod,
     container_status: &ContainerStatus,
-) -> types::SessionState {
+) -> Option<types::SessionState> {
     if let Some(state) = &container_status.state {
-        if let Some(running) = &state.running {
-            return types::SessionState::Running {
-                start_time: running
-                    .started_at
-                    .as_ref()
-                    .map(|dt| dt.0.into())
-                    .unwrap_or(SystemTime::UNIX_EPOCH),
-                node: types::Node {
-                    hostname: pod
-                        .spec
-                        .clone()
-                        .unwrap_or_default()
-                        .node_name
-                        .unwrap_or_default(),
-                },
-                runtime_configuration: SessionRuntimeConfiguration {
-                    // TODO
-                    env: vec![],
-                    ports: vec![],
-                },
-            };
-        } else if let Some(terminated) = &state.terminated {
-            return types::SessionState::Failed {
+        if let Some(terminated) = &state.terminated {
+            return Some(types::SessionState::Failed {
                 message: terminated
                     .message
                     .clone()
                     .unwrap_or_else(|| "Terminated with an error".to_string()),
                 reason: terminated.reason.clone().unwrap_or_default(),
-            };
+            });
         } else if let Some(waiting) = &state.waiting {
             let reason = waiting.reason.clone().unwrap_or_default();
-            match reason.as_str() {
+            return match reason.as_str() {
                 // https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#container-state-waiting
                 // https://kubernetes.io/docs/concepts/containers/images/#imagepullbackoff
                 // https://github.com/kubernetes/kubernetes/blob/master/pkg/kubelet/images/types.go
                 // https://github.com/kubernetes/kubernetes/blob/master/pkg/kubelet/events/event.go
                 "CreateContainerConfigError" | "ImagePullBackOff" | "CrashLoopBackOff" => {
-                    return types::SessionState::Failed {
+                    Some(types::SessionState::Failed {
                         message: waiting.message.clone().unwrap_or_default(),
                         reason,
-                    };
+                    })
                 }
-                _ => (),
-            }
+                _ => None,
+            };
         }
     }
-    types::SessionState::Deploying
+    None
 }
 
 fn pod_to_state(pod: &Pod) -> types::SessionState {
     let status = pod.status.clone().unwrap_or_default();
-    println!("{:?}", status.conditions);
-    let init_container_statuses = status.init_container_statuses.unwrap_or_default();
-    let container_statuses = status.container_statuses.unwrap_or_default();
-    if let Some(init_container_status) = init_container_statuses.get(0) {
-        // Only inspect the first init_container as it's the only one defined
-        container_status_to_session_state(pod, init_container_status)
-    } else if let Some(container_status) = container_statuses.get(0) {
-        // Only inspect the first container as it's the only one defined
-        container_status_to_session_state(pod, container_status)
-    } else {
-        // Container not yet deployed, inspect conditions
-        // See https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#pod-conditions
-        if let Some(conditions) = status.conditions {
-            // TODO Loop over conditions and figure out current state: PodScheduled, Initialized, ContainersReady, Ready, ..
-            // Based on that, inspect container or initContainer statuses
-            if let Some(condition) = conditions.get(0) {
-                let reason = condition.clone().reason.unwrap_or_default();
-                if reason == "Unschedulable" {
+    if let Some(condition) = status.conditions.unwrap_or_default().first() {
+        return match condition.type_.as_str() {
+            "ContainersNotReady" => {
+                let init_container_statuses = status.init_container_statuses.unwrap_or_default();
+                if let Some(init_container_status) = init_container_statuses.first() {
+                    // Only inspect the first init_container as it's the only one defined
+                    container_status_to_session_state(init_container_status)
+                        .unwrap_or(types::SessionState::Deploying)
+                } else {
                     return types::SessionState::Failed {
                         message: condition.clone().message.unwrap_or_default(),
-                        reason,
+                        reason: "ContainersNotReady".to_string(),
                     };
                 }
             }
-        }
-        types::SessionState::Deploying
+            "Initialized" => {
+                let container_statuses = status.container_statuses.unwrap_or_default();
+                if let Some(container_status) = container_statuses.first() {
+                    // Only inspect the first container as it's the only one defined
+                    container_status_to_session_state(container_status)
+                        .unwrap_or(types::SessionState::Deploying)
+                } else {
+                    return types::SessionState::Failed {
+                        message: condition.clone().message.unwrap_or_default(),
+                        reason: "Initialized".to_string(),
+                    };
+                }
+            }
+            "Ready" => {
+                if let Some(status) = status.container_statuses.unwrap_or_default().first() {
+                    if let Some(state) = status.clone().state.unwrap_or_default().running {
+                        return types::SessionState::Running {
+                            start_time: state
+                                .started_at
+                                .as_ref()
+                                .map(|dt| dt.0.into())
+                                .unwrap_or(SystemTime::UNIX_EPOCH),
+                            node: types::Node {
+                                hostname: pod
+                                    .spec
+                                    .clone()
+                                    .unwrap_or_default()
+                                    .node_name
+                                    .unwrap_or_default(),
+                            },
+                            runtime_configuration: SessionRuntimeConfiguration {
+                                // TODO
+                                env: vec![],
+                                ports: vec![],
+                            },
+                        };
+                    }
+                }
+                types::SessionState::Deploying
+            }
+            _ => types::SessionState::Deploying,
+        };
     }
+
+    // Fallback if no conditions are available
+    types::SessionState::Deploying
 }
 
 // Creates a Session from a Pod annotations
