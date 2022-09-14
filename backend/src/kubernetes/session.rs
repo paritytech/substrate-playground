@@ -321,7 +321,64 @@ fn container_status_to_session_state(
 
 fn pod_to_state(pod: &Pod) -> types::SessionState {
     let status = pod.status.clone().unwrap_or_default();
-    if let Some(condition) = status.conditions.unwrap_or_default().first() {
+    match status
+        .phase
+        .unwrap_or_else(|| "Pending".to_string())
+        .as_str()
+    {
+        "Running" => {
+            if let Some(status) = status.container_statuses.unwrap_or_default().first() {
+                if let Some(state) = status.clone().state.unwrap_or_default().running {
+                    types::SessionState::Running {
+                        start_time: state
+                            .started_at
+                            .as_ref()
+                            .map(|dt| dt.0.into())
+                            .unwrap_or(SystemTime::UNIX_EPOCH),
+                        node: types::Node {
+                            hostname: pod
+                                .spec
+                                .clone()
+                                .unwrap_or_default()
+                                .node_name
+                                .unwrap_or_default(),
+                        },
+                        runtime_configuration: SessionRuntimeConfiguration {
+                            // TODO
+                            env: vec![],
+                            ports: vec![],
+                        },
+                    }
+                } else {
+                    types::SessionState::Deploying
+                }
+            } else {
+                types::SessionState::Deploying
+            }
+        }
+        "Failed" => {
+            let container_statuses = status.container_statuses.unwrap_or_default();
+            if let Some(container_status) = container_statuses.first() {
+                // Only inspect the first container as it's the only one defined
+                container_status_to_session_state(container_status)
+                    .unwrap_or(types::SessionState::Deploying)
+            } else {
+                let init_container_statuses = status.init_container_statuses.unwrap_or_default();
+                if let Some(init_container_status) = init_container_statuses.first() {
+                    // Only inspect the first init_container as it's the only one defined
+                    container_status_to_session_state(init_container_status)
+                        .unwrap_or(types::SessionState::Deploying)
+                } else {
+                    types::SessionState::Failed {
+                        message: status.message.unwrap_or_default(),
+                        reason: status.reason.unwrap_or_default(),
+                    }
+                }
+            }
+        }
+        _ => types::SessionState::Deploying,
+    }
+    /*if let Some(condition) = status.conditions.unwrap_or_default().first() {
         return match condition.type_.as_str() {
             "ContainersNotReady" => {
                 let init_container_statuses = status.init_container_statuses.unwrap_or_default();
@@ -381,7 +438,7 @@ fn pod_to_state(pod: &Pod) -> types::SessionState {
     }
 
     // Fallback if no conditions are available
-    types::SessionState::Deploying
+    types::SessionState::Deploying*/
 }
 
 // Creates a Session from a Pod annotations
