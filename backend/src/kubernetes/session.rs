@@ -12,9 +12,9 @@ use crate::{
 use futures::StreamExt;
 use k8s_openapi::api::{
     core::v1::{
-        Affinity, Container, ContainerStatus, EnvVar, Pod, PodAffinityTerm, PodAntiAffinity,
-        PodSpec, ResourceRequirements, SecurityContext, Service, ServicePort, ServiceSpec,
-        Toleration,
+        Affinity, Container, ContainerStatus, EmptyDirVolumeSource, EnvVar, Pod, PodAffinityTerm,
+        PodAntiAffinity, PodSpec, ResourceRequirements, SecurityContext, Service, ServicePort,
+        ServiceSpec, Toleration, Volume, VolumeMount,
     },
     networking::v1::{HTTPIngressPath, HTTPIngressRuleValue, Ingress, IngressRule},
 };
@@ -90,7 +90,7 @@ fn pod_annotations(duration: &Duration) -> BTreeMap<String, String> {
 fn session_to_pod(
     user_id: &str,
     session_id: &str,
-    _volume_name: &str,
+    volume_name: &str,
     image: &str,
     duration: &Duration,
     pool_id: &str,
@@ -116,14 +116,13 @@ fn session_to_pod(
                 NODE_POOL_LABEL.to_string(),
                 pool_id.to_string(),
             )])),
-            /*volumes: Some(vec![Volume {
+            volumes: Some(vec![Volume {
                 name: volume_name.to_string(),
-                persistent_volume_claim: Some(PersistentVolumeClaimVolumeSource {
-                    claim_name: volume_name.to_string(),
+                empty_dir: Some(EmptyDirVolumeSource {
                     ..Default::default()
                 }),
                 ..Default::default()
-            }]),*/
+            }]),
             affinity: Some(Affinity {
                 pod_anti_affinity: Some(PodAntiAffinity {
                     required_during_scheduling_ignored_during_execution: Some(vec![
@@ -152,11 +151,11 @@ fn session_to_pod(
                     "-c".to_string(),
                     "apt-get update; apt-get install -y curl; curl -L https://github.com/gitpod-io/openvscode-server/releases/download/openvscode-server-v{{VERSION}}/openvscode-server-v{{VERSION}}-linux-x64.tar.gz --output openvscode-server.tar.gz ; mkdir -p /opt/openvscode;tar -xzf openvscode-server.tar.gz --directory /opt/openvscode --strip-components=1;cp /opt/openvscode/bin/remote-cli/openvscode-server /opt/openvscode/bin/remote-cli/code".to_string().replace("{{VERSION}}", openvscode_version),
                 ]),
-                /*volume_mounts: Some(vec![VolumeMount {
+                volume_mounts: Some(vec![VolumeMount {
                     name: volume_name.to_string(),
                     mount_path: "/opt".to_string(),
                     ..Default::default()
-                }]),*/
+                }]),
                 ..Default::default()
             }]),
             containers: vec![Container {
@@ -178,11 +177,11 @@ fn session_to_pod(
                         ("memory".to_string(), Quantity("8Gi".to_string())),
                     ]))
                 }),
-                /*volume_mounts: Some(vec![VolumeMount {
+                volume_mounts: Some(vec![VolumeMount {
                     name: volume_name.to_string(),
                     mount_path: "/opt".to_string(),
                     ..Default::default()
-                }]),*/
+                }]),
                 security_context: Some(SecurityContext {
                     allow_privilege_escalation: Some(false),
                     run_as_non_root: Some(false), // TODO Reinvestigate, should provide guidance for image creation
