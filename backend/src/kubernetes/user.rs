@@ -5,15 +5,21 @@
 //!
 
 use super::{
-    all_namespaces_api, delete_all_resource, delete_annotation_value, get_all_resource,
+    all_namespaces_api, delete_all_resource, delete_annotation_value, get_all_resource, get_host,
     list_all_resources, serialize_json, unserialize_json, update_annotation_value, user_namespace,
     user_namespaced_api, APP_LABEL, APP_VALUE, COMPONENT_LABEL,
 };
 use crate::{
     error::{Error, ResourceError, Result},
-    types::{ResourceType, User, UserConfiguration, UserUpdateConfiguration},
+    types::{ResourceType, Session, User, UserConfiguration, UserUpdateConfiguration},
 };
-use k8s_openapi::api::core::v1::{Namespace, ServiceAccount};
+use k8s_openapi::api::{
+    core::v1::{Namespace, Service, ServiceAccount},
+    networking::v1::{
+        HTTPIngressPath, HTTPIngressRuleValue, Ingress, IngressBackend, IngressRule,
+        IngressServiceBackend, IngressSpec, ServiceBackendPort,
+    },
+};
 use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
 use kube::{
     api::{Api, PostParams},
@@ -27,6 +33,7 @@ const ROLE_ANNOTATION: &str = "ROLE";
 const PROFILE_ANNOTATION: &str = "PROFILE";
 const PREFERENCES_ANNOTATION: &str = "PREFERENCES";
 pub const DEFAULT_SERVICE_ACCOUNT: &str = "default-service-account";
+pub const INGRESS_NAME: &str = "ingress";
 
 fn namespace_to_user(namespace: &Namespace) -> Result<User> {
     let annotations = namespace.annotations();
@@ -118,6 +125,78 @@ pub async fn create_user(id: &str, conf: UserConfiguration) -> Result<()> {
         )
         .await
         .map_err(Error::K8sCommunicationFailure)?;
+
+    // Create the ServiceAccount that will be used for all user's Sessions
+    let ingress_api: Api<Ingress> = user_namespaced_api(id)?;
+    ingress_api
+        .create(
+            &PostParams::default(),
+            &Ingress {
+                metadata: ObjectMeta {
+                    name: Some(INGRESS_NAME.to_string()),
+                    ..Default::default()
+                },
+                spec: Some(IngressSpec {
+                    ingress_class_name: Some("nginx".to_string()),
+                    rules: Some(vec![IngressRule {
+                        host: Some(format!("{}.{}", user.id, get_host().await?)),
+                        http: Some(HTTPIngressRuleValue { paths: vec![] }),
+                    }]),
+                    ..Default::default()
+                }),
+                ..Default::default()
+            },
+        )
+        .await
+        .map_err(Error::K8sCommunicationFailure)?;
+
+    Ok(())
+}
+
+pub async fn add_user_session(user_id: &str, id: &str, service: Service) -> Result<()> {
+    let ingress_api: Api<Ingress> = user_namespaced_api(user_id)?;
+    let mut ingress: Ingress = ingress_api
+        .get(INGRESS_NAME)
+        .await
+        .map_err(Error::K8sCommunicationFailure)?
+        .clone();
+    let mut spec = ingress
+        .clone()
+        .spec
+        .ok_or_else(|| Error::MissingConstraint("ingress".to_string(), "spec".to_string()))?;
+    let rules: Vec<IngressRule> = spec.rules.unwrap_or_default();
+    if let Some(rule) = rules.first() {
+        if let Some(mut http) = rule.http.clone() {
+            // TODO use service.clone().spec.unwrap_or_default().ports;
+            http.paths.push(HTTPIngressPath {
+                backend: IngressBackend {
+                    service: Some(IngressServiceBackend {
+                        name: service.name_any(),
+                        port: Some(ServiceBackendPort {
+                            number: Some(3000),
+                            ..Default::default()
+                        }),
+                    }),
+                    ..Default::default()
+                },
+                path: Some(format!("/{}", id)),
+                path_type: "Exact".to_string(),
+            });
+        }
+    }
+    spec.rules = Some(rules);
+    ingress.spec.replace(spec);
+
+    ingress_api
+        .replace(INGRESS_NAME, &PostParams::default(), &ingress)
+        .await
+        .map_err(Error::K8sCommunicationFailure)?;
+
+    Ok(())
+}
+
+pub async fn remove_user_session(_session: Session) -> Result<()> {
+    // TODO
 
     Ok(())
 }

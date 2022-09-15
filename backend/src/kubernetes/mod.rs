@@ -175,7 +175,7 @@ pub fn docker_image_name(pod: &Pod) -> Result<String> {
     match &pod.spec {
         Some(spec) => spec
             .containers
-            .get(0)
+            .first()
             .map(|container| {
                 container
                     .image

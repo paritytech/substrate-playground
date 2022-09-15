@@ -40,7 +40,7 @@ use super::{
     repository::get_repository,
     repository_version::{get_repository_version, volume_template_name},
     str_minutes_to_duration, update_annotation_value,
-    user::DEFAULT_SERVICE_ACCOUNT,
+    user::{add_user_session, DEFAULT_SERVICE_ACCOUNT},
     user_namespace, user_namespaced_api, APP_LABEL, APP_VALUE, COMPONENT_LABEL, INGRESS_NAME,
     NODE_POOL_LABEL, NODE_POOL_TYPE_LABEL, OWNER_LABEL,
 };
@@ -513,7 +513,7 @@ pub async fn patch_ingress(runtimes: &BTreeMap<String, Vec<Port>>) -> Result<()>
     Ok(())
 }
 
-fn service_name(session_id: &str) -> String {
+pub fn service_name(session_id: &str) -> String {
     format!("service-{}", session_id)
 }
 
@@ -692,6 +692,8 @@ pub async fn create_user_session(
         )
         .await
         .map_err(Error::K8sCommunicationFailure)?;
+
+    add_user_session(&user.id, id, service).await?;
 
     let recorder = Recorder::new(client.clone(), "test".into(), pod.object_ref(&()));
     recorder
