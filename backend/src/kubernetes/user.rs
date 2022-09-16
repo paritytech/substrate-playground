@@ -150,7 +150,7 @@ pub async fn create_user(id: &str, conf: UserConfiguration) -> Result<()> {
                             name: "backend-ui-service".to_string(),
                             port: Some(ServiceBackendPort {
                                 name: Some("ui-port".to_string()),
-                                number: Some(80)
+                                number: Some(80),
                             }),
                         }),
                         ..Default::default()
