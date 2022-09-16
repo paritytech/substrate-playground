@@ -126,7 +126,6 @@ pub async fn create_user(id: &str, conf: UserConfiguration) -> Result<()> {
         .await
         .map_err(Error::K8sCommunicationFailure)?;
 
-    // Create the ServiceAccount that will be used for all user's Sessions
     let ingress_api: Api<Ingress> = user_namespaced_api(id)?;
     ingress_api
         .create(
@@ -151,7 +150,7 @@ pub async fn create_user(id: &str, conf: UserConfiguration) -> Result<()> {
                             name: "backend-ui-service".to_string(),
                             port: Some(ServiceBackendPort {
                                 name: Some("ui-port".to_string()),
-                                ..Default::default()
+                                number: Some(80)
                             }),
                         }),
                         ..Default::default()
@@ -171,12 +170,12 @@ pub async fn create_user(id: &str, conf: UserConfiguration) -> Result<()> {
             &PostParams::default(),
             &Service {
                 metadata: ObjectMeta {
-                    name: Some("backend-ui".to_string()),
+                    name: Some("backend-ui-service".to_string()),
                     ..Default::default()
                 },
                 spec: Some(ServiceSpec {
                     type_: Some("ExternalName".to_string()),
-                    external_name: Some("backend-ui.default.svc.cluster.local".to_string()),
+                    external_name: Some("backend-ui-service.default.svc.cluster.local".to_string()),
                     ..Default::default()
                 }),
                 ..Default::default()
