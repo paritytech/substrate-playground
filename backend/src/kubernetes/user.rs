@@ -139,7 +139,7 @@ pub async fn create_user(id: &str, conf: UserConfiguration) -> Result<()> {
                 spec: Some(IngressSpec {
                     ingress_class_name: Some("nginx".to_string()),
                     rules: Some(vec![IngressRule {
-                        host: Some(format!("{}.{}", user.id, get_host().await?)),
+                        host: Some(format!("{}.{}", user_namespace(&user.id), get_host().await?)),
                         ..Default::default()
                     }]),
                     default_backend: Some(IngressBackend {
