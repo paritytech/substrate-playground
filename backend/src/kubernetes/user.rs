@@ -177,7 +177,10 @@ pub async fn create_user(id: &str, conf: UserConfiguration) -> Result<()> {
                 },
                 spec: Some(ServiceSpec {
                     type_: Some("ExternalName".to_string()),
-                    external_name: Some(format!("{}.default.svc.cluster.local", BACKEND_UI_SERVICE_NAME)),
+                    external_name: Some(format!(
+                        "{}.default.svc.cluster.local",
+                        BACKEND_UI_SERVICE_NAME
+                    )),
                     ..Default::default()
                 }),
                 ..Default::default()
