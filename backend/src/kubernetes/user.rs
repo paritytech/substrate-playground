@@ -16,8 +16,8 @@ use crate::{
 use k8s_openapi::api::{
     core::v1::{Namespace, Service, ServiceAccount},
     networking::v1::{
-        HTTPIngressPath, Ingress, IngressBackend, IngressRule,
-        IngressServiceBackend, IngressSpec, ServiceBackendPort,
+        HTTPIngressPath, Ingress, IngressBackend, IngressRule, IngressServiceBackend, IngressSpec,
+        ServiceBackendPort,
     },
 };
 use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
@@ -175,7 +175,8 @@ pub async fn add_user_session(user_id: &str, session_id: &str, service: Service)
         .spec
         .ok_or_else(|| Error::MissingConstraint("ingress".to_string(), "spec".to_string()))?;
     let rules: Vec<IngressRule> = spec.rules.unwrap_or_default();
-    if let Some(rule) = rules.first() { // Always exist
+    if let Some(rule) = rules.first() {
+        // Always exist
         let mut http = rule.http.clone().unwrap_or_default();
         let mut paths = service
             .clone()
