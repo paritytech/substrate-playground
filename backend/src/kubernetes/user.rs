@@ -16,7 +16,7 @@ use crate::{
 use k8s_openapi::api::{
     core::v1::{Namespace, Service, ServiceAccount},
     networking::v1::{
-        HTTPIngressPath, HTTPIngressRuleValue, Ingress, IngressBackend, IngressRule,
+        HTTPIngressPath, Ingress, IngressBackend, IngressRule,
         IngressServiceBackend, IngressSpec, ServiceBackendPort,
     },
 };
@@ -140,8 +140,18 @@ pub async fn create_user(id: &str, conf: UserConfiguration) -> Result<()> {
                     ingress_class_name: Some("nginx".to_string()),
                     rules: Some(vec![IngressRule {
                         host: Some(format!("{}.{}", user.id, get_host().await?)),
-                        http: Some(HTTPIngressRuleValue { paths: vec![] }),
+                        ..Default::default()
                     }]),
+                    default_backend: Some(IngressBackend {
+                        service: Some(IngressServiceBackend {
+                            name: "backend-ui-service".to_string(),
+                            port: Some(ServiceBackendPort {
+                                name: Some("ui-port".to_string()),
+                                ..Default::default()
+                            }),
+                        }),
+                        ..Default::default()
+                    }),
                     ..Default::default()
                 }),
                 ..Default::default()
@@ -153,7 +163,7 @@ pub async fn create_user(id: &str, conf: UserConfiguration) -> Result<()> {
     Ok(())
 }
 
-pub async fn add_user_session(user_id: &str, id: &str, service: Service) -> Result<()> {
+pub async fn add_user_session(user_id: &str, session_id: &str, service: Service) -> Result<()> {
     let ingress_api: Api<Ingress> = user_namespaced_api(user_id)?;
     let mut ingress: Ingress = ingress_api
         .get(INGRESS_NAME)
@@ -165,24 +175,31 @@ pub async fn add_user_session(user_id: &str, id: &str, service: Service) -> Resu
         .spec
         .ok_or_else(|| Error::MissingConstraint("ingress".to_string(), "spec".to_string()))?;
     let rules: Vec<IngressRule> = spec.rules.unwrap_or_default();
-    if let Some(rule) = rules.first() {
-        if let Some(mut http) = rule.http.clone() {
-            // TODO use service.clone().spec.unwrap_or_default().ports;
-            http.paths.push(HTTPIngressPath {
+    if let Some(rule) = rules.first() { // Always exist
+        let mut http = rule.http.clone().unwrap_or_default();
+        let mut paths = service
+            .clone()
+            .spec
+            .unwrap_or_default()
+            .ports
+            .unwrap_or_default()
+            .iter()
+            .map(|service_port| HTTPIngressPath {
                 backend: IngressBackend {
                     service: Some(IngressServiceBackend {
                         name: service.name_any(),
                         port: Some(ServiceBackendPort {
-                            number: Some(3000),
+                            number: Some(service_port.port),
                             ..Default::default()
                         }),
                     }),
                     ..Default::default()
                 },
-                path: Some(format!("/{}", id)),
+                path: Some(format!("/{}", session_id)),
                 path_type: "Exact".to_string(),
-            });
-        }
+            })
+            .collect();
+        http.paths.append(&mut paths);
     }
     spec.rules = Some(rules);
     ingress.spec.replace(spec);
