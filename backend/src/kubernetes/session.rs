@@ -673,7 +673,7 @@ pub async fn create_user_session(
     let volume_name = volume_template_name(repository_id, repository_version_id);
     // Deploy a new pod for this image
     let pod_api: Api<Pod> = Api::namespaced(client.clone(), &user_namespace(user_id));
-    let pod = pod_api
+    let _pod = pod_api
         .create(
             &PostParams::default(),
             &session_to_pod(
@@ -697,7 +697,7 @@ pub async fn create_user_session(
 
     let recorder = Recorder::new(
         client.clone(),
-        "test".into(),
+        "kube".into(),
         backend_pod().await?.object_ref(&()),
     );
     recorder
@@ -709,6 +709,8 @@ pub async fn create_user_session(
             secondary: None,
         })
         .await?;
+
+    println!("Event published");
 
     Ok(())
 }
