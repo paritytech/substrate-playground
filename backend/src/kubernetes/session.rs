@@ -34,8 +34,8 @@ use std::{
 };
 
 use super::{
-    client, env_var, get_owned_resource, get_preference, ingress_path, list_all_resources,
-    list_owned_resources,
+    backend_pod, client, env_var, get_owned_resource, get_preference, ingress_path,
+    list_all_resources, list_owned_resources,
     pool::get_pool,
     repository::get_repository,
     repository_version::{get_repository_version, volume_template_name},
@@ -695,7 +695,11 @@ pub async fn create_user_session(
 
     add_user_session(&user.id, id, service).await?;
 
-    let recorder = Recorder::new(client.clone(), "test".into(), pod.object_ref(&()));
+    let recorder = Recorder::new(
+        client.clone(),
+        "test".into(),
+        backend_pod().await?.object_ref(&()),
+    );
     recorder
         .publish(Event {
             type_: EventType::Normal,
