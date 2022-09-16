@@ -33,7 +33,8 @@ const ROLE_ANNOTATION: &str = "ROLE";
 const PROFILE_ANNOTATION: &str = "PROFILE";
 const PREFERENCES_ANNOTATION: &str = "PREFERENCES";
 pub const DEFAULT_SERVICE_ACCOUNT: &str = "default-service-account";
-pub const INGRESS_NAME: &str = "ingress";
+const INGRESS_NAME: &str = "ingress";
+const BACKEND_UI_SERVICE_NAME: &str = "backend-ui-service";
 
 fn namespace_to_user(namespace: &Namespace) -> Result<User> {
     let annotations = namespace.annotations();
@@ -147,10 +148,11 @@ pub async fn create_user(id: &str, conf: UserConfiguration) -> Result<()> {
                     }]),
                     default_backend: Some(IngressBackend {
                         service: Some(IngressServiceBackend {
-                            name: "backend-ui-service".to_string(),
+                            name: BACKEND_UI_SERVICE_NAME.to_string(),
                             port: Some(ServiceBackendPort {
-                                name: Some("ui-port".to_string()),
+                                //name: Some("ui-port".to_string()),
                                 number: Some(80),
+                                ..Default::default()
                             }),
                         }),
                         ..Default::default()
@@ -170,12 +172,12 @@ pub async fn create_user(id: &str, conf: UserConfiguration) -> Result<()> {
             &PostParams::default(),
             &Service {
                 metadata: ObjectMeta {
-                    name: Some("backend-ui-service".to_string()),
+                    name: Some(BACKEND_UI_SERVICE_NAME.to_string()),
                     ..Default::default()
                 },
                 spec: Some(ServiceSpec {
                     type_: Some("ExternalName".to_string()),
-                    external_name: Some("backend-ui-service.default.svc.cluster.local".to_string()),
+                    external_name: Some(format!("{}.default.svc.cluster.local", BACKEND_UI_SERVICE_NAME)),
                     ..Default::default()
                 }),
                 ..Default::default()
