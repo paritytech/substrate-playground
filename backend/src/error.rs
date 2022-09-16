@@ -31,7 +31,7 @@ pub enum ResourceError {
     NotOwned(ResourceType, String),
     #[error("UnknownResource {0} {1}")]
     Unknown(ResourceType, String),
-    #[error("SessionIdAlreayUsed {0} {1}")]
+    #[error("IdAlreayUsed {0} {1}")]
     IdAlreayUsed(ResourceType, String),
 
     #[error("Misconfiguration: {0} {1}")]
