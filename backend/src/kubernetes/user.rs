@@ -127,6 +127,12 @@ pub async fn create_user(id: &str, conf: UserConfiguration) -> Result<()> {
         .await
         .map_err(Error::K8sCommunicationFailure)?;
 
+    let mut annotations = BTreeMap::new();
+    annotations.insert(
+        "nginx.ingress.kubernetes.io/configuration-snippet".to_string(),
+        "more_set_headers 'Access-Control-Allow-credentials: true';\nmore_set_headers 'Access-Control-Allow-Methods: PUT, GET, POST, PATCH, DELETE, OPTIONS';\nmore_set_headers 'Access-Control-Allow-Origin: $http_origin';".to_string(),
+    );
+
     let ingress_api: Api<Ingress> = user_namespaced_api(id)?;
     ingress_api
         .create(
@@ -134,6 +140,7 @@ pub async fn create_user(id: &str, conf: UserConfiguration) -> Result<()> {
             &Ingress {
                 metadata: ObjectMeta {
                     name: Some(INGRESS_NAME.to_string()),
+                    annotations: Some(annotations),
                     ..Default::default()
                 },
                 spec: Some(IngressSpec {
@@ -230,6 +237,7 @@ pub async fn add_user_session(user_id: &str, session_id: &str, service: Service)
             })
             .collect();
         http.paths.append(&mut paths);
+        println!("Append paths {:?}", paths);
     }
     spec.rules = Some(rules);
     ingress.spec.replace(spec);
