@@ -14,7 +14,7 @@ use crate::{
     types::{ResourceType, Session, User, UserConfiguration, UserUpdateConfiguration},
 };
 use k8s_openapi::api::{
-    core::v1::{Namespace, Service, ServiceAccount},
+    core::v1::{Namespace, Service, ServiceAccount, ServiceSpec},
     networking::v1::{
         HTTPIngressPath, Ingress, IngressBackend, IngressRule, IngressServiceBackend, IngressSpec,
         ServiceBackendPort,
@@ -139,7 +139,11 @@ pub async fn create_user(id: &str, conf: UserConfiguration) -> Result<()> {
                 spec: Some(IngressSpec {
                     ingress_class_name: Some("nginx".to_string()),
                     rules: Some(vec![IngressRule {
-                        host: Some(format!("{}.{}", user_namespace(&user.id), get_host().await?)),
+                        host: Some(format!(
+                            "{}.{}",
+                            user_namespace(&user.id),
+                            get_host().await?
+                        )),
                         ..Default::default()
                     }]),
                     default_backend: Some(IngressBackend {
@@ -152,6 +156,27 @@ pub async fn create_user(id: &str, conf: UserConfiguration) -> Result<()> {
                         }),
                         ..Default::default()
                     }),
+                    ..Default::default()
+                }),
+                ..Default::default()
+            },
+        )
+        .await
+        .map_err(Error::K8sCommunicationFailure)?;
+
+    // Deploy the local service that allows to connect to the main UI (as it is deployed in `default` namespace)
+    let service_local_api: Api<Service> = user_namespaced_api(id)?;
+    service_local_api
+        .create(
+            &PostParams::default(),
+            &Service {
+                metadata: ObjectMeta {
+                    name: Some("backend-ui".to_string()),
+                    ..Default::default()
+                },
+                spec: Some(ServiceSpec {
+                    type_: Some("ExternalName".to_string()),
+                    external_name: Some("backend-ui.default.svc.cluster.local".to_string()),
                     ..Default::default()
                 }),
                 ..Default::default()
