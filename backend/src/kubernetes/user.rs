@@ -11,7 +11,7 @@ use super::{
 };
 use crate::{
     error::{Error, ResourceError, Result},
-    types::{ResourceType, Session, User, UserConfiguration, UserUpdateConfiguration},
+    types::{Port, ResourceType, Session, User, UserConfiguration, UserUpdateConfiguration},
 };
 use k8s_openapi::api::{
     core::v1::{Namespace, Service, ServiceAccount, ServiceSpec},
@@ -199,7 +199,7 @@ pub async fn create_user(id: &str, conf: UserConfiguration) -> Result<()> {
     Ok(())
 }
 
-pub async fn add_user_session(user_id: &str, session_id: &str, service: Service) -> Result<()> {
+pub async fn add_user_session(user_id: &str, session_id: &str, ports: Vec<Port>) -> Result<()> {
     let ingress_api: Api<Ingress> = user_namespaced_api(user_id)?;
     let mut ingress: Ingress = ingress_api
         .get(INGRESS_NAME)
@@ -214,19 +214,15 @@ pub async fn add_user_session(user_id: &str, session_id: &str, service: Service)
     if let Some(rule) = rules.first() {
         // Always exist
         let mut http = rule.http.clone().unwrap_or_default();
-        let mut paths = service
-            .clone()
-            .spec
-            .unwrap_or_default()
-            .ports
-            .unwrap_or_default()
+        let mut paths = ports
             .iter()
-            .map(|service_port| HTTPIngressPath {
+            .map(|port| HTTPIngressPath {
+                // TODO filter HTTP port
                 backend: IngressBackend {
                     service: Some(IngressServiceBackend {
-                        name: service.name_any(),
+                        name: port.clone().name,
                         port: Some(ServiceBackendPort {
-                            number: Some(service_port.port),
+                            number: Some(port.port),
                             ..Default::default()
                         }),
                     }),
@@ -238,7 +234,6 @@ pub async fn add_user_session(user_id: &str, session_id: &str, service: Service)
             .collect();
         http.paths.append(&mut paths);
         println!("Append paths {:?}", paths);
-        println!("Service {:?}", service);
     }
     spec.rules = Some(rules);
     ingress.spec.replace(spec);

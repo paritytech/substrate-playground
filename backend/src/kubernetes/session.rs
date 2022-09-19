@@ -34,8 +34,7 @@ use std::{
 };
 
 use super::{
-    client, env_var, get_owned_resource, get_preference, list_all_resources,
-    list_owned_resources,
+    client, env_var, get_owned_resource, get_preference, list_all_resources, list_owned_resources,
     pool::get_pool,
     repository::get_repository,
     repository_version::{get_repository_version, volume_template_name},
@@ -550,21 +549,17 @@ pub async fn create_user_session(
                 &duration,
                 &pool_id,
                 devcontainer.map(|devcontainer| envs(&devcontainer)),
-                ports,
+                ports.clone(),
             )?,
         )
         .await
         .map_err(Error::K8sCommunicationFailure)?;
 
-    add_user_session(&user.id, id, service).await?;
+    add_user_session(&user.id, id, ports).await?;
 
     let svcs: Api<Service> = Api::namespaced(client.clone(), "default");
     let s = svcs.get("kubernetes").await?; // always a kubernetes service in default
-    let recorder = Recorder::new(
-        client.clone(),
-        "kube".into(),
-        s.object_ref(&()),
-    );
+    let recorder = Recorder::new(client.clone(), "kube".into(), s.object_ref(&()));
     recorder
         .publish(Event {
             type_: EventType::Normal,
