@@ -84,13 +84,14 @@ async function waitForSession(client: Client, userId: string, sessionId: string)
 }
 
 export function playgroundUserBaseURL(env: EnvironmentType, user: User) {
+    const subdomain = user.id.toLowerCase();
     switch (env) {
         case EnvironmentType.dev:
-            return `https://${user.id}.playground-dev.substrate.test`;
+            return `https://${subdomain}.playground-dev.substrate.test`;
         case EnvironmentType.staging:
-            return `https://${user.id}.playground-staging.substrate.io`;
+            return `https://${subdomain}.playground-staging.substrate.io`;
         case EnvironmentType.production:
-            return `https://${user.id}.playground.substrate.io`;
+            return `https://${subdomain}.playground.substrate.io`;
         default:
             throw new Error(`Unrecognized env ${env}`);
     }
@@ -123,9 +124,8 @@ if (accessToken) {
             const { state } = session;
             if (state.type == "Running") {
                 const port = state.runtimeConfiguration.ports.find(port => port.port == 80);
-                t.not(port, null, "Can't find corresponding port");
+                t.not(port, undefined, "Can't find corresponding port");
                 const url = playgroundUserBaseURL(env, user);
-                console.log(url);
                 const response = await fetch(url);
                 t.is(response.ok, true, "Failed to access URL");
             }
@@ -163,7 +163,7 @@ if (accessToken) {
         }
     });
 
-    if (env == EnvironmentType.staging) { // TODO Not deployed on prod yet
+    if (env != EnvironmentType.staging) { // TODO Not deployed on prod yet
         test('authenticated - should be able to execute in session', async (t) => {
             const client = newClient();
             const user = await client.login(accessToken);

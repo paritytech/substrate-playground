@@ -29,13 +29,14 @@ export function playgroundBaseURL(env: EnvironmentType) {
 }
 
 export function playgroundUserBaseURL(env: EnvironmentType, user: User) {
+    const subdomain = user.id.toLowerCase();
     switch (env) {
         case EnvironmentType.dev:
-            return `https://${user.id}.playground-dev.substrate.test`;
+            return `https://${subdomain}.playground-dev.substrate.test`;
         case EnvironmentType.staging:
-            return `https://${user.id}.playground-staging.substrate.io`;
+            return `https://${subdomain}.playground-staging.substrate.io`;
         case EnvironmentType.production:
-            return `https://${user.id}.playground.substrate.io`;
+            return `https://${subdomain}.playground.substrate.io`;
         default:
             throw new Error(`Unrecognized env ${env}`);
     }
