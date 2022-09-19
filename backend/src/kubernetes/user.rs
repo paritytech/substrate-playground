@@ -238,6 +238,7 @@ pub async fn add_user_session(user_id: &str, session_id: &str, service: Service)
             .collect();
         http.paths.append(&mut paths);
         println!("Append paths {:?}", paths);
+        println!("Service {:?}", service);
     }
     spec.rules = Some(rules);
     ingress.spec.replace(spec);

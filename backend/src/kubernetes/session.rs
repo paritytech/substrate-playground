@@ -34,7 +34,7 @@ use std::{
 };
 
 use super::{
-    backend_pod, client, env_var, get_owned_resource, get_preference, list_all_resources,
+    client, env_var, get_owned_resource, get_preference, list_all_resources,
     list_owned_resources,
     pool::get_pool,
     repository::get_repository,
@@ -233,7 +233,7 @@ fn service(session_id: &str, service_name: &str, ports: &[Port]) -> Service {
         })
         .collect::<Vec<ServicePort>>();
     service_ports.append(&mut extra_service_ports);
-
+    println!("Service Ports {:?}", service_ports);
     Service {
         metadata: ObjectMeta {
             name: Some(service_name.to_string()),
@@ -249,28 +249,6 @@ fn service(session_id: &str, service_name: &str, ports: &[Port]) -> Service {
         ..Default::default()
     }
 }
-
-/*fn external_service(
-    local_service_name: &str,
-    service_name: &str,
-    session_namespace: &str,
-) -> Service {
-    Service {
-        metadata: ObjectMeta {
-            name: Some(local_service_name.to_string()),
-            ..Default::default()
-        },
-        spec: Some(ServiceSpec {
-            type_: Some("ExternalName".to_string()),
-            external_name: Some(format!(
-                "{}.{}.svc.cluster.local",
-                service_name, session_namespace
-            )),
-            ..Default::default()
-        }),
-        ..Default::default()
-    }
-}*/
 
 fn subdomain(host: &str, id: &str) -> String {
     format!("{}.{}", id, host)
@@ -373,67 +351,6 @@ fn pod_to_state(pod: &Pod) -> types::SessionState {
         }
         _ => types::SessionState::Deploying,
     }
-    /*if let Some(condition) = status.conditions.unwrap_or_default().first() {
-        return match condition.type_.as_str() {
-            "ContainersNotReady" => {
-                let init_container_statuses = status.init_container_statuses.unwrap_or_default();
-                if let Some(init_container_status) = init_container_statuses.first() {
-                    // Only inspect the first init_container as it's the only one defined
-                    container_status_to_session_state(init_container_status)
-                        .unwrap_or(types::SessionState::Deploying)
-                } else {
-                    return types::SessionState::Failed {
-                        message: condition.clone().message.unwrap_or_default(),
-                        reason: "ContainersNotReady".to_string(),
-                    };
-                }
-            }
-            "Initialized" => {
-                let container_statuses = status.container_statuses.unwrap_or_default();
-                if let Some(container_status) = container_statuses.first() {
-                    // Only inspect the first container as it's the only one defined
-                    container_status_to_session_state(container_status)
-                        .unwrap_or(types::SessionState::Deploying)
-                } else {
-                    return types::SessionState::Failed {
-                        message: condition.clone().message.unwrap_or_default(),
-                        reason: "Initialized".to_string(),
-                    };
-                }
-            }
-            "Ready" => {
-                if let Some(status) = status.container_statuses.unwrap_or_default().first() {
-                    if let Some(state) = status.clone().state.unwrap_or_default().running {
-                        return types::SessionState::Running {
-                            start_time: state
-                                .started_at
-                                .as_ref()
-                                .map(|dt| dt.0.into())
-                                .unwrap_or(SystemTime::UNIX_EPOCH),
-                            node: types::Node {
-                                hostname: pod
-                                    .spec
-                                    .clone()
-                                    .unwrap_or_default()
-                                    .node_name
-                                    .unwrap_or_default(),
-                            },
-                            runtime_configuration: SessionRuntimeConfiguration {
-                                // TODO
-                                env: vec![],
-                                ports: vec![],
-                            },
-                        };
-                    }
-                }
-                types::SessionState::Deploying
-            }
-            _ => types::SessionState::Deploying,
-        };
-    }
-
-    // Fallback if no conditions are available
-    types::SessionState::Deploying*/
 }
 
 // Creates a Session from a Pod annotations
@@ -472,41 +389,6 @@ pub async fn list_user_sessions(user_id: &str) -> Result<Vec<Session>> {
 pub async fn list_sessions() -> Result<Vec<Session>> {
     list_all_resources(COMPONENT, pod_to_session).await
 }
-/*
-pub async fn patch_ingress(runtimes: &BTreeMap<String, Vec<Port>>) -> Result<()> {
-    let client = client()?;
-    let ingress_api: Api<Ingress> = Api::default_namespaced(client);
-    let mut ingress: Ingress = ingress_api
-        .get(INGRESS_NAME)
-        .await
-        .map_err(Error::K8sCommunicationFailure)?
-        .clone();
-    let mut spec = ingress
-        .clone()
-        .spec
-        .ok_or_else(|| Error::MissingConstraint("ingress".to_string(), "spec".to_string()))?;
-    let mut rules: Vec<IngressRule> = spec.rules.unwrap_or_default();
-    let host = get_host().await?;
-    for (session_id, ports) in runtimes {
-        let local_service_name = local_service_name(session_id);
-        let subdomain = subdomain(&host, session_id);
-        rules.push(IngressRule {
-            host: Some(subdomain.clone()),
-            http: Some(HTTPIngressRuleValue {
-                paths: ingress_paths(local_service_name.to_string(), ports),
-            }),
-        });
-    }
-    spec.rules = Some(rules);
-    ingress.spec.replace(spec);
-
-    ingress_api
-        .replace(INGRESS_NAME, &PostParams::default(), &ingress)
-        .await
-        .map_err(Error::K8sCommunicationFailure)?;
-
-    Ok(())
-}*/
 
 pub fn service_name(session_id: &str) -> String {
     format!("service-{}", session_id)
@@ -645,16 +527,6 @@ pub async fn create_user_session(
     let service = service(id, &service_name, &ports);
     service_api.create(&PostParams::default(), &service).await?;
 
-    // Deploy the ingress local service
-    /*     let service_local_api: Api<Service> = Api::default_namespaced(client.clone());
-    service_local_api
-        .create(
-            &PostParams::default(),
-            &external_service(&local_service_name(id), &service_name, id),
-        )
-        .await
-        .map_err(Error::K8sCommunicationFailure)?;*/
-
     let duration = str_minutes_to_duration(&get_preference(
         &preferences,
         &Preferences::SessionDefaultDuration.to_string(),
@@ -686,10 +558,12 @@ pub async fn create_user_session(
 
     add_user_session(&user.id, id, service).await?;
 
+    let svcs: Api<Service> = Api::namespaced(client.clone(), "default");
+    let s = svcs.get("kubernetes").await?; // always a kubernetes service in default
     let recorder = Recorder::new(
         client.clone(),
         "kube".into(),
-        backend_pod().await?.object_ref(&()),
+        s.object_ref(&()),
     );
     recorder
         .publish(Event {
@@ -700,8 +574,6 @@ pub async fn create_user_session(
             secondary: None,
         })
         .await?;
-
-    println!("Event published");
 
     Ok(())
 }
@@ -769,16 +641,6 @@ pub async fn delete_user_session(user_id: &str, id: &str) -> Result<()> {
             id.to_string(),
         ))
     })?;
-
-    // Undeploy the ingress local service
-    /*    let service_local_api: Api<Service> = Api::default_namespaced(client.clone());
-    service_local_api
-        .delete(
-            &local_service_name(id),
-            &DeleteParams::default().grace_period(0),
-        )
-        .await
-        .map_err(Error::K8sCommunicationFailure)?;*/
 
     // Undeploy the ingress service
     let service_api: Api<Service> = Api::namespaced(client.clone(), &user_namespace(user_id));
