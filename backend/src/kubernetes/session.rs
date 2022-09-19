@@ -204,7 +204,7 @@ fn session_to_pod(
     }
 }
 
-fn service(session_id: &str, service_name: &str, ports: Option<Vec<Port>>) -> Service {
+fn service(session_id: &str, service_name: &str, ports: Vec<Port>) -> Service {
     let mut labels = BTreeMap::new();
     labels.insert(APP_LABEL.to_string(), APP_VALUE.to_string());
     labels.insert(COMPONENT_LABEL.to_string(), COMPONENT.to_string());
@@ -220,20 +220,18 @@ fn service(session_id: &str, service_name: &str, ports: Option<Vec<Port>>) -> Se
         ..Default::default()
     }];
 
-    // Optional extra ports are converted and appended
-    if let Some(ports) = ports {
-        let mut extra_service_ports = ports
-            .iter()
-            .map(|port| ServicePort {
-                name: Some(port.clone().name),
-                protocol: port.clone().protocol,
-                port: port.port,
-                target_port: port.clone().target.map(IntOrString::Int),
-                ..Default::default()
-            })
-            .collect::<Vec<ServicePort>>();
-        service_ports.append(&mut extra_service_ports);
-    }
+    // Extra ports are converted and appended
+    let mut extra_service_ports = ports
+        .iter()
+        .map(|port| ServicePort {
+            name: Some(port.clone().name),
+            protocol: port.clone().protocol,
+            port: port.port,
+            target_port: port.clone().target.map(IntOrString::Int),
+            ..Default::default()
+        })
+        .collect::<Vec<ServicePort>>();
+    service_ports.append(&mut extra_service_ports);
 
     Service {
         metadata: ObjectMeta {
@@ -521,7 +519,7 @@ fn local_service_name(session_id: &str) -> String {
     format!("local-service-{}", session_id)
 }
 
-fn ports(devcontainer: &DevContainer) -> Vec<Port> {
+fn devcontainer_to_ports(devcontainer: &DevContainer) -> Vec<Port> {
     // TODO add support to https://code.visualstudio.com/docs/remote/devcontainerjson-reference#_port-attributes
     devcontainer
         .forward_ports
@@ -633,17 +631,16 @@ pub async fn create_user_session(
         )))
     }?;
 
-    let ports = devcontainer
-        .clone()
-        .map(|devcontainer| ports(&devcontainer));
-    // TODO deploy a new ingress matching the route
-    // With the proper mapping
-    // Define the correct route
-    // Also deploy proper tcp mapping configmap https://kubernetes.github.io/ingress-nginx/user-guide/exposing-tcp-udp-services/
-
-    // let mut sessions = BTreeMap::new();
-    // sessions.insert(id.to_string(), ports.clone());
-    //  patch_ingress(&sessions).await?;
+    let mut ports = vec![];
+    if let Some(devcontainer) = devcontainer.clone() {
+        ports.append(&mut devcontainer_to_ports(&devcontainer));
+    }
+    ports.push(Port {
+        name: "vscode".to_string(),
+        protocol: None,
+        port: 80,
+        target: None,
+    });
 
     // Now create the session itself
 
@@ -656,14 +653,14 @@ pub async fn create_user_session(
     service_api.create(&PostParams::default(), &service).await?;
 
     // Deploy the ingress local service
-    let service_local_api: Api<Service> = Api::default_namespaced(client.clone());
+/*     let service_local_api: Api<Service> = Api::default_namespaced(client.clone());
     service_local_api
         .create(
             &PostParams::default(),
             &external_service(&local_service_name(id), &service_name, id),
         )
         .await
-        .map_err(Error::K8sCommunicationFailure)?;
+        .map_err(Error::K8sCommunicationFailure)?;*/
 
     let duration = str_minutes_to_duration(&get_preference(
         &preferences,
