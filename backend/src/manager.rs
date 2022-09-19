@@ -21,8 +21,7 @@ use crate::{
         role::{create_role, delete_role, get_role, list_roles, update_role},
         session::{
             create_user_session, create_user_session_execution, delete_user_session,
-            get_user_session, list_sessions, list_user_sessions, patch_ingress,
-            update_user_session,
+            get_user_session, list_sessions, list_user_sessions, update_user_session,
         },
         user::{create_user, delete_user, get_user, list_users, update_user},
     },
@@ -52,33 +51,6 @@ impl Manager {
 
     pub async fn new() -> Result<Self> {
         let metrics = Metrics::new()?;
-        // Go through all existing sessions and update the ingress
-        // TODO remove once migrated to per session nginx
-        match list_sessions().await {
-            Ok(sessions) => {
-                let running = sessions
-                    .iter()
-                    .flat_map(|i| match &i.state {
-                        SessionState::Running { .. } => Some((i.id.clone(), vec![])),
-                        _ => None,
-                    })
-                    .collect();
-                if let Err(err) = patch_ingress(&running).await {
-                    error!(
-                        "Failed to patch ingress: {}. Existing sessions won't be accessible",
-                        err
-                    )
-                } else if running.is_empty() {
-                    info!("No sesssions restored");
-                } else {
-                    info!("Restored sesssions for {:?}", running.keys());
-                }
-            }
-            Err(err) => error!(
-                "Failed to list sessions: {}. Existing sessions won't be accessible",
-                err
-            ),
-        }
         Ok(Manager { metrics })
     }
 

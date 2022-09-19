@@ -16,7 +16,7 @@ use k8s_openapi::api::{
         PodAntiAffinity, PodSpec, ResourceRequirements, SecurityContext, Service, ServicePort,
         ServiceSpec, Toleration, Volume, VolumeMount,
     },
-    networking::v1::{HTTPIngressPath, HTTPIngressRuleValue, Ingress, IngressRule},
+    networking::v1::{Ingress, IngressRule},
 };
 use k8s_openapi::apimachinery::pkg::{
     api::resource::Quantity,
@@ -34,8 +34,8 @@ use std::{
 };
 
 use super::{
-    backend_pod, client, env_var, get_owned_resource, get_preference, ingress_path,
-    list_all_resources, list_owned_resources,
+    backend_pod, client, env_var, get_owned_resource, get_preference, list_all_resources,
+    list_owned_resources,
     pool::get_pool,
     repository::get_repository,
     repository_version::{get_repository_version, volume_template_name},
@@ -272,16 +272,6 @@ fn service(session_id: &str, service_name: &str, ports: &[Port]) -> Service {
     }
 }*/
 
-fn ingress_paths(service_name: String, ports: &[Port]) -> Vec<HTTPIngressPath> {
-    let mut all_paths = vec![ingress_path(&service_name, THEIA_WEB_PORT)];
-    let mut paths = ports
-        .iter()
-        .map(|port| ingress_path(&service_name.clone(), port.port))
-        .collect();
-    all_paths.append(&mut paths);
-    all_paths
-}
-
 fn subdomain(host: &str, id: &str) -> String {
     format!("{}.{}", id, host)
 }
@@ -482,7 +472,7 @@ pub async fn list_user_sessions(user_id: &str) -> Result<Vec<Session>> {
 pub async fn list_sessions() -> Result<Vec<Session>> {
     list_all_resources(COMPONENT, pod_to_session).await
 }
-
+/*
 pub async fn patch_ingress(runtimes: &BTreeMap<String, Vec<Port>>) -> Result<()> {
     let client = client()?;
     let ingress_api: Api<Ingress> = Api::default_namespaced(client);
@@ -516,14 +506,10 @@ pub async fn patch_ingress(runtimes: &BTreeMap<String, Vec<Port>>) -> Result<()>
         .map_err(Error::K8sCommunicationFailure)?;
 
     Ok(())
-}
+}*/
 
 pub fn service_name(session_id: &str) -> String {
     format!("service-{}", session_id)
-}
-
-fn local_service_name(session_id: &str) -> String {
-    format!("local-service-{}", session_id)
 }
 
 fn devcontainer_to_ports(devcontainer: &DevContainer) -> Vec<Port> {
@@ -785,14 +771,14 @@ pub async fn delete_user_session(user_id: &str, id: &str) -> Result<()> {
     })?;
 
     // Undeploy the ingress local service
-    let service_local_api: Api<Service> = Api::default_namespaced(client.clone());
+    /*    let service_local_api: Api<Service> = Api::default_namespaced(client.clone());
     service_local_api
         .delete(
             &local_service_name(id),
             &DeleteParams::default().grace_period(0),
         )
         .await
-        .map_err(Error::K8sCommunicationFailure)?;
+        .map_err(Error::K8sCommunicationFailure)?;*/
 
     // Undeploy the ingress service
     let service_api: Api<Service> = Api::namespaced(client.clone(), &user_namespace(user_id));
