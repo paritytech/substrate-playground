@@ -163,7 +163,7 @@ if (accessToken) {
         }
     });
 
-    if (env != EnvironmentType.staging) { // TODO Not deployed on prod yet
+    if (env != EnvironmentType.production) { // TODO Not deployed on prod yet
         test('authenticated - should be able to execute in session', async (t) => {
             const client = newClient();
             const user = await client.login(accessToken);
