@@ -39,7 +39,7 @@ use super::{
     pool::get_pool,
     repository::get_repository,
     repository_version::{get_repository_version, volume_template_name},
-    str_minutes_to_duration, update_annotation_value,
+    serialize_json, str_minutes_to_duration, unserialize_json, update_annotation_value,
     user::{add_user_session, DEFAULT_SERVICE_ACCOUNT},
     user_namespace, user_namespaced_api, APP_LABEL, APP_VALUE, COMPONENT_LABEL, INGRESS_NAME,
     NODE_POOL_LABEL, NODE_POOL_TYPE_LABEL, OWNER_LABEL,
@@ -49,6 +49,7 @@ const DEFAULT_DOCKER_IMAGE: &str = "ubuntu";
 const RESOURCE_ID: &str = "RESOURCE_ID";
 const COMPONENT: &str = "session";
 const SESSION_DURATION_ANNOTATION: &str = "app.playground/session_duration";
+const PORTS_ANNOTATION: &str = "app.playground/ports";
 const THEIA_WEB_PORT: i32 = 3000;
 
 fn duration_to_string(duration: Duration) -> String {
@@ -78,15 +79,7 @@ fn pod_env_variables(envs: Option<Vec<NameValuePair>>, session_id: &str) -> Vec<
     all_envs
 }
 
-fn pod_annotations(duration: &Duration) -> BTreeMap<String, String> {
-    let mut annotations = BTreeMap::new();
-    annotations.insert(
-        SESSION_DURATION_ANNOTATION.to_string(),
-        duration_to_string(*duration),
-    );
-    annotations
-}
-
+#[cfg_attr(feature = "cargo-clippy", allow(clippy::too_many_arguments))]
 fn session_to_pod(
     user_id: &str,
     session_id: &str,
@@ -95,19 +88,27 @@ fn session_to_pod(
     duration: &Duration,
     pool_id: &str,
     envs: Option<Vec<NameValuePair>>,
-) -> Pod {
+    ports: Vec<Port>,
+) -> Result<Pod> {
     let mut labels = BTreeMap::new();
     labels.insert(APP_LABEL.to_string(), APP_VALUE.to_string());
     labels.insert(COMPONENT_LABEL.to_string(), COMPONENT.to_string());
     labels.insert(RESOURCE_ID.to_string(), session_id.to_string());
     labels.insert(OWNER_LABEL.to_string(), user_id.to_string());
 
+    let mut annotations = BTreeMap::new();
+    annotations.insert(
+        SESSION_DURATION_ANNOTATION.to_string(),
+        duration_to_string(*duration),
+    );
+    annotations.insert(PORTS_ANNOTATION.to_string(), serialize_json(&ports)?);
+
     let openvscode_version = "1.71.0";
-    Pod {
+    Ok(Pod {
         metadata: ObjectMeta {
             name: Some(session_id.to_string()),
             labels: Some(labels),
-            annotations: Some(pod_annotations(duration)),
+            annotations: Some(annotations),
             ..Default::default()
         },
         spec: Some(PodSpec {
@@ -201,10 +202,10 @@ fn session_to_pod(
             ..Default::default()
         }),
         ..Default::default()
-    }
+    })
 }
 
-fn service(session_id: &str, service_name: &str, ports: Vec<Port>) -> Service {
+fn service(session_id: &str, service_name: &str, ports: &[Port]) -> Service {
     let mut labels = BTreeMap::new();
     labels.insert(APP_LABEL.to_string(), APP_VALUE.to_string());
     labels.insert(COMPONENT_LABEL.to_string(), COMPONENT.to_string());
@@ -249,7 +250,7 @@ fn service(session_id: &str, service_name: &str, ports: Vec<Port>) -> Service {
     }
 }
 
-fn external_service(
+/*fn external_service(
     local_service_name: &str,
     service_name: &str,
     session_namespace: &str,
@@ -269,7 +270,7 @@ fn external_service(
         }),
         ..Default::default()
     }
-}
+}*/
 
 fn ingress_paths(service_name: String, ports: &[Port]) -> Vec<HTTPIngressPath> {
     let mut all_paths = vec![ingress_path(&service_name, THEIA_WEB_PORT)];
@@ -327,6 +328,12 @@ fn pod_to_state(pod: &Pod) -> types::SessionState {
         "Running" => {
             if let Some(status) = status.container_statuses.unwrap_or_default().first() {
                 if let Some(state) = status.clone().state.unwrap_or_default().running {
+                    let ports = pod
+                        .annotations()
+                        .get(PORTS_ANNOTATION)
+                        .and_then(|s| unserialize_json(s).ok()) // Ignore unserialization issues
+                        .unwrap_or_default();
+
                     types::SessionState::Running {
                         start_time: state
                             .started_at
@@ -344,7 +351,7 @@ fn pod_to_state(pod: &Pod) -> types::SessionState {
                         runtime_configuration: SessionRuntimeConfiguration {
                             // TODO
                             env: vec![],
-                            ports: vec![],
+                            ports,
                         },
                     }
                 } else {
@@ -649,11 +656,11 @@ pub async fn create_user_session(
     // Deploy the associated service
     let service_api: Api<Service> = Api::namespaced(client.clone(), &user_namespace(user_id));
     let service_name = service_name(id);
-    let service = service(id, &service_name, ports);
+    let service = service(id, &service_name, &ports);
     service_api.create(&PostParams::default(), &service).await?;
 
     // Deploy the ingress local service
-/*     let service_local_api: Api<Service> = Api::default_namespaced(client.clone());
+    /*     let service_local_api: Api<Service> = Api::default_namespaced(client.clone());
     service_local_api
         .create(
             &PostParams::default(),
@@ -685,7 +692,8 @@ pub async fn create_user_session(
                 &duration,
                 &pool_id,
                 devcontainer.map(|devcontainer| envs(&devcontainer)),
-            ),
+                ports,
+            )?,
         )
         .await
         .map_err(Error::K8sCommunicationFailure)?;
@@ -761,6 +769,7 @@ pub async fn update_user_session(
         )
         .await?
     }
+    // TODO update ports
 
     Ok(())
 }
