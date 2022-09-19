@@ -145,6 +145,7 @@ pub async fn create_user(id: &str, conf: UserConfiguration) -> Result<()> {
                 },
                 spec: Some(IngressSpec {
                     ingress_class_name: Some("nginx".to_string()),
+                    // TODO should start empty?
                     rules: Some(vec![IngressRule {
                         host: Some(format!(
                             "{}.{}",
@@ -157,7 +158,7 @@ pub async fn create_user(id: &str, conf: UserConfiguration) -> Result<()> {
                         service: Some(IngressServiceBackend {
                             name: BACKEND_UI_SERVICE_NAME.to_string(),
                             port: Some(ServiceBackendPort {
-                                //name: Some("ui-port".to_string()),
+                                //TODO name: Some("ui-port".to_string()),
                                 number: Some(80),
                                 ..Default::default()
                             }),
@@ -210,8 +211,10 @@ pub async fn add_user_session(user_id: &str, session_id: &str, ports: Vec<Port>)
         .clone()
         .spec
         .ok_or_else(|| Error::MissingConstraint("ingress".to_string(), "spec".to_string()))?;
-    let rules: Vec<IngressRule> = spec.rules.unwrap_or_default();
-    if let Some(rule) = rules.first() {
+    let mut rules: Vec<IngressRule> = spec.rules.clone().unwrap_or_default();
+    // TODO fix so that it works with multiple session
+    // Host should be unique per session
+    if let Some(rule) = rules.clone().first() {
         // Always exist
         let mut http = rule.http.clone().unwrap_or_default();
         let mut paths = ports
@@ -233,9 +236,15 @@ pub async fn add_user_session(user_id: &str, session_id: &str, ports: Vec<Port>)
             })
             .collect();
         http.paths.append(&mut paths);
-        println!("Append paths {:?}", paths);
+        rules.insert(
+            0,
+            IngressRule {
+                host: rule.clone().host,
+                http: Some(http),
+            },
+        );
     }
-    spec.rules = Some(rules);
+    spec.rules.replace(rules);
     ingress.spec.replace(spec);
 
     ingress_api
