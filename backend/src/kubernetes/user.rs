@@ -200,7 +200,12 @@ pub async fn create_user(id: &str, conf: UserConfiguration) -> Result<()> {
     Ok(())
 }
 
-pub async fn add_user_session(user_id: &str, session_id: &str, ports: Vec<Port>) -> Result<()> {
+pub async fn add_user_session(
+    user_id: &str,
+    session_id: &str,
+    service_name: &str,
+    ports: Vec<Port>,
+) -> Result<()> {
     let ingress_api: Api<Ingress> = user_namespaced_api(user_id)?;
     let mut ingress: Ingress = ingress_api
         .get(INGRESS_NAME)
@@ -219,20 +224,28 @@ pub async fn add_user_session(user_id: &str, session_id: &str, ports: Vec<Port>)
         let mut http = rule.http.clone().unwrap_or_default();
         let mut paths = ports
             .iter()
-            .map(|port| HTTPIngressPath {
-                // TODO filter HTTP port
-                backend: IngressBackend {
-                    service: Some(IngressServiceBackend {
-                        name: port.clone().name,
-                        port: Some(ServiceBackendPort {
-                            number: Some(port.port),
-                            ..Default::default()
+            .map(|port| {
+                let path = if port.name == "web" {
+                    format!("/{}", session_id)
+                } else {
+                    format!("/{}/{}", session_id, port.name)
+                };
+
+                HTTPIngressPath {
+                    // TODO filter HTTP port
+                    backend: IngressBackend {
+                        service: Some(IngressServiceBackend {
+                            name: service_name.to_string(),
+                            port: Some(ServiceBackendPort {
+                                number: Some(port.port),
+                                ..Default::default()
+                            }),
                         }),
-                    }),
-                    ..Default::default()
-                },
-                path: Some(format!("/{}", session_id)),
-                path_type: "Exact".to_string(),
+                        ..Default::default()
+                    },
+                    path: Some(path),
+                    path_type: "Exact".to_string(),
+                }
             })
             .collect();
         http.paths.append(&mut paths);

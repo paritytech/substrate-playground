@@ -49,7 +49,6 @@ const RESOURCE_ID: &str = "RESOURCE_ID";
 const COMPONENT: &str = "session";
 const SESSION_DURATION_ANNOTATION: &str = "app.playground/session_duration";
 const PORTS_ANNOTATION: &str = "app.playground/ports";
-const THEIA_WEB_PORT: i32 = 3000;
 
 fn duration_to_string(duration: Duration) -> String {
     duration.as_secs().to_string()
@@ -213,12 +212,7 @@ fn service(session_id: &str, service_name: &str, ports: &[Port]) -> Service {
     selector.insert(OWNER_LABEL.to_string(), session_id.to_string());
 
     // The theia port itself is mandatory
-    let mut service_ports = vec![ServicePort {
-        name: Some("web".to_string()),
-        protocol: Some("TCP".to_string()),
-        port: THEIA_WEB_PORT,
-        ..Default::default()
-    }];
+    let mut service_ports = vec![];
 
     // Extra ports are converted and appended
     let mut extra_service_ports = ports
@@ -232,7 +226,6 @@ fn service(session_id: &str, service_name: &str, ports: &[Port]) -> Service {
         })
         .collect::<Vec<ServicePort>>();
     service_ports.append(&mut extra_service_ports);
-    println!("Service Ports {:?}", service_ports);
     Service {
         metadata: ObjectMeta {
             name: Some(service_name.to_string()),
@@ -510,10 +503,10 @@ pub async fn create_user_session(
         ports.append(&mut devcontainer_to_ports(&devcontainer));
     }
     ports.push(Port {
-        name: "vscode".to_string(),
-        protocol: None,
+        name: "web".to_string(),
+        protocol: Some("TCP".to_string()),
         port: 80,
-        target: None,
+        target: Some(3000),
     });
 
     // Now create the session itself
@@ -555,7 +548,7 @@ pub async fn create_user_session(
         .await
         .map_err(Error::K8sCommunicationFailure)?;
 
-    add_user_session(&user.id, id, ports).await?;
+    add_user_session(&user.id, id, &service_name, ports).await?;
 
     let svcs: Api<Service> = Api::namespaced(client.clone(), "default");
     let s = svcs.get("kubernetes").await?; // always a kubernetes service in default
