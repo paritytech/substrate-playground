@@ -202,7 +202,7 @@ pub async fn create_user(id: &str, conf: UserConfiguration) -> Result<()> {
 
 pub async fn add_user_session(
     user_id: &str,
-    session_id: &str,
+    _session_id: &str,
     service_name: &str,
     ports: Vec<Port>,
 ) -> Result<()> {
@@ -217,14 +217,13 @@ pub async fn add_user_session(
         .spec
         .ok_or_else(|| Error::MissingConstraint("ingress".to_string(), "spec".to_string()))?;
     let mut rules: Vec<IngressRule> = spec.rules.clone().unwrap_or_default();
-    // TODO fix so that it works with multiple session
-    // Host should be unique per session
     if let Some(rule) = rules.clone().first() {
         // Always exist
         let mut http = rule.http.clone().unwrap_or_default();
         let mut paths = ports
             .iter()
             .map(|port| {
+                // TODO Add session_id prefix
                 let path = if port.name == "web" {
                     "/".to_string()
                 } else {
