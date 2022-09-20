@@ -226,9 +226,9 @@ pub async fn add_user_session(
             .iter()
             .map(|port| {
                 let path = if port.name == "web" {
-                    format!("/{}", session_id)
+                    "/".to_string()
                 } else {
-                    format!("/{}/{}", session_id, port.name)
+                    format!("/{}", port.name)
                 };
 
                 HTTPIngressPath {
@@ -244,7 +244,7 @@ pub async fn add_user_session(
                         ..Default::default()
                     },
                     path: Some(path),
-                    path_type: "Exact".to_string(),
+                    path_type: "Prefix".to_string(),
                 }
             })
             .collect();
