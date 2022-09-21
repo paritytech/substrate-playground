@@ -101,7 +101,7 @@ fn session_to_pod(
     );
     annotations.insert(PORTS_ANNOTATION.to_string(), serialize_json(&ports)?);
 
-    let openvscode_version = "1.71.0";
+    let openvscode_version = "1.71.2";
     Ok(Pod {
         metadata: ObjectMeta {
             name: Some(session_id.to_string()),
