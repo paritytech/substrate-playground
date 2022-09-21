@@ -2,7 +2,7 @@
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
 import * as path from 'path';
-import { Client, environmentTypeFromString, mainSessionId, playgroundBaseAPIURL } from '@substrate/playground-client';
+import { Client, EnvironmentType, environmentTypeFromString, mainSessionId, playgroundBaseAPIURL, playgroundUserBaseURL } from '@substrate/playground-client';
 
 import 'cross-fetch/dist/node-polyfill.js';
 
@@ -44,10 +44,13 @@ export class PlaygroundTreeDataProvider implements vscode.TreeDataProvider<TreeI
 
 	protected readonly onDidChangeTreeDataEmitter = new vscode.EventEmitter<TreeItem | undefined>();
 	readonly onDidChangeTreeData = this.onDidChangeTreeDataEmitter.event;
+    private readonly client;
 
 	constructor(
-		private readonly context: vscode.ExtensionContext
+		private readonly context: vscode.ExtensionContext,
+        client: Client
 	) {
+        this.client = client;
 	}
 
 	getTreeItem(element: TreeItem): vscode.TreeItem {
@@ -55,11 +58,32 @@ export class PlaygroundTreeDataProvider implements vscode.TreeDataProvider<TreeI
 	}
 
 	getChildren(element?: TreeItem): vscode.ProviderResult<TreeItem[]> {
+        console.log("about to resolve");
 		if (!element) {
-			return [new TreeItem('jeluard', [
+            const userId = 'jeluard';
+            /*const sessions = await this.client.listUserSessions(userId);
+			return [new TreeItem('jeluard', sessions.map [
                 new TreeItem(
                     'paritytech/substrate')
-              ])];
+              ])];*/
+              console.log("about to resolve");
+              return new Promise(async resolve => {
+                console.log("promise");
+                const sessions = await this.client.listUserSessions(userId);
+                console.log(sessions);
+                resolve([new TreeItem(userId, sessions.map(session => {
+                    return new TreeItem(session.id);
+                }))]);
+				/*setTimeout(() => {
+					resolve(getChildren(element ? element.key : undefined).map(key => getNode(key)))
+				}, 2000)*/
+			})
+            /*return {
+                then: function (...args: any[]): Thenable<TreeItem[]> {
+                    item.triggerLoadChildren();
+                    return item._childrenP.then(...args);
+                },
+            };*/
 		}
 		return element.children;
 	}
@@ -69,13 +93,21 @@ export class PlaygroundTreeDataProvider implements vscode.TreeDataProvider<TreeI
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
-    vscode.commands.registerCommand('substrate-playground.navigate', (node) => {
-        vscode.env.openExternal(vscode.Uri.parse('https://code.visualstudio.com'));
+
+    console.log("Activation");
+    const environment = vscode.workspace.getConfiguration().get<string>('conf.substrate-playground.environment', "production");
+    const env = environmentTypeFromString(environment);
+    const client = new Client(playgroundBaseAPIURL(env));
+
+    vscode.commands.registerCommand('substrate-playground.navigate', (node: TreeItem) => {
+        const userId = node.label;
+        if (userId) {
+            const url = playgroundUserBaseURL(env, userId);
+            vscode.env.openExternal(vscode.Uri.parse(url));
+        }
     });
 
-    const environment = vscode.workspace.getConfiguration().get<string>('conf.substrate-playground.environment', "production");
-    const client = new Client(playgroundBaseAPIURL(environmentTypeFromString(environment)));
-	const treeDataProvider = new PlaygroundTreeDataProvider(context);
+	const treeDataProvider = new PlaygroundTreeDataProvider(context, client);
 	const workspaceView = vscode.window.createTreeView('substrate-playground.explorer', {
 		treeDataProvider: treeDataProvider,
 	});
