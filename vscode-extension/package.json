@@ -137,7 +137,7 @@
         "test": "node ./out/test/runTest.js"
     },
     "dependencies": {
-        "@substrate/playground-client": "1.9.21",
+        "@substrate/playground-client": "1.9.22",
         "cross-fetch": "3.1.5",
         "@octokit/rest": "18.0.0"
     },

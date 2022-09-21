@@ -1,5 +1,5 @@
 import test from 'ava';
-import { Client, EnvironmentType, playgroundBaseAPIURL, environmentTypeFromString, mainSessionId, SessionState, Session, User } from '@substrate/playground-client';
+import { Client, EnvironmentType, playgroundBaseAPIURL, environmentTypeFromString, mainSessionId, SessionState, Session, User, playgroundUserBaseURL } from '@substrate/playground-client';
 
 import 'cross-fetch/dist/node-polyfill.js'; // TODO remove once moving to Node18 (https://github.com/nodejs/node/pull/41749)
 
@@ -81,20 +81,6 @@ async function waitForSession(client: Client, userId: string, sessionId: string)
             }
         }, interval);
     });
-}
-
-export function playgroundUserBaseURL(env: EnvironmentType, user: User) {
-    const subdomain = user.id.toLowerCase();
-    switch (env) {
-        case EnvironmentType.dev:
-            return `https://${subdomain}.playground-dev.substrate.test`;
-        case EnvironmentType.staging:
-            return `https://${subdomain}.playground-staging.substrate.io`;
-        case EnvironmentType.production:
-            return `https://${subdomain}.playground.substrate.io`;
-        default:
-            throw new Error(`Unrecognized env ${env}`);
-    }
 }
 
 const accessToken = process.env.ACCESS_TOKEN;
