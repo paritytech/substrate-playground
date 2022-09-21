@@ -161,7 +161,7 @@ function SessionStateElement({ state }: { state: SessionState }): JSX.Element {
         case "Failed":
             return <div>Failed: {state.message}</div>;
         case "Running":
-            return <div>Running since ${formatDuration(state.startTime)}</div>;
+            return <div>Running since {formatDuration(state.startTime)}</div>;
     }
 }
 
