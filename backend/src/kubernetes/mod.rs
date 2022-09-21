@@ -132,12 +132,8 @@ pub fn str_minutes_to_duration(str: &str) -> Result<Duration> {
 
 /// Client utilities
 
-fn config() -> Result<Config> {
-    Config::from_cluster_env().map_err(|err| Error::Failure(err.to_string()))
-}
-
 pub fn client() -> Result<Client> {
-    let config = config()?;
+    let config = Config::from_cluster_env().map_err(|err| Error::Failure(err.to_string()))?;
     Client::try_from(config).map_err(Error::K8sCommunicationFailure)
 }
 
