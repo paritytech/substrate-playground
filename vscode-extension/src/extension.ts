@@ -61,29 +61,12 @@ export class PlaygroundTreeDataProvider implements vscode.TreeDataProvider<TreeI
         console.log("about to resolve");
 		if (!element) {
             const userId = 'jeluard';
-            /*const sessions = await this.client.listUserSessions(userId);
-			return [new TreeItem('jeluard', sessions.map [
-                new TreeItem(
-                    'paritytech/substrate')
-              ])];*/
-              console.log("about to resolve");
               return new Promise(async resolve => {
-                console.log("promise");
                 const sessions = await this.client.listUserSessions(userId);
-                console.log(sessions);
                 resolve([new TreeItem(userId, sessions.map(session => {
                     return new TreeItem(session.id);
                 }))]);
-				/*setTimeout(() => {
-					resolve(getChildren(element ? element.key : undefined).map(key => getNode(key)))
-				}, 2000)*/
 			})
-            /*return {
-                then: function (...args: any[]): Thenable<TreeItem[]> {
-                    item.triggerLoadChildren();
-                    return item._childrenP.then(...args);
-                },
-            };*/
 		}
 		return element.children;
 	}
