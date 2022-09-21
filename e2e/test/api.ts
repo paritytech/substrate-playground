@@ -1,5 +1,5 @@
 import test from 'ava';
-import { Client, EnvironmentType, playgroundBaseAPIURL, environmentTypeFromString, mainSessionId, SessionState, Session, User, playgroundUserBaseURL } from '@substrate/playground-client';
+import { Client, EnvironmentType, playgroundBaseAPIURL, environmentTypeFromString, mainSessionId, Session, playgroundUserBaseURL } from '@substrate/playground-client';
 
 import 'cross-fetch/dist/node-polyfill.js'; // TODO remove once moving to Node18 (https://github.com/nodejs/node/pull/41749)
 
@@ -102,7 +102,8 @@ if (accessToken) {
 
     test('authenticated - should be able to get current session', async (t) => {
         const client = newClient();
-        const user = await client.login(accessToken);
+        await client.login(accessToken);
+        const user = (await client.get()).user;
         const sessionId = await createSession(user.id, client);
         try {
             const session = await waitForSession(client, user.id, sessionId);
@@ -111,7 +112,7 @@ if (accessToken) {
             if (state.type == "Running") {
                 const port = state.runtimeConfiguration.ports.find(port => port.port == 80);
                 t.not(port, undefined, "Can't find corresponding port");
-                const url = playgroundUserBaseURL(env, user);
+                const url = playgroundUserBaseURL(env, user.id);
                 const response = await fetch(url);
                 t.is(response.ok, true, "Failed to access URL");
             }
@@ -126,7 +127,8 @@ if (accessToken) {
 
     test('authenticated - should not be able to get current session when unlogged', async (t) => {
         const client = newClient();
-        const user = await client.login(accessToken);
+        await client.login(accessToken);
+        const user = (await client.get()).user;
 
         try {
             const sessionId = await createSession(user.id, client);
@@ -152,7 +154,8 @@ if (accessToken) {
     if (env != EnvironmentType.production) { // TODO Not deployed on prod yet
         test('authenticated - should be able to execute in session', async (t) => {
             const client = newClient();
-            const user = await client.login(accessToken);
+            await client.login(accessToken);
+            const user = (await client.get()).user;
             const sessionId = await createSession(user.id, client);
             try {
                 const { stdout } = await client.createUserSessionExecution(user.id, sessionId, {command: ["ls"]});

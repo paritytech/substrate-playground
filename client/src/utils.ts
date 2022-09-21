@@ -28,8 +28,8 @@ export function playgroundBaseURL(env: EnvironmentType) {
     }
 }
 
-export function playgroundUserBaseURL(env: EnvironmentType, user: User) {
-    const subdomain = user.id.toLowerCase();
+export function playgroundUserBaseURL(env: EnvironmentType, userId: string) {
+    const subdomain = userId.toLowerCase();
     switch (env) {
         case EnvironmentType.dev:
             return `https://${subdomain}.playground-dev.substrate.test`;
