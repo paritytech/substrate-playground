@@ -125,7 +125,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
             vscode.commands.registerCommand('substrate-playground.navigate', (node: SessionTreeItem) => {
                 const user = node.user;
                 if (user) {
-                    const url = playgroundUserBaseURL(env, user);
+                    const url = playgroundUserBaseURL(env, user.id);
                     vscode.env.openExternal(vscode.Uri.parse(url));
                 }
             });

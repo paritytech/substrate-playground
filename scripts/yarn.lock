@@ -27,10 +27,10 @@
     "@jridgewell/resolve-uri" "^3.0.3"
     "@jridgewell/sourcemap-codec" "^1.4.10"
 
-"@substrate/playground-client@1.9.22":
-  version "1.9.22"
-  resolved "https://registry.yarnpkg.com/@substrate/playground-client/-/playground-client-1.9.22.tgz#000f305dce2c991bb4cadf252a60f89f11864f58"
-  integrity sha512-Za6WsrktypzGvngQHkcjKT2HAtlMdr2OkLMAFKfH+XDyW36hrgTtpPvKO2Ulc8ljWzBVgSamfUqTwy20k3Y/Ag==
+"@substrate/playground-client@1.9.23":
+  version "1.9.23"
+  resolved "https://registry.yarnpkg.com/@substrate/playground-client/-/playground-client-1.9.23.tgz#f66a85bb851bdfe2034835a7bb209ac264b1f7cd"
+  integrity sha512-7jukFy0uoHXF3k2bkc83ToAoBcs1mFEqCishWhgl/2PWI4Nrb9OnGOaQfLhYijzsS3Xz9O/NpIE6TVbYW/lS0w==
   dependencies:
     uuid "9.0.0"
 
