@@ -142,7 +142,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
                 // TODO allow to choose timeout, node pool, repo version
                  if (pick) {
                     await client.createUserSession(user.id, mainSessionId(user), {repositorySource: {repositoryId: pick.label}});
-                    vscode.window.showInformationMessage("Session succesfully created");
+                    const connect = "Connect to it";
+                    vscode.window.showInformationMessage("Session succesfully created", connect).then(selection => {
+                        if (selection === connect) {
+                          connectToPlayground(user.id);
+                        }
+                      });
                 }
             });
 
