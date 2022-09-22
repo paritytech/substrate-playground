@@ -24,6 +24,7 @@
         "onView:substrate-playground.explorer",
         "onCommand:substrate-playground.navigate",
         "onCommand:substrate-playground.newSession",
+        "onCommand:substrate-playground.closeSession",
         "*"
     ],
     "enabledApiProposals": [
@@ -45,12 +46,23 @@
                 "title": "Create a new session",
                 "category": "Substrate Playground",
                 "icon": "$(add)"
+            },
+            {
+                "command": "substrate-playground.closeSession",
+                "title": "Close a running session",
+                "category": "Substrate Playground",
+                "icon": "$(remove)"
             }
         ],
         "menus": {
             "view/item/context": [
                 {
                     "command": "substrate-playground.navigate",
+                    "when": "view == substrate-playground.explorer && viewItem == session",
+                    "group": "inline"
+                },
+                {
+                    "command": "substrate-playground.closeSession",
                     "when": "view == substrate-playground.explorer && viewItem == session",
                     "group": "inline"
                 },

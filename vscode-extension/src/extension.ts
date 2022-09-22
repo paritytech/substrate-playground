@@ -2,7 +2,7 @@
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
 import * as path from 'path';
-import { Client, EnvironmentType, environmentTypeFromString, mainSessionId, playgroundBaseAPIURL, playgroundUserBaseURL } from '@substrate/playground-client';
+import { Client, EnvironmentType, environmentTypeFromString, mainSessionId, playgroundBaseAPIURL, playgroundUserBaseURL, Session, User } from '@substrate/playground-client';
 
 import 'cross-fetch/dist/node-polyfill.js';
 
@@ -22,49 +22,64 @@ export async function connectToPlayground(id: string) {
     await vscode.commands.executeCommand('vscode.openFolder', uri, true);
 }
 
-class TreeItem extends vscode.TreeItem {
-    children: TreeItem[]|undefined;
+class UserTreeItem extends vscode.TreeItem {
+    children: SessionTreeItem[]|undefined;
 
-    constructor(label: string, children?: TreeItem[]) {
+    constructor(user: User, children: SessionTreeItem[]) {
       super(
-          label,
+          user.id,
           children === undefined ? vscode.TreeItemCollapsibleState.None :
                                    vscode.TreeItemCollapsibleState.Collapsed);
       this.children = children;
-      if (children == undefined) {
-        this.contextValue = "session";
-        this.iconPath = new vscode.ThemeIcon("vm-outline");
-        this.description = "description";
-        this.tooltip = new vscode.MarkdownString("Hello \n [test](test)");
-      }
     }
   }
 
-export class PlaygroundTreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
+class SessionTreeItem extends vscode.TreeItem {
+    user: User;
+    session: Session;
+    constructor(user: User, session: Session) {
+      super(
+          session.id,
+          vscode.TreeItemCollapsibleState.None);
+          this.contextValue = "session";
+          this.iconPath = new vscode.ThemeIcon("vm-outline");
+          this.description = session.state.type;
+          if (session.state.type == "Running") {
+            const {runtimeConfiguration, startTime, node} = session.state;
+            this.tooltip = new vscode.MarkdownString(`Started at ${startTime} on ${node.hostname}  \n\n   ENV: \n${runtimeConfiguration.env.map(env => `* ${env.name} = ${env.value}\n`)}`);
+          }
+          this.user = user;
+          this.session = session;
+    }
+  }
 
-	protected readonly onDidChangeTreeDataEmitter = new vscode.EventEmitter<TreeItem | undefined>();
+export class PlaygroundTreeDataProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
+
+	protected readonly onDidChangeTreeDataEmitter = new vscode.EventEmitter<vscode.TreeItem | undefined>();
 	readonly onDidChangeTreeData = this.onDidChangeTreeDataEmitter.event;
     private readonly client;
+    private readonly user;
 
 	constructor(
 		private readonly context: vscode.ExtensionContext,
-        client: Client
+        client: Client,
+        user: User
 	) {
         this.client = client;
+        this.user = user;
 	}
 
-	getTreeItem(element: TreeItem): vscode.TreeItem {
+	getTreeItem(element: SessionTreeItem): vscode.TreeItem {
 		return element;
 	}
 
-	getChildren(element?: TreeItem): vscode.ProviderResult<TreeItem[]> {
-        console.log("about to resolve");
+	getChildren(element?: UserTreeItem): vscode.ProviderResult<vscode.TreeItem[]> {
 		if (!element) {
-            const userId = 'jeluard';
               return new Promise(async resolve => {
+                const userId = this.user.id;
                 const sessions = await this.client.listUserSessions(userId);
-                resolve([new TreeItem(userId, sessions.map(session => {
-                    return new TreeItem(session.id);
+                resolve([new UserTreeItem(this.user, sessions.map(session => {
+                    return new SessionTreeItem(this.user, session);
                 }))]);
 			})
 		}
@@ -73,50 +88,48 @@ export class PlaygroundTreeDataProvider implements vscode.TreeDataProvider<TreeI
 
 }
 
-// this method is called when your extension is activated
-// your extension is activated the very first time the command is executed
+//
+// This method is called when your extension is activated
+// The extension is activated the very first time the command is executed
+//
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
+    // TODO detect if running in playground
 
-    console.log("Activation");
     const environment = vscode.workspace.getConfiguration().get<string>('conf.substrate-playground.environment', "production");
     const env = environmentTypeFromString(environment);
     const client = new Client(playgroundBaseAPIURL(env));
 
-    vscode.commands.registerCommand('substrate-playground.navigate', (node: TreeItem) => {
-        const userId = node.label;
-        if (userId) {
-            const url = playgroundUserBaseURL(env, userId);
-            vscode.env.openExternal(vscode.Uri.parse(url));
-        }
-    });
-
-	const treeDataProvider = new PlaygroundTreeDataProvider(context, client);
-	const workspaceView = vscode.window.createTreeView('substrate-playground.explorer', {
-		treeDataProvider: treeDataProvider,
-	});
-    context.subscriptions.push(workspaceView);
-
-
     vscode.workspace.onDidChangeConfiguration(event => {
-        let affected = event.affectsConfiguration("riot.compiler");
-        if (affected) {
-            // rebuild cpp project settings
-
-        }
+        console.log("Configuration changed!!!!", event);
     })
 
-    context.subscriptions.push(vscode.authentication.onDidChangeSessions(async e => {
-        console.log("session changed", e);
+    context.subscriptions.push(vscode.authentication.onDidChangeSessions(event => {
+        console.log("Session changed !!!!!", event);
     }));
 
     const session = await vscode.authentication.getSession('github', ['user:email'], { createIfNone: true });
-
     if (session) {
         await client.login(session.accessToken);
         const details = await client.get();
 
         const user = details.user;
         if (user) {
+            const treeDataProvider = new PlaygroundTreeDataProvider(context, client, user);
+            const workspaceView = vscode.window.createTreeView('substrate-playground.explorer', {
+                treeDataProvider: treeDataProvider,
+            });
+            context.subscriptions.push(workspaceView);
+
+            // Commands
+
+            vscode.commands.registerCommand('substrate-playground.navigate', (node: SessionTreeItem) => {
+                const user = node.user;
+                if (user) {
+                    const url = playgroundUserBaseURL(env, user);
+                    vscode.env.openExternal(vscode.Uri.parse(url));
+                }
+            });
+
             vscode.commands.registerCommand('substrate-playground.newSession', async () => {
                   const repositories = await client.listRepositories();
                   const picks = repositories.map((repository) => {
@@ -129,8 +142,17 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
                 // TODO allow to choose timeout, node pool, repo version
                  if (pick) {
                     await client.createUserSession(user.id, mainSessionId(user), {repositorySource: {repositoryId: pick.label}});
+                    vscode.window.showInformationMessage("Session succesfully created");
                 }
             });
+
+            vscode.commands.registerCommand('substrate-playground.closeSession', async (node: SessionTreeItem) => {
+                const userId = node.user?.id;
+                if (userId) {
+                    await client.deleteUserSession(userId, node.session.id);
+                    vscode.window.showInformationMessage("Session succesfully closed");
+                }
+          });
         } else {
             vscode.window.showErrorMessage("Failed to access current user");
         }
