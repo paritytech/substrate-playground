@@ -77,7 +77,7 @@ help:
 
 build-template-base:
 	$(eval DOCKER_IMAGE_VERSION=$(shell git rev-parse --short HEAD))
-	@cd templates; docker buildx build --load --force-rm -f Dockerfile.base --label org.opencontainers.image.version=${DOCKER_IMAGE_VERSION} -t ${TEMPLATE_BASE}:sha-${DOCKER_IMAGE_VERSION} .
+	@docker buildx build --load --force-rm -f Dockerfile.base --label org.opencontainers.image.version=${DOCKER_IMAGE_VERSION} -t ${TEMPLATE_BASE}:sha-${DOCKER_IMAGE_VERSION} .
 	docker image prune -f --filter label=stage=builder
 
 push-template-base: build-template-base ## Push a newly built image on docker.io
