@@ -42,6 +42,8 @@ spec:
             value: "8080"
           - name: ROCKET_LOG_LEVEL
             value: "normal"
+          - name: ROCKET_CLI_COLORS
+            value: "false"
           - name: ROCKET_ADDRESS
             value: "0.0.0.0"
           - name: USER_ROLES
