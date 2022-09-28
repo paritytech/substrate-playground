@@ -5,7 +5,7 @@ export class Client {
 
     static preferencesResource = 'preferences';
     static usersResource = 'users';
-    static sessionsResourcePath = 'sessions';
+    static sessionResourcePath = 'session';
     static sessionExecutionResourcePath = 'executions';
     static sessionsResource = 'sessions';
     static repositoriesResource = 'repositories';
@@ -238,38 +238,34 @@ export class Client {
 
     // Sessions
 
-    async listSessions(timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<Session[]> {
+    async listAllSessions(timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<Session[]> {
         return rpc(this.path(Client.sessionsResource), init, timeout);
     }
 
     // Sessions
 
-    async getUserSession(userId: User['id'], id: Session['id'], timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<Session | null> {
-        return rpc(this.path(Client.usersResource, userId, Client.sessionsResourcePath, id), init, timeout);
+    async getSession(userId: User['id'], timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<Session | null> {
+        return rpc(this.path(Client.usersResource, userId, Client.sessionResourcePath), init, timeout);
     }
 
-    async listUserSessions(userId: User['id'], timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<Session[]> {
-        return rpc(this.path(Client.usersResource, userId, Client.sessionsResourcePath), init, timeout);
-    }
-
-    async createUserSession(userId: User['id'], id: Session['id'], conf: SessionConfiguration, timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<void> {
-        return rpc(this.path(Client.usersResource, userId, Client.sessionsResourcePath, id), {
+    async createSession(userId: User['id'], conf: SessionConfiguration, timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<void> {
+        return rpc(this.path(Client.usersResource, userId, Client.sessionResourcePath), {
             method: 'PUT',
             body: JSON.stringify(conf),
             ...init
         }, timeout);
     }
 
-    async updateUserSession(userId: User['id'], id: Session['id'], conf: SessionUpdateConfiguration, timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<void> {
-        return rpc(this.path(Client.usersResource, userId, Client.sessionsResourcePath, id), {
+    async updateSession(userId: User['id'], conf: SessionUpdateConfiguration, timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<void> {
+        return rpc(this.path(Client.usersResource, userId, Client.sessionResourcePath), {
             method: 'PATCH',
             body: JSON.stringify(conf),
             ...init
         }, timeout);
     }
 
-    async deleteUserSession(userId: User['id'], id: Session['id'], timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<void> {
-        return rpc(this.path(Client.usersResource, userId, Client.sessionsResourcePath, id), {
+    async deleteSession(userId: User['id'], timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<void> {
+        return rpc(this.path(Client.usersResource, userId, Client.sessionResourcePath), {
             method: 'DELETE',
             ...init
         }, timeout);
@@ -277,8 +273,8 @@ export class Client {
 
     // Session executions
 
-    async createUserSessionExecution(userId: User['id'], id: Session['id'], conf: SessionExecutionConfiguration, timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<SessionExecution> {
-        return rpc(this.path(Client.usersResource, userId, Client.sessionsResourcePath, id, Client.sessionExecutionResourcePath), {
+    async createSessionExecution(userId: User['id'], id: Session['id'], conf: SessionExecutionConfiguration, timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<SessionExecution> {
+        return rpc(this.path(Client.usersResource, userId, Client.sessionResourcePath, id, Client.sessionExecutionResourcePath), {
             method: 'PUT',
             body: JSON.stringify(conf),
             ...init

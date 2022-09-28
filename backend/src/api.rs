@@ -626,13 +626,6 @@ pub async fn delete_role(state: &State<Context>, caller: User, id: String) -> Re
     Ok(EmptyJsonRPC())
 }
 
-// Sessions
-
-#[get("/sessions")]
-pub async fn list_sessions(state: &State<Context>, caller: User) -> Result<JsonRPC<Vec<Session>>> {
-    state.manager.list_sessions(&caller).await.map(JsonRPC)
-}
-
 // Users
 
 #[get("/users/<id>")]
@@ -685,92 +678,81 @@ pub async fn delete_user(state: &State<Context>, caller: User, id: String) -> Re
     Ok(EmptyJsonRPC())
 }
 
-// User sessions
+// Sessions
 
-#[get("/users/<user_id>/sessions/<id>")]
-pub async fn get_user_session(
+#[get("/users/<user_id>/session")]
+pub async fn get_session(
     state: &State<Context>,
     caller: User,
     user_id: String,
-    id: String,
 ) -> Result<JsonRPC<Option<Session>>> {
     state
         .manager
-        .get_user_session(&caller, &user_id, &id)
+        .get_session(&caller, &user_id)
         .await
         .map(JsonRPC)
 }
 
-#[get("/users/<user_id>/sessions")]
-pub async fn list_user_sessions(
-    state: &State<Context>,
-    user_id: String,
-    caller: User,
-) -> Result<JsonRPC<Vec<Session>>> {
-    state
-        .manager
-        .list_user_sessions(&caller, &user_id)
-        .await
-        .map(JsonRPC)
-}
-
-#[put("/users/<user_id>/sessions/<id>", data = "<conf>")]
-pub async fn create_user_session(
+#[put("/users/<user_id>/session", data = "<conf>")]
+pub async fn create_session(
     state: &State<Context>,
     caller: User,
     user_id: String,
-    id: String,
     conf: Json<SessionConfiguration>,
 ) -> Result<EmptyJsonRPC> {
     state
         .manager
-        .create_user_session(&caller, &user_id, &id, &conf.0)
+        .create_session(&caller, &user_id, &conf.0)
         .await?;
     Ok(EmptyJsonRPC())
 }
 
-#[patch("/users/<user_id>/sessions/<id>", data = "<conf>")]
-pub async fn update_user_session(
+#[patch("/users/<user_id>/session", data = "<conf>")]
+pub async fn update_session(
     state: &State<Context>,
     caller: User,
     user_id: String,
-    id: String,
     conf: Json<SessionUpdateConfiguration>,
 ) -> Result<EmptyJsonRPC> {
     state
         .manager
-        .update_user_session(&caller, &user_id, &id, conf.0)
+        .update_session(&caller, &user_id, conf.0)
         .await?;
     Ok(EmptyJsonRPC())
 }
 
-#[delete("/users/<user_id>/sessions/<id>")]
-pub async fn delete_user_session(
+#[delete("/users/<user_id>/session")]
+pub async fn delete_session(
     state: &State<Context>,
     caller: User,
     user_id: String,
-    id: String,
 ) -> Result<EmptyJsonRPC> {
-    state
-        .manager
-        .delete_user_session(&caller, &user_id, &id)
-        .await?;
+    state.manager.delete_session(&caller, &user_id).await?;
     Ok(EmptyJsonRPC())
 }
 
 // User session executions
 
-#[put("/users/<user_id>/sessions/<id>/executions", data = "<conf>")]
-pub async fn create_user_session_execution(
+#[put("/users/<user_id>/session/executions", data = "<conf>")]
+pub async fn create_session_execution(
     state: &State<Context>,
     caller: User,
     user_id: String,
-    id: String,
     conf: Json<SessionExecutionConfiguration>,
 ) -> Result<EmptyJsonRPC> {
     state
         .manager
-        .create_user_session_execution(&caller, &user_id, &id, conf.0)
+        .create_session_execution(&caller, &user_id, conf.0)
         .await?;
     Ok(EmptyJsonRPC())
+}
+
+// All sessions
+
+#[get("/sessions")]
+pub async fn list_all_sessions(
+    state: &State<Context>,
+    caller: User,
+) -> Result<JsonRPC<Vec<Session>>> {
+    state.manager.list_all_sessions(&caller).await.map(JsonRPC)
 }

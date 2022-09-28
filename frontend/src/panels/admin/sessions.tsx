@@ -13,7 +13,7 @@ import TableCell from '@mui/material/TableCell';
 import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
-import { Client, Session, SessionConfiguration, Pool, User, SessionUpdateConfiguration, Repository, ResourceType, RepositoryVersion, mainSessionId, SessionState, Preference, Preferences } from '@substrate/playground-client';
+import { Client, Session, SessionConfiguration, Pool, User, SessionUpdateConfiguration, Repository, ResourceType, RepositoryVersion, SessionState, Preference, Preferences } from '@substrate/playground-client';
 import { Checkbox, Link, TablePagination, TextField } from "@mui/material";
 import { EnhancedTableToolbar, NoResourcesContainer, Resources } from ".";
 import { ErrorSnackbar } from "../../components";
@@ -21,7 +21,7 @@ import { useInterval } from "../../hooks";
 import { canCustomizeSessionDuration, canCustomizeSessionPoolAffinity, find, formatDuration, remove } from "../../utils";
 import { fetchRepositoriesWithLatestVersions } from "../session";
 
-export function SessionCreationDialog({ client, preferences, user, repository, repositories, show, onCreate, onHide }: { client: Client, preferences: Preference[], user: User, repository?: string, repositories: [Repository, RepositoryVersion][] | undefined, show: boolean, onCreate: (id: string, userId: string, conf: SessionConfiguration ) => void, onHide: () => void }): JSX.Element {
+export function SessionCreationDialog({ client, preferences, user, repository, repositories, show, onCreate, onHide }: { client: Client, preferences: Preference[], user: User, repository?: string, repositories: [Repository, RepositoryVersion][] | undefined, show: boolean, onCreate: (userId: string, conf: SessionConfiguration ) => void, onHide: () => void }): JSX.Element {
     const [selection, setSelection] = React.useState<string | null>(null);
     const [canCustomizeDuration, setCanCustomizeDuration] = React.useState(false);
     const [duration, setDuration] = React.useState(Number.parseInt(find(preferences, Preferences.SessionDefaultDuration)?.value || "60"));
@@ -54,7 +54,7 @@ export function SessionCreationDialog({ client, preferences, user, repository, r
         if (repositoryWithVersion) {
             const repositorySource = {repositoryId: repositoryWithVersion[0].id, repositoryVersionId: repositoryWithVersion[1].id};
             const sessionConfiguration = {repositorySource: repositorySource, duration: duration, poolAffinity: poolAffinity};
-            onCreate(user.id, mainSessionId(user), sessionConfiguration);
+            onCreate(user.id, sessionConfiguration);
             onHide();
         }
     }
@@ -193,9 +193,9 @@ export function Sessions({ client, preferences, user }: { client: Client, prefer
         };
     }
 
-    async function createSession(userId: string, sessionId: string, conf: SessionConfiguration, setSessions: Dispatch<SetStateAction<Session[] | null>>): Promise<void> {
+    async function createSession(userId: string, conf: SessionConfiguration, setSessions: Dispatch<SetStateAction<Session[] | null>>): Promise<void> {
         try {
-            await client.createUserSession(userId, sessionId, conf);
+            await client.createSession(userId, conf);
             setSessions((sessions: Session[] | null) => {
                 if (sessions) {
                     sessions.concat(sessionMock(conf));
@@ -209,7 +209,7 @@ export function Sessions({ client, preferences, user }: { client: Client, prefer
 
     async function updateSession(session: Session, conf: SessionUpdateConfiguration, setSessions: Dispatch<SetStateAction<Session[] | null>>): Promise<void> {
         try {
-            await client.updateUserSession(session.userId, session.id, conf);
+            await client.updateSession(session.userId, conf);
             setSessions((sessions: Session[] | null) => {
                 if (sessions && conf.duration) {
                     const existingSession = find(sessions, session.id);
@@ -224,14 +224,14 @@ export function Sessions({ client, preferences, user }: { client: Client, prefer
         }
     }
 
-    async function deleteSession(setSessions: Dispatch<SetStateAction<Session[] | null>>, userId?: string, sessionId?: string): Promise<void> {
-        if (userId && sessionId) {
+    async function deleteSession(setSessions: Dispatch<SetStateAction<Session[] | null>>, userId?: string): Promise<void> {
+        if (userId) {
             try {
-                await client.deleteUserSession(userId, sessionId);
+                await client.deleteSession(userId);
 
                 setSessions((sessions: Session[] | null) => {
                     if (sessions) {
-                        return remove(sessions, sessionId);
+                        return remove(sessions, userId);
                     }
                     return sessions;
                 });
@@ -324,7 +324,7 @@ export function Sessions({ client, preferences, user }: { client: Client, prefer
                         {errorMessage &&
                         <ErrorSnackbar open={true} message={errorMessage} onClose={() => setErrorMessage(null)} />}
                         {showCreationDialog &&
-                        <SessionCreationDialog client={client} preferences={preferences} user={user} repositories={repositories} show={showCreationDialog} onCreate={(userId, sessionId, conf) => createSession(userId, sessionId, conf, setSessions)} onHide={() => setShowCreationDialog(false)} />}
+                        <SessionCreationDialog client={client} preferences={preferences} user={user} repositories={repositories} show={showCreationDialog} onCreate={(userId, conf) => createSession(userId, conf, setSessions)} onHide={() => setShowCreationDialog(false)} />}
                         {(selected && showUpdateDialog) &&
                         <SessionUpdateDialog session={selected} duration={selected.maxDuration} show={showUpdateDialog} onUpdate={(session, conf) => updateSession(session, conf, setSessions)} onHide={() => setShowUpdateDialog(false)} />}
                     </>

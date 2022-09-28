@@ -1,5 +1,5 @@
 import test from 'ava';
-import { Client, EnvironmentType, playgroundBaseAPIURL, environmentTypeFromString, mainSessionId, Session, playgroundUserBaseURL } from '@substrate/playground-client';
+import { Client, EnvironmentType, playgroundBaseAPIURL, environmentTypeFromString, Session, playgroundUserBaseURL } from '@substrate/playground-client';
 
 import 'cross-fetch/dist/node-polyfill.js'; // TODO remove once moving to Node18 (https://github.com/nodejs/node/pull/41749)
 
@@ -16,9 +16,7 @@ function newClient(): Client {
 }
 
 async function createSession(userId: string, client: Client): Promise<string> {
-    const sessionId = await mainSessionId((await client.get()).user);
-    await client.createUserSession(userId, sessionId, {repositorySource: {repositoryId: repositoryId}});
-    return sessionId;
+    await client.createSession(userId, {repositorySource: {repositoryId: repositoryId}});
 }
 
 test('unauthenticated - should be able to get details', async (t) => {
@@ -42,13 +40,13 @@ test('unauthenticated - should not be able to create a new session', async (t) =
     }
 });
 
-async function waitForSessionDeletion(client: Client, userId: string, sessionId: string) {
+async function waitForSessionDeletion(client: Client, userId: string) {
     const timeout = 60 * 1000;
     const interval = 1000;
     const startTime = Date.now();
     return new Promise<void>((resolve, reject) => {
         const id = setInterval(async () => {
-            const session = await client.getUserSession(userId, sessionId);
+            const session = await client.getSession(userId);
             if (session == null) {
                 clearInterval(id);
                 resolve();
@@ -61,12 +59,12 @@ async function waitForSessionDeletion(client: Client, userId: string, sessionId:
     });
 }
 
-async function waitForSession(client: Client, userId: string, sessionId: string): Promise<Session> {
+async function waitForSession(client: Client, userId: string): Promise<Session> {
     const interval = 5000;
     return new Promise<Session>((resolve, reject) => {
         const id = setInterval(async () => {
             try {
-                const session = await client.getUserSession(userId, sessionId);
+                const session = await client.getSession(userId);
                 const type = session?.state.type;
                 if (type == "Running") {
                     clearInterval(id);
@@ -104,9 +102,9 @@ if (accessToken) {
         const client = newClient();
         await client.login(accessToken);
         const user = (await client.get()).user;
-        const sessionId = await createSession(user.id, client);
+        await createSession(user.id, client);
         try {
-            const session = await waitForSession(client, user.id, sessionId);
+            const session = await waitForSession(client, user.id);
             t.not(session, null);
             const { state } = session;
             if (state.type == "Running") {
@@ -119,8 +117,8 @@ if (accessToken) {
         } catch(e) {
             t.fail(`Failed to create a session: ${e.message}`);
         } finally {
-            await client.deleteUserSession(user.id, sessionId);
-            await waitForSessionDeletion(client, user.id, sessionId);
+            await client.deleteSession(user.id);
+            await waitForSessionDeletion(client, user.id);
             await client.logout();
         }
     });
@@ -131,19 +129,19 @@ if (accessToken) {
         const user = (await client.get()).user;
 
         try {
-            const sessionId = await createSession(user.id, client);
-            t.not(await client.getUserSession(user.id, sessionId), null);
+            await createSession(user.id, client);
+            t.not(await client.getSession(user.id), null);
 
             await client.logout();
 
             try {
-                t.is(await client.getUserSession(user.id, sessionId), null);
+                t.is(await client.getSession(user.id), null);
             } catch {
                 t.pass();
             } finally {
                 await client.login(accessToken);
-                await client.deleteUserSession(user.id, sessionId);
-                await waitForSessionDeletion(client, user.id, sessionId);
+                await client.deleteSession(user.id);
+                await waitForSessionDeletion(client, user.id);
                 await client.logout();
             }
         } catch(e) {
@@ -157,16 +155,16 @@ if (accessToken) {
             const client = newClient();
             await client.login(accessToken);
             const user = (await client.get()).user;
-            const sessionId = await createSession(user.id, client);
+            await createSession(user.id, client);
             try {
-                const { stdout } = await client.createUserSessionExecution(user.id, sessionId, {command: ["ls"]});
+                const { stdout } = await client.createSessionExecution(user.id, {command: ["ls"]});
                 console.log(stdout);
                 t.not(stdout, null);
             } catch(e) {
                 t.fail(`Failed to create a session execution: ${e.message}`);
             }  finally {
-                client.deleteUserSession(user.id, sessionId);
-                await waitForSessionDeletion(client, user.id, sessionId);
+                client.deleteSession(user.id);
+                await waitForSessionDeletion(client, user.id);
                 await client.logout();
             }
         });

@@ -34,12 +34,12 @@ use std::{
 };
 
 use super::{
-    client, env_var, get_owned_resource, get_preference, list_all_resources, list_owned_resources,
+    client, env_var, get_owned_resource, get_preference, list_all_resources,
     pool::get_pool,
     repository::get_repository,
     repository_version::{get_repository_version, volume_template_name},
     serialize_json, str_minutes_to_duration, unserialize_json, update_annotation_value,
-    user::{add_user_session, DEFAULT_SERVICE_ACCOUNT},
+    user::{add_session, DEFAULT_SERVICE_ACCOUNT},
     user_namespace, user_namespaced_api, APP_LABEL, APP_VALUE, COMPONENT_LABEL, HOSTNAME_LABEL,
     INGRESS_NAME, NODE_POOL_LABEL, NODE_POOL_TYPE_LABEL, OWNER_LABEL,
 };
@@ -61,10 +61,10 @@ fn string_to_duration(str: &str) -> Duration {
 
 // Model
 
-fn pod_env_variables(envs: Vec<NameValuePair>, session_id: &str) -> Vec<EnvVar> {
+fn pod_env_variables(envs: Vec<NameValuePair>, user_id: &str) -> Vec<EnvVar> {
     let mut all_envs = Vec::from([
         env_var("SUBSTRATE_PLAYGROUND", "true"),
-        env_var("SUBSTRATE_PLAYGROUND_SESSION", session_id),
+        env_var("SUBSTRATE_PLAYGROUND_USER", user_id),
     ]);
     // Add default variables
     all_envs.append(
@@ -79,7 +79,6 @@ fn pod_env_variables(envs: Vec<NameValuePair>, session_id: &str) -> Vec<EnvVar> 
 #[cfg_attr(feature = "cargo-clippy", allow(clippy::too_many_arguments))]
 fn session_to_pod(
     user_id: &str,
-    session_id: &str,
     volume_name: &str,
     image: &str,
     duration: &Duration,
@@ -90,7 +89,6 @@ fn session_to_pod(
     let mut labels = BTreeMap::new();
     labels.insert(APP_LABEL.to_string(), APP_VALUE.to_string());
     labels.insert(COMPONENT_LABEL.to_string(), COMPONENT.to_string());
-    labels.insert(RESOURCE_ID.to_string(), session_id.to_string());
     labels.insert(OWNER_LABEL.to_string(), user_id.to_string());
 
     let mut annotations = BTreeMap::new();
@@ -104,7 +102,7 @@ fn session_to_pod(
     let openvscode_version = "1.71.2";
     Ok(Pod {
         metadata: ObjectMeta {
-            name: Some(session_id.to_string()),
+            name: Some(user_id.to_string()),
             labels: Some(labels),
             annotations: Some(annotations),
             ..Default::default()
@@ -161,7 +159,7 @@ fn session_to_pod(
             containers: vec![Container {
                 name: format!("{}-container", COMPONENT),
                 image: Some(image.to_string()),
-                env: Some(pod_env_variables(envs, session_id)),
+                env: Some(pod_env_variables(envs, user_id)),
                 command: Some(vec!["/opt/openvscode/bin/openvscode-server".to_string()]),
                 args: Some(vec![
                     "--host".to_string(),
@@ -208,13 +206,13 @@ fn session_to_pod(
     })
 }
 
-fn service(session_id: &str, service_name: &str, ports: &[Port]) -> Service {
+fn service(user_id: &str, service_name: &str, ports: &[Port]) -> Service {
     let mut labels = BTreeMap::new();
     labels.insert(APP_LABEL.to_string(), APP_VALUE.to_string());
     labels.insert(COMPONENT_LABEL.to_string(), COMPONENT.to_string());
-    labels.insert(OWNER_LABEL.to_string(), session_id.to_string());
+    labels.insert(OWNER_LABEL.to_string(), user_id.to_string());
     let mut selector = BTreeMap::new();
-    selector.insert(OWNER_LABEL.to_string(), session_id.to_string());
+    selector.insert(OWNER_LABEL.to_string(), user_id.to_string());
 
     // The theia port itself is mandatory
     let mut service_ports = vec![];
@@ -379,22 +377,17 @@ fn pod_to_session(pod: &Pod) -> Result<Session> {
     })
 }
 
-pub async fn get_user_session(user_id: &str, session_id: &str) -> Result<Option<Session>> {
-    get_owned_resource(user_id, session_id, pod_to_session).await
+pub async fn get_session(user_id: &str) -> Result<Option<Session>> {
+    get_owned_resource(user_id, user_id, pod_to_session).await
 }
 
-/// Lists all currently running sessions for `user_id`
-pub async fn list_user_sessions(user_id: &str) -> Result<Vec<Session>> {
-    list_owned_resources(user_id, COMPONENT, pod_to_session).await
-}
-
-/// Lists all currently running sessions for `user_id`
-pub async fn list_sessions() -> Result<Vec<Session>> {
+/// Lists all currently running sessions
+pub async fn list_all_sessions() -> Result<Vec<Session>> {
     list_all_resources(COMPONENT, pod_to_session).await
 }
 
-pub fn service_name(session_id: &str) -> String {
-    format!("service-{}", session_id)
+pub fn service_name(user_id: &str) -> String {
+    format!("service-{}", user_id)
 }
 
 fn devcontainer_to_ports(devcontainer: &DevContainer) -> Vec<Port> {
@@ -426,15 +419,15 @@ fn envs(devcontainer: &DevContainer) -> Vec<NameValuePair> {
         .collect()
 }
 
-pub async fn create_user_session(
+pub async fn create_session(
     user: &User,
-    id: &str,
     session_configuration: &SessionConfiguration,
 ) -> Result<()> {
-    if get_user_session(&user.id, id).await?.is_some() {
+    let user_id = user.clone().id;
+    if get_session(&user_id).await?.is_some() {
         return Err(Error::Resource(ResourceError::IdAlreayUsed(
             ResourceType::Session,
-            id.to_string(),
+            user_id,
         )));
     }
 
@@ -453,7 +446,7 @@ pub async fn create_user_session(
     })?;
     let max_sessions_allowed = pool.nodes.len();
     let user_id = &user.id;
-    let sessions = list_sessions().await?;
+    let sessions = list_all_sessions().await?;
     if sessions.len() >= max_sessions_allowed {
         // 1 session == 1 node
         return Err(Error::Resource(ResourceError::Misconfiguration(
@@ -526,8 +519,8 @@ pub async fn create_user_session(
 
     // Deploy the associated service
     let service_api: Api<Service> = Api::namespaced(client.clone(), &user_namespace(user_id));
-    let service_name = service_name(id);
-    let service = service(id, &service_name, &ports);
+    let service_name = service_name(user_id);
+    let service = service(user_id, &service_name, &ports);
     service_api.create(&PostParams::default(), &service).await?;
 
     let duration = str_minutes_to_duration(&get_preference(
@@ -543,7 +536,6 @@ pub async fn create_user_session(
             &PostParams::default(),
             &session_to_pod(
                 &user.id,
-                id,
                 &volume_name,
                 devcontainer
                     .clone()
@@ -561,7 +553,7 @@ pub async fn create_user_session(
         .await
         .map_err(Error::K8sCommunicationFailure)?;
 
-    add_user_session(&user.id, id, &service_name, ports).await?;
+    add_session(&user.id, &service_name, ports).await?;
 
     let svcs: Api<Service> = Api::namespaced(client.clone(), "default");
     let s = svcs.get("kubernetes").await?; // always a kubernetes service in default
@@ -579,15 +571,15 @@ pub async fn create_user_session(
     Ok(())
 }
 
-pub async fn update_user_session(
+pub async fn update_session(
     user: &User,
-    id: &str,
     session_configuration: SessionUpdateConfiguration,
 ) -> Result<()> {
-    let session = get_user_session(&user.id, id).await?.ok_or_else(|| {
+    let user_id = user.clone().id;
+    let session = get_session(&user_id).await?.ok_or_else(|| {
         Error::Resource(ResourceError::Unknown(
             ResourceType::Session,
-            id.to_string(),
+            user_id.to_string(),
         ))
     })?;
 
@@ -622,7 +614,7 @@ pub async fn update_user_session(
         let pod_api: Api<Pod> = user_namespaced_api(&user.id)?;
         update_annotation_value(
             &pod_api,
-            id,
+            &user_id,
             SESSION_DURATION_ANNOTATION,
             duration_to_string(duration).into(),
         )
@@ -633,33 +625,36 @@ pub async fn update_user_session(
     Ok(())
 }
 
-pub async fn delete_user_session(user_id: &str, id: &str) -> Result<()> {
+pub async fn delete_session(user_id: &str) -> Result<()> {
     let client = client()?;
 
-    get_user_session(user_id, id).await?.ok_or_else(|| {
+    get_session(user_id).await?.ok_or_else(|| {
         Error::Resource(ResourceError::Unknown(
             ResourceType::Session,
-            id.to_string(),
+            user_id.to_string(),
         ))
     })?;
 
     // Undeploy the ingress service
     let service_api: Api<Service> = Api::namespaced(client.clone(), &user_namespace(user_id));
     service_api
-        .delete(&service_name(id), &DeleteParams::default().grace_period(0))
+        .delete(
+            &service_name(user_id),
+            &DeleteParams::default().grace_period(0),
+        )
         .await
         .map_err(Error::K8sCommunicationFailure)?;
 
     // Undeploy the pod
     let pod_api: Api<Pod> = Api::namespaced(client.clone(), &user_namespace(user_id));
     pod_api
-        .delete(id, &DeleteParams::default().grace_period(0))
+        .delete(user_id, &DeleteParams::default().grace_period(0))
         .await
         .map_err(Error::K8sCommunicationFailure)?;
 
     // Remove the ingress route
     let host = get_host().await?;
-    let subdomain = subdomain(&host, id);
+    let subdomain = subdomain(&host, user_id);
     let ingress_api: Api<Ingress> = Api::default_namespaced(client.clone());
     let mut ingress: Ingress = ingress_api
         .get(INGRESS_NAME)
@@ -700,16 +695,15 @@ async fn get_output(mut attached: AttachedProcess) -> String {
     out
 }
 
-pub async fn create_user_session_execution(
+pub async fn create_session_execution(
     user_id: &str,
-    session_id: &str,
     execution_configuration: SessionExecutionConfiguration,
 ) -> Result<SessionExecution> {
     let client = client()?;
     let pod_api: Api<Pod> = Api::namespaced(client, &user_namespace(user_id));
     let attached = pod_api
         .exec(
-            session_id,
+            user_id,
             execution_configuration.command,
             &AttachParams::default(),
         )

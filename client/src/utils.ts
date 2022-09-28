@@ -29,7 +29,7 @@ export function playgroundBaseURL(env: EnvironmentType) {
 }
 
 export function playgroundUserBaseURL(env: EnvironmentType, userId: string) {
-    const subdomain = userId.toLowerCase();
+    const subdomain = userSubDomain(userId);
     switch (env) {
         case EnvironmentType.dev:
             return `https://${subdomain}.playground-dev.substrate.test`;
@@ -46,12 +46,7 @@ export function playgroundBaseAPIURL(env: EnvironmentType) {
     return `${playgroundBaseURL(env)}/api`
 }
 
-// Return a normalized session ID that is valid with regards to Playground constraints
-export function normalizeSessionId(sessionId: string): string {
-    return sessionId.toLocaleLowerCase();
-}
-
-// Return the main session ID for a considered user
-export function mainSessionId(user: User): string {
-    return normalizeSessionId(user.id);
+// Return a normalized user sub-domain that is valid with regards to Playground constraints
+export function userSubDomain(userId: string): string {
+    return userId.toLocaleLowerCase();
 }

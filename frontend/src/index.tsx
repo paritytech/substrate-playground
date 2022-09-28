@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom";
-import { Client, Configuration, User, Session, ResourceType, mainSessionId, Preference, Preferences } from '@substrate/playground-client';
+import { Client, Configuration, User, Session, ResourceType, Preference, Preferences } from '@substrate/playground-client';
 import { CssBaseline } from "@mui/material";
 import { createTheme, ThemeProvider, Theme, StyledEngineProvider, adaptV4Theme } from '@mui/material/styles';
 import Button from "@mui/material/Button";
@@ -29,10 +29,10 @@ function MainPanel({ client, params, preferences, user, panel, onRetry, onConnec
         case PanelId.SessionSelection:
           return <SessionPanel client={client} preferences={preferences} user={user} onRetry={onRetry}
                     onStop={async () => {
-                        await client.deleteUserSession(user.id, mainSessionId(user));
+                        await client.deleteSession(user.id);
                     }}
                     onDeployed={async conf => {
-                        await client.createUserSession(user.id, mainSessionId(user), conf);
+                        await client.createSession(user.id, conf);
                         onAfterDeployed();
                     }}
                     onConnect={onConnect} />;
@@ -47,10 +47,9 @@ function MainPanel({ client, params, preferences, user, panel, onRetry, onConnec
 
 function ExtraTheiaNav({ client, user, preferences, restartAction }: { client: Client, user: User, preferences: Preference[], restartAction: () => void }): JSX.Element {
     const [session, setSession] = useState<Session | null | undefined>(undefined);
-    const sessionId = mainSessionId(user);
 
     useInterval(async () => {
-        const session = await client.getUserSession(user.id, sessionId);
+        const session = await client.getSession(user.id);
         setSession(session);
 
         // Periodically extend duration of running sessions
@@ -62,7 +61,7 @@ function ExtraTheiaNav({ client, user, preferences, restartAction }: { client: C
                 // Increase duration
                 if (remaining < 10 && maxDuration < maxConfDuration) {
                     const newDuration = Math.min(maxConfDuration, maxDuration + 10);
-                    await client.updateUserSession(user.id, sessionId, {duration: newDuration});
+                    await client.updateSession(user.id, {duration: newDuration});
                 }
             }
         }

@@ -104,10 +104,6 @@
       },
       {
         "type": "Custom",
-        "name": "CustomizeSessionName"
-      },
-      {
-        "type": "Custom",
         "name": "CustomizeSessionDuration"
       },
       {

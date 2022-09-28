@@ -20,8 +20,8 @@ use crate::{
         },
         role::{create_role, delete_role, get_role, list_roles, update_role},
         session::{
-            create_user_session, create_user_session_execution, delete_user_session,
-            get_user_session, list_sessions, list_user_sessions, update_user_session,
+            create_session, create_session_execution, delete_session, get_session,
+            list_all_sessions, update_session,
         },
         user::{create_user, delete_user, get_user, list_users, update_user},
     },
@@ -61,7 +61,7 @@ impl Manager {
             thread::sleep(Manager::SLEEP_TIME);
 
             // Go through all Running pods and figure out if they have to be undeployed
-            if let Ok(sessions) = list_sessions().await {
+            if let Ok(sessions) = list_all_sessions().await {
                 for session in sessions {
                     if let SessionState::Running { start_time, .. } = session.state {
                         if let Ok(duration) = start_time.elapsed() {
@@ -75,10 +75,8 @@ impl Manager {
 
                                 // Finally delete the session
                                 let session = session.clone();
-                                let sid = session.id;
-                                let id = sid.as_str();
-                                if let Err(err) = delete_user_session(&session.user_id, id).await {
-                                    warn!("Error while undeploying {}: {}", id, err)
+                                if let Err(err) = delete_session(&session.user_id).await {
+                                    warn!("Error while undeploying {}: {}", session.user_id, err)
                                 }
                             }
                         }
@@ -411,14 +409,6 @@ impl Manager {
         delete_role(id).await
     }
 
-    // Sessions
-
-    pub async fn list_sessions(&self, caller: &User) -> Result<Vec<Session>> {
-        ensure_permission(caller, ResourceType::Session, ResourcePermission::Read).await?;
-
-        list_sessions().await
-    }
-
     // Users
 
     pub async fn get_user(&self, caller: &User, id: &str) -> Result<Option<User>> {
@@ -470,15 +460,10 @@ impl Manager {
         delete_user(&id).await
     }
 
-    // User sessions
+    // Sessions
 
-    async fn ensure_session_ownership(
-        &self,
-        caller: &User,
-        user_id: &str,
-        session_id: &str,
-    ) -> Result<Session> {
-        if let Some(session) = get_user_session(user_id, session_id).await? {
+    async fn ensure_session_ownership(&self, caller: &User, user_id: &str) -> Result<Session> {
+        if let Some(session) = get_session(user_id).await? {
             if user_id == session.user_id
                 || caller
                     .has_permission(
@@ -494,58 +479,33 @@ impl Manager {
 
             Err(Error::Resource(ResourceError::NotOwned(
                 ResourceType::Session,
-                session_id.to_string(),
+                user_id.to_string(),
             )))
         } else {
             Err(Error::Resource(ResourceError::Unknown(
                 ResourceType::Session,
-                session_id.to_string(),
+                user_id.to_string(),
             )))
         }
     }
 
-    pub async fn get_user_session(
-        &self,
-        caller: &User,
-        user_id: &str,
-        id: &str,
-    ) -> Result<Option<Session>> {
+    pub async fn get_session(&self, caller: &User, user_id: &str) -> Result<Option<Session>> {
         ensure_permission(caller, ResourceType::Session, ResourcePermission::Read).await?;
 
-        match self.ensure_session_ownership(caller, user_id, id).await {
+        match self.ensure_session_ownership(caller, user_id).await {
             Err(failure @ Error::Failure(_)) => Err(failure),
             Err(_) => Ok(None),
             Ok(session) => Ok(Some(session)),
         }
     }
 
-    pub async fn list_user_sessions(&self, caller: &User, user_id: &str) -> Result<Vec<Session>> {
-        ensure_permission(caller, ResourceType::Session, ResourcePermission::Read).await?;
-
-        list_user_sessions(user_id).await
-    }
-
-    pub async fn create_user_session(
+    pub async fn create_session(
         &self,
         caller: &User,
         user_id: &str,
-        id: &str,
         session_configuration: &SessionConfiguration,
     ) -> Result<()> {
         ensure_permission(caller, ResourceType::Session, ResourcePermission::Create).await?;
-
-        // Default permission only allows a single concurrent session per user.
-        // Session name must match user name.
-        if user_id.to_ascii_lowercase() != id {
-            ensure_permission(
-                caller,
-                ResourceType::Session,
-                ResourcePermission::Custom {
-                    name: "CustomizeSessionName".to_string(),
-                },
-            )
-            .await?
-        }
 
         if session_configuration.duration.is_some() {
             // Duration can only be customized by users with proper permission
@@ -571,11 +531,11 @@ impl Manager {
         }
 
         let repository_source = session_configuration.clone().repository_source;
-        let result = create_user_session(caller, id, session_configuration).await;
+        let result = create_session(caller, session_configuration).await;
 
         info!(
             "Created session {} with repository_source {}:{:?}",
-            id, repository_source.repository_id, repository_source.repository_version_id
+            user_id, repository_source.repository_id, repository_source.repository_version_id
         );
 
         match &result {
@@ -590,26 +550,25 @@ impl Manager {
         result
     }
 
-    pub async fn update_user_session(
+    pub async fn update_session(
         &self,
         caller: &User,
         user_id: &str,
-        id: &str,
         session_update_configuration: SessionUpdateConfiguration,
     ) -> Result<()> {
         ensure_permission(caller, ResourceType::Session, ResourcePermission::Update).await?;
 
-        self.ensure_session_ownership(caller, user_id, id).await?;
+        self.ensure_session_ownership(caller, user_id).await?;
 
-        update_user_session(caller, id, session_update_configuration).await
+        update_session(caller, session_update_configuration).await
     }
 
-    pub async fn delete_user_session(&self, caller: &User, user_id: &str, id: &str) -> Result<()> {
+    pub async fn delete_session(&self, caller: &User, user_id: &str) -> Result<()> {
         ensure_permission(caller, ResourceType::Session, ResourcePermission::Delete).await?;
 
-        self.ensure_session_ownership(caller, user_id, id).await?;
+        self.ensure_session_ownership(caller, user_id).await?;
 
-        let result = delete_user_session(&caller.id, id).await;
+        let result = delete_session(&caller.id).await;
         match &result {
             Ok(_) => {
                 self.metrics.inc_undeploy_counter();
@@ -622,13 +581,12 @@ impl Manager {
         result
     }
 
-    // User session executions
+    // Session executions
 
-    pub async fn create_user_session_execution(
+    pub async fn create_session_execution(
         &self,
         caller: &User,
         user_id: &str,
-        session_id: &str,
         session_execution_configuration: SessionExecutionConfiguration,
     ) -> Result<SessionExecution> {
         ensure_permission(
@@ -638,9 +596,16 @@ impl Manager {
         )
         .await?;
 
-        self.ensure_session_ownership(caller, user_id, session_id)
-            .await?;
+        self.ensure_session_ownership(caller, user_id).await?;
 
-        create_user_session_execution(&caller.id, session_id, session_execution_configuration).await
+        create_session_execution(&caller.id, session_execution_configuration).await
+    }
+
+    // All sessions
+
+    pub async fn list_all_sessions(&self, caller: &User) -> Result<Vec<Session>> {
+        ensure_permission(caller, ResourceType::Session, ResourcePermission::Read).await?;
+
+        list_all_sessions().await
     }
 }

@@ -77,22 +77,21 @@ async fn main() {
                 playground::api::create_role,
                 playground::api::update_role,
                 playground::api::delete_role,
-                // Sessions
-                playground::api::list_sessions,
                 // Users
                 playground::api::get_user,
                 playground::api::list_users,
                 playground::api::create_user,
                 playground::api::update_user,
                 playground::api::delete_user,
-                // User sessions
-                playground::api::get_user_session,
-                playground::api::list_user_sessions,
-                playground::api::create_user_session,
-                playground::api::update_user_session,
-                playground::api::delete_user_session,
-                // User session Executions
-                playground::api::create_user_session_execution,
+                // Sessions
+                playground::api::get_session,
+                playground::api::create_session,
+                playground::api::update_session,
+                playground::api::delete_session,
+                // Session Executions
+                playground::api::create_session_execution,
+                // All sessions
+                playground::api::list_all_sessions,
             ],
         )
         .mount("/metrics", prometheus)

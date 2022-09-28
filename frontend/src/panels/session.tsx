@@ -23,7 +23,7 @@ import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
-import { Client, NameValuePair, User, Port, Session, SessionConfiguration, Repository, RepositoryVersion, mainSessionId, Preference } from '@substrate/playground-client';
+import { Client, NameValuePair, User, Port, Session, SessionConfiguration, Repository, RepositoryVersion, Preference } from '@substrate/playground-client';
 import { CenteredContainer, ErrorMessage, ErrorSnackbar, LoadingPanel } from "../components";
 import { useInterval } from "../hooks";
 import { canCustomizeSession, formatDuration } from "../utils";
@@ -373,7 +373,7 @@ function ExistingSession({session, onStop, onConnect}: {session: Session, onStop
 export function SessionPanel({ client, preferences, user, onDeployed, onConnect, onRetry, onStop }: {client: Client, preferences: Preference[], user: User, onStop: () => Promise<void>, onConnect: (session: Session) => void, onDeployed: (conf: SessionConfiguration) => Promise<void>, onRetry: () => void}): JSX.Element {
     const [session, setSession] = useState<Session | null | undefined>(undefined);
 
-    useInterval(async () => setSession(await client.getUserSession(user.id, mainSessionId(user))), 1000);
+    useInterval(async () => setSession(await client.getSession(user.id)), 1000);
 
     return (
         <Container style={{ display: "flex", flex: 1, justifyContent: "center", alignItems: "center" }}>

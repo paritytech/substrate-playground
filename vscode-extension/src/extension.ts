@@ -2,7 +2,7 @@
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
 import * as path from 'path';
-import { Client, EnvironmentType, environmentTypeFromString, mainSessionId, playgroundBaseAPIURL, playgroundUserBaseURL, Session, User } from '@substrate/playground-client';
+import { Client, environmentTypeFromString, playgroundBaseAPIURL, playgroundUserBaseURL, Session, User } from '@substrate/playground-client';
 
 import 'cross-fetch/dist/node-polyfill.js';
 
@@ -77,7 +77,7 @@ export class PlaygroundTreeDataProvider implements vscode.TreeDataProvider<vscod
 		if (!element) {
               return new Promise(async resolve => {
                 const userId = this.user.id;
-                const sessions = await this.client.listUserSessions(userId);
+                const sessions = await this.client.listSessions(userId);
                 resolve([new UserTreeItem(this.user, sessions.map(session => {
                     return new SessionTreeItem(this.user, session);
                 }))]);
@@ -141,7 +141,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
                  const pick = await vscode.window.showQuickPick(picks, {placeHolder: "The repository to be used", matchOnDescription: true, matchOnDetail: true});
                 // TODO allow to choose timeout, node pool, repo version
                  if (pick) {
-                    await client.createUserSession(user.id, mainSessionId(user), {repositorySource: {repositoryId: pick.label}});
+                    await client.createSession(user.id, {repositorySource: {repositoryId: pick.label}});
                     const connect = "Connect to it";
                     vscode.window.showInformationMessage("Session succesfully created", connect).then(selection => {
                         if (selection === connect) {
@@ -154,7 +154,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
             vscode.commands.registerCommand('substrate-playground.closeSession', async (node: SessionTreeItem) => {
                 const userId = node.user?.id;
                 if (userId) {
-                    await client.deleteUserSession(userId, node.session.id);
+                    await client.deleteSession(userId);
                     vscode.window.showInformationMessage("Session succesfully closed");
                 }
           });

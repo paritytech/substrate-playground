@@ -200,12 +200,7 @@ pub async fn create_user(id: &str, conf: UserConfiguration) -> Result<()> {
     Ok(())
 }
 
-pub async fn add_user_session(
-    user_id: &str,
-    _session_id: &str,
-    service_name: &str,
-    ports: Vec<Port>,
-) -> Result<()> {
+pub async fn add_session(user_id: &str, service_name: &str, ports: Vec<Port>) -> Result<()> {
     let ingress_api: Api<Ingress> = user_namespaced_api(user_id)?;
     let mut ingress: Ingress = ingress_api
         .get(INGRESS_NAME)
@@ -223,7 +218,6 @@ pub async fn add_user_session(
         let mut paths = ports
             .iter()
             .map(|port| {
-                // TODO Add session_id prefix
                 let path = if port.name == "web" {
                     "/".to_string()
                 } else {
