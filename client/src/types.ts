@@ -128,7 +128,7 @@ export interface Port {
     target?: number
 }
 
-export interface Session extends IdentifiedResource, OwnedResource {
+export interface Session extends OwnedResource {
     state: SessionState;
     /* The maximum number of minutes this session can last */
     maxDuration: number,

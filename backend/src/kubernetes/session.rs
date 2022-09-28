@@ -45,7 +45,6 @@ use super::{
 };
 
 const DEFAULT_DOCKER_IMAGE: &str = "ubuntu";
-const RESOURCE_ID: &str = "RESOURCE_ID";
 const COMPONENT: &str = "session";
 const SESSION_DURATION_ANNOTATION: &str = "app.playground/session_duration";
 const ENVS_ANNOTATION: &str = "app.playground/envs";
@@ -362,11 +361,6 @@ fn pod_to_session(pod: &Pod) -> Result<Session> {
             .unwrap_or(&"".to_string()),
     );
     Ok(Session {
-        id: pod
-            .labels()
-            .get(RESOURCE_ID)
-            .ok_or_else(|| Error::Failure(format!("Missing label {}", RESOURCE_ID)))?
-            .to_string(),
         user_id: pod
             .labels()
             .get(OWNER_LABEL)

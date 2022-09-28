@@ -39,7 +39,7 @@ class SessionTreeItem extends vscode.TreeItem {
     session: Session;
     constructor(user: User, session: Session) {
       super(
-          session.id,
+          user.id,
           vscode.TreeItemCollapsibleState.None);
           this.contextValue = "session";
           this.iconPath = new vscode.ThemeIcon("vm-outline");

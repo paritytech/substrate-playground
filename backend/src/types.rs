@@ -256,7 +256,6 @@ pub struct Port {
 #[derive(Serialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct Session {
-    pub id: String,
     pub user_id: String,
     pub state: SessionState,
     #[serde(with = "duration")]

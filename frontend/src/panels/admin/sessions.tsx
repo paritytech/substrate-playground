@@ -173,7 +173,7 @@ export function Sessions({ client, preferences, user }: { client: Client, prefer
     const [repositories, setRepositories] = useState<[Repository, RepositoryVersion][]>();
     const isSelected = (id: string) => selected?.id == id;
     const handleClick = (session: Session) => {
-        if (isSelected(session.id)) {
+        if (isSelected(session.userId)) {
             setSelected(null);
         } else {
             setSelected(session);
@@ -212,7 +212,7 @@ export function Sessions({ client, preferences, user }: { client: Client, prefer
             await client.updateSession(session.userId, conf);
             setSessions((sessions: Session[] | null) => {
                 if (sessions && conf.duration) {
-                    const existingSession = find(sessions, session.id);
+                    const existingSession = find(sessions, session.userId);
                     if (existingSession) {
                         existingSession.maxDuration = conf.duration;
                     }
@@ -282,11 +282,11 @@ export function Sessions({ client, preferences, user }: { client: Client, prefer
                                     </TableHead>
                                     <TableBody>
                                     {filteredResources.map((session: Session, index: number) => {
-                                        const isItemSelected = isSelected(session.id);
+                                        const isItemSelected = isSelected(session.userId);
                                         const labelId = `enhanced-table-checkbox-${index}`;
                                         return (
                                             <TableRow
-                                                key={session.id}
+                                                key={session.userId}
                                                 hover
                                                 onClick={() => handleClick(session)}
                                                 role="checkbox"
@@ -302,7 +302,7 @@ export function Sessions({ client, preferences, user }: { client: Client, prefer
                                                 <TableCell component="th" scope="row">
                                                     <Link href={`https://github.com/${session.userId}`} target="_blank" rel="noreferrer" onClick={stopPropagation}>{session.userId}</Link>
                                                 </TableCell>
-                                                <TableCell>{session.id}</TableCell>
+                                                <TableCell>{session.userId}</TableCell>
                                                 <TableCell>{session.maxDuration}</TableCell>
                                                 <TableCell><SessionStateElement state={session.state} /></TableCell>
                                             </TableRow>
