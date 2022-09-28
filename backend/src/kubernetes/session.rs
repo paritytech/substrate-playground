@@ -12,9 +12,9 @@ use crate::{
 use futures::StreamExt;
 use k8s_openapi::api::{
     core::v1::{
-        Affinity, Container, ContainerStatus, EmptyDirVolumeSource, EnvVar, Pod, PodAffinityTerm,
-        PodAntiAffinity, PodSpec, ResourceRequirements, SecurityContext, Service, ServicePort,
-        ServiceSpec, Toleration, Volume, VolumeMount,
+        Affinity, Container, ContainerPort, ContainerStatus, EmptyDirVolumeSource, EnvVar, Pod,
+        PodAffinityTerm, PodAntiAffinity, PodSpec, ResourceRequirements, SecurityContext, Service,
+        ServicePort, ServiceSpec, Toleration, Volume, VolumeMount,
     },
     networking::v1::{Ingress, IngressRule},
 };
@@ -40,14 +40,15 @@ use super::{
     repository_version::{get_repository_version, volume_template_name},
     serialize_json, str_minutes_to_duration, unserialize_json, update_annotation_value,
     user::{add_user_session, DEFAULT_SERVICE_ACCOUNT},
-    user_namespace, user_namespaced_api, APP_LABEL, APP_VALUE, COMPONENT_LABEL, INGRESS_NAME,
-    NODE_POOL_LABEL, NODE_POOL_TYPE_LABEL, OWNER_LABEL,
+    user_namespace, user_namespaced_api, APP_LABEL, APP_VALUE, COMPONENT_LABEL, HOSTNAME_LABEL,
+    INGRESS_NAME, NODE_POOL_LABEL, NODE_POOL_TYPE_LABEL, OWNER_LABEL,
 };
 
 const DEFAULT_DOCKER_IMAGE: &str = "ubuntu";
 const RESOURCE_ID: &str = "RESOURCE_ID";
 const COMPONENT: &str = "session";
 const SESSION_DURATION_ANNOTATION: &str = "app.playground/session_duration";
+const ENVS_ANNOTATION: &str = "app.playground/envs";
 const PORTS_ANNOTATION: &str = "app.playground/ports";
 
 fn duration_to_string(duration: Duration) -> String {
@@ -60,20 +61,18 @@ fn string_to_duration(str: &str) -> Duration {
 
 // Model
 
-fn pod_env_variables(envs: Option<Vec<NameValuePair>>, session_id: &str) -> Vec<EnvVar> {
+fn pod_env_variables(envs: Vec<NameValuePair>, session_id: &str) -> Vec<EnvVar> {
     let mut all_envs = Vec::from([
-        env_var("SUBSTRATE_PLAYGROUND", ""),
+        env_var("SUBSTRATE_PLAYGROUND", "true"),
         env_var("SUBSTRATE_PLAYGROUND_SESSION", session_id),
     ]);
     // Add default variables
-    if let Some(envs) = envs {
-        all_envs.append(
-            &mut envs
-                .iter()
-                .map(|env| env_var(&env.name, &env.value))
-                .collect::<Vec<EnvVar>>(),
-        );
-    }
+    all_envs.append(
+        &mut envs
+            .iter()
+            .map(|env| env_var(&env.name, &env.value))
+            .collect::<Vec<EnvVar>>(),
+    );
     all_envs
 }
 
@@ -85,7 +84,7 @@ fn session_to_pod(
     image: &str,
     duration: &Duration,
     pool_id: &str,
-    envs: Option<Vec<NameValuePair>>,
+    envs: Vec<NameValuePair>,
     ports: Vec<Port>,
 ) -> Result<Pod> {
     let mut labels = BTreeMap::new();
@@ -99,6 +98,7 @@ fn session_to_pod(
         SESSION_DURATION_ANNOTATION.to_string(),
         duration_to_string(*duration),
     );
+    annotations.insert(ENVS_ANNOTATION.to_string(), serialize_json(&envs)?);
     annotations.insert(PORTS_ANNOTATION.to_string(), serialize_json(&ports)?);
 
     let openvscode_version = "1.71.2";
@@ -126,7 +126,7 @@ fn session_to_pod(
                 pod_anti_affinity: Some(PodAntiAffinity {
                     required_during_scheduling_ignored_during_execution: Some(vec![
                         PodAffinityTerm {
-                            topology_key: "kubernetes.io/hostname".to_string(),
+                            topology_key: HOSTNAME_LABEL.to_string(),
                             label_selector: Some(LabelSelector {
                                 match_labels: Some(BTreeMap::from([(
                                     COMPONENT_LABEL.to_string(),
@@ -157,6 +157,7 @@ fn session_to_pod(
                 }]),
                 ..Default::default()
             }]),
+            // TODO curl https://github.com/jeluard.keys | tee -a ~/.ssh/authorized_keys
             containers: vec![Container {
                 name: format!("{}-container", COMPONENT),
                 image: Some(image.to_string()),
@@ -167,6 +168,10 @@ fn session_to_pod(
                     "0.0.0.0".to_string(),
                     "--without-connection-token".to_string(),
                 ]),
+                ports: Some(ports.iter().map(|port| ContainerPort {
+                    container_port: port.port,
+                    ..Default::default()
+                }).collect()),
                 resources: Some(ResourceRequirements {
                     requests: Some(BTreeMap::from([
                         ("memory".to_string(), Quantity("6Gi".to_string())),
@@ -288,6 +293,12 @@ fn pod_to_state(pod: &Pod) -> types::SessionState {
         "Running" => {
             if let Some(status) = status.container_statuses.unwrap_or_default().first() {
                 if let Some(state) = status.clone().state.unwrap_or_default().running {
+                    let env = pod
+                        .annotations()
+                        .get(ENVS_ANNOTATION)
+                        .and_then(|s| unserialize_json(s).ok()) // Ignore unserialization issues
+                        .unwrap_or_default();
+
                     let ports = pod
                         .annotations()
                         .get(PORTS_ANNOTATION)
@@ -310,7 +321,7 @@ fn pod_to_state(pod: &Pod) -> types::SessionState {
                         },
                         runtime_configuration: SessionRuntimeConfiguration {
                             // TODO
-                            env: vec![],
+                            env,
                             ports,
                         },
                     }
@@ -541,7 +552,9 @@ pub async fn create_user_session(
                     .as_str(),
                 &duration,
                 &pool_id,
-                devcontainer.map(|devcontainer| envs(&devcontainer)),
+                devcontainer
+                    .map(|devcontainer| envs(&devcontainer))
+                    .unwrap_or_default(),
                 ports.clone(),
             )?,
         )
