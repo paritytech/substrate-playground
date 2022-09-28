@@ -15,7 +15,7 @@ function newClient(): Client {
     return new Client(playgroundBaseAPIURL(env), 30000, {credentials: "include"});
 }
 
-async function createSession(userId: string, client: Client): Promise<string> {
+async function createSession(userId: string, client: Client) {
     await client.createSession(userId, {repositorySource: {repositoryId: repositoryId}});
 }
 
@@ -149,24 +149,4 @@ if (accessToken) {
         }
     });
 
-    // TODO Enable once it's working
-    if (false && env != EnvironmentType.production) { // TODO Not deployed on prod yet
-        test('authenticated - should be able to execute in session', async (t) => {
-            const client = newClient();
-            await client.login(accessToken);
-            const user = (await client.get()).user;
-            await createSession(user.id, client);
-            try {
-                const { stdout } = await client.createSessionExecution(user.id, {command: ["ls"]});
-                console.log(stdout);
-                t.not(stdout, null);
-            } catch(e) {
-                t.fail(`Failed to create a session execution: ${e.message}`);
-            }  finally {
-                client.deleteSession(user.id);
-                await waitForSessionDeletion(client, user.id);
-                await client.logout();
-            }
-        });
-    }
 }

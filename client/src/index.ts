@@ -273,8 +273,8 @@ export class Client {
 
     // Session executions
 
-    async createSessionExecution(userId: User['id'], id: Session['id'], conf: SessionExecutionConfiguration, timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<SessionExecution> {
-        return rpc(this.path(Client.usersResource, userId, Client.sessionResourcePath, id, Client.sessionExecutionResourcePath), {
+    async createSessionExecution(userId: User['id'], conf: SessionExecutionConfiguration, timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<SessionExecution> {
+        return rpc(this.path(Client.usersResource, userId, Client.sessionResourcePath, Client.sessionExecutionResourcePath), {
             method: 'PUT',
             body: JSON.stringify(conf),
             ...init

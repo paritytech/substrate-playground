@@ -77,10 +77,12 @@ export class PlaygroundTreeDataProvider implements vscode.TreeDataProvider<vscod
 		if (!element) {
               return new Promise(async resolve => {
                 const userId = this.user.id;
-                const sessions = await this.client.listSessions(userId);
-                resolve([new UserTreeItem(this.user, sessions.map(session => {
-                    return new SessionTreeItem(this.user, session);
-                }))]);
+                const session = await this.client.getSession(userId);
+                if (session) {
+                    resolve([new UserTreeItem(this.user, [
+                        new SessionTreeItem(this.user, session)
+                    ])]);
+                }
 			})
 		}
 		return element.children;

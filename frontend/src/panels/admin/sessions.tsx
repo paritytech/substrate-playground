@@ -260,7 +260,7 @@ export function Sessions({ client, preferences, user }: { client: Client, prefer
     const stopPropagation = (event: React.SyntheticEvent) => event.stopPropagation();
 
     return (
-        <Resources<Session> callback={async () => await client.listSessions()}>
+        <Resources<Session> callback={async () => await client.listAllSessions()}>
             {(resources: Session[], setSessions: Dispatch<SetStateAction<Session[] | null>>) => {
                 const filteredResources = rowsPerPage > 0 ? resources.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage) : resources;
                 return (
@@ -268,7 +268,7 @@ export function Sessions({ client, preferences, user }: { client: Client, prefer
                         {filteredResources.length > 0
                         ?
                         <>
-                            <EnhancedTableToolbar client={client} user={user} label="Sessions" selected={selected?.id} onCreate={() => setShowCreationDialog(true)} onUpdate={() => setShowUpdateDialog(true)} onDelete={() => deleteSession(setSessions, selected?.userId, selected?.id)} resourceType={ResourceType.Session} />
+                            <EnhancedTableToolbar client={client} user={user} label="Sessions" selected={selected?.id} onCreate={() => setShowCreationDialog(true)} onUpdate={() => setShowUpdateDialog(true)} onDelete={() => deleteSession(setSessions, selected?.userId)} resourceType={ResourceType.Session} />
                             <TableContainer component={Paper}>
                                 <Table stickyHeader aria-label="sessions table">
                                     <TableHead>
