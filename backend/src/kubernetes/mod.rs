@@ -184,7 +184,7 @@ pub fn docker_image_name(pod: &Pod) -> Result<String> {
     }
 }
 
-pub fn user_namespace(user_id: &str) -> String {
+pub fn normalize_id(user_id: &str) -> String {
     user_id.to_lowercase()
 }
 
@@ -407,7 +407,7 @@ where
     T: Metadata<Ty = ObjectMeta>,
 {
     let client = client()?;
-    Ok(Api::namespaced(client, &user_namespace(owner_id)))
+    Ok(Api::namespaced(client, &normalize_id(owner_id)))
 }
 
 // Get

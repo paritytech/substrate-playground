@@ -6,7 +6,7 @@
 
 use super::{
     all_namespaces_api, delete_all_resource, delete_annotation_value, get_all_resource, get_host,
-    list_all_resources, serialize_json, unserialize_json, update_annotation_value, user_namespace,
+    list_all_resources, normalize_id, serialize_json, unserialize_json, update_annotation_value,
     user_namespaced_api, APP_LABEL, APP_VALUE, COMPONENT_LABEL,
 };
 use crate::{
@@ -73,7 +73,7 @@ fn user_to_namespace(user: &User) -> Result<Namespace> {
     }
     Ok(Namespace {
         metadata: ObjectMeta {
-            name: Some(user_namespace(&user.id)),
+            name: Some(normalize_id(&user.id)),
             labels: Some(labels),
             annotations: Some(annotations),
             ..Default::default()
@@ -83,7 +83,7 @@ fn user_to_namespace(user: &User) -> Result<Namespace> {
 }
 
 pub async fn get_user(id: &str) -> Result<Option<User>> {
-    get_all_resource::<Namespace, User>(&user_namespace(id), namespace_to_user).await
+    get_all_resource::<Namespace, User>(&normalize_id(id), namespace_to_user).await
 }
 
 pub async fn list_users() -> Result<Vec<User>> {
@@ -147,11 +147,7 @@ pub async fn create_user(id: &str, conf: UserConfiguration) -> Result<()> {
                     ingress_class_name: Some("nginx".to_string()),
                     // TODO should start empty?
                     rules: Some(vec![IngressRule {
-                        host: Some(format!(
-                            "{}.{}",
-                            user_namespace(&user.id),
-                            get_host().await?
-                        )),
+                        host: Some(format!("{}.{}", normalize_id(&user.id), get_host().await?)),
                         ..Default::default()
                     }]),
                     default_backend: Some(IngressBackend {
@@ -313,5 +309,5 @@ pub async fn delete_user(id: &str) -> Result<()> {
         Error::Resource(ResourceError::Unknown(ResourceType::User, id.to_string()))
     })?;
 
-    delete_all_resource::<Namespace>(&user_namespace(id)).await
+    delete_all_resource::<Namespace>(&normalize_id(id)).await
 }

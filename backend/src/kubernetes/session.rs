@@ -34,14 +34,14 @@ use std::{
 };
 
 use super::{
-    client, env_var, get_owned_resource, get_preference, list_all_resources,
+    client, env_var, get_owned_resource, get_preference, list_all_resources, normalize_id,
     pool::get_pool,
     repository::get_repository,
     repository_version::{get_repository_version, volume_template_name},
     serialize_json, str_minutes_to_duration, unserialize_json, update_annotation_value,
     user::{add_session, DEFAULT_SERVICE_ACCOUNT},
-    user_namespace, user_namespaced_api, APP_LABEL, APP_VALUE, COMPONENT_LABEL, HOSTNAME_LABEL,
-    INGRESS_NAME, NODE_POOL_LABEL, NODE_POOL_TYPE_LABEL, OWNER_LABEL,
+    user_namespaced_api, APP_LABEL, APP_VALUE, COMPONENT_LABEL, HOSTNAME_LABEL, INGRESS_NAME,
+    NODE_POOL_LABEL, NODE_POOL_TYPE_LABEL, OWNER_LABEL,
 };
 
 const DEFAULT_DOCKER_IMAGE: &str = "ubuntu";
@@ -423,7 +423,7 @@ pub async fn create_session(
     user: &User,
     session_configuration: &SessionConfiguration,
 ) -> Result<()> {
-    let user_id = user.clone().id;
+    let user_id = normalize_id(&user.clone().id);
     if get_session(&user_id).await?.is_some() {
         return Err(Error::Resource(ResourceError::IdAlreayUsed(
             ResourceType::Session,
@@ -445,7 +445,6 @@ pub async fn create_session(
         Error::Resource(ResourceError::Unknown(ResourceType::Pool, pool_id.clone()))
     })?;
     let max_sessions_allowed = pool.nodes.len();
-    let user_id = &user.id;
     let sessions = list_all_sessions().await?;
     if sessions.len() >= max_sessions_allowed {
         // 1 session == 1 node
@@ -518,9 +517,9 @@ pub async fn create_session(
     let client = client()?;
 
     // Deploy the associated service
-    let service_api: Api<Service> = Api::namespaced(client.clone(), &user_namespace(user_id));
-    let service_name = service_name(user_id);
-    let service = service(user_id, &service_name, &ports);
+    let service_api: Api<Service> = user_namespaced_api(&user_id)?;
+    let service_name = service_name(&user_id);
+    let service = service(&user_id, &service_name, &ports);
     service_api.create(&PostParams::default(), &service).await?;
 
     let duration = str_minutes_to_duration(&get_preference(
@@ -530,12 +529,12 @@ pub async fn create_session(
     // TODO clone per user
     let volume_name = volume_template_name(repository_id, repository_version_id);
     // Deploy a new pod for this image
-    let pod_api: Api<Pod> = Api::namespaced(client.clone(), &user_namespace(user_id));
+    let pod_api: Api<Pod> = user_namespaced_api(&user_id)?;
     let _pod = pod_api
         .create(
             &PostParams::default(),
             &session_to_pod(
-                &user.id,
+                &user_id,
                 &volume_name,
                 devcontainer
                     .clone()
@@ -553,7 +552,7 @@ pub async fn create_session(
         .await
         .map_err(Error::K8sCommunicationFailure)?;
 
-    add_session(&user.id, &service_name, ports).await?;
+    add_session(&user_id, &service_name, ports).await?;
 
     let svcs: Api<Service> = Api::namespaced(client.clone(), "default");
     let s = svcs.get("kubernetes").await?; // always a kubernetes service in default
@@ -575,7 +574,7 @@ pub async fn update_session(
     user: &User,
     session_configuration: SessionUpdateConfiguration,
 ) -> Result<()> {
-    let user_id = user.clone().id;
+    let user_id = normalize_id(&user.clone().id);
     let session = get_session(&user_id).await?.ok_or_else(|| {
         Error::Resource(ResourceError::Unknown(
             ResourceType::Session,
@@ -611,7 +610,7 @@ pub async fn update_session(
         )));
     }
     if duration != session.max_duration {
-        let pod_api: Api<Pod> = user_namespaced_api(&user.id)?;
+        let pod_api: Api<Pod> = user_namespaced_api(&user_id)?;
         update_annotation_value(
             &pod_api,
             &user_id,
@@ -627,8 +626,8 @@ pub async fn update_session(
 
 pub async fn delete_session(user_id: &str) -> Result<()> {
     let client = client()?;
-
-    get_session(user_id).await?.ok_or_else(|| {
+    let user_id = normalize_id(user_id);
+    get_session(&user_id).await?.ok_or_else(|| {
         Error::Resource(ResourceError::Unknown(
             ResourceType::Session,
             user_id.to_string(),
@@ -636,25 +635,25 @@ pub async fn delete_session(user_id: &str) -> Result<()> {
     })?;
 
     // Undeploy the ingress service
-    let service_api: Api<Service> = Api::namespaced(client.clone(), &user_namespace(user_id));
+    let service_api: Api<Service> = user_namespaced_api(&user_id)?;
     service_api
         .delete(
-            &service_name(user_id),
+            &service_name(&user_id),
             &DeleteParams::default().grace_period(0),
         )
         .await
         .map_err(Error::K8sCommunicationFailure)?;
 
     // Undeploy the pod
-    let pod_api: Api<Pod> = Api::namespaced(client.clone(), &user_namespace(user_id));
+    let pod_api: Api<Pod> = user_namespaced_api(&user_id)?;
     pod_api
-        .delete(user_id, &DeleteParams::default().grace_period(0))
+        .delete(&user_id, &DeleteParams::default().grace_period(0))
         .await
         .map_err(Error::K8sCommunicationFailure)?;
 
     // Remove the ingress route
     let host = get_host().await?;
-    let subdomain = subdomain(&host, user_id);
+    let subdomain = subdomain(&host, &user_id);
     let ingress_api: Api<Ingress> = Api::default_namespaced(client.clone());
     let mut ingress: Ingress = ingress_api
         .get(INGRESS_NAME)
@@ -696,14 +695,14 @@ async fn get_output(mut attached: AttachedProcess) -> String {
 }
 
 pub async fn create_session_execution(
-    user_id: &str,
+    user: &User,
     execution_configuration: SessionExecutionConfiguration,
 ) -> Result<SessionExecution> {
-    let client = client()?;
-    let pod_api: Api<Pod> = Api::namespaced(client, &user_namespace(user_id));
+    let user_id = normalize_id(&user.clone().id);
+    let pod_api: Api<Pod> = user_namespaced_api(&user_id)?;
     let attached = pod_api
         .exec(
-            user_id,
+            &user_id,
             execution_configuration.command,
             &AttachParams::default(),
         )

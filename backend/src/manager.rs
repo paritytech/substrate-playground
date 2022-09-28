@@ -598,7 +598,7 @@ impl Manager {
 
         self.ensure_session_ownership(caller, user_id).await?;
 
-        create_session_execution(&caller.id, session_execution_configuration).await
+        create_session_execution(caller, session_execution_configuration).await
     }
 
     // All sessions
