@@ -21,7 +21,7 @@ use k8s_openapi::{
             HTTPIngressPath, Ingress, IngressBackend, IngressServiceBackend, ServiceBackendPort,
         },
     },
-    Metadata,
+    Metadata, Resource, NamespaceResourceScope,
 };
 use kube::{
     api::{DeleteParams, ListParams, ObjectMeta, Patch, PatchParams},
@@ -133,7 +133,7 @@ pub fn str_minutes_to_duration(str: &str) -> Result<Duration> {
 /// Client utilities
 
 pub fn client() -> Result<Client> {
-    let config = Config::from_cluster_env().map_err(|err| Error::Failure(err.to_string()))?;
+    let config = Config::incluster_dns().map_err(|err| Error::Failure(err.to_string()))?;
     Client::try_from(config).map_err(Error::K8sCommunicationFailure)
 }
 
@@ -395,6 +395,7 @@ where
     T: Clone + std::fmt::Debug + DeserializeOwned + Metadata,
     T: Default,
     T: Metadata<Ty = ObjectMeta>,
+    T: Resource<Scope = NamespaceResourceScope>,
 {
     let client = client()?;
     Ok(Api::default_namespaced(client))
@@ -405,6 +406,7 @@ where
     T: Clone + std::fmt::Debug + DeserializeOwned + Metadata,
     T: Default,
     T: Metadata<Ty = ObjectMeta>,
+    T: Resource<Scope = NamespaceResourceScope>,
 {
     let client = client()?;
     Ok(Api::namespaced(client, &normalize_id(owner_id)))
@@ -420,6 +422,7 @@ where
     T: Clone + std::fmt::Debug + DeserializeOwned + Metadata,
     T: Default,
     T: Metadata<Ty = ObjectMeta>,
+    T: Resource<Scope = NamespaceResourceScope>,
 {
     let api: Api<T> = default_namespaced_api()?;
     get_resource(api, resource_id, f).await
@@ -449,6 +452,7 @@ where
     T: Clone + std::fmt::Debug + DeserializeOwned + Metadata,
     T: Default,
     T: Metadata<Ty = ObjectMeta>,
+    T: Resource<Scope = NamespaceResourceScope>,
 {
     let api: Api<T> = user_namespaced_api(owner_id)?;
     get_resource(api, resource_id, f).await
@@ -498,6 +502,7 @@ where
     T: Clone + std::fmt::Debug + DeserializeOwned + Metadata,
     T: Default,
     T: Metadata<Ty = ObjectMeta>,
+    T: Resource<Scope = NamespaceResourceScope>,
 {
     let api: Api<T> = default_namespaced_api()?;
     list_resources(api, resource_type, f).await
@@ -512,6 +517,7 @@ where
     T: Clone + std::fmt::Debug + DeserializeOwned + Metadata,
     T: Default,
     T: Metadata<Ty = ObjectMeta>,
+    T: Resource<Scope = NamespaceResourceScope>,
 {
     let api: Api<T> = user_namespaced_api(owner_id)?;
     list_resources(api, resource_type, f).await
@@ -563,6 +569,7 @@ where
     T: Clone + std::fmt::Debug + DeserializeOwned + Metadata,
     T: Default,
     T: Metadata<Ty = ObjectMeta>,
+    T: Resource<Scope = NamespaceResourceScope>,
 {
     let api: Api<T> = default_namespaced_api()?;
     delete_resource(api, resource_id).await
@@ -573,6 +580,7 @@ where
     T: Clone + std::fmt::Debug + DeserializeOwned + Metadata,
     T: Default,
     T: Metadata<Ty = ObjectMeta>,
+    T: Resource<Scope = NamespaceResourceScope>,
 {
     let api: Api<T> = user_namespaced_api(owner_id)?;
     delete_resource(api, resource_id).await
