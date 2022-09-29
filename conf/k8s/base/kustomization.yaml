@@ -35,5 +35,6 @@ configMapGenerator:
     - resources/roles/paritytech-member
     - resources/roles/super-admin
     - resources/roles/user
+    - resources/roles/blacklisted
   options:
     disableNameSuffixHash: true
