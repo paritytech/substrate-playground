@@ -140,7 +140,8 @@ function EditToolbar({ client, user, resourceType, selected, onCreate, onUpdate,
   useEffect(() => {
     async function fetchData() {
         setCanCreate(await hasPermission(client, user, resourceType, {type: "Create"}));
-        setCanUpdate(await hasPermission(client, user, resourceType, {type: "Update"}));
+        const owns = (resourceType == ResourceType.User && selected == user.id);
+        setCanUpdate(owns || await hasPermission(client, user, resourceType, {type: "Update"}));
         setCanDelete(await hasPermission(client, user, resourceType, {type: "Delete"}));
     }
 
