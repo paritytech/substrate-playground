@@ -200,6 +200,7 @@ export function Users({ client, user, preferences }: { client: Client, user: Use
                                 <TableCell></TableCell>
                                 <TableCell>ID</TableCell>
                                 <TableCell>Role</TableCell>
+                                <TableCell>Profile</TableCell>
                                 <TableCell>Preferences</TableCell>
                             </TableRow>
                         </TableHead>
@@ -226,6 +227,7 @@ export function Users({ client, user, preferences }: { client: Client, user: Use
                                         {user.id}
                                     </TableCell>
                                     <TableCell>{user.role}</TableCell>
+                                    <TableCell>{user.profile}</TableCell>
                                     <TableCell>{JSON.stringify(user.preferences)}</TableCell>
                                 </TableRow>
                                 )})}
