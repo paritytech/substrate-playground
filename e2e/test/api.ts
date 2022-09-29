@@ -112,7 +112,7 @@ if (accessToken) {
                 t.not(port, undefined, "Can't find corresponding port");
                 const url = playgroundUserBaseURL(env, user.id);
                 const response = await fetch(url);
-                t.is(response.ok, true, "Failed to access URL");
+                t.is(response.ok, true, `Failed to access ${url}`);
             }
         } catch(e) {
             t.fail(`Failed to create a session: ${e.message}`);
