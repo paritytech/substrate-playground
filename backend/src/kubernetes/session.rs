@@ -372,7 +372,7 @@ fn pod_to_session(pod: &Pod) -> Result<Session> {
 }
 
 pub async fn get_session(user_id: &str) -> Result<Option<Session>> {
-    let user_id = normalize_id(&user_id);
+    let user_id = normalize_id(user_id);
     get_owned_resource(&user_id, &user_id, pod_to_session).await
 }
 
