@@ -21,7 +21,7 @@ use k8s_openapi::{
             HTTPIngressPath, Ingress, IngressBackend, IngressServiceBackend, ServiceBackendPort,
         },
     },
-    Metadata, Resource, NamespaceResourceScope,
+    Metadata, NamespaceResourceScope, Resource,
 };
 use kube::{
     api::{DeleteParams, ListParams, ObjectMeta, Patch, PatchParams},
