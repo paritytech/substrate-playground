@@ -16,7 +16,7 @@ use crate::{
 use json_patch::{AddOperation, PatchOperation, RemoveOperation};
 use k8s_openapi::{
     api::{
-        core::v1::{ConfigMap, EnvVar, Pod},
+        core::v1::{ConfigMap, EnvVar, Pod, Service},
         networking::v1::{
             HTTPIngressPath, Ingress, IngressBackend, IngressServiceBackend, ServiceBackendPort,
         },
@@ -25,6 +25,7 @@ use k8s_openapi::{
 };
 use kube::{
     api::{DeleteParams, ListParams, ObjectMeta, Patch, PatchParams},
+    runtime::events::{Event, EventType, Recorder},
     Api, Client, Config,
 };
 use serde::{de::DeserializeOwned, Serialize};
@@ -595,6 +596,27 @@ where
     api.delete(resource_id, &DeleteParams::default())
         .await
         .map_err(Error::K8sCommunicationFailure)?;
+
+    Ok(())
+}
+
+// Events
+
+pub async fn publish_event() -> Result<()> {
+    use kube::Resource;
+    let client = client()?;
+    let svcs: Api<Service> = Api::namespaced(client.clone(), "default");
+    let s = svcs.get("kubernetes").await?; // always a kubernetes service in default
+    let recorder = Recorder::new(client, "kube".into(), s.object_ref(&()));
+    recorder
+        .publish(Event {
+            type_: EventType::Normal,
+            reason: "HiddenDoc".into(),
+            note: Some("Some note".to_string()),
+            action: "Reconciling".into(),
+            secondary: None,
+        })
+        .await?;
 
     Ok(())
 }

@@ -19,18 +19,14 @@ use k8s_openapi::apimachinery::pkg::{
     apis::meta::v1::{LabelSelector, ObjectMeta},
     util::intstr::IntOrString,
 };
-use kube::runtime::events::{Event, EventType, Recorder};
-use kube::{
-    api::{Api, AttachParams, AttachedProcess, DeleteParams, PostParams, ResourceExt},
-    Resource,
-};
+use kube::api::{Api, AttachParams, AttachedProcess, DeleteParams, PostParams, ResourceExt};
 use std::{
     collections::BTreeMap,
     time::{Duration, SystemTime},
 };
 
 use super::{
-    client, env_var, get_owned_resource, get_preference, list_all_resources, normalize_id,
+    env_var, get_owned_resource, get_preference, list_all_resources, normalize_id,
     pool::get_pool,
     repository::get_repository,
     repository_version::{get_repository_version, volume_template_name},
@@ -308,11 +304,7 @@ fn pod_to_state(pod: &Pod) -> types::SessionState {
                                 .node_name
                                 .unwrap_or_default(),
                         },
-                        runtime_configuration: SessionRuntimeConfiguration {
-                            // TODO
-                            env,
-                            ports,
-                        },
+                        runtime_configuration: SessionRuntimeConfiguration { env, ports },
                     }
                 } else {
                     types::SessionState::Deploying
@@ -501,8 +493,6 @@ pub async fn create_session(
 
     // Now create the session itself
 
-    let client = client()?;
-
     // Deploy the associated service
     let service_api: Api<Service> = user_namespaced_api(&user_id)?;
     let service_name = service_name(&user_id);
@@ -540,19 +530,6 @@ pub async fn create_session(
         .map_err(Error::K8sCommunicationFailure)?;
 
     add_session(&user_id, &service_name, ports).await?;
-
-    let svcs: Api<Service> = Api::namespaced(client.clone(), "default");
-    let s = svcs.get("kubernetes").await?; // always a kubernetes service in default
-    let recorder = Recorder::new(client.clone(), "kube".into(), s.object_ref(&()));
-    recorder
-        .publish(Event {
-            type_: EventType::Normal,
-            reason: "HiddenDoc".into(),
-            note: Some("Some note".to_string()),
-            action: "Reconciling".into(),
-            secondary: None,
-        })
-        .await?;
 
     Ok(())
 }
