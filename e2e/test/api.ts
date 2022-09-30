@@ -81,6 +81,29 @@ async function waitForSession(client: Client, userId: string): Promise<Session> 
     });
 }
 
+async function waitForURL(url: string): Promise<Response> {
+    const timeout = 60 * 1000;
+    const interval = 5000;
+    const startTime = Date.now();
+    return new Promise<Response>((resolve, reject) => {
+        const id = setInterval(async () => {
+            try {
+                const response = await fetch(url);
+                if (response.ok) {
+                    clearInterval(id);
+                    resolve(response);
+                } else if ((Date.now() - startTime) > timeout)  {
+                    clearInterval(id);
+                    reject({type: "Failure", message: response.status});
+                }
+            } catch (e) {
+                clearInterval(id);
+                reject({type: "Failure", message: `Error during URL access: ${JSON.stringify(e)}`});
+            }
+        }, interval);
+    });
+}
+
 const accessToken = process.env.ACCESS_TOKEN;
 if (accessToken) {
 
@@ -111,7 +134,7 @@ if (accessToken) {
                 const port = state.runtimeConfiguration.ports.find(port => port.port == 80);
                 t.not(port, undefined, "Can't find corresponding port");
                 const url = playgroundUserBaseURL(env, user.id);
-                const response = await fetch(url);
+                const response = await waitForURL(url);
                 t.is(response.ok, true, `Failed to access ${url}`);
             }
         } catch(e) {
