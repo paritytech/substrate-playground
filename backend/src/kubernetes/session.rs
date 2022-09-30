@@ -9,12 +9,10 @@ use crate::{
     utils::devcontainer::{parse_devcontainer, DevContainer},
 };
 use futures::StreamExt;
-use k8s_openapi::api::{
-    core::v1::{
-        Affinity, Container, ContainerPort, ContainerStatus, EmptyDirVolumeSource, EnvVar, Pod,
-        PodAffinityTerm, PodAntiAffinity, PodSpec, ResourceRequirements, SecurityContext, Service,
-        ServicePort, ServiceSpec, Toleration, Volume, VolumeMount,
-    },
+use k8s_openapi::api::core::v1::{
+    Affinity, Container, ContainerPort, ContainerStatus, EmptyDirVolumeSource, EnvVar, Pod,
+    PodAffinityTerm, PodAntiAffinity, PodSpec, ResourceRequirements, SecurityContext, Service,
+    ServicePort, ServiceSpec, Toleration, Volume, VolumeMount,
 };
 use k8s_openapi::apimachinery::pkg::{
     api::resource::Quantity,
@@ -37,9 +35,9 @@ use super::{
     repository::get_repository,
     repository_version::{get_repository_version, volume_template_name},
     serialize_json, str_minutes_to_duration, unserialize_json, update_annotation_value,
-    user::{add_session, DEFAULT_SERVICE_ACCOUNT, remove_session},
-    user_namespaced_api, APP_LABEL, APP_VALUE, COMPONENT_LABEL, HOSTNAME_LABEL,
-    NODE_POOL_LABEL, NODE_POOL_TYPE_LABEL, OWNER_LABEL,
+    user::{add_session, remove_session, DEFAULT_SERVICE_ACCOUNT},
+    user_namespaced_api, APP_LABEL, APP_VALUE, COMPONENT_LABEL, HOSTNAME_LABEL, NODE_POOL_LABEL,
+    NODE_POOL_TYPE_LABEL, OWNER_LABEL,
 };
 
 const DEFAULT_DOCKER_IMAGE: &str = "ubuntu";

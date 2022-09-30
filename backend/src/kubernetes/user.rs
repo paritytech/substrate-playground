@@ -34,7 +34,7 @@ const PROFILE_ANNOTATION: &str = "PROFILE";
 const PREFERENCES_ANNOTATION: &str = "PREFERENCES";
 pub const DEFAULT_SERVICE_ACCOUNT: &str = "default-service-account";
 const INGRESS_NAME: &str = "ingress";
-const INGRESS_CLASS_NAME:&str = "nginx";
+const INGRESS_CLASS_NAME: &str = "nginx";
 const BACKEND_UI_SERVICE_NAME: &str = "backend-ui-service";
 
 fn namespace_to_user(namespace: &Namespace) -> Result<User> {
