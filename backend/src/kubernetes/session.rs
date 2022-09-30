@@ -1,7 +1,6 @@
 //! Helper methods ton interact with k8s
 use crate::{
     error::{Error, ResourceError, Result},
-    kubernetes::get_host,
     types::{
         self, NameValuePair, Port, Preferences, RepositoryVersionState, ResourceType, Session,
         SessionConfiguration, SessionExecution, SessionExecutionConfiguration,
@@ -16,7 +15,6 @@ use k8s_openapi::api::{
         PodAffinityTerm, PodAntiAffinity, PodSpec, ResourceRequirements, SecurityContext, Service,
         ServicePort, ServiceSpec, Toleration, Volume, VolumeMount,
     },
-    networking::v1::{Ingress, IngressRule},
 };
 use k8s_openapi::apimachinery::pkg::{
     api::resource::Quantity,
@@ -39,8 +37,8 @@ use super::{
     repository::get_repository,
     repository_version::{get_repository_version, volume_template_name},
     serialize_json, str_minutes_to_duration, unserialize_json, update_annotation_value,
-    user::{add_session, DEFAULT_SERVICE_ACCOUNT},
-    user_namespaced_api, APP_LABEL, APP_VALUE, COMPONENT_LABEL, HOSTNAME_LABEL, INGRESS_NAME,
+    user::{add_session, DEFAULT_SERVICE_ACCOUNT, remove_session},
+    user_namespaced_api, APP_LABEL, APP_VALUE, COMPONENT_LABEL, HOSTNAME_LABEL,
     NODE_POOL_LABEL, NODE_POOL_TYPE_LABEL, OWNER_LABEL,
 };
 
@@ -242,10 +240,6 @@ fn service(user_id: &str, service_name: &str, ports: &[Port]) -> Service {
         }),
         ..Default::default()
     }
-}
-
-fn subdomain(host: &str, id: &str) -> String {
-    format!("{}.{}", id, host)
 }
 
 fn container_status_to_session_state(
@@ -620,7 +614,6 @@ pub async fn update_session(
 }
 
 pub async fn delete_session(user_id: &str) -> Result<()> {
-    let client = client()?;
     let user_id = normalize_id(user_id);
     get_session(&user_id).await?.ok_or_else(|| {
         Error::Resource(ResourceError::Unknown(
@@ -646,34 +639,7 @@ pub async fn delete_session(user_id: &str) -> Result<()> {
         .await
         .map_err(Error::K8sCommunicationFailure)?;
 
-    // Remove the ingress route
-    let host = get_host().await?;
-    let subdomain = subdomain(&host, &user_id);
-    let ingress_api: Api<Ingress> = Api::default_namespaced(client.clone());
-    let mut ingress: Ingress = ingress_api
-        .get(INGRESS_NAME)
-        .await
-        .map_err(Error::K8sCommunicationFailure)?
-        .clone();
-    let mut spec = ingress
-        .clone()
-        .spec
-        .ok_or_else(|| Error::MissingConstraint("ingress".to_string(), "spec".to_string()))?
-        .clone();
-    let rules: Vec<IngressRule> = spec
-        .clone()
-        .rules
-        .unwrap()
-        .into_iter()
-        .filter(|rule| rule.clone().host.unwrap_or_else(|| "unknown".to_string()) != subdomain)
-        .collect();
-    spec.rules.replace(rules);
-    ingress.spec.replace(spec);
-
-    ingress_api
-        .replace(INGRESS_NAME, &PostParams::default(), &ingress)
-        .await
-        .map_err(Error::K8sCommunicationFailure)?;
+    remove_session(&user_id).await?;
 
     Ok(())
 }

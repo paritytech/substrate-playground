@@ -11,7 +11,7 @@ use super::{
 };
 use crate::{
     error::{Error, ResourceError, Result},
-    types::{Port, ResourceType, Session, User, UserConfiguration, UserUpdateConfiguration},
+    types::{Port, ResourceType, User, UserConfiguration, UserUpdateConfiguration},
 };
 use k8s_openapi::api::{
     core::v1::{Namespace, Service, ServiceAccount, ServiceSpec},
@@ -34,6 +34,7 @@ const PROFILE_ANNOTATION: &str = "PROFILE";
 const PREFERENCES_ANNOTATION: &str = "PREFERENCES";
 pub const DEFAULT_SERVICE_ACCOUNT: &str = "default-service-account";
 const INGRESS_NAME: &str = "ingress";
+const INGRESS_CLASS_NAME:&str = "nginx";
 const BACKEND_UI_SERVICE_NAME: &str = "backend-ui-service";
 
 fn namespace_to_user(namespace: &Namespace) -> Result<User> {
@@ -144,12 +145,7 @@ pub async fn create_user(id: &str, conf: UserConfiguration) -> Result<()> {
                     ..Default::default()
                 },
                 spec: Some(IngressSpec {
-                    ingress_class_name: Some("nginx".to_string()),
-                    // TODO should start empty?
-                    rules: Some(vec![IngressRule {
-                        host: Some(format!("{}.{}", normalize_id(&user.id), get_host().await?)),
-                        ..Default::default()
-                    }]),
+                    ingress_class_name: Some(INGRESS_CLASS_NAME.to_string()),
                     default_backend: Some(IngressBackend {
                         service: Some(IngressServiceBackend {
                             name: BACKEND_UI_SERVICE_NAME.to_string(),
@@ -257,8 +253,26 @@ pub async fn add_session(user_id: &str, service_name: &str, ports: Vec<Port>) ->
     Ok(())
 }
 
-pub async fn remove_user_session(_session: Session) -> Result<()> {
-    // TODO
+pub async fn remove_session(user_id: &str) -> Result<()> {
+    // Remove the ingress route
+    let ingress_api: Api<Ingress> = user_namespaced_api(user_id)?;
+    let mut ingress: Ingress = ingress_api
+        .get(INGRESS_NAME)
+        .await
+        .map_err(Error::K8sCommunicationFailure)?
+        .clone();
+    let mut spec = ingress
+        .clone()
+        .spec
+        .ok_or_else(|| Error::MissingConstraint("ingress".to_string(), "spec".to_string()))?
+        .clone();
+    spec.rules.replace(vec![]);
+    ingress.spec.replace(spec);
+
+    ingress_api
+        .replace(INGRESS_NAME, &PostParams::default(), &ingress)
+        .await
+        .map_err(Error::K8sCommunicationFailure)?;
 
     Ok(())
 }
@@ -269,12 +283,15 @@ pub async fn update_user(id: &str, conf: UserUpdateConfiguration) -> Result<()> 
     })?;
 
     let namespace_api: Api<Namespace> = all_namespaces_api()?;
+
+    // Update Role
     if let Some(role) = conf.role {
         if user.role != role {
             update_annotation_value(&namespace_api, &user.id, ROLE_ANNOTATION, role.into()).await?;
         }
     }
 
+    // Update Profile
     if conf.profile != user.profile {
         if conf.profile.is_some() {
             update_annotation_value(
@@ -289,6 +306,7 @@ pub async fn update_user(id: &str, conf: UserUpdateConfiguration) -> Result<()> 
         }
     }
 
+    // Update Preferences
     if let Some(preferences) = conf.preferences {
         if preferences != user.preferences {
             update_annotation_value(
