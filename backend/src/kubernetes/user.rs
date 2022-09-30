@@ -5,7 +5,7 @@
 //!
 
 use super::{
-    all_namespaces_api, delete_all_resource, delete_annotation_value, get_all_resource, get_host,
+    all_namespaces_api, delete_all_resource, delete_annotation_value, get_all_resource,
     list_all_resources, normalize_id, serialize_json, unserialize_json, update_annotation_value,
     user_namespaced_api, APP_LABEL, APP_VALUE, COMPONENT_LABEL,
 };
