@@ -5,7 +5,7 @@
 //!
 
 use super::{
-    all_namespaces_api, delete_all_resource, delete_annotation_value, get_all_resource,
+    all_namespaces_api, delete_all_resource, delete_annotation_value, get_all_resource, get_host,
     list_all_resources, normalize_id, serialize_json, unserialize_json, update_annotation_value,
     user_namespaced_api, APP_LABEL, APP_VALUE, COMPONENT_LABEL,
 };
@@ -146,6 +146,11 @@ pub async fn create_user(id: &str, conf: UserConfiguration) -> Result<()> {
                 },
                 spec: Some(IngressSpec {
                     ingress_class_name: Some(INGRESS_CLASS_NAME.to_string()),
+                    // Setup initial route with proper subdomain
+                    rules: Some(vec![IngressRule {
+                        host: Some(format!("{}.{}", normalize_id(&user.id), get_host().await?)),
+                        ..Default::default()
+                    }]),
                     default_backend: Some(IngressBackend {
                         service: Some(IngressServiceBackend {
                             name: BACKEND_UI_SERVICE_NAME.to_string(),
