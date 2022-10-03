@@ -27,16 +27,15 @@ export function formatDuration(s: number): string {
 }
 
 export function sessionDomain(session: Session): string {
-    return `${session.userId}.${document.location.hostname}`;
+    return `${session.userId.toLowerCase()}.${document.location.hostname}`;
 }
 
 export function sessionUrl(session: Session): string | null {
     switch (session.state.type) {
-        // TODO retrieve RepoVersion, extract ports
         case 'Running': {
-            //TODO const ports = session.template.runtime?.ports;
-            //const port = ports?.find(port => port.name == 'web')?.port || 80;
-            return `//${sessionDomain(session)}`;
+            // http://localhost:3000/?folder=/home/workspace
+            // TODO extract this info from editor
+            return `//${sessionDomain(session)}/?folder=/home`;
         }
         default: return null;
     }
