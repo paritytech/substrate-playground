@@ -89,6 +89,14 @@ build-editor:
 push-editor: build-editor ## Push a newly built image on docker.io
 	docker push ${PLAYGROUND_EDITOR_IMAGE_TAG}
 
+launch-editor:
+	@if test "$(EDITOR_NAME)" = "" ; then \
+		echo "Environment variable EDITOR_NAME not set"; \
+		exit 1; \
+	fi
+	@-cd vscode-extension; yarn clean && yarn && yarn build
+	@cd resources/editors; docker compose up --build --force-recreate
+
 build-template-base:
 	$(eval DOCKER_IMAGE_VERSION=$(shell git rev-parse --short HEAD))
 	@docker buildx build --load --force-rm -f Dockerfile.base --label org.opencontainers.image.version=${DOCKER_IMAGE_VERSION} -t ${TEMPLATE_BASE}:sha-${DOCKER_IMAGE_VERSION} .
