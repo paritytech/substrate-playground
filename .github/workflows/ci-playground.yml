@@ -11,7 +11,7 @@ on:
     paths:
       - 'Makefile'
       - '.github/workflows/ci-playground.yml'
-      - 'conf/**'
+      - 'resources/**'
       - 'backend/**'
       - 'frontend/**'
       - 'e2e/**'
@@ -25,7 +25,7 @@ on:
     paths:
       - 'Makefile'
       - '.github/workflows/ci-playground.yml'
-      - 'conf/**'
+      - 'resources/**'
       - 'backend/**'
       - 'frontend/**'
       - 'e2e/**'
@@ -148,13 +148,13 @@ jobs:
           curl -sfLo kustomize https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv3.6.1/kustomize_v3.6.1_linux_amd64.tar.gz
           tar zxvf kustomize*
           chmod u+x ./kustomize
-        working-directory: conf/k8s/overlays/dev
+        working-directory: resources/k8s/overlays/dev
 
       - name: Update version
         run: |-
           ./kustomize edit set image paritytech/substrate-playground-backend-api:${{ steps.env.outputs.sha }}
           ./kustomize edit set image paritytech/substrate-playground-backend-ui:${{ steps.env.outputs.sha }}
-        working-directory: conf/k8s/overlays/dev
+        working-directory: resources/k8s/overlays/dev
 
       - name: Load docker images
         run: k3d image import paritytech/substrate-playground-backend-api:${{ steps.env.outputs.sha }} paritytech/substrate-playground-backend-ui:${{ steps.env.outputs.sha }} -c pg-cluster

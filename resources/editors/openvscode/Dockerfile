@@ -1,25 +1,24 @@
-# The image serving as base for openvscode templates.
-# Inherits from the 3rd party docker image and adds the relevant bits so that it can run openvscode
+# The image used as openvscode editor.
 #
 # Built as a multi-stage image (https://docs.docker.com/develop/develop-images/multistage-build/)
 
-ARG TEMPLATE_IMAGE
-
-FROM $TEMPLATE_IMAGE
+FROM ubuntu
 
 # Ensure that needed env variables have been set by inherited image
-RUN [ ! -z "${USER}" ] || { echo "USER env variable must be set in inherited image"; exit 1; } && \
-    [ ! -z "${HOME}" ] || { echo "HOME env variable must be set in inherited image"; exit 1; } && \
-    [ ! -z "${WORKSPACE}" ] || { echo "WORKSPACE env variable must be set in inherited image"; exit 1; }
+#RUN [ ! -z "${USER}" ] || { echo "USER env variable must be set in inherited image"; exit 1; } && \
+#    [ ! -z "${HOME}" ] || { echo "HOME env variable must be set in inherited image"; exit 1; } && \
+#    [ ! -z "${WORKSPACE}" ] || { echo "WORKSPACE env variable must be set in inherited image"; exit 1; }
 
 ARG OPENVSCODE_PLAYGROUND_HOME=$OPENVSCODE_HOME/openvscode-playground
-ARG OPENVSCODE_SERVER_ROOT="/home/.openvscode-server"
+ARG OPENVSCODE_SERVER_ROOT="/opt/editor"
 
 WORKDIR /home/
 
 USER root
 
 ENV OPENVSCODE_VERSION=1.68.1
+
+RUN apt-get update && apt-get install -y wget
 
 # Downloading the latest VSC Server release
 RUN wget https://github.com/gitpod-io/openvscode-server/releases/download/openvscode-server-v$OPENVSCODE_VERSION/openvscode-server-v$OPENVSCODE_VERSION-linux-x64.tar.gz \
@@ -28,23 +27,32 @@ RUN wget https://github.com/gitpod-io/openvscode-server/releases/download/openvs
     && cp ${OPENVSCODE_SERVER_ROOT}/bin/remote-cli/openvscode-server ${OPENVSCODE_SERVER_ROOT}/bin/remote-cli/code \
     && rm -rf openvscode-server-v$OPENVSCODE_VERSION-linux-x64.tar.gz
 
-COPY playground-extension ${OPENVSCODE_SERVER_ROOT}/extensions/playground-extension
 # https://code.visualstudio.com/docs/getstarted/settings#_settings-file-locations
-COPY conf ${HOME}/.config/Code/User/settings.json
+RUN mkdir -p ${OPENVSCODE_SERVER_ROOT}/extensions/
+COPY resources/editors/openvscode/.vscode ${HOME}/.config/Code/User/settings.json
+COPY ../../vscode-extension ${OPENVSCODE_SERVER_ROOT}/extensions/parity.substrate-playground
+COPY resources/editors/openvscode/start.sh ${OPENVSCODE_SERVER_ROOT}/start.sh
 
 RUN chmod g+rw /home && \
     chown -R $USER:$USER ${OPENVSCODE_SERVER_ROOT}
+RUN chmod +x ${OPENVSCODE_SERVER_ROOT}/start.sh
 
 USER $USER
 
-## Install default extensions
-# https://marketplace.visualstudio.com/items?itemName=Zerotaskx.rust-extension-pack
-RUN ${OPENVSCODE_SERVER_ROOT}/bin/openvscode-server
+# Install default extensions
+RUN ${OPENVSCODE_SERVER_ROOT}/bin/openvscode-server \
     --install-extension matklad.rust-analyzer \
+    --install-extension vadimcn.vscode-lldb \
     --install-extension vsls-contrib.codetour \
+    --install-extension GitHub.vscode-pull-request-github \
+    --install-extension ms-vscode.live-server \
     --install-extension redhat.vscode-yaml \
     --install-extension ms-python.python \
     --install-extension ms-toolsai.jupyter
+
+# https://code.visualstudio.com/docs/editor/settings-sync
+# https://github.com/microsoft/vscode/issues/141293
+# https://github.com/microsoft/vscode/issues/116740
 
 WORKDIR $WORKSPACE
 
@@ -55,10 +63,3 @@ ENV LANG=C.UTF-8 \
     GIT_EDITOR="code --wait" \
     OPENVSCODE_SERVER_ROOT=${OPENVSCODE_SERVER_ROOT} \
     PATH="${OPENVSCODE_SERVER_ROOT}/bin/remote-cli:${PATH}"
-
-EXPOSE 3000
-
-# https://github.com/Yelp/dumb-init
-#ENTRYPOINT [ "dumb-init", "--" ]
-#CMD [ "/home/openvscode-server/server.sh", "--port", "3000", "--folder", "/home/playground/workspace", "--disable-telemetry", "true", "--without-connection-token"]
-ENTRYPOINT [ "/bin/sh", "-c", "exec ${OPENVSCODE_SERVER_ROOT}/bin/openvscode-server --host 0.0.0.0 --without-connection-token ${WORKSPACE} \"${@}\"", "--" ]

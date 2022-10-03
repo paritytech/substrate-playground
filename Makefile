@@ -32,8 +32,8 @@ endif
 # ENV defaults to dev
 ENV?=dev
 
-# Extract all environments from conf/k8s/overlays/
-ENVS := $(shell cd conf/k8s/overlays/ && ls -d *)
+# Extract all environments from resources/k8s/overlays/
+ENVS := $(shell cd resources/k8s/overlays/ && ls -d *)
 
 ifeq ($(filter $(ENV),$(ENVS)),)
     $(error ENV should be one of ($(ENVS)) but was $(ENV))
@@ -75,6 +75,20 @@ help:
 
 ##@ Docker images
 
+build-editor:
+	@if test "$(EDITOR_NAME)" = "" ; then \
+		echo "Environment variable EDITOR_NAME not set"; \
+		exit 1; \
+	fi
+	$(eval DOCKER_IMAGE_VERSION=$(shell git rev-parse --short HEAD))
+	$(eval PLAYGROUND_EDITOR_IMAGE_NAME=${DOCKER_ORG}/substrate-playground-editor-$(EDITOR_NAME))
+	$(eval PLAYGROUND_EDITOR_IMAGE_TAG=${PLAYGROUND_EDITOR_IMAGE_NAME}:sha-${DOCKER_IMAGE_VERSION})
+	@docker buildx build --load --force-rm -f resources/editors/${EDITOR_NAME}/Dockerfile --label org.opencontainers.image.version=${DOCKER_IMAGE_VERSION} -t ${PLAYGROUND_EDITOR_IMAGE_TAG} .
+	docker image prune -f --filter label=stage=builder
+
+push-editor: build-editor ## Push a newly built image on docker.io
+	docker push ${PLAYGROUND_EDITOR_IMAGE_TAG}
+
 build-template-base:
 	$(eval DOCKER_IMAGE_VERSION=$(shell git rev-parse --short HEAD))
 	@docker buildx build --load --force-rm -f Dockerfile.base --label org.opencontainers.image.version=${DOCKER_IMAGE_VERSION} -t ${TEMPLATE_BASE}:sha-${DOCKER_IMAGE_VERSION} .
@@ -85,7 +99,7 @@ push-template-base: build-template-base ## Push a newly built image on docker.io
 
 build-backend-docker-images: ## Build backend docker images
 	$(eval PLAYGROUND_DOCKER_IMAGE_VERSION=$(shell git rev-parse --short HEAD))
-	@cd frontend; docker buildx build --load -f Dockerfile --build-arg GITHUB_SHA="${PLAYGROUND_DOCKER_IMAGE_VERSION}" --label org.opencontainers.image.version=${PLAYGROUND_DOCKER_IMAGE_VERSION} -t ${PLAYGROUND_BACKEND_UI_DOCKER_IMAGE_NAME}:sha-${PLAYGROUND_DOCKER_IMAGE_VERSION} .
+	cd frontend; docker buildx build --load -f Dockerfile --build-arg GITHUB_SHA="${PLAYGROUND_DOCKER_IMAGE_VERSION}" --label org.opencontainers.image.version=${PLAYGROUND_DOCKER_IMAGE_VERSION} -t ${PLAYGROUND_BACKEND_UI_DOCKER_IMAGE_NAME}:sha-${PLAYGROUND_DOCKER_IMAGE_VERSION} .
 	@cd backend; docker buildx build --load -f Dockerfile --build-arg GITHUB_SHA="${PLAYGROUND_DOCKER_IMAGE_VERSION}" --label org.opencontainers.image.version=${PLAYGROUND_DOCKER_IMAGE_VERSION} -t ${PLAYGROUND_BACKEND_API_DOCKER_IMAGE_NAME}:sha-${PLAYGROUND_DOCKER_IMAGE_VERSION} .
 
 push-backend-docker-images: build-backend-docker-images ## Push newly built backend images on docker.io
@@ -130,11 +144,11 @@ k8s-setup-env: requires-k8s
 	kubectl create secret generic playground-secrets --from-literal=github.clientSecret="$${GH_CLIENT_SECRET}" --from-literal=rocket.secretKey=`openssl rand -base64 32` --dry-run=client -o yaml | kubectl apply -f -
 
 k8s-deploy: requires-k8s ## Deploy playground on kubernetes
-	kustomize build --enable-helm conf/k8s/overlays/${ENV}/ | kubectl apply -f -
+	kustomize build --enable-helm resources/k8s/overlays/${ENV}/ | kubectl apply -f -
 
 k8s-undeploy: requires-k8s ## Undeploy playground from kubernetes
 	@read -p $$'All configuration (including GitHub secrets) will be lost. Ok to proceed? [yN]' answer; if [ "$${answer}" != "Y" ] ;then exit 1; fi
-	kustomize build --enable-helm conf/k8s/overlays/${ENV}/ | kubectl delete -f -
+	kustomize build --enable-helm resources/k8s/overlays/${ENV}/ | kubectl delete -f -
 
 ##@ DNS certificates
 

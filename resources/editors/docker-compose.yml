@@ -1,0 +1,9 @@
+version: "3.9"
+services:
+  editor:
+    build:
+      context: ../..
+      dockerfile: resources/editors/${EDITOR_NAME}/Dockerfile
+    ports:
+      - "80:80"
+    entrypoint: ["bash", "-c",  "/home/.openvscode-server/start.sh"]

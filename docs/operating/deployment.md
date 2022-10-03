@@ -35,7 +35,7 @@ See https://github.com/kubernetes-sigs/kustomize
 
 ### Custom overlay
 
-If a new deployment environment is created, duplicate `conf/k8s/overlays/staging` into a dedicated folder and adapt accordingly.
+If a new deployment environment is created, duplicate `resources/k8s/overlays/staging` into a dedicated folder and adapt accordingly.
 ### Github OAuth app
 
 Make sure a Github OAuth App is [created](https://docs.github.com/en/developers/apps/creating-an-oauth-app) with following parameters:
@@ -54,7 +54,7 @@ gcloud compute addresses list --filter="region:( us-central1 )"
 gcloud compute addresses describe playground --region=us-central1 --format="value(address)"
 ```
 
-Then update `loadBalancerIP` with the newly created IP in `conf/k8s/overlays/$ENV/kustomization.yaml`
+Then update `loadBalancerIP` with the newly created IP in `resources/k8s/overlays/$ENV/kustomization.yaml`
 
 ### Cluster creation
 

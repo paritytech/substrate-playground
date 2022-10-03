@@ -57,13 +57,13 @@ Potential hooks:
 
 A template workflow can be found [here](https://github.com/paritytech/substrate-playground/blob/develop/.github/workflow-templates/cd-template.yml).
 
-`client_payload` must define `id` pointing to one of the existing [templates](https://github.com/paritytech/substrate-playground/blob/develop/conf/k8s/overlays/staging/).
+`client_payload` must define `id` pointing to one of the existing [templates](https://github.com/paritytech/substrate-playground/blob/develop/resources/k8s/overlays/staging/).
 It can also define a `ref` (branch/tag/commit used to build, defaults to _master_) and a `dockerFile` location (default to _.devcontainer/Dockerfile_)
 
 This workflow will trigger the [_template-updated_ workflow](https://github.com/paritytech/substrate-playground/blob/develop/.github/workflows/event-template-updated.yml) on [substrate-playground](https://github.com/paritytech/substrate-playground/), including the following actions:
 
 * create and publish a [composite docker image](https://github.com/paritytech/substrate-playground/blob/develop/templates/Dockerfile.template) from the new template one and latest [base one](https://github.com/paritytech/substrate-playground/blob/develop/templates/Dockerfile.base)
-* update [template image id](https://github.com/paritytech/substrate-playground/tree/develop/conf/k8s/overlays/staging/templates)
+* update [template image id](https://github.com/paritytech/substrate-playground/tree/develop/resources/k8s/overlays/staging/templates)
 * commit changes
 
 Changes to the configuration file are finally [continuously deployed](https://github.com/paritytech/substrate-playground/blob/develop/.github/workflows/cd-templates.yml) to the staging playground environment as kubernetes ConfigMap.
