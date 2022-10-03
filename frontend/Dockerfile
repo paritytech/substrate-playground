@@ -13,10 +13,6 @@ COPY package.json yarn.lock tsconfig.json .
 COPY src /app/src
 COPY public /app/public
 
-# The custom base URL used to access the API, if any
-ARG BASE
-ENV BASE=$BASE
-
 # The git sha of the current source tree
 ARG GITHUB_SHA
 ENV GITHUB_SHA=$GITHUB_SHA
