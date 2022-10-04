@@ -4,6 +4,8 @@ services:
     build:
       context: ../..
       dockerfile: resources/editors/${EDITOR_NAME}/Dockerfile
+    environment:
+      PORT: ${PORT}
     ports:
-      - "80:80"
-    entrypoint: ["bash", "-c",  "/home/.openvscode-server/start.sh"]
+      - "80:${PORT}"
+    entrypoint: ["bash", "-c",  "/opt/playground-editor/start.sh"]

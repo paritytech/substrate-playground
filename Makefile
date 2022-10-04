@@ -95,7 +95,7 @@ launch-editor:
 		exit 1; \
 	fi
 	@-cd vscode-extension; yarn clean && yarn && yarn build
-	@cd resources/editors; docker compose up --build --force-recreate
+	@cd resources/editors; docker compose --env-file .env up --build --force-recreate
 
 build-template-base:
 	$(eval DOCKER_IMAGE_VERSION=$(shell git rev-parse --short HEAD))
