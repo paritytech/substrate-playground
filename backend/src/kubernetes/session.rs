@@ -52,10 +52,11 @@ fn string_to_duration(str: &str) -> Duration {
 
 // Model
 
-fn pod_env_variables(envs: Vec<NameValuePair>, user_id: &str) -> Vec<EnvVar> {
+fn pod_env_variables(envs: Vec<NameValuePair>, user_id: &str, editor_port: i32) -> Vec<EnvVar> {
     let mut all_envs = Vec::from([
         env_var("SUBSTRATE_PLAYGROUND", "true"),
         env_var("SUBSTRATE_PLAYGROUND_USER", user_id),
+        env_var("PORT", &editor_port.to_string()),
     ]);
     // Add default variables
     all_envs.append(
@@ -155,8 +156,8 @@ fn session_to_pod(
             containers: vec![Container {
                 name: format!("{}-container", COMPONENT),
                 image: Some(image.to_string()),
-                env: Some(pod_env_variables(envs, user_id)),
-                command: Some(vec![format!("ls {}; PORT={} {}/start.sh", editor_path, editor_port, editor_path)]),
+                env: Some(pod_env_variables(envs, user_id, editor_port)),
+                command: Some(vec![format!("{}/start.sh", editor_path)]),
                 ports: Some(ports.iter().map(|port| ContainerPort {
                     container_port: port.port,
                     ..Default::default()
