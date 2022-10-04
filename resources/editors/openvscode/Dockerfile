@@ -4,37 +4,30 @@
 
 FROM ubuntu
 
-# Ensure that needed env variables have been set by inherited image
-#RUN [ ! -z "${USER}" ] || { echo "USER env variable must be set in inherited image"; exit 1; } && \
-#    [ ! -z "${HOME}" ] || { echo "HOME env variable must be set in inherited image"; exit 1; } && \
-#    [ ! -z "${WORKSPACE}" ] || { echo "WORKSPACE env variable must be set in inherited image"; exit 1; }
-
-ARG OPENVSCODE_PLAYGROUND_HOME=$OPENVSCODE_HOME/openvscode-playground
 ARG OPENVSCODE_SERVER_ROOT="/opt/editor"
-
-WORKDIR /home/
 
 USER root
 
 ENV OPENVSCODE_VERSION=1.68.1
-
-RUN apt-get update && apt-get install -y wget
+ENV OPENVSCODE_SERVER=openvscode-server-v${OPENVSCODE_VERSION}-linux-x64
+ENV OPENVSCODE_SERVER_FILE=${OPENVSCODE_SERVER}.tar.gz
 
 # Downloading the latest VSC Server release
-RUN wget https://github.com/gitpod-io/openvscode-server/releases/download/openvscode-server-v$OPENVSCODE_VERSION/openvscode-server-v$OPENVSCODE_VERSION-linux-x64.tar.gz \
-    && tar -xzf openvscode-server-v$OPENVSCODE_VERSION-linux-x64.tar.gz \
-    && mv openvscode-server-v$OPENVSCODE_VERSION-linux-x64 ${OPENVSCODE_SERVER_ROOT} \
+RUN apt-get update && apt-get install -y wget \
+    && wget https://github.com/gitpod-io/openvscode-server/releases/download/openvscode-server-v${OPENVSCODE_VERSION}/${OPENVSCODE_SERVER_FILE} \
+    && tar -xzf ${OPENVSCODE_SERVER_FILE} \
+    && mkdir -p ${OPENVSCODE_SERVER_ROOT}/data/User \
+    && mkdir -p ${OPENVSCODE_SERVER_ROOT}/extensions \
+    && mv ${OPENVSCODE_SERVER}/* ${OPENVSCODE_SERVER_ROOT} \
+    && ls ${OPENVSCODE_SERVER_ROOT} \
     && cp ${OPENVSCODE_SERVER_ROOT}/bin/remote-cli/openvscode-server ${OPENVSCODE_SERVER_ROOT}/bin/remote-cli/code \
-    && rm -rf openvscode-server-v$OPENVSCODE_VERSION-linux-x64.tar.gz
+    && rm -rf ${OPENVSCODE_SERVER_FILE}
 
 # https://code.visualstudio.com/docs/getstarted/settings#_settings-file-locations
-RUN mkdir -p ${OPENVSCODE_SERVER_ROOT}/extensions/
-COPY resources/editors/openvscode/.vscode ${HOME}/.config/Code/User/settings.json
+COPY resources/editors/openvscode/conf/* ${OPENVSCODE_SERVER_ROOT}/data/User
 COPY ../../vscode-extension ${OPENVSCODE_SERVER_ROOT}/extensions/parity.substrate-playground
 COPY resources/editors/openvscode/start.sh ${OPENVSCODE_SERVER_ROOT}/start.sh
 
-RUN chmod g+rw /home && \
-    chown -R $USER:$USER ${OPENVSCODE_SERVER_ROOT}
 RUN chmod +x ${OPENVSCODE_SERVER_ROOT}/start.sh
 
 USER $USER
@@ -53,8 +46,6 @@ RUN ${OPENVSCODE_SERVER_ROOT}/bin/openvscode-server \
 # https://code.visualstudio.com/docs/editor/settings-sync
 # https://github.com/microsoft/vscode/issues/141293
 # https://github.com/microsoft/vscode/issues/116740
-
-WORKDIR $WORKSPACE
 
 ENV LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
