@@ -35,7 +35,7 @@ export function sessionUrl(session: Session): string | null {
         case 'Running': {
             // http://localhost:3000/?folder=/home/workspace
             // TODO extract this info from editor
-            return `//${sessionDomain(session)}/?folder=/home`;
+            return `//${sessionDomain(session)}/editor?folder=/home`;
         }
         default: return null;
     }
