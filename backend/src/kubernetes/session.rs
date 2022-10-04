@@ -157,7 +157,8 @@ fn session_to_pod(
                 name: format!("{}-container", COMPONENT),
                 image: Some(image.to_string()),
                 env: Some(pod_env_variables(envs, user_id, editor_port)),
-                command: Some(vec![format!("{}/start.sh", editor_path)]),
+                command: Some(vec!["/bin/sh".to_string()]),
+                args: Some(vec![format!("{}/start.sh", editor_path)]),
                 ports: Some(ports.iter().map(|port| ContainerPort {
                     container_port: port.port,
                     ..Default::default()
