@@ -8,4 +8,4 @@ services:
       PORT: ${PORT}
     ports:
       - "80:${PORT}"
-    entrypoint: ["bash", "-c",  "/opt/playground-editor/start.sh"]
+    entrypoint: ["bash", "-c", "/opt/editor/start.sh"]
