@@ -147,10 +147,7 @@ pub async fn create_user(id: &str, conf: UserConfiguration) -> Result<()> {
                 spec: Some(IngressSpec {
                     ingress_class_name: Some(INGRESS_CLASS_NAME.to_string()),
                     // Setup initial route with proper subdomain
-                    rules: Some(vec![IngressRule {
-                        host: Some(format!("{}.{}", normalize_id(&user.id), get_host().await?)),
-                        ..Default::default()
-                    }]),
+                    rules: Some(vec![initial_rule(&user.id).await?]),
                     default_backend: Some(IngressBackend {
                         service: Some(IngressServiceBackend {
                             name: BACKEND_UI_SERVICE_NAME.to_string(),
@@ -194,6 +191,13 @@ pub async fn create_user(id: &str, conf: UserConfiguration) -> Result<()> {
         .map_err(Error::K8sCommunicationFailure)?;
 
     Ok(())
+}
+
+async fn initial_rule(user_id: &str) -> Result<IngressRule> {
+    Ok(IngressRule {
+        host: Some(format!("{}.{}", normalize_id(user_id), get_host().await?)),
+        ..Default::default()
+    })
 }
 
 pub async fn add_session(user_id: &str, service_name: &str, ports: Vec<Port>) -> Result<()> {
@@ -270,7 +274,7 @@ pub async fn remove_session(user_id: &str) -> Result<()> {
         .spec
         .ok_or_else(|| Error::MissingConstraint("ingress".to_string(), "spec".to_string()))?
         .clone();
-    spec.rules.replace(vec![]);
+    spec.rules.replace(vec![initial_rule(user_id).await?]);
     ingress.spec.replace(spec);
 
     ingress_api
