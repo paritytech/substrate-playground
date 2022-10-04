@@ -67,6 +67,8 @@ fn pod_env_variables(envs: Vec<NameValuePair>, user_id: &str) -> Vec<EnvVar> {
     all_envs
 }
 
+const BASE_EDITOR_PATH: &str = "/opt/editors";
+
 #[cfg_attr(feature = "cargo-clippy", allow(clippy::too_many_arguments))]
 fn session_to_pod(
     user_id: &str,
@@ -75,6 +77,7 @@ fn session_to_pod(
     duration: &Duration,
     pool_id: &str,
     envs: Vec<NameValuePair>,
+    editor_port: i32,
     ports: Vec<Port>,
 ) -> Result<Pod> {
     let mut labels = BTreeMap::new();
@@ -90,7 +93,10 @@ fn session_to_pod(
     annotations.insert(ENVS_ANNOTATION.to_string(), serialize_json(&envs)?);
     annotations.insert(PORTS_ANNOTATION.to_string(), serialize_json(&ports)?);
 
-    let openvscode_version = "1.71.2";
+    // TODO make configurable; also add ENVs
+    let editor_name = "openvscode";
+    let editor_path = format!("{}/{}", BASE_EDITOR_PATH, editor_name);
+    let editor_image = "paritytech/substrate-playground-editor-openvscode:sha-37d01730".to_string();
     Ok(Pod {
         metadata: ObjectMeta {
             name: Some(user_id.to_string()),
@@ -132,31 +138,25 @@ fn session_to_pod(
             }),
             restart_policy: Some("Never".to_string()),
             init_containers: Some(vec![Container {
-                name: "copy-openvscode".to_string(),
-                image: Some("ubuntu".to_string()),
+                name: "editor".to_string(),
+                image: Some(editor_image),
                 command: Some(vec![
                     "sh".to_string(),
                     "-c".to_string(),
-                    "apt-get update; apt-get install -y curl; curl -L https://github.com/gitpod-io/openvscode-server/releases/download/openvscode-server-v{{VERSION}}/openvscode-server-v{{VERSION}}-linux-x64.tar.gz --output openvscode-server.tar.gz ; mkdir -p /opt/openvscode;tar -xzf openvscode-server.tar.gz --directory /opt/openvscode --strip-components=1;cp /opt/openvscode/bin/remote-cli/openvscode-server /opt/openvscode/bin/remote-cli/code".to_string().replace("{{VERSION}}", openvscode_version),
+                    format!("mv /opt/editor/* {}", editor_path),
                 ]),
                 volume_mounts: Some(vec![VolumeMount {
                     name: volume_name.to_string(),
-                    mount_path: "/opt".to_string(),
+                    mount_path: BASE_EDITOR_PATH.to_string(),
                     ..Default::default()
                 }]),
                 ..Default::default()
             }]),
-            // TODO curl https://github.com/jeluard.keys | tee -a ~/.ssh/authorized_keys
             containers: vec![Container {
                 name: format!("{}-container", COMPONENT),
                 image: Some(image.to_string()),
                 env: Some(pod_env_variables(envs, user_id)),
-                command: Some(vec!["/opt/openvscode/bin/openvscode-server".to_string()]),
-                args: Some(vec![
-                    "--host".to_string(),
-                    "0.0.0.0".to_string(),
-                    "--without-connection-token".to_string(),
-                ]),
+                command: Some(vec![format!("PORT={} {}/start.sh", editor_port, editor_path).to_string()]),
                 ports: Some(ports.iter().map(|port| ContainerPort {
                     container_port: port.port,
                     ..Default::default()
@@ -172,7 +172,7 @@ fn session_to_pod(
                 }),
                 volume_mounts: Some(vec![VolumeMount {
                     name: volume_name.to_string(),
-                    mount_path: "/opt".to_string(),
+                    mount_path: BASE_EDITOR_PATH.to_string(),
                     ..Default::default()
                 }]),
                 security_context: Some(SecurityContext {
@@ -484,11 +484,12 @@ pub async fn create_session(
     if let Some(devcontainer) = devcontainer.clone() {
         ports.append(&mut devcontainer_to_ports(&devcontainer));
     }
+    let editor_port = 80;
     ports.push(Port {
-        name: "web".to_string(),
+        name: "editor".to_string(),
         protocol: Some("TCP".to_string()),
         port: 80,
-        target: Some(3000),
+        target: Some(editor_port),
     });
 
     // Now create the session itself
@@ -523,6 +524,7 @@ pub async fn create_session(
                 devcontainer
                     .map(|devcontainer| envs(&devcontainer))
                     .unwrap_or_default(),
+                editor_port,
                 ports.clone(),
             )?,
         )
