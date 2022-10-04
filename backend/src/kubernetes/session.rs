@@ -486,7 +486,7 @@ pub async fn create_session(
     if let Some(devcontainer) = devcontainer.clone() {
         ports.append(&mut devcontainer_to_ports(&devcontainer));
     }
-    let editor_port = 80;
+    let editor_port = 3000;
     ports.push(Port {
         name: "editor".to_string(),
         protocol: Some("TCP".to_string()),
