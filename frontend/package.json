@@ -16,7 +16,7 @@
     "@emotion/react": "11.10.4",
     "@emotion/styled": "11.10.4",
     "@mui/icons-material": "5.10.6",
-    "@mui/lab": "5.0.0-alpha.101",
+    "@mui/lab": "5.0.0-alpha.102",
     "@mui/material": "5.10.7",
     "@mui/styles": "5.10.8",
     "@substrate/playground-client": "1.9.24",
