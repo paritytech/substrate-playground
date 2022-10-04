@@ -143,7 +143,7 @@ fn session_to_pod(
                 command: Some(vec![
                     "sh".to_string(),
                     "-c".to_string(),
-                    format!("mv /opt/editor/* {}", editor_path),
+                    format!("mkdir -p {}; mv /opt/editor/* {}", editor_path, editor_path),
                 ]),
                 volume_mounts: Some(vec![VolumeMount {
                     name: volume_name.to_string(),
