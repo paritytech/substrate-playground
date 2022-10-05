@@ -3,6 +3,7 @@
 use crate::{
     error::{Error, ResourceError, Result},
     kubernetes::{
+        editor::{create_editor, delete_editor, get_editor, list_editors, update_editor},
         get_configuration,
         pool::{get_pool, list_pools},
         preference::{
@@ -27,11 +28,12 @@ use crate::{
     },
     metrics::Metrics,
     types::{
-        Playground, Pool, Preference, PreferenceConfiguration, Preferences, Profile,
-        ProfileConfiguration, Repository, RepositoryConfiguration, RepositoryUpdateConfiguration,
-        RepositoryVersion, ResourcePermission, ResourceType, Role, RoleConfiguration, Session,
-        SessionConfiguration, SessionExecution, SessionExecutionConfiguration, SessionState,
-        SessionUpdateConfiguration, User, UserConfiguration, UserUpdateConfiguration,
+        Editor, EditorConfiguration, Playground, Pool, Preference, PreferenceConfiguration,
+        Preferences, Profile, ProfileConfiguration, Repository, RepositoryConfiguration,
+        RepositoryUpdateConfiguration, RepositoryVersion, ResourcePermission, ResourceType, Role,
+        RoleConfiguration, Session, SessionConfiguration, SessionExecution,
+        SessionExecutionConfiguration, SessionState, SessionUpdateConfiguration, User,
+        UserConfiguration, UserUpdateConfiguration,
     },
 };
 use log::{error, info, warn};
@@ -128,6 +130,58 @@ impl Manager {
             user: None,
             configuration: get_configuration().await?,
         })
+    }
+
+    // Editors
+
+    pub async fn get_editor(&self, caller: &User, id: &str) -> Result<Option<Editor>> {
+        ensure_permission(caller, ResourceType::Editor, ResourcePermission::Read).await?;
+
+        get_editor(id).await
+    }
+
+    pub async fn list_editors(&self, caller: &User) -> Result<Vec<Editor>> {
+        ensure_permission(
+            caller,
+            ResourceType::Editor,
+            crate::types::ResourcePermission::Read,
+        )
+        .await?;
+
+        list_editors().await
+    }
+
+    pub async fn create_editor(
+        &self,
+        caller: &User,
+        id: &str,
+        conf: EditorConfiguration,
+    ) -> Result<()> {
+        ensure_permission(
+            caller,
+            ResourceType::Editor,
+            crate::types::ResourcePermission::Create,
+        )
+        .await?;
+
+        create_editor(id, conf).await
+    }
+
+    pub async fn update_editor(
+        &self,
+        caller: &User,
+        id: &str,
+        conf: crate::types::EditorUpdateConfiguration,
+    ) -> Result<()> {
+        ensure_permission(caller, ResourceType::Editor, ResourcePermission::Update).await?;
+
+        update_editor(id, conf).await
+    }
+
+    pub async fn delete_editor(&self, caller: &User, id: &str) -> Result<()> {
+        ensure_permission(caller, ResourceType::Editor, ResourcePermission::Delete).await?;
+
+        delete_editor(id).await
     }
 
     // Pools

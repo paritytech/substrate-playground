@@ -1,5 +1,5 @@
 import { fetchWithTimeout, rpc } from './rpc';
-import { Playground, Pool, User, UserConfiguration, UserUpdateConfiguration, Repository, RepositoryConfiguration, RepositoryUpdateConfiguration, RepositoryVersion, RepositoryVersionConfiguration, SessionConfiguration, Session, SessionUpdateConfiguration, SessionExecutionConfiguration, SessionExecution, Role, RoleConfiguration, RoleUpdateConfiguration, Profile, ProfileUpdateConfiguration, ProfileConfiguration, Preference, PreferenceConfiguration, PreferenceUpdateConfiguration, } from './types';
+import { Playground, Pool, User, UserConfiguration, UserUpdateConfiguration, Repository, RepositoryConfiguration, RepositoryUpdateConfiguration, RepositoryVersion, RepositoryVersionConfiguration, SessionConfiguration, Session, SessionUpdateConfiguration, SessionExecutionConfiguration, SessionExecution, Role, RoleConfiguration, RoleUpdateConfiguration, Profile, ProfileUpdateConfiguration, ProfileConfiguration, Preference, PreferenceConfiguration, PreferenceUpdateConfiguration, Editor, EditorConfiguration, EditorUpdateConfiguration, } from './types';
 
 export class Client {
 
@@ -12,6 +12,7 @@ export class Client {
     static rolesResource = 'roles';
     static profilesResource = 'profiles';
     static poolsResource = 'pools';
+    static editorsResource = 'editors';
 
     private readonly base: string;
     private readonly defaultTimeout: number;
@@ -68,6 +69,39 @@ export class Client {
 
     async get(timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<Playground> {
         return rpc(this.path(""), init, timeout);
+    }
+
+    // Editors
+
+    async getEditor(id: Editor['id'], timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<Editor | null> {
+        return rpc(this.path(Client.editorsResource, id), init, timeout);
+    }
+
+    async listEditors(timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<Editor[]> {
+        return rpc(this.path(Client.editorsResource), init, timeout);
+    }
+
+    async createEditor(id: Editor['id'], conf: EditorConfiguration, timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<void> {
+        return rpc(this.path(Client.editorsResource, id), {
+            method: 'PUT',
+            body: JSON.stringify(conf),
+            ...init
+        }, timeout);
+    }
+
+    async updateEditor(id: Editor['id'], conf: EditorUpdateConfiguration, timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<void> {
+        return rpc(this.path(Client.editorsResource, id), {
+            method: 'PATCH',
+            body: JSON.stringify(conf),
+            ...init
+        }, timeout);
+    }
+
+    async deleteEditor(id: Editor['id'], timeout: number = this.defaultTimeout, init: RequestInit = this.defaultInit): Promise<void> {
+        return rpc(this.path(Client.editorsResource, id), {
+            method: 'DELETE',
+            ...init
+        }, timeout);
     }
 
     // Pools

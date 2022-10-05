@@ -62,6 +62,7 @@ pub struct PreferenceUpdateConfiguration {
 #[derive(PartialOrd, Ord, PartialEq, Eq, Serialize, Deserialize, Clone, Debug)]
 #[serde(rename_all = "PascalCase")]
 pub enum Preferences {
+    DefaultEditor,
     SessionDefaultDuration,
     SessionMaxDuration,
     SessionPoolAffinity,
@@ -71,6 +72,7 @@ pub enum Preferences {
 impl fmt::Display for Preferences {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match &*self {
+            Preferences::DefaultEditor => write!(f, "DefaultEditor"),
             Preferences::SessionDefaultDuration => write!(f, "SessionDefaultDuration"),
             Preferences::SessionMaxDuration => write!(f, "SessionMaxDuration"),
             Preferences::SessionPoolAffinity => write!(f, "SessionPoolAffinity"),
@@ -121,6 +123,7 @@ pub struct RepositoryDetails {
 #[derive(PartialOrd, Ord, PartialEq, Eq, Serialize, Deserialize, Clone, Debug)]
 #[serde(rename_all = "PascalCase")]
 pub enum ResourceType {
+    Editor,
     Pool,
     Preference,
     Profile,
@@ -137,6 +140,7 @@ pub enum ResourceType {
 impl fmt::Display for ResourceType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match &*self {
+            ResourceType::Editor => write!(f, "Editor"),
             ResourceType::Pool => write!(f, "Pool"),
             ResourceType::Preference => write!(f, "Preference"),
             ResourceType::Profile => write!(f, "Profile"),
@@ -322,6 +326,28 @@ pub struct SessionExecution {
 #[serde(rename_all = "camelCase")]
 pub struct SessionExecutionConfiguration {
     pub command: Vec<String>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct Editor {
+    pub id: String,
+    pub image: String,
+    pub env: BTreeMap<String, String>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct EditorConfiguration {
+    pub image: String,
+    pub env: BTreeMap<String, String>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct EditorUpdateConfiguration {
+    pub image: Option<String>,
+    pub env: Option<BTreeMap<String, String>>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

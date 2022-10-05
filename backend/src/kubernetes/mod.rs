@@ -1,3 +1,4 @@
+pub mod editor;
 pub mod pool;
 pub mod preference;
 pub mod profile;

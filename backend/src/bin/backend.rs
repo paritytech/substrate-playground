@@ -45,6 +45,12 @@ async fn main() {
                 playground::api::logout,
                 playground::api::get,
                 playground::api::get_unlogged,
+                // Editors
+                playground::api::get_editor,
+                playground::api::list_editors,
+                playground::api::create_editor,
+                playground::api::update_editor,
+                playground::api::delete_editor,
                 // Preferences
                 playground::api::get_preference,
                 playground::api::list_preferences,

@@ -24,6 +24,7 @@ export interface Pool extends IdentifiedResource {
 }
 
 export enum Preferences {
+    DefaultEditor = "DefaultEditor",
     SessionDefaultDuration = "SessionDefaultDuration",
     SessionMaxDuration = "SessionMaxDuration",
     SessionPoolAffinity = "SessionPoolAffinity",
@@ -169,6 +170,21 @@ export interface SessionExecution {
 
 export interface SessionExecutionConfiguration {
     command: Array<string>,
+}
+
+export interface Editor extends IdentifiedResource {
+    image: string,
+    env: Record<string, string>,
+}
+
+export interface EditorConfiguration {
+    image: string,
+    env: Record<string, string>,
+}
+
+export interface EditorUpdateConfiguration {
+    image?: string,
+    env?: Record<string, string>,
 }
 
 export interface User extends IdentifiedResource {

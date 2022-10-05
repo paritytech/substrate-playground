@@ -2,8 +2,8 @@
 use crate::{
     error::{Error, ResourceError, Result},
     types::{
-        self, NameValuePair, Port, Preferences, RepositoryVersionState, ResourceType, Session,
-        SessionConfiguration, SessionExecution, SessionExecutionConfiguration,
+        self, Editor, NameValuePair, Port, Preferences, RepositoryVersionState, ResourceType,
+        Session, SessionConfiguration, SessionExecution, SessionExecutionConfiguration,
         SessionRuntimeConfiguration, SessionUpdateConfiguration, User,
     },
     utils::devcontainer::{parse_devcontainer, DevContainer},
@@ -26,6 +26,7 @@ use std::{
 };
 
 use super::{
+    editor::get_editor,
     env_var, get_owned_resource, get_preference, list_all_resources, normalize_id,
     pool::get_pool,
     repository::get_repository,
@@ -52,13 +53,24 @@ fn string_to_duration(str: &str) -> Duration {
 
 // Model
 
-fn pod_env_variables(envs: Vec<NameValuePair>, user_id: &str, editor_port: i32) -> Vec<EnvVar> {
+fn pod_env_variables(
+    envs: Vec<NameValuePair>,
+    user_id: &str,
+    editor: &Editor,
+    editor_port: i32,
+) -> Vec<EnvVar> {
     let mut all_envs = Vec::from([
         env_var("SUBSTRATE_PLAYGROUND", "true"),
         env_var("SUBSTRATE_PLAYGROUND_USER", user_id),
         env_var("PORT", &editor_port.to_string()),
     ]);
-    // Add default variables
+    all_envs.append(
+        &mut editor
+            .env
+            .iter()
+            .map(|env| env_var(env.0, env.1))
+            .collect::<Vec<EnvVar>>(),
+    );
     all_envs.append(
         &mut envs
             .iter()
@@ -78,6 +90,7 @@ fn session_to_pod(
     duration: &Duration,
     pool_id: &str,
     envs: Vec<NameValuePair>,
+    editor: &Editor,
     editor_port: i32,
     ports: Vec<Port>,
 ) -> Result<Pod> {
@@ -94,10 +107,7 @@ fn session_to_pod(
     annotations.insert(ENVS_ANNOTATION.to_string(), serialize_json(&envs)?);
     annotations.insert(PORTS_ANNOTATION.to_string(), serialize_json(&ports)?);
 
-    // TODO make configurable; also add ENVs
-    let editor_name = "openvscode";
-    let editor_path = format!("{}/{}", BASE_EDITOR_PATH, editor_name);
-    let editor_image = "paritytech/substrate-playground-editor-openvscode:sha-37d01730".to_string();
+    let editor_path = format!("{}/{}", BASE_EDITOR_PATH, editor.id);
     Ok(Pod {
         metadata: ObjectMeta {
             name: Some(user_id.to_string()),
@@ -140,7 +150,7 @@ fn session_to_pod(
             restart_policy: Some("Never".to_string()),
             init_containers: Some(vec![Container {
                 name: "editor".to_string(),
-                image: Some(editor_image),
+                image: Some(editor.clone().image),
                 command: Some(vec![
                     "sh".to_string(),
                     "-c".to_string(),
@@ -156,21 +166,27 @@ fn session_to_pod(
             containers: vec![Container {
                 name: format!("{}-container", COMPONENT),
                 image: Some(image.to_string()),
-                env: Some(pod_env_variables(envs, user_id, editor_port)),
+                env: Some(pod_env_variables(envs, user_id, editor, editor_port)),
                 command: Some(vec!["/bin/sh".to_string()]),
                 args: Some(vec![format!("{}/start.sh", editor_path)]),
-                ports: Some(ports.iter().map(|port| ContainerPort {
-                    container_port: port.port,
-                    ..Default::default()
-                }).collect()),
+                ports: Some(
+                    ports
+                        .iter()
+                        .map(|port| ContainerPort {
+                            container_port: port.port,
+                            ..Default::default()
+                        })
+                        .collect(),
+                ),
                 resources: Some(ResourceRequirements {
                     requests: Some(BTreeMap::from([
                         ("memory".to_string(), Quantity("6Gi".to_string())),
                         ("ephemeral-storage".to_string(), Quantity("5Gi".to_string())),
                     ])),
-                    limits: Some(BTreeMap::from([
-                        ("memory".to_string(), Quantity("8Gi".to_string())),
-                    ]))
+                    limits: Some(BTreeMap::from([(
+                        "memory".to_string(),
+                        Quantity("8Gi".to_string()),
+                    )])),
                 }),
                 volume_mounts: Some(vec![VolumeMount {
                     name: volume_name.to_string(),
@@ -425,6 +441,13 @@ pub async fn create_session(
     let pool = get_pool(&pool_id).await?.ok_or_else(|| {
         Error::Resource(ResourceError::Unknown(ResourceType::Pool, pool_id.clone()))
     })?;
+    let editor_id = get_preference(&preferences, &Preferences::DefaultEditor.to_string())?;
+    let editor = get_editor(&editor_id).await?.ok_or_else(|| {
+        Error::Resource(ResourceError::Unknown(
+            ResourceType::Editor,
+            editor_id.clone(),
+        ))
+    })?;
     let max_sessions_allowed = pool.nodes.len();
     let sessions = list_all_sessions().await?;
     if sessions.len() >= max_sessions_allowed {
@@ -526,6 +549,7 @@ pub async fn create_session(
                 devcontainer
                     .map(|devcontainer| envs(&devcontainer))
                     .unwrap_or_default(),
+                &editor,
                 editor_port,
                 ports.clone(),
             )?,

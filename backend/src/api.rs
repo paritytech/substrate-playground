@@ -8,12 +8,12 @@ use crate::{
     error::{Error, Result},
     kubernetes::{parse_user_roles, user},
     types::{
-        Playground, Pool, Preference, PreferenceConfiguration, PreferenceUpdateConfiguration,
-        Profile, ProfileConfiguration, ProfileUpdateConfiguration, Repository,
-        RepositoryConfiguration, RepositoryUpdateConfiguration, RepositoryVersion, Role,
-        RoleConfiguration, RoleUpdateConfiguration, Session, SessionConfiguration,
-        SessionExecutionConfiguration, SessionUpdateConfiguration, User, UserConfiguration,
-        UserUpdateConfiguration,
+        Editor, EditorConfiguration, EditorUpdateConfiguration, Playground, Pool, Preference,
+        PreferenceConfiguration, PreferenceUpdateConfiguration, Profile, ProfileConfiguration,
+        ProfileUpdateConfiguration, Repository, RepositoryConfiguration,
+        RepositoryUpdateConfiguration, RepositoryVersion, Role, RoleConfiguration,
+        RoleUpdateConfiguration, Session, SessionConfiguration, SessionExecutionConfiguration,
+        SessionUpdateConfiguration, User, UserConfiguration, UserUpdateConfiguration,
     },
     utils::{
         github::{authorization_uri, current_user, exchange_code, orgs, GitHubUser},
@@ -337,6 +337,54 @@ pub async fn get(state: &State<Context>, caller: User) -> Result<JsonRPC<Playgro
 #[get("/", rank = 2)]
 pub async fn get_unlogged(state: &State<Context>) -> Result<JsonRPC<Playground>> {
     state.manager.get_unlogged().await.map(JsonRPC)
+}
+
+// Editors
+
+#[get("/editors/<id>")]
+pub async fn get_editor(
+    state: &State<Context>,
+    caller: User,
+    id: String,
+) -> Result<JsonRPC<Option<Editor>>> {
+    state.manager.get_editor(&caller, &id).await.map(JsonRPC)
+}
+
+#[get("/editors")]
+pub async fn list_editors(state: &State<Context>, caller: User) -> Result<JsonRPC<Vec<Editor>>> {
+    state.manager.list_editors(&caller).await.map(JsonRPC)
+}
+
+#[put("/editors/<id>", data = "<conf>")]
+pub async fn create_editor(
+    state: &State<Context>,
+    caller: User,
+    id: String,
+    conf: Json<EditorConfiguration>,
+) -> Result<EmptyJsonRPC> {
+    state.manager.create_editor(&caller, &id, conf.0).await?;
+    Ok(EmptyJsonRPC())
+}
+
+#[patch("/editors/<id>", data = "<conf>")]
+pub async fn update_editor(
+    state: &State<Context>,
+    caller: User,
+    id: String,
+    conf: Json<EditorUpdateConfiguration>,
+) -> Result<EmptyJsonRPC> {
+    state.manager.update_editor(&caller, &id, conf.0).await?;
+    Ok(EmptyJsonRPC())
+}
+
+#[delete("/editors/<id>")]
+pub async fn delete_editor(
+    state: &State<Context>,
+    caller: User,
+    id: String,
+) -> Result<EmptyJsonRPC> {
+    state.manager.delete_editor(&caller, &id).await?;
+    Ok(EmptyJsonRPC())
 }
 
 // Pools
