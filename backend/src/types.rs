@@ -91,7 +91,10 @@ impl TryFrom<&str> for Preferences {
             "SessionMaxDuration" => Ok(Preferences::SessionMaxDuration),
             "SessionPoolAffinity" => Ok(Preferences::SessionPoolAffinity),
             "UserDefaultRoles" => Ok(Preferences::UserDefaultRoles),
-            _ => Err(Error::Failure(format!("Unrecognized preference: {}", other))),
+            _ => Err(Error::Failure(format!(
+                "Unrecognized preference: {}",
+                other
+            ))),
         }
     }
 }
