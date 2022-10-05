@@ -1,6 +1,11 @@
 {
   "id": "user",
   "permissions": {
+    "Editor": [
+        {
+          "type": "Read"
+        }
+    ],
     "Repository": [
       {
         "type": "Read"

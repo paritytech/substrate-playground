@@ -1,6 +1,14 @@
 {
   "id": "paritytech-member",
   "permissions": {
+    "Editor": [
+        {
+          "type": "Create"
+        },
+        {
+          "type": "Read"
+        }
+    ],
     "Pool": [
       {
         "type": "Create"

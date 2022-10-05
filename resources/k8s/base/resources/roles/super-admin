@@ -1,6 +1,20 @@
 {
   "id": "super-admin",
   "permissions": {
+    "Editor": [
+        {
+          "type": "Create"
+        },
+        {
+          "type": "Read"
+        },
+        {
+          "type": "Update"
+        },
+        {
+          "type": "Delete"
+        }
+    ],
     "Pool": [
       {
         "type": "Create"
