@@ -1,5 +1,5 @@
 
-import { Client, playgroundBaseAPIURL, environmentTypeFromString, EnvironmentType, RepositoryVersion } from '@substrate/playground-client';
+import { Client, playgroundBaseAPIURL, environmentTypeFromString, EnvironmentType, RepositoryVersion, Preferences } from '@substrate/playground-client';
 import 'cross-fetch/dist/node-polyfill.js'; // TODO remove once moving to Node18 (https://github.com/nodejs/node/pull/41749)
 
 const accessToken = process.env.ACCESS_TOKEN;
@@ -72,11 +72,14 @@ try {
     const details = await client.get();
     console.log(`Logged as ${details.user.id} (${details.user.role})`);
 
-    const repositoryVersionId = await latestRepositoryVersion(repository);
+    const editorId = "openvscode";
 
-    await client.createPreference('SessionDefaultDuration', {value: "45"});
-    await client.createPreference('SessionMaxDuration', {value: "1440"});
-    await client.createPreference('SessionPoolAffinity', {value: "default"});
+    await client.createEditor(editorId, {image: "paritytech/substrate-playground-editor-openvscode:sha-37d01730", env: {}});
+
+    await client.createPreference(Preferences.DefaultEditor, {value: editorId});
+    await client.createPreference(Preferences.SessionDefaultDuration, {value: "45"});
+    await client.createPreference(Preferences.SessionMaxDuration, {value: "1440"});
+    await client.createPreference(Preferences.SessionPoolAffinity, {value: "default"});
 
     if (! await client.getRepository(repositoryId)) {
         console.log(`Creating Repository ${repositoryId}`);
@@ -91,6 +94,7 @@ try {
     }
 
     const repositoryVersionIds = (await client.listRepositoryVersions(repositoryId)).map(repositoryVersion => repositoryVersion.id);
+    const repositoryVersionId = await latestRepositoryVersion(repository);
     if (!repositoryVersionIds.includes(repositoryVersionId)) {
         console.log(`Creating RepositoryVersion ${repositoryVersionId}`);
         try {
