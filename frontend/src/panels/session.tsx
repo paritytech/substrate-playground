@@ -23,7 +23,7 @@ import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
-import { Client, NameValuePair, User, Port, Session, SessionConfiguration, Repository, RepositoryVersion, Preference } from '@substrate/playground-client';
+import { Client, User, Port, Session, SessionConfiguration, Repository, RepositoryVersion, Preference } from '@substrate/playground-client';
 import { CenteredContainer, ErrorMessage, ErrorSnackbar, LoadingPanel } from "../components";
 import { useInterval } from "../hooks";
 import { canCustomizeSession, formatDuration } from "../utils";
@@ -240,7 +240,7 @@ function RepositorySelector({client, preferences, user, onDeployed, onRetry}: {c
     }
 }
 
-function EnvTable({ env }: {env?: NameValuePair[]}): JSX.Element {
+function EnvTable({ env }: {env?: Record<string, string>}): JSX.Element {
     return (
         <TableContainer component={Paper}>
             <Table size="small" aria-label="a dense table">
@@ -252,7 +252,7 @@ function EnvTable({ env }: {env?: NameValuePair[]}): JSX.Element {
                 </TableHead>
                 {env &&
                     <TableBody>
-                        {env.map(e => (
+                        {env.entries().map(e => (
                             <TableRow key={e.name}>
                                 <TableCell component="th" scope="row">
                                     {e.name}

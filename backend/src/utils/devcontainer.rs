@@ -3,7 +3,7 @@
 use crate::error::{Error, Result};
 use crate::utils::jsonc::strip_jsonc_comments;
 use serde::Deserialize;
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use std::{
     fs,
     process::{Command, Output},
@@ -13,9 +13,9 @@ use std::{
 #[serde(rename_all = "camelCase")]
 pub struct DevContainer {
     pub image: String,
-    pub container_env: Option<HashMap<String, String>>,
+    pub container_env: Option<BTreeMap<String, String>>,
     pub forward_ports: Option<Vec<i32>>,
-    pub ports_attributes: Option<HashMap<String, HashMap<String, String>>>,
+    pub ports_attributes: Option<BTreeMap<String, BTreeMap<String, String>>>,
     pub on_create_command: Option<String>,
     pub post_create_command: Option<String>,
     pub post_start_command: Option<String>,
@@ -83,7 +83,7 @@ fn it_parses_devcontainer() -> Result<()> {
         )?
         .container_env
         .unwrap(),
-        HashMap::from([(
+        BTreeMap::from([(
             "MY_VARIABLE".to_string(),
             "${localEnv:MY_VARIABLE}".to_string()
         )])

@@ -117,11 +117,6 @@ export type RepositoryVersionState =
     | {type: "Ready", devcontainerJson?: string }
     | {type: "Failed", message: string };
 
-export interface NameValuePair {
-    name: string,
-    value: string,
-}
-
 export interface Port {
     name: string,
     protocol?: string,
@@ -136,7 +131,7 @@ export interface Session extends OwnedResource {
 }
 
 export interface SessionRuntimeConfiguration {
-    env: NameValuePair[],
+    env: Record<string, string>,
     ports: Port[],
 }
 

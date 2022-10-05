@@ -1,8 +1,5 @@
 //! HTTP endpoints exposed in /api context
-use std::{
-    collections::{BTreeMap, HashMap},
-    io::Cursor,
-};
+use std::{collections::BTreeMap, io::Cursor};
 
 use crate::{
     error::{Error, Result},
@@ -262,7 +259,7 @@ pub async fn post_install_callback(
         Some(q) => q,
         None => return Err(Error::Failure("Failed to access query".to_string())),
     };
-    let segments = query.segments().collect::<HashMap<&str, &str>>();
+    let segments = query.segments().collect::<BTreeMap<&str, &str>>();
     // Make sure that the 'state' value provided matches the generated one
     if let Some(state) = segments.get("state") {
         if let Some(cookie) = cookies.get_private(STATE_COOKIE_NAME) {

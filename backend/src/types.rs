@@ -244,12 +244,6 @@ pub enum RepositoryVersionState {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct NameValuePair {
-    pub name: String,
-    pub value: String,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Port {
     pub name: String,
     pub protocol: Option<String>,
@@ -269,7 +263,7 @@ pub struct Session {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct SessionRuntimeConfiguration {
-    pub env: Vec<NameValuePair>,
+    pub env: BTreeMap<String, String>,
     pub ports: Vec<Port>,
 }
 

@@ -2,8 +2,8 @@
 use crate::{
     error::{Error, ResourceError, Result},
     types::{
-        self, Editor, NameValuePair, Port, Preferences, RepositoryVersionState, ResourceType,
-        Session, SessionConfiguration, SessionExecution, SessionExecutionConfiguration,
+        self, Editor, Port, Preferences, RepositoryVersionState, ResourceType, Session,
+        SessionConfiguration, SessionExecution, SessionExecutionConfiguration,
         SessionRuntimeConfiguration, SessionUpdateConfiguration, User,
     },
     utils::devcontainer::{parse_devcontainer, DevContainer},
@@ -54,7 +54,7 @@ fn string_to_duration(str: &str) -> Duration {
 // Model
 
 fn pod_env_variables(
-    envs: Vec<NameValuePair>,
+    envs: BTreeMap<String, String>,
     user_id: &str,
     editor: &Editor,
     editor_port: i32,
@@ -74,7 +74,7 @@ fn pod_env_variables(
     all_envs.append(
         &mut envs
             .iter()
-            .map(|env| env_var(&env.name, &env.value))
+            .map(|env| env_var(env.0, env.1))
             .collect::<Vec<EnvVar>>(),
     );
     all_envs
@@ -89,7 +89,7 @@ fn session_to_pod(
     image: &str,
     duration: &Duration,
     pool_id: &str,
-    envs: Vec<NameValuePair>,
+    envs: BTreeMap<String, String>,
     editor: &Editor,
     editor_port: i32,
     ports: Vec<Port>,
@@ -403,17 +403,8 @@ fn devcontainer_to_ports(devcontainer: &DevContainer) -> Vec<Port> {
         .collect::<Vec<Port>>()
 }
 
-fn envs(devcontainer: &DevContainer) -> Vec<NameValuePair> {
-    devcontainer
-        .container_env
-        .clone()
-        .unwrap_or_default()
-        .iter()
-        .map(|(k, v)| NameValuePair {
-            name: k.to_string(),
-            value: v.to_string(),
-        })
-        .collect()
+fn envs(devcontainer: &DevContainer) -> BTreeMap<String, String> {
+    devcontainer.container_env.clone().unwrap_or_default()
 }
 
 pub async fn create_session(
