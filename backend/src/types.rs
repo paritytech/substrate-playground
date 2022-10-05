@@ -86,11 +86,12 @@ impl TryFrom<&str> for Preferences {
 
     fn try_from(other: &str) -> Result<Self> {
         match other {
+            "DefaultEditor" => Ok(Preferences::DefaultEditor),
             "SessionDefaultDuration" => Ok(Preferences::SessionDefaultDuration),
             "SessionMaxDuration" => Ok(Preferences::SessionMaxDuration),
             "SessionPoolAffinity" => Ok(Preferences::SessionPoolAffinity),
             "UserDefaultRoles" => Ok(Preferences::UserDefaultRoles),
-            _ => Err(Error::Failure(format!("Unknown preference: {}", other))),
+            _ => Err(Error::Failure(format!("Unrecognized preference: {}", other))),
         }
     }
 }
