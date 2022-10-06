@@ -1,55 +1,48 @@
 {
 	"name": "playground-dev",
+	"image": "ubuntu",
+	//"dockerFile": "Dockerfile",
 
-	// TODO publish a version of this image to the organization's package registry and then comment
-	// out the `dockerFile` configuration.
-	//"image": "ghcr.io/kube-rs/dev:v1",
-	"dockerFile": "Dockerfile",
+    "customizations": {
+        // Configure properties specific to VS Code.
+        "vscode": {
+			"settings": {
+				"rust-analyzer.cargo.allFeatures": false
+			},
+			"extensions": [
+				"matklad.rust-analyzer",
+				"tamasfe.even-better-toml",
+				"vadimcn.vscode-lldb",
+				"ms-azuretools.vscode-docker",
+				"dbaeumer.vscode-eslint",
+				"DavidAnson.vscode-markdownlint",
+				"mutantdino.resourcemonitor"
+			]
+        }
+    },
 
-	// These extensions are loaded for all users by default.
-	"extensions": [
-		"matklad.rust-analyzer",
-		"tamasfe.even-better-toml",
-		"vadimcn.vscode-lldb",
-        "ms-azuretools.vscode-docker",
-		"dbaeumer.vscode-eslint",
-		"DavidAnson.vscode-markdownlint",
-		"mutantdino.resourcemonitor"
-	],
+	//"postCreateCommand": ["make", "k3d-create-cluster"],
 
-	// Set project-specific VS Code settings here.
-	"settings": {
-		// Prevent conflicting versions of the Kubernetes API from being loaded.
-		"rust-analyzer.cargo.allFeatures": false,
-	},
-
-    "mounts": ["source=dind-var-lib-docker,target=/var/lib/docker,type=volume"],
-
-	"postCreateCommand": ["make", "k3d-create-cluster"],
-
-	// Configure docker.
-	"runArgs": [
-		"--init",
-        "--privileged",
-		// Use the host network so we can access k3d, etc.
-		"--net=host",
-		// For lldb
-		"--cap-add=SYS_PTRACE",
-		"--security-opt=seccomp=unconfined",
-        "--shm-size=1g"
-	],
-	"overrideCommand": false,
 	"remoteUser": "vscode",
 
-//https://github.com/microsoft/vscode-dev-containers/blob/main/containers/docker-from-docker/.devcontainer/devcontainer.json
-
-	// Mount the parent host's docker socket into the container.
-//	"mounts": [
-//		"source=/var/run/docker.sock,target=/var/run/docker-host.sock,type=bind"
-//	],
+    // See all features here: https://containers.dev/features
+    "features": {
+		"ghcr.io/devcontainers/features/rust:1": {
+            "version": "latest"
+        },
+        "ghcr.io/devcontainers/features/node:1": {
+            "version": "latest"
+        },
+        "ghcr.io/devcontainers/features/kubectl-helm-minikube:1": {
+            "version": "latest"
+        },
+        "ghcr.io/devcontainers/features/docker-in-docker:1": {
+            "version": "latest"
+        }
+    },
 
 	"hostRequirements": {
 		"memory": "6gb"
-	},
+	}
 
 }
