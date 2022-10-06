@@ -603,6 +603,7 @@ pub async fn update_session(
         .await?
     }
     // TODO update ports
+    // Must update service, container and ingress paths
 
     Ok(())
 }
