@@ -1,13 +1,6 @@
 .DEFAULT_GOAL=help
 
 # Check if required tools are installed
-ifeq (, $(shell which jq))
-    $(error "jq not installed, see https://stedolan.github.io/jq/")
-endif
-
-ifeq (, $(shell which yq))
-    $(error "yq not installed, see https://kislyuk.github.io/yq/")
-endif
 
 ifeq (, $(shell which docker))
     $(error "docker not installed, see https://docs.docker.com/get-docker/")
@@ -15,14 +8,6 @@ endif
 
 ifeq (, $(shell which kubectl))
     $(error "kubectl not installed, see https://kubernetes.io/docs/tasks/tools/install-kubectl/")
-endif
-
-ifeq (, $(shell which helm))
-    $(error "helm not installed, see https://helm.sh/docs/intro/install/")
-endif
-
-ifeq (, $(shell which gcloud))
-    $(error "gcloud not installed, see https://cloud.google.com/sdk/docs/install")
 endif
 
 # ENV defaults to dev
