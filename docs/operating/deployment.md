@@ -19,9 +19,6 @@ Install [gcloud](https://cloud.google.com/sdk/docs/)
 brew cask install google-cloud-sdk
 gcloud init
 ```
-#### jq
-
-See https://stedolan.github.io/jq/
 #### Docker
 
 See https://docs.docker.com/get-docker/
@@ -29,9 +26,6 @@ See https://docs.docker.com/get-docker/
 #### kubectl
 
 See https://kubernetes.io/docs/tasks/tools/install-kubectl/
-#### kustomize
-
-See https://github.com/kubernetes-sigs/kustomize
 
 ### Custom overlay
 
