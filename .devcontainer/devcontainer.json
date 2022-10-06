@@ -1,7 +1,9 @@
 {
-	"name": "playground-dev",
-	"image": "ubuntu",
-	//"dockerFile": "Dockerfile",
+	"name": "playground-devcontainer",
+	"build": {
+        "dockerfile": "Dockerfile",
+        "cacheFrom": "ghcr.io/paritytech/substrate-playground-devcontainer"
+    },
 
     "customizations": {
         // Configure properties specific to VS Code.

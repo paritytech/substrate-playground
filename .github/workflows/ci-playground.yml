@@ -78,27 +78,21 @@ jobs:
   # From https://code.visualstudio.com/docs/remote/devcontainer-cli#_adding-automation
   build-devcontainer:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
     steps:
+
       - uses: actions/checkout@v3
-      - run: |
-          set -e
 
-          IMAGE_REPOSITORY="ghcr.io/paritytech/substrate-playground-devcontainer"
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-          export DOCKER_BUILDKIT=1
-          export BUILDKIT_PROGRESS=plain
-
-          # Do the build - update
-          npm install -g "@vscode/dev-container-cli@0.224.3"
-          devcontainer build --no-cache --image-name "${IMAGE_REPOSITORY}" "."
-
-          # Push image to GitHub Container Registry
-          echo "${{ github.token }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
-          docker push "${IMAGE_REPOSITORY}"
-
+      - name: Build and run dev container task
+        uses: devcontainers/ci@v0.2 # See https://github.com/devcontainers/ci/blob/main/docs/github-action.md
+        with:
+          imageName: ghcr.io/paritytech/substrate-playground-devcontainer
 
   docker:
     runs-on: ubuntu-latest
