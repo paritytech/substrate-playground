@@ -17,16 +17,12 @@ ifeq (, $(shell which kubectl))
     $(error "kubectl not installed, see https://kubernetes.io/docs/tasks/tools/install-kubectl/")
 endif
 
-ifeq (, $(shell which gcloud))
-    $(error "gcloud not installed, see https://cloud.google.com/sdk/docs/install")
-endif
-
-ifeq (, $(shell which kustomize))
-    $(error "kustomize not installed, see https://github.com/kubernetes-sigs/kustomize")
-endif
-
 ifeq (, $(shell which helm))
     $(error "helm not installed, see https://helm.sh/docs/intro/install/")
+endif
+
+ifeq (, $(shell which gcloud))
+    $(error "gcloud not installed, see https://cloud.google.com/sdk/docs/install")
 endif
 
 # ENV defaults to dev
@@ -152,11 +148,11 @@ k8s-setup-env: requires-k8s
 	kubectl create secret generic playground-secrets --from-literal=github.clientSecret="$${GH_CLIENT_SECRET}" --from-literal=rocket.secretKey=`openssl rand -base64 32` --dry-run=client -o yaml | kubectl apply -f -
 
 k8s-deploy: requires-k8s ## Deploy playground on kubernetes
-	kustomize build --enable-helm resources/k8s/overlays/${ENV}/ | kubectl apply -f -
+	kubectl kustomize --enable-helm resources/k8s/overlays/${ENV}/ | kubectl apply -f -
 
 k8s-undeploy: requires-k8s ## Undeploy playground from kubernetes
 	@read -p $$'All configuration (including GitHub secrets) will be lost. Ok to proceed? [yN]' answer; if [ "$${answer}" != "Y" ] ;then exit 1; fi
-	kustomize build --enable-helm resources/k8s/overlays/${ENV}/ | kubectl delete -f -
+	kubectl kustomize --enable-helm resources/k8s/overlays/${ENV}/ | kubectl delete -f -
 
 ##@ DNS certificates
 
