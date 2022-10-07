@@ -17,8 +17,7 @@
 				"vadimcn.vscode-lldb",
 				"ms-azuretools.vscode-docker",
 				"dbaeumer.vscode-eslint",
-				"DavidAnson.vscode-markdownlint",
-				"mutantdino.resourcemonitor"
+				"DavidAnson.vscode-markdownlint"
 			]
         }
     },
