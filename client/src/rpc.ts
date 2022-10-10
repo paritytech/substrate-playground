@@ -39,8 +39,10 @@ async function call<T>(input: RequestInfo, init: RequestInit, timeout: number): 
         } else {
             if (response.status == 401) {
                 return Promise.reject({code: RpcErrorCode.INVALID_REQUEST, message: 'User unauthorized'});
+            } else if (response.status == 503) {
+                return Promise.reject({code: RpcErrorCode.SERVER_ERROR, message: 'Missing backend'});
             }
-            return Promise.reject({code: RpcErrorCode.SERVER_ERROR, message: response.statusText});
+            return Promise.reject({code: RpcErrorCode.SERVER_ERROR, message: response.statusText || `Unknown error: ${response.status}`});
         }
     } catch (e) {
         return Promise.reject({code: RpcErrorCode.TIMEOUT_ERROR, message: e.message || `Failed to fetch in ${timeout} ms`});
