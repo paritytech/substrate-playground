@@ -134,8 +134,11 @@ if (accessToken) {
                 const port = state.runtimeConfiguration.ports.find(port => port.port == 80);
                 t.not(port, undefined, "Can't find corresponding port");
                 const url = `${playgroundUserBaseURL(env, user.id)}/editor`;
-                const response = await waitForURL(url);
-                t.is(response.ok, true, `Failed to access ${url}`);
+                try {
+                    await waitForURL(url);
+                } catch {
+                    t.fail(`Failed to access ${url}`);
+                }
             }
         } catch(e) {
             t.fail(`Failed to create a session: ${e.message}`);
