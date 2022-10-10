@@ -1,8 +1,10 @@
 FROM docker.io/rust:1.56.0-bullseye
 
 ENV DEBIAN_FRONTEND=noninteractive
-RUN apt update && apt upgrade -y
-RUN apt install -y \
+RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add - \
+    && echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
+RUN apt update && apt upgrade -y \
+    && apt install -y \
     clang \
     cmake \
     lldb \
@@ -13,7 +15,8 @@ RUN apt install -y \
     apt-transport-https \
     ca-certificates \
     gnupg \
-    lsb-release
+    lsb-release \
+    yarn
 
 # Install `k3d`
 RUN curl https://raw.githubusercontent.com/rancher/k3d/main/install.sh \
