@@ -67,10 +67,10 @@ build-editor:
 	@docker buildx build --load --force-rm -f resources/editors/${EDITOR_NAME}/Dockerfile --label org.opencontainers.image.version=${DOCKER_IMAGE_VERSION} -t ${PLAYGROUND_EDITOR_IMAGE_TAG} .
 	docker image prune -f --filter label=stage=builder
 
-push-editor: build-editor ## Push a newly built image on docker.io
+push-editor: build-editor ## Push a newly built editor image on docker.io
 	docker push ${PLAYGROUND_EDITOR_IMAGE_TAG}
 
-launch-editor:
+launch-editor: ## Launch an editor image
 	@if test "$(EDITOR_NAME)" = "" ; then \
 		echo "Environment variable EDITOR_NAME not set"; \
 		exit 1; \
@@ -83,7 +83,7 @@ build-template-base:
 	@docker buildx build --load --force-rm -f Dockerfile.base --label org.opencontainers.image.version=${DOCKER_IMAGE_VERSION} -t ${TEMPLATE_BASE}:sha-${DOCKER_IMAGE_VERSION} .
 	docker image prune -f --filter label=stage=builder
 
-push-template-base: build-template-base ## Push a newly built image on docker.io
+push-template-base: build-template-base ## Push a newly template base built image on docker.io
 	docker push ${TEMPLATE_BASE}:sha-${DOCKER_IMAGE_VERSION}
 
 build-backend-docker-images: ## Build backend docker images
@@ -141,30 +141,30 @@ k8s-undeploy: requires-k8s ## Undeploy playground from kubernetes
 
 ##@ DNS certificates
 
-generate-challenge: requires-env
+generate-challenge: requires-env ## Generate a letsencrypt challenge
 	sudo certbot certonly --manual --preferred-challenges dns --server https://acme-v02.api.letsencrypt.org/directory --agree-tos -m admin@parity.io -d *.${DOMAIN}.${SUBSTRATE_DOMAIN} -d ${DOMAIN}.${SUBSTRATE_DOMAIN} --cert-name ${DOMAIN}.${SUBSTRATE_DOMAIN}
 
 get-challenge: requires-env
 	dig +short TXT _acme-challenge.${DOMAIN}.${SUBSTRATE_DOMAIN} @8.8.8.8
 
-k8s-update-certificate: requires-k8s
+k8s-update-certificate: requires-k8s ## Update the tls certificate
 	sudo kubectl create secret tls playground-tls --save-config --key /etc/letsencrypt/live/${DOMAIN}.${SUBSTRATE_DOMAIN}/privkey.pem --cert /etc/letsencrypt/live/${DOMAIN}.${SUBSTRATE_DOMAIN}/fullchain.pem --dry-run=client -o yaml | sudo kubectl apply -f -
 
-##@ K3d
+##@ K3d cluster
 
 K3d_CLUSTER_NAME=pg-cluster
 
 dev-create-certificate:
 	openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout tls.key -out tls.crt -subj "/CN=playground-dev.substrate.test"
 
-k3d-create-cluster:
+k3d-create-cluster: ## Create a new cluster
 	k3d cluster create ${K3d_CLUSTER_NAME} --servers 2 --port 80:80@loadbalancer --port 443:443@loadbalancer \
         --k3s-arg '--tls-san=127.0.0.1@server:*' --k3s-arg '--no-deploy=traefik@server:*' \
         --k3s-node-label "app.playground/pool=default@server:1" \
         --k3s-node-label "app.playground/pool-type=user@server:1" \
         --k3s-arg '--node-taint=app.playground/pool-type=user:NoExecute@server:1'
 
-k3d-delete-cluster:
+k3d-delete-cluster: ## Delete the existing cluster
 	k3d cluster delete ${K3d_CLUSTER_NAME}
 
 ##@ Google Kubernetes Engine
@@ -172,7 +172,7 @@ k3d-delete-cluster:
 gke-static-ip: requires-k8s
 	gcloud compute addresses describe --region=${GKE_REGION} --format="value(address)"
 
-gke-create-cluster: requires-env
+gke-create-cluster: requires-env ## Create a new cluster
 # See https://cloud.google.com/compute/docs/machine-types
 	gcloud container clusters create ${GKE_CLUSTER} \
         --release-channel regular \
@@ -185,7 +185,7 @@ gke-create-cluster: requires-env
         --num-nodes 1 \
         --enable-network-policy
 
-gke-create-user-nodepool: requires-env
+gke-create-user-nodepool: requires-env ## Create a new nodepool
 	gcloud container node-pools create user-default \
         --cluster ${GKE_CLUSTER} \
         --num-nodes 1 \
