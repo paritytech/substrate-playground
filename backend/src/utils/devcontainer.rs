@@ -21,6 +21,7 @@ pub struct DevContainer {
     pub post_start_command: Option<String>,
 }
 
+// https://containers.dev/implementors/json_reference/
 // TODO add support for multiple devcontainer files (.devcontainer/FOLDER1/devcontainer.json)
 pub fn read_devcontainer(path: &str) -> Result<String> {
     fs::read_to_string(format!("{}/.devcontainer/devcontainer.json", path))
