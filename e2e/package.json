@@ -26,7 +26,7 @@
     "cross-fetch": "3.1.5"
   },
   "devDependencies": {
-    "@esbuild-kit/esm-loader": "2.4.2",
+    "@esbuild-kit/esm-loader": "2.5.0",
     "@types/node": "18.8.3",
     "ava": "4.3.3",
     "playwright": "1.26.1",
