@@ -133,7 +133,7 @@ if (accessToken) {
             if (state.type == "Running") {
                 const port = state.runtimeConfiguration.ports.find(port => port.port == 80);
                 t.not(port, undefined, "Can't find corresponding port");
-                const url = playgroundUserBaseURL(env, user.id);
+                const url = `${playgroundUserBaseURL(env, user.id)}/editor`;
                 const response = await waitForURL(url);
                 t.is(response.ok, true, `Failed to access ${url}`);
             }
