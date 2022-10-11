@@ -155,18 +155,22 @@ jobs:
 
       - name: Configure playground
         run: |-
-          SKIP_ACK=1 USER_ROLES=TestUppercase=super-admin GH_CLIENT_ID=${{ secrets.GH_CLIENT_ID }} GH_CLIENT_SECRET=${{ secrets.GH_CLIENT_SECRET }} make k8s-setup-env
-          openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout tls.key -out tls.crt -subj "/CN=playground-dev.substrate.test"
+          make k8s-setup-env
+          make dev-create-certificate
           kubectl create secret tls playground-tls --save-config --key tls.key --cert tls.crt --dry-run=client -o yaml | kubectl apply -f -
-
-      - name: Dump configuration
-        run: kubectl describe cm playground-config
+        env:
+          SKIP_ACK: 1
+          USER_ROLES: TestUppercase=super-admin
+          GH_CLIENT_ID: ${{ secrets.GH_CLIENT_ID }}
+          GH_CLIENT_SECRET: ${{ secrets.GH_CLIENT_SECRET }}
 
       - name: Deploy playground
-        run: SKIP_ACK=1 make k8s-deploy && sleep 300
+        run: make k8s-deploy
+        env:
+          SKIP_ACK: 1
 
-      - name: Show cluster status
-        run: kubectl get pods -o wide
+      - name: Wait for deployment
+        run: sleep 300
 
       - name: Initialize default resources
         run: yarn && yarn build && yarn run:init-playground node-template substrate-developer-hub/substrate-front-end-template
