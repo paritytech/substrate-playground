@@ -173,7 +173,7 @@ fn session_to_pod(
                     ports
                         .iter()
                         .map(|port| ContainerPort {
-                            container_port: port.port,
+                            container_port: port.target.unwrap_or(port.port),
                             ..Default::default()
                         })
                         .collect(),
