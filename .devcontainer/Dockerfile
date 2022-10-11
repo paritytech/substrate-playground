@@ -6,6 +6,7 @@ RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add - \
     && curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash - &&\
 RUN apt update && apt upgrade -y \
     && apt install -y \
+    sudo \
     clang \
     cmake \
     lldb \
