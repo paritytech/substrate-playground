@@ -155,14 +155,21 @@ k8s-restart-backend: requires-k8s ## Restart playground backend
 
 ##@ DNS certificates
 
-generate-challenge: requires-env ## Generate a letsencrypt challenge
+acme-generate-challenge: requires-env ## Generate a letsencrypt challenge
 	sudo certbot certonly --manual --preferred-challenges dns --server https://acme-v02.api.letsencrypt.org/directory --agree-tos -m admin@parity.io -d *.${DOMAIN}.${SUBSTRATE_DOMAIN} -d ${DOMAIN}.${SUBSTRATE_DOMAIN} --cert-name ${DOMAIN}.${SUBSTRATE_DOMAIN}
 
-get-challenge: requires-env
+acme-get-challenge: requires-env
 	dig +short TXT _acme-challenge.${DOMAIN}.${SUBSTRATE_DOMAIN} @8.8.8.8
 
 k8s-update-certificate: requires-k8s ## Update the tls certificate
-	sudo kubectl create secret tls playground-tls --save-config --key /etc/letsencrypt/live/${DOMAIN}.${SUBSTRATE_DOMAIN}/privkey.pem --cert /etc/letsencrypt/live/${DOMAIN}.${SUBSTRATE_DOMAIN}/fullchain.pem --dry-run=client -o yaml | sudo kubectl apply -f -
+	@if test "$(ENV)" = "dev" ; then \
+		FULLCHAIN=tls.crt \
+		PRIVKEY=tls.key \
+	else \
+		FULLCHAIN=/etc/letsencrypt/live/${DOMAIN}.${SUBSTRATE_DOMAIN}/fullchain.pem \
+		PRIVKEY=/etc/letsencrypt/live/${DOMAIN}.${SUBSTRATE_DOMAIN}/privkey.pem \
+	fi
+	sudo kubectl create secret tls playground-tls --save-config --key ${PRIVKEY} --cert ${FULLCHAIN} --dry-run=client -o yaml | sudo kubectl apply -f -
 
 ##@ K3d cluster
 

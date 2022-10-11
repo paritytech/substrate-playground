@@ -92,12 +92,12 @@ Then request new challenges. Two DNS entries will have to be updated.
 #### Update
 
 ```
-ENV=XXX make generate-challenge
+ENV=XXX make acme-generate-challenge
 
 # Update CloudDNS by adding a new TXT record as detailed by certbot
 
 # Make sure to check it's been propagated
-ENV=XXX make get-challenge
+ENV=XXX make acme-get-challenge
 ```
 
 Then update the tls secret:

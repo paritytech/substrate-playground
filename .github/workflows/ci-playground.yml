@@ -97,6 +97,10 @@ jobs:
   docker:
     runs-on: ubuntu-latest
     if: "! contains(github.event.head_commit.message, '[CI Skip]')"
+    env:
+      SKIP_ACK: 1
+      ENV: dev
+
     steps:
 
       - uses: actions/checkout@v3
@@ -119,9 +123,6 @@ jobs:
       - name: Build backend images
         run: make push-backend-docker-images
 
-      - name: Show images
-        run: docker images
-
       - uses: AbsaOSS/k3d-action@b176c2a6dcae72e3e64e3e4d61751904ec314002 # v2.3.0
         with:
           cluster-name: "pg-cluster"
@@ -142,13 +143,13 @@ jobs:
           curl -sfLo kustomize https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv3.6.1/kustomize_v3.6.1_linux_amd64.tar.gz
           tar zxvf kustomize*
           chmod u+x ./kustomize
-        working-directory: resources/k8s/overlays/dev
+        working-directory: resources/k8s/overlays/${{ env.ENV }}
 
       - name: Update version
         run: |-
           ./kustomize edit set image paritytech/substrate-playground-backend-api:${{ steps.env.outputs.sha }}
           ./kustomize edit set image paritytech/substrate-playground-backend-ui:${{ steps.env.outputs.sha }}
-        working-directory: resources/k8s/overlays/dev
+        working-directory: resources/k8s/overlays/${{ env.ENV }}
 
       - name: Load docker images
         run: k3d image import paritytech/substrate-playground-backend-api:${{ steps.env.outputs.sha }} paritytech/substrate-playground-backend-ui:${{ steps.env.outputs.sha }} -c pg-cluster
@@ -157,17 +158,14 @@ jobs:
         run: |-
           make k8s-setup-cluster
           make dev-create-certificate
-          kubectl create secret tls playground-tls --save-config --key tls.key --cert tls.crt --dry-run=client -o yaml | kubectl apply -f -
+          make k8s-update-certificate
         env:
-          SKIP_ACK: 1
           USER_ROLES: TestUppercase=super-admin
           GH_CLIENT_ID: ${{ secrets.GH_CLIENT_ID }}
           GH_CLIENT_SECRET: ${{ secrets.GH_CLIENT_SECRET }}
 
       - name: Deploy playground
         run: make k8s-deploy
-        env:
-          SKIP_ACK: 1
 
       - name: Wait for deployment
         run: sleep 300
@@ -175,7 +173,6 @@ jobs:
       - name: Synchronize resources
         run: make k8s-sync-resources
         env:
-          ENV: dev
           ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
           REPOSITORY_ID: node-template
           REPOSITORY: substrate-developer-hub/substrate-front-end-template
@@ -187,5 +184,4 @@ jobs:
         working-directory: ./e2e
         timeout-minutes: 3
         env:
-          ENV: dev
           ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
