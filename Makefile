@@ -139,6 +139,9 @@ k8s-undeploy: requires-k8s ## Undeploy playground from kubernetes
 	@read -p $$'All configuration (including GitHub secrets) will be lost. Ok to proceed? [yN]' answer; if [ "$${answer}" != "Y" ] ;then exit 1; fi
 	kubectl kustomize --enable-helm resources/k8s/overlays/${ENV}/ | kubectl delete -f -
 
+k8s-restart-backend: requires-k8s ## Restart playground backend
+	@kubectl rollout restart deployment  backend-api-deployment
+
 ##@ DNS certificates
 
 generate-challenge: requires-env ## Generate a letsencrypt challenge
