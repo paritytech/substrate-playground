@@ -116,7 +116,7 @@ ifeq ($(SKIP_ACK), )
 	@read -p $$'Ok to proceed? [yN]' answer; if [ "$${answer}" != "Y" ] ;then exit 1; fi
 endif
 
-k8s-setup-env: requires-k8s ## Create `config` and `secret` static ConfigMap
+k8s-setup-cluster: requires-k8s ## Create `config` and `secret` static ConfigMap
 	@if test "$(GH_CLIENT_ID)" = "" ; then \
 		echo "Environment variable GH_CLIENT_ID not set"; \
 		exit 1; \
@@ -138,6 +138,17 @@ k8s-deploy: requires-k8s ## Deploy playground on kubernetes
 k8s-undeploy: requires-k8s ## Undeploy playground from kubernetes
 	@read -p $$'All configuration (including GitHub secrets) will be lost. Ok to proceed? [yN]' answer; if [ "$${answer}" != "Y" ] ;then exit 1; fi
 	kubectl kustomize --enable-helm resources/k8s/overlays/${ENV}/ | kubectl delete -f -
+
+k8s-sync-resources: requires-k8s ## Synchronize default resources
+	@if test "$(REPOSITORY_ID)" = "" ; then \
+		echo "Environment variable REPOSITORY_ID not set"; \
+		exit 1; \
+	fi
+	@if test "$(REPOSITORY)" = "" ; then \
+		echo "Environment variable REPOSITORY not set"; \
+		exit 1; \
+	fi
+	@cd scripts; yarn && yarn build && yarn run:sync-playground $${REPOSITORY_ID} $${REPOSITORY}
 
 k8s-restart-backend: requires-k8s ## Restart playground backend
 	@kubectl rollout restart deployment  backend-api-deployment

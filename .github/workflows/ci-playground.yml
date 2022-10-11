@@ -155,7 +155,7 @@ jobs:
 
       - name: Configure playground
         run: |-
-          make k8s-setup-env
+          make k8s-setup-cluster
           make dev-create-certificate
           kubectl create secret tls playground-tls --save-config --key tls.key --cert tls.crt --dry-run=client -o yaml | kubectl apply -f -
         env:
@@ -172,12 +172,13 @@ jobs:
       - name: Wait for deployment
         run: sleep 300
 
-      - name: Initialize default resources
-        run: yarn && yarn build && yarn run:init-playground node-template substrate-developer-hub/substrate-front-end-template
-        working-directory: ./scripts
+      - name: Synchronize resources
+        run: make k8s-sync-resources
         env:
           ENV: dev
           ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+          REPOSITORY_ID: node-template
+          REPOSITORY: substrate-developer-hub/substrate-front-end-template
 
       # Will not run authenticated tests when triggered by PR
       # See https://securitylab.github.com/research/github-actions-preventing-pwn-requests/

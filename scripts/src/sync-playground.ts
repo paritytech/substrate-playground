@@ -74,12 +74,27 @@ try {
 
     const editorId = "openvscode";
 
-    await client.createEditor(editorId, {image: "paritytech/substrate-playground-editor-openvscode:sha-37d01730", env: {}});
+    try {
+        await client.createEditor(editorId, {image: "paritytech/substrate-playground-editor-openvscode:sha-37d01730", env: {}});
+    } catch {
+    }
 
-    await client.createPreference(Preferences.DefaultEditor, {value: editorId});
-    await client.createPreference(Preferences.SessionDefaultDuration, {value: "45"});
-    await client.createPreference(Preferences.SessionMaxDuration, {value: "1440"});
-    await client.createPreference(Preferences.SessionPoolAffinity, {value: "default"});
+    try {
+        await client.createPreference(Preferences.DefaultEditor, {value: editorId});
+    } catch {
+    }
+    try {
+        await client.createPreference(Preferences.SessionDefaultDuration, {value: "45"});
+    } catch {
+    }
+    try {
+        await client.createPreference(Preferences.SessionMaxDuration, {value: "1440"});
+    } catch {
+    }
+    try {
+        await client.createPreference(Preferences.SessionPoolAffinity, {value: "default"});
+    } catch {
+    }
 
     if (! await client.getRepository(repositoryId)) {
         console.log(`Creating Repository ${repositoryId}`);
