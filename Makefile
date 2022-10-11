@@ -116,7 +116,7 @@ ifeq ($(SKIP_ACK), )
 	@read -p $$'Ok to proceed? [yN]' answer; if [ "$${answer}" != "Y" ] ;then exit 1; fi
 endif
 
-k8s-setup-env: requires-k8s
+k8s-setup-env: requires-k8s ## Create `config` and `secret` static ConfigMap
 	@if test "$(GH_CLIENT_ID)" = "" ; then \
 		echo "Environment variable GH_CLIENT_ID not set"; \
 		exit 1; \
