@@ -15,7 +15,7 @@ updates:
   open-pull-requests-limit: 20
   rebase-strategy: disabled
 - package-ecosystem: npm
-  directory: "/templates"
+  directory: "/vscode-extension"
   schedule:
     interval: daily
     time: "03:00"
