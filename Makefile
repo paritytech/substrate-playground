@@ -163,7 +163,7 @@ acme-get-challenge: requires-env
 
 k8s-update-certificate: requires-k8s ## Update the tls certificate
 	@if test "$(ENV)" = "dev" ; then \
-        sudo kubectl create secret tls playground-tls --save-config --key tls.key --cert tls.crt --dry-run=client -o yaml | sudo kubectl apply -f -;\
+        kubectl create secret tls playground-tls --save-config --key tls.key --cert tls.crt --dry-run=client -o yaml | kubectl apply -f -;\
 	else \
         sudo kubectl create secret tls playground-tls --save-config --key /etc/letsencrypt/live/${DOMAIN}.${SUBSTRATE_DOMAIN}/privkey.pem --cert /etc/letsencrypt/live/${DOMAIN}.${SUBSTRATE_DOMAIN}/fullchain.pem --dry-run=client -o yaml | sudo kubectl apply -f -; \
 	fi
