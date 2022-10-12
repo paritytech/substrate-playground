@@ -1,12 +1,11 @@
 FROM docker.io/rust:1.56.0-bullseye
 
 ENV DEBIAN_FRONTEND=noninteractive
-RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add - \
-    && echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list \
-    && curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash - &&\
+RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add - \
+    && echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list \
+    && curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
 RUN apt update && apt upgrade -y \
     && apt install -y \
-    sudo \
     clang \
     cmake \
     lldb \
