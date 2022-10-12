@@ -1,0 +1,25 @@
+#
+# Continuously tests scripts source code
+#
+
+name: Continuous Integration scripts
+
+on:
+  push:
+    branches:
+      - develop
+    paths:
+      - '.github/workflows/ci-scripts.yml'
+      - 'scripts/**'
+  pull_request:
+    branches:
+      - develop
+    paths:
+      - '.github/workflows/ci-scripts.yml'
+      - 'scripts/**'
+
+jobs:
+  build:
+    uses: ./.github/workflows/base-ci-node.yml
+    with:
+      path: scripts

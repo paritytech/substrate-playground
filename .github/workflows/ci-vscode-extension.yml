@@ -1,0 +1,25 @@
+#
+# Continuously tests vscode-extension source code
+#
+
+name: Continuous Integration vscode-extension
+
+on:
+  push:
+    branches:
+      - develop
+    paths:
+      - '.github/workflows/ci-vscode-extension.yml'
+      - 'vscode-extension/**'
+  pull_request:
+    branches:
+      - develop
+    paths:
+      - '.github/workflows/ci-vscode-extension.yml'
+      - 'vscode-extension/**'
+
+jobs:
+  build:
+    uses: ./.github/workflows/base-ci-node.yml
+    with:
+      path: vscode-extension
