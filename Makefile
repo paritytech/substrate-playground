@@ -49,6 +49,7 @@ COLOR_BOLD:= $(shell tput bold)
 COLOR_RED:= $(shell tput bold; tput setaf 1)
 COLOR_GREEN:= $(shell tput bold; tput setaf 2)
 COLOR_RESET:= $(shell tput sgr0)
+TERM=xterm
 
 help:
 	@echo "Build and publish playground components"
