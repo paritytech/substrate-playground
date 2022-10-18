@@ -34,7 +34,7 @@
     "@types/react": "18.0.21",
     "@types/react-dom": "18.0.6",
     "@typescript-eslint/eslint-plugin": "5.40.1",
-    "@typescript-eslint/parser": "5.40.0",
+    "@typescript-eslint/parser": "5.40.1",
     "eslint": "8.25.0",
     "eslint-plugin-react": "7.31.10",
     "parcel": "2.7.0",
