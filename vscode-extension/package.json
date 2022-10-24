@@ -155,7 +155,7 @@
         "@octokit/rest": "19.0.5"
     },
     "devDependencies": {
-        "@types/node": "18.11.3",
+        "@types/node": "18.11.4",
         "@types/vscode": "1.72.0",
         "@typescript-eslint/eslint-plugin": "5.40.1",
         "@typescript-eslint/parser": "5.40.1",
