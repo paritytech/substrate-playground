@@ -13,7 +13,7 @@
     "clean": "rm -rf node_modules/ dist/ .parcel-cache/ yarn.lock"
   },
   "dependencies": {
-    "@emotion/react": "11.10.4",
+    "@emotion/react": "11.10.5",
     "@emotion/styled": "11.10.4",
     "@mui/icons-material": "5.10.9",
     "@mui/lab": "5.0.0-alpha.105",
