@@ -30,7 +30,7 @@
     "@substrate/playground-client": "1.8.4",
     "clipboardy": "2.3.0",
     "cross-fetch": "3.1.4",
-    "ink": "3.0.8",
+    "ink": "3.2.0",
     "ink-big-text": "1.2.0",
     "ink-gradient": "2.0.0",
     "ink-link": "2.0.0",
