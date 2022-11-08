@@ -21,7 +21,7 @@
     "analytics": "0.7.11",
     "analytics-plugin-simple-analytics": "0.1.3",
     "broadcast-channel": "3.5.3",
-    "marked": "2.0.3",
+    "marked": "4.2.2",
     "react": "17.0.2",
     "react-dom": "17.0.2",
     "react-spring": "9.1.1",
@@ -31,7 +31,7 @@
   "devDependencies": {
     "@ava/typescript": "1.1.1",
     "@parcel/transformer-inline-string": "2.0.0-beta.2",
-    "@types/marked": "2.0.2",
+    "@types/marked": "4.0.7",
     "@types/node": "14.14.41",
     "@types/react": "17.0.3",
     "@types/react-dom": "17.0.3",
