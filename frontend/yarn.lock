@@ -1783,12 +1783,12 @@
   resolved "https://registry.yarnpkg.com/@sindresorhus/is/-/is-0.14.0.tgz#9fb3a3cf3132328151f353de4632e01e52102bea"
   integrity sha512-9NET910DNaIPngYnLLPeg+Ogzqsi9uM4mSboU5y6p8S5DzMTVEsJZrawi+BoDNUVBa2DhJqQYUFvMDfgU062LQ==
 
-"@substrate/playground-client@1.5.0":
-  version "1.5.0"
-  resolved "https://registry.yarnpkg.com/@substrate/playground-client/-/playground-client-1.5.0.tgz#2f5a9d50d552c0aca62aab7c493f44f46b50b111"
-  integrity sha512-FQ9xybLQmDFEk1kFXOkuy7cHZdgVsvbVknhRzQdBXxprcT+KqNEg3eRT7VRC8XClbQsSCIME/Gi7LYzdp5IpoQ==
+"@substrate/playground-client@1.9.26":
+  version "1.9.26"
+  resolved "https://registry.yarnpkg.com/@substrate/playground-client/-/playground-client-1.9.26.tgz#c7d375ab9b26a49677ddbf157eca0abb65ce92b0"
+  integrity sha512-JtFGRPeVBPtQUzygrL8O7Ijn8kD/t4biCh7rqaAmp227e6GD3K3ujFUnkZP/JRqy0C+wFXrMe0pvfqxKCdsdPg==
   dependencies:
-    uuid "8.3.2"
+    uuid "9.0.0"
 
 "@szmarczak/http-timer@^1.1.2":
   version "1.1.2"
@@ -8190,6 +8190,11 @@ uuid@8.3.2:
   version "8.3.2"
   resolved "https://registry.yarnpkg.com/uuid/-/uuid-8.3.2.tgz#80d5b5ced271bb9af6c445f21a1a04c606cefbe2"
   integrity sha512-+NYs2QeMWy+GWFOEm9xnn6HCDp0l7QBD7ml8zLUmJ+93Q5NF0NocErnwkTkXVFNiX3/fpC6afS8Dhb/gz7R7eg==
+
+uuid@9.0.0:
+  version "9.0.0"
+  resolved "https://registry.yarnpkg.com/uuid/-/uuid-9.0.0.tgz#592f550650024a38ceb0c562f2f6aa435761efb5"
+  integrity sha512-MXcSTerfPa4uqyzStbRoTgt5XIe3x5+42+q1sDuy3R5MDk66URdLMOZe5aPX/SQd+kuYAh0FdP/pO28IkQyTeg==
 
 uuid@^3.3.2:
   version "3.4.0"
