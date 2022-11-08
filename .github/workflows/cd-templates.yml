@@ -32,7 +32,7 @@ jobs:
 # https://github.com/marketplace/actions/get-changed-files
 # https://github.com/lots0logs/gh-action-get-changed-files
 # https://github.com/jitterbit/get-changed-files
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Set templates
         id: set-templates
@@ -57,7 +57,7 @@ jobs:
       max-parallel: 1
     steps:
 
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -89,7 +89,7 @@ jobs:
         id: env
 
       - name: Checkout remote repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           path: template
           repository: ${{ steps.env.outputs.repository }}

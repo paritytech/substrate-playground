@@ -19,7 +19,7 @@ jobs:
         id: env
         run: echo ::set-output name=sha::sha-${GITHUB_SHA::7}
 
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           token: ${{ secrets.PAT_TOKEN }}
 

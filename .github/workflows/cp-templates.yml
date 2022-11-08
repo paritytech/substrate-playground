@@ -22,7 +22,7 @@ jobs:
       matrix: ${{ steps.set-templates.outputs.matrix }}
     steps:
 
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Set up Python
         uses: actions/setup-python@v2
@@ -58,7 +58,7 @@ jobs:
       max-parallel: 1
     steps:
 
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           token: ${{ secrets.PAT_TOKEN }}
 

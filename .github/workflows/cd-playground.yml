@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
 
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           # Use a specific token so that the commit done further the line triggers other workflows
           token: ${{ secrets.PAT_TOKEN }}
