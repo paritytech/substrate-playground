@@ -95,6 +95,7 @@ rules:
       - "extensions"
       - "networking.k8s.io"
     resources:
+      - ingressclasses
       - ingresses
     verbs:
       - get
@@ -136,7 +137,7 @@ rules:
       # Here: "<ingress-controller-leader>-<nginx>"
       # This has to be adapted if you change either parameter
       # when launching the nginx-ingress-controller.
-      - "ingress-controller-leader-nginx"
+      - "ingress-controller-leader"
     verbs:
       - get
       - update
@@ -220,7 +221,7 @@ spec:
         kubernetes.io/os: linux
       containers:
         - name: nginx-ingress-controller
-          image: quay.io/kubernetes-ingress-controller/nginx-ingress-controller:0.30.0
+          image: k8s.gcr.io/ingress-nginx/controller:v1.0.0
           args:
             - /nginx-ingress-controller
             - --configmap=$(POD_NAMESPACE)/nginx-configuration

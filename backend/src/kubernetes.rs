@@ -257,7 +257,7 @@ fn create_service(session_id: &str, template: &Template) -> Service {
 fn create_ingress_path(path: &str, service_name: &str, service_port: i32) -> HTTPIngressPath {
     HTTPIngressPath {
         path: Some(path.to_string()),
-        path_type: "Exact".to_string(),
+        path_type: "Prefix".to_string(),
         backend: IngressBackend {
             service: Some(IngressServiceBackend {
                 name: service_name.to_string(),
