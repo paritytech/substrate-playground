@@ -150,7 +150,7 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Build and push template Docker image
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v3
         with:
           context: template
           file: templates/Dockerfile.template
@@ -163,7 +163,7 @@ jobs:
             org.opencontainers.image.revision=${{ github.sha }}
 
       - name: Build and Push theia template image
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v3
         with:
           context: templates
           file: templates/Dockerfile.theia-template
