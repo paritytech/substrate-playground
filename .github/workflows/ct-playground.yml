@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        env: [staging, production]
+        env: [production]
     steps:
       - uses: actions/checkout@v2
         with:
@@ -20,7 +20,7 @@ jobs:
       - name: Setup node
         uses: actions/setup-node@v2
         with:
-          node-version: "14"
+          node-version: "16"
 
       - name: Set environment
         id: env
