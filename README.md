@@ -5,7 +5,7 @@
 A hosted website that enables the user to navigate [Substrate](https://github.com/paritytech/substrate) runtimes, modify them and run remotely accessible chain. In a couple seconds!
 
 <p align="center">
-  <img width="600" src="website/static/img/using/00-demo.gif" alt="Playground demo">
+  <img width="600" src="docs/using/00-demo.gif" alt="Playground demo">
 </p>
 
 Playground allows end-user to spin up a substrate based development environment in seconds. A full machine with terminal is then available from a web browser, ready to launch a chain and remotely access it.
