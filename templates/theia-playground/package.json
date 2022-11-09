@@ -10,7 +10,7 @@
         }
     },
     "dependencies": {
-        "@theia/callhierarchy": "1.17.2",
+        "@theia/callhierarchy": "1.31.1",
         "@theia/console": "1.17.2",
         "@theia/core": "1.17.2",
         "@theia/debug": "1.17.2",
