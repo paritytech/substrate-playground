@@ -9,34 +9,20 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        env: [production]
     steps:
       - uses: actions/checkout@v2
         with:
-          ref: develop
+          ref: prod
 
       - name: Setup node
         uses: actions/setup-node@v2
         with:
           node-version: "16"
 
-      - name: Set environment
-        id: env
-        run: |
-          if [[ $ENV == 'production' ]]; then
-              echo ::set-output name=domain::playground
-          elif [[ $ENV == 'staging' ]]; then
-              echo ::set-output name=domain::playground-staging
-          fi
-        env:
-          ENV: ${{ matrix.env }}
-
       - name: Audit URLs using Lighthouse
         uses: treosh/lighthouse-ci-action@7.0.0
         with:
-          urls: https://${{ steps.env.outputs.domain }}.substrate.dev/
+          urls: https://playground.substrate.dev/
 
       - uses: microsoft/playwright-github-action@v1
 
@@ -45,4 +31,4 @@ jobs:
         working-directory: ./e2e
         timeout-minutes: 10
         env:
-          ENV: ${{ matrix.env }}
+          ENV: production
