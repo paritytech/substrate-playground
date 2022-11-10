@@ -194,7 +194,6 @@ fn create_pod(
                         "ephemeral-storage".to_string(),
                         Quantity("40Gi".to_string()),
                     )])),
-                    ..Default::default()
                 }),
                 ..Default::default()
             }],
@@ -493,7 +492,7 @@ impl Engine {
             .clone()
             .ok_or(Error::MissingData("pod#metadata#annotations"))?;
         let template = serde_yaml::from_str(
-            &annotations
+            annotations
                 .get(TEMPLATE_ANNOTATION)
                 .ok_or(Error::MissingData("template"))?,
         )
@@ -507,7 +506,7 @@ impl Engine {
         Ok(Session {
             user_id: username.clone(),
             template,
-            url: subdomain(&env.host, &username),
+            url: subdomain(&env.host, username),
             pod: Self::pod_to_details(self, &pod.clone())?,
             duration,
             node: pod
@@ -636,7 +635,7 @@ impl Engine {
         let users = list_users(client, &self.env.namespace).await?;
         let user = users.get(id);
 
-        match user.map(|user| self.clone().yaml_to_user(&user)) {
+        match user.map(|user| self.clone().yaml_to_user(user)) {
             Some(user) => user.map(Some),
             None => Ok(None),
         }
@@ -737,11 +736,11 @@ impl Engine {
             .rules
             .ok_or(Error::MissingData("ingress#spec#rules"))?;
         for (session_id, template) in templates {
-            let subdomain = subdomain(&self.env.host, &session_id);
+            let subdomain = subdomain(&self.env.host, session_id);
             rules.push(IngressRule {
                 host: Some(subdomain.clone()),
                 http: Some(HTTPIngressRuleValue {
-                    paths: create_ingress_paths(service_name(&session_id), template),
+                    paths: create_ingress_paths(service_name(session_id), template),
                 }),
             });
         }
@@ -834,7 +833,7 @@ impl Engine {
     ) -> Result<()> {
         let session = self
             .clone()
-            .get_session(&session_id)
+            .get_session(session_id)
             .await?
             .ok_or(Error::MissingData("no matching session"))?;
 

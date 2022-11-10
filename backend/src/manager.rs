@@ -180,7 +180,7 @@ impl Manager {
             return Err(Error::Unauthorized());
         }
 
-        new_runtime()?.block_on(self.engine.get_user(&id))
+        new_runtime()?.block_on(self.engine.get_user(id))
     }
 
     pub fn list_users(&self, user: &LoggedUser) -> Result<BTreeMap<String, User>> {
@@ -227,7 +227,7 @@ impl Manager {
             return Err(Error::Unauthorized());
         }
 
-        new_runtime()?.block_on(self.engine.get_session(&id))
+        new_runtime()?.block_on(self.engine.get_session(id))
     }
 
     pub fn list_sessions(&self, user: &LoggedUser) -> Result<BTreeMap<String, Session>> {
@@ -279,7 +279,7 @@ impl Manager {
         match &result {
             Ok(_session) => {
                 if let Ok(mut sessions) = self.sessions.lock() {
-                    sessions.insert(session_id.to_string());
+                    sessions.insert(session_id);
                 } else {
                     error!("Failed to acquire sessions lock");
                 }
@@ -343,7 +343,7 @@ impl Manager {
             return Err(Error::Unauthorized());
         }
 
-        new_runtime()?.block_on(self.engine.get_pool(&pool_id))
+        new_runtime()?.block_on(self.engine.get_pool(pool_id))
     }
 
     pub fn list_pools(&self, user: &LoggedUser) -> Result<BTreeMap<String, Pool>> {
