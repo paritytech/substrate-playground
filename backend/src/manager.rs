@@ -264,7 +264,10 @@ impl Manager {
 
         let session_id = session_id(id);
         // Ensure a workspace with the same id is not alread running
-        if new_runtime()?.block_on(self.engine.get_session(&session_id))?.is_some() {
+        if new_runtime()?
+            .block_on(self.engine.get_session(&session_id))?
+            .is_some()
+        {
             return Err(Error::Unauthorized());
         }
 
