@@ -169,7 +169,7 @@ function main(): void {
       document.domain = members.slice(members.length-2).join(".");
     }
 
-    const analytics = Analytics({
+    Analytics({
         app: "substrate-playground",
         plugins: [
           simpleAnalyticsPlugin(),

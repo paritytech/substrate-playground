@@ -5,6 +5,7 @@ import LogoDark from 'url:../public/assets/images/logo_substrate_onDark.svg';
 
 interface Props {
   theme: boolean;
+  onClick: () => void;
 }
 
 const useStyles = makeStyles({
