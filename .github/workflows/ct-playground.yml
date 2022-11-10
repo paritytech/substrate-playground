@@ -20,7 +20,7 @@ jobs:
           node-version: "16"
 
       - name: Audit URLs using Lighthouse
-        uses: treosh/lighthouse-ci-action@7.0.0
+        uses: treosh/lighthouse-ci-action@9.3.1
         with:
           urls: https://playground.substrate.dev/
 
