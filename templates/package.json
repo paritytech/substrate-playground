@@ -7,7 +7,7 @@
     "clean": "lerna run clean && rm -rf node_modules/"
   },
   "devDependencies": {
-    "lerna": "4.0.0"
+    "lerna": "6.0.3"
   },
   "workspaces": ["theia-playground-extension", "theia-playground"]
 }
