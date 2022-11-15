@@ -28,7 +28,7 @@
         "@theia/output": "1.17.2",
         "@theia/plugin": "1.17.2",
         "@theia/plugin-dev": "1.17.2",
-        "@theia/plugin-ext": "1.17.2",
+        "@theia/plugin-ext": "1.29.2",
         "@theia/plugin-ext-vscode": "1.17.2",
         "@theia/preview": "1.17.2",
         "@theia/preferences": "1.17.2",
