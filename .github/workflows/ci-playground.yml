@@ -82,3 +82,58 @@ jobs:
 
       - name: Build backend Dockerfile
         run: cd backend && docker build -f Dockerfile .
+
+      - uses: AbsaOSS/k3d-action@b176c2a6dcae72e3e64e3e4d61751904ec314002 # v2.3.0
+        with:
+          cluster-name: "pg-cluster"
+          args: >-
+             --k3s-arg '--tls-san=127.0.0.1@server:*'
+             --k3s-arg '--no-deploy=traefik@server:*'
+             --k3s-node-label "cloud.google.com/gke-nodepool=default-workspace@server:0"
+             --port 80:80@loadbalancer
+             --port 443:443@loadbalancer
+
+      - name: Set environment
+        id: env
+        run: |
+          echo ::set-output name=sha::sha-${GITHUB_SHA::7}
+
+      - name: Set up Kustomize
+        run: |-
+          curl -sfLo kustomize https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv3.6.1/kustomize_v3.6.1_linux_amd64.tar.gz
+          tar zxvf kustomize*
+          chmod u+x ./kustomize
+        working-directory: resources/k8s/overlays/dev
+
+      - name: Update version
+        run: |-
+          ./kustomize edit set image paritytech/substrate-playground-backend-api:${{ steps.env.outputs.sha }}
+          ./kustomize edit set image paritytech/substrate-playground-backend-ui:${{ steps.env.outputs.sha }}
+        working-directory: resources/k8s/overlays/dev
+
+      - name: Load docker images
+        run: k3d image import paritytech/substrate-playground-backend-api:${{ steps.env.outputs.sha }} paritytech/substrate-playground-backend-ui:${{ steps.env.outputs.sha }} -c pg-cluster
+
+      - name: Configure playground
+        run: |-
+          make k8s-setup-env
+          make dev-create-certificate
+          make k8s-update-certificate
+        env:
+          GH_CLIENT_ID: ${{ secrets.GH_CLIENT_ID }}
+          GH_CLIENT_SECRET: ${{ secrets.GH_CLIENT_SECRET }}
+
+      - name: Deploy playground
+        run: make k8s-deploy
+
+      - name: Wait for deployment
+        run: sleep 300
+
+      # Will not run authenticated tests when triggered by PR
+      # See https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
+      - name: Run e2e tests
+        run: yarn && yarn test
+        working-directory: ./e2e
+        timeout-minutes: 3
+        env:
+          ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
