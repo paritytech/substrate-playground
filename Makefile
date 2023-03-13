@@ -9,10 +9,6 @@ ifeq (, $(shell which yq))
     $(error "yq not installed, see https://kislyuk.github.io/yq/")
 endif
 
-ifeq (, $(shell which docker))
-    $(error "docker not installed, see https://docs.docker.com/get-docker/")
-endif
-
 ifeq (, $(shell which kubectl))
     $(error "kubectl not installed, see https://kubernetes.io/docs/tasks/tools/install-kubectl/")
 endif
@@ -21,34 +17,18 @@ ifeq (, $(shell which gcloud))
     $(error "gcloud not installed, see https://cloud.google.com/sdk/docs/install")
 endif
 
-ifeq (, $(shell which kustomize))
-    $(error "kustomize not installed, see https://github.com/kubernetes-sigs/kustomize")
-endif
-
-# ENV defaults to dev
-ENV?=dev
-
-# Extract all environments from conf/k8s/overlays/
-ENVS := $(shell cd conf/k8s/overlays/ && ls -d *)
-
-ifeq ($(filter $(ENV),$(ENVS)),)
-    $(error ENV should be one of ($(ENVS)) but was $(ENV))
-endif
+# ENV set to production
+ENV=production
 
 # Docker images names
 PLAYGROUND_BACKEND_API_DOCKER_IMAGE_NAME=${DOCKER_ORG}/substrate-playground-backend-api
 PLAYGROUND_BACKEND_UI_DOCKER_IMAGE_NAME=${DOCKER_ORG}/substrate-playground-backend-ui
 TEMPLATE_BASE=${DOCKER_ORG}/substrate-playground-template-base
 TEMPLATE_THEIA_BASE=${DOCKER_ORG}/substrate-playground-template-theia-base
-PLAYGROUND_ID=playground-${ENV}
-GKE_CLUSTER=substrate-${PLAYGROUND_ID}
+PLAYGROUND_ID=playground
+GKE_CLUSTER=substrate-${PLAYGROUND_ID}-production
 
-# Derive CONTEXT from ENV
-ifeq ($(ENV), dev)
-  CONTEXT=docker-desktop
-else
-  CONTEXT=gke_${GKE_PROJECT}_${GKE_ZONE}_${GKE_CLUSTER}
-endif
+CONTEXT=gke_${GKE_PROJECT}_${GKE_ZONE}_${GKE_CLUSTER}
 
 COLOR_BOLD:= $(shell tput bold)
 COLOR_RED:= $(shell tput bold; tput setaf 1)
