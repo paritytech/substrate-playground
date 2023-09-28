@@ -29,7 +29,7 @@ LABEL stage=builder
 #          Nginx         #
 ##########################
 
-FROM nginx:1.19.0-alpine
+FROM nginx:1.25.2-alpine
 
 COPY ./conf/nginx.conf /etc/nginx/conf.d/default.conf
 
